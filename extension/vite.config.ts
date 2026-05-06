@@ -23,7 +23,9 @@ export default defineConfig({
       "@picker": path.resolve(srcRoot, "picker"),
       "@capture": path.resolve(srcRoot, "capture"),
       "@zip": path.resolve(srcRoot, "zip"),
+      "@element": path.resolve(srcRoot, "element"),
       jszip: path.resolve(here, "node_modules/jszip/dist/jszip.min.js"),
+      "html-to-image": path.resolve(here, "node_modules/html-to-image/dist/html-to-image.js"),
     },
   },
   define: {

@@ -21,7 +21,12 @@ import { mountFloatingPanel } from "@panel/mountFloatingPanel";
 import { collectArtifacts } from "@capture/collectArtifacts";
 import { beginScrollCapture, restoreAfterCapture } from "@capture/scrollCapture";
 import { describe, enterPicker, exitPicker } from "@picker/picker";
-import type { EnterPickerModePayload, EnterPickerModeResponse, ExitPickerModePayload, ExitPickerModeResponse } from "@shared/types";
+import type {
+  EnterPickerModePayload, EnterPickerModeResponse,
+  ExitPickerModePayload, ExitPickerModeResponse,
+  RunElementExportResponse,
+} from "@shared/types";
+import { collectElement } from "@element/collectElement";
 
 logger.debug(LogCategory.Lifecycle, "Content script loaded");
 
@@ -69,12 +74,25 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
   MessageKind.EnterPickerMode,
   () => {
     enterPicker({
-      onSelect: ({ element, rect }) => {
-        // Stage 7: selection captured; the MD pipeline lands in Stage 8.
-        // For now we acknowledge the pick in the console so we can verify the
-        // overlay end-to-end; Stage 8 will replace this with RunElementExport.
-        logger.info(LogCategory.Picker, `Picked ${describe(element)} ${Math.round(rect.width)}x${Math.round(rect.height)}`);
+      onSelect: async ({ element, rect }) => {
+        logger.info(LogCategory.Picker, `Picked ${describe(element)}`);
         exitPicker();
+        try {
+          const settings = await sendToBackground<Record<string, never>, GetSettingsResponse>(
+            MessageKind.GetSettings, {},
+          );
+          // tabId is unknown from CS; SW resolves via sender.tab.id.
+          const payload = await collectElement(-1, element, rect, {
+            redactPasswordFields: settings.redactPasswordFields,
+            includeComputedStyles: settings.includeComputedStyles,
+            includeMatchedRules: settings.includeMatchedRules,
+          });
+          await sendToBackground<typeof payload, RunElementExportResponse>(
+            MessageKind.RunElementExport, payload,
+          );
+        } catch (e) {
+          logger.error(LogCategory.Element, "EXPORT_FAIL", "element export failed", e);
+        }
       },
       onCancel: () => {
         logger.info(LogCategory.Picker, "Picker cancelled");

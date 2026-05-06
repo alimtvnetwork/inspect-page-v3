@@ -101,6 +101,12 @@ export interface RunElementExportPayload {
   matchedCss: string;
   computedDiff: Record<string, string>;
   isolatedHtml: string;
+  pageInfo: {
+    url: string;
+    title: string;
+    viewportCssPx: { w: number; h: number };
+    dpr: number;
+  };
 }
 export interface RunElementExportResponse { mdFilename: string; downloadId: number }
 

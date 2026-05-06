@@ -15,9 +15,13 @@ import type {
   OffscreenDisposeResponse,
   OffscreenInitPayload,
   OffscreenInitResponse,
+  OffscreenRenderIsolatedPayload,
+  OffscreenRenderIsolatedResponse,
   OffscreenStitchFinishPayload,
   OffscreenStitchFinishResponse,
 } from "@shared/types";
+import { ISOLATED_LOAD_TIMEOUT_MS } from "@shared/constants";
+import { toPng } from "html-to-image";
 
 logger.debug(LogCategory.Offscreen, "Offscreen document loaded");
 
@@ -86,5 +90,47 @@ router.on<OffscreenDisposePayload, OffscreenDisposeResponse>(
     sessions.delete(sessionId);
   },
 );
+
+router.on<OffscreenRenderIsolatedPayload, OffscreenRenderIsolatedResponse>(
+  MessageKind.OffscreenRenderIsolated,
+  async ({ html, widthPx, heightPx }) => {
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = `position:absolute;left:-99999px;top:0;width:${widthPx}px;height:${heightPx}px;border:0;background:transparent;`;
+    iframe.setAttribute("sandbox", "allow-same-origin");
+    document.body.appendChild(iframe);
+    try {
+      iframe.srcdoc = html;
+      await waitForLoad(iframe);
+      const idoc = iframe.contentDocument;
+      if (!idoc?.body) throw new MessageError(ErrorCode.E_ISOLATED_FAILED, "iframe body missing");
+      const dpr = (self as unknown as Window).devicePixelRatio || 1;
+      const dataUrl = await toPng(idoc.body, { pixelRatio: dpr, cacheBust: false });
+      return { dataUrl };
+    } catch (e) {
+      if (e instanceof MessageError) throw e;
+      logger.error(LogCategory.Offscreen, ErrorCode.E_ISOLATED_FAILED, "isolated render failed", e);
+      throw new MessageError(ErrorCode.E_ISOLATED_FAILED, "Failed to render isolated element");
+    } finally {
+      iframe.remove();
+    }
+  },
+);
+
+function waitForLoad(iframe: HTMLIFrameElement): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const t = setTimeout(() => {
+      if (done) return;
+      done = true;
+      reject(new MessageError(ErrorCode.E_ISOLATED_TIMEOUT, "iframe.onload timeout"));
+    }, ISOLATED_LOAD_TIMEOUT_MS);
+    iframe.addEventListener("load", () => {
+      if (done) return;
+      done = true;
+      clearTimeout(t);
+      resolve();
+    }, { once: true });
+  });
+}
 
 router.attach();
