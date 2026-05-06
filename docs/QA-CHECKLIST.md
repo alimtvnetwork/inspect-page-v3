@@ -7,7 +7,7 @@ box is checked or has a documented waiver.
 ## 0. Pre-flight (5 min)
 
 - [ ] `cd extension && bun run lint` exits 0 (AC-BD-1)
-- [ ] `cd extension && bun run test` reports 64/64 passing (AC-BD-1)
+- [ ] `cd extension && bun run test` reports 70/70 passing (AC-BD-1)
 - [ ] `cd extension && bun run build && bun run package` succeeds (AC-BD-2)
 - [ ] `public/llm-export.zip` ≤ 1.5 MiB and `public/llm-export.zip.sha256` exists (AC-BD-2)
 - [ ] Unzip the bundle locally; verify the 14 files: `manifest.json`,
@@ -194,6 +194,27 @@ counters). Open the floating panel via popup → **Open panel on page**.
       telemetry block is *not* rendered; only the red status row shows
 - [ ] AC-FD-22 — Re-running the export updates the telemetry block in
       place; old counters do not linger from the previous run
+
+### 7.6 Element-export telemetry parity
+
+Test on **S1** (article — pick a paragraph) and **S5** (Stripe — pick a
+pricing card with web fonts). Open the floating panel.
+
+- [ ] AC-FD-23 — After a successful element export the same "Captured
+      in this export" block appears under the status row, populated via
+      the `StatusUpdate` Success broadcast (no top-level response)
+- [ ] AC-FD-24 — Rows shown: `outerHTML` (bytes), `matched CSS rules`
+      (count), `computed-style diffs` (count), `screenshots (context +
+      isolated)` formatted as `X KB + Y KB`
+- [ ] AC-FD-25 — When the offscreen render fails, the screenshot row
+      reads `X KB + isolated skipped` (verify by picking on a page that
+      blocks `chrome-extension://` iframes, e.g. some bank portals)
+- [ ] AC-FD-26 — Numbers match the `.md` artifact: `outerHTML` bytes
+      ≈ size of the fenced HTML block; `matched CSS rules` ≈ rule
+      count in the "Matched CSS" section; `computed-style diffs` =
+      table row count
+- [ ] AC-FD-27 — Picker cancelled via Esc → no telemetry block renders
+      (status returns to Idle, not Success)
 
 ## 6. Spec completeness (static review, T18-style)
 
