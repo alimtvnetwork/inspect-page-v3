@@ -7,7 +7,7 @@ box is checked or has a documented waiver.
 ## 0. Pre-flight (5 min)
 
 - [ ] `cd extension && bun run lint` exits 0 (AC-BD-1)
-- [ ] `cd extension && bun run test` reports 56/56 passing (AC-BD-1)
+- [ ] `cd extension && bun run test` reports 64/64 passing (AC-BD-1)
 - [ ] `cd extension && bun run build && bun run package` succeeds (AC-BD-2)
 - [ ] `public/llm-export.zip` ≤ 1.5 MiB and `public/llm-export.zip.sha256` exists (AC-BD-2)
 - [ ] Unzip the bundle locally; verify the 14 files: `manifest.json`,
