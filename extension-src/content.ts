@@ -54,3 +54,24 @@ router.on<CollectPageArtifactsPayload, CollectPageArtifactsResponse>(
 );
 
 router.attach();
+
+import {
+  beginScrollCapture,
+  restoreAfterCapture,
+} from "@capture/scrollCapture";
+import type {
+  BeginScrollCapturePayload,
+  BeginScrollCaptureResponse,
+  RestoreAfterCapturePayload,
+  RestoreAfterCaptureResponse,
+} from "@shared/types";
+
+router.on<BeginScrollCapturePayload, BeginScrollCaptureResponse>(
+  MessageKind.BeginScrollCapture,
+  (payload) => beginScrollCapture(payload),
+);
+
+router.on<RestoreAfterCapturePayload, RestoreAfterCaptureResponse>(
+  MessageKind.RestoreAfterCapture,
+  () => { restoreAfterCapture(); },
+);
