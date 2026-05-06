@@ -447,3 +447,30 @@ function SettingsSection({ settings, error, onPatch }: SettingsSectionProps): JS
     </details>
   );
 }
+
+interface TelemetrySummaryProps {
+  counts: NonNullable<PanelState["successTelemetry"]>;
+}
+
+/**
+ * Compact "what was captured" block shown after a successful Full Page
+ * export. Only renders rows whose count is meaningful (non-zero) so a
+ * minimal page produces a minimal block.
+ */
+function TelemetrySummary({ counts }: TelemetrySummaryProps): JSX.Element | null {
+  const rows = telemetryRows(counts);
+  if (rows.length === 0) return null;
+  return (
+    <div className="lpe-telemetry" aria-label={COPY.telemetryHeader}>
+      <div className="lpe-telemetry-header">{COPY.telemetryHeader}</div>
+      <ul className="lpe-telemetry-list">
+        {rows.map(([label, value]) => (
+          <li key={label} className="lpe-telemetry-row">
+            <span className="lpe-telemetry-label">{label}</span>
+            <span className="lpe-telemetry-value">{value}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
