@@ -23,6 +23,7 @@ export default defineConfig({
       "@picker": path.resolve(srcRoot, "picker"),
       "@capture": path.resolve(srcRoot, "capture"),
       "@zip": path.resolve(srcRoot, "zip"),
+      jszip: path.resolve(here, "node_modules/jszip/dist/jszip.min.js"),
     },
   },
   define: {

@@ -6,15 +6,23 @@ import { logger } from "@shared/logger";
 import { MessageError, MessageRouter, sendToTab } from "@shared/messaging";
 import { getSettings, setSettings } from "@shared/settings";
 import type {
+  CollectPageArtifactsResponse,
   GetSettingsPayload,
   GetSettingsResponse,
   MountFloatingPanelPayload,
   MountFloatingPanelResponse,
   PingPayload,
   PingResponse,
+  RunFullPageExportPayload,
+  RunFullPageExportResponse,
   SetSettingsPayload,
   SetSettingsResponse,
+  StatusUpdatePayload,
 } from "@shared/types";
+import { PanelStatus } from "@shared/enums";
+import { buildBundle } from "@zip/buildBundle";
+import { placeholderPngBlob } from "@zip/placeholderPng";
+import { applyTemplate, domainFromUrl, localTimestamp } from "@zip/filename";
 
 logger.info(LogCategory.Lifecycle, `Service worker booted v${__EXT_VERSION__}`);
 
@@ -54,4 +62,99 @@ router.on<MountFloatingPanelPayload, MountFloatingPanelResponse>(
   },
 );
 
+router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
+  MessageKind.RunFullPageExport,
+  async ({ tabId, settings }) => runFullPageExport(tabId, settings),
+);
+
 router.attach();
+
+/**
+ * Stage 5 orchestrator — collect artifacts via CS, build ZIP with placeholder
+ * PNG, download. Stage 6 will replace placeholderPngBlob() with the real
+ * scroll-and-stitch screenshot.
+ */
+async function runFullPageExport(
+  tabId: number,
+  settings: SetSettingsPayload,
+): Promise<RunFullPageExportResponse> {
+  await broadcast({ status: PanelStatus.Collecting });
+
+  let artifacts: CollectPageArtifactsResponse;
+  try {
+    artifacts = await sendToTab<{ tabId: number }, CollectPageArtifactsResponse>(
+      tabId, MessageKind.CollectPageArtifacts, { tabId },
+    );
+  } catch (e) {
+    throw new MessageError(
+      ErrorCode.E_COLLECT_TIMEOUT,
+      "Could not collect page artifacts",
+      e instanceof Error ? e.message : String(e),
+    );
+  }
+
+  await broadcast({ status: PanelStatus.Bundling });
+  const pngBlob = placeholderPngBlob();
+  const bundle = await buildBundle({
+    html: artifacts.html,
+    css: artifacts.css,
+    js: artifacts.js,
+    pngBlob,
+    meta: artifacts.meta,
+  });
+
+  const filename = applyTemplate(
+    settings?.namingTemplateFullPage ?? "llm-export-fullpage-{domain}-{timestamp}.zip",
+    {
+      domain: domainFromUrl(artifacts.meta.url),
+      timestamp: localTimestamp(),
+    },
+  );
+
+  await broadcast({ status: PanelStatus.Downloading });
+  const url = await blobToObjectUrl(bundle);
+  let downloadId: number;
+  try {
+    downloadId = await chrome.downloads.download({ url, filename, saveAs: false });
+  } catch (e) {
+    URL.revokeObjectURL(url);
+    throw new MessageError(
+      ErrorCode.E_DOWNLOAD_FAILED, "chrome.downloads failed",
+      e instanceof Error ? e.message : String(e),
+    );
+  }
+
+  scheduleObjectUrlRevoke(downloadId, url);
+  await broadcast({ status: PanelStatus.Success, message: filename });
+  logger.info(LogCategory.Download, `bundle saved as ${filename} (id=${downloadId})`);
+  return { bundleFilename: filename, downloadId };
+}
+
+async function blobToObjectUrl(blob: Blob): Promise<string> {
+  // SW global URL works in MV3.
+  return URL.createObjectURL(blob);
+}
+
+function scheduleObjectUrlRevoke(downloadId: number, url: string): void {
+  const listener = (delta: chrome.downloads.DownloadDelta): void => {
+    if (delta.id !== downloadId) return;
+    if (delta.state?.current === "complete" || delta.state?.current === "interrupted") {
+      URL.revokeObjectURL(url);
+      chrome.downloads.onChanged.removeListener(listener);
+    }
+  };
+  chrome.downloads.onChanged.addListener(listener);
+}
+
+async function broadcast(payload: StatusUpdatePayload): Promise<void> {
+  // Best-effort; popup may not be open. Errors swallowed.
+  try {
+    await chrome.runtime.sendMessage({
+      kind: MessageKind.StatusUpdate,
+      requestId: `bcast_${Date.now()}`,
+      payload,
+    });
+  } catch {
+    // Popup closed.
+  }
+}
