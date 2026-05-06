@@ -85,12 +85,11 @@ describe("inlineIframes", () => {
 
     const html = reSerialize();
     const r = await inlineIframes(html, document);
-    // eslint-disable-next-line no-console
-    console.log("DEBUG_HTML", JSON.stringify(r.html));
     expect(r.counts.total).toBe(3);
     expect(r.counts.sameOrigin).toBe(2);
     expect(r.counts.crossOrigin).toBe(1);
-    expect((r.html.match(/srcdoc="/g) || []).length).toBe(2);
+    // Match the srcdoc attribute itself, not the data-llm-export-srcdoc marker.
+    expect((r.html.match(/(?<![-\w])srcdoc="/g) || []).length).toBe(2);
     expect((r.html.match(/data-llm-export-cross-origin/g) || []).length).toBe(1);
   });
 
