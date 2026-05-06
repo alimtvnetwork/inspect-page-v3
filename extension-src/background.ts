@@ -17,6 +17,8 @@ import type {
   MountFloatingPanelResponse,
   PingPayload,
   PingResponse,
+  RunElementExportPayload,
+  RunElementExportResponse,
   RunFullPageExportPayload,
   RunFullPageExportResponse,
   SetSettingsPayload,
@@ -27,6 +29,7 @@ import { PanelStatus } from "@shared/enums";
 import { buildBundle } from "@zip/buildBundle";
 import { applyTemplate, domainFromUrl, localTimestamp } from "@zip/filename";
 import { captureFullPage } from "@capture/screenshotOrchestrator";
+import { runElementExport } from "@element/runElementExport";
 
 logger.info(LogCategory.Lifecycle, `Service worker booted v${__EXT_VERSION__}`);
 
@@ -94,6 +97,20 @@ router.on<ExitPickerModePayload, ExitPickerModeResponse>(
     } catch {
       // Tab may be closed; ignore.
     }
+  },
+);
+
+router.on<RunElementExportPayload, RunElementExportResponse>(
+  MessageKind.RunElementExport,
+  async (payload) => {
+    const tab = await chrome.tabs.get(payload.tabId);
+    const settings = await getSettings();
+    return runElementExport(payload, {
+      tab,
+      settings,
+      extensionVersion: __EXT_VERSION__,
+      broadcast,
+    });
   },
 );
 
