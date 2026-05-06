@@ -7,6 +7,7 @@ import { Hero } from "@/components/landing/Hero";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { InstallSteps } from "@/components/landing/InstallSteps";
 import { WhatYouGet } from "@/components/landing/WhatYouGet";
+import { WhatsNew } from "@/components/landing/WhatsNew";
 import { Privacy } from "@/components/landing/Privacy";
 import { Footer } from "@/components/landing/Footer";
 
@@ -14,7 +15,7 @@ const ZIP_URL = "/llm-export.zip";
 
 const Index = (): JSX.Element => {
   const [meta, setMeta] = useState<{ version: string; sizeKb: number | null }>({
-    version: "1.0.0",
+    version: "1.1.0",
     sizeKb: null,
   });
 
@@ -63,6 +64,7 @@ const Index = (): JSX.Element => {
         <HowItWorks />
         <InstallSteps />
         <WhatYouGet />
+        <WhatsNew />
         <Privacy />
       </main>
       <Footer version={meta.version} />
