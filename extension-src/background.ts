@@ -7,6 +7,10 @@ import { MessageError, MessageRouter, sendToTab } from "@shared/messaging";
 import { getSettings, setSettings } from "@shared/settings";
 import type {
   CollectPageArtifactsResponse,
+  EnterPickerModePayload,
+  EnterPickerModeResponse,
+  ExitPickerModePayload,
+  ExitPickerModeResponse,
   GetSettingsPayload,
   GetSettingsResponse,
   MountFloatingPanelPayload,
@@ -65,6 +69,32 @@ router.on<MountFloatingPanelPayload, MountFloatingPanelResponse>(
 router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
   MessageKind.RunFullPageExport,
   async ({ tabId, settings }) => runFullPageExport(tabId, settings),
+);
+
+router.on<EnterPickerModePayload, EnterPickerModeResponse>(
+  MessageKind.EnterPickerMode,
+  async ({ tabId }) => {
+    try {
+      await sendToTab<{ tabId: number }, void>(tabId, MessageKind.EnterPickerMode, { tabId });
+    } catch (e) {
+      throw new MessageError(
+        ErrorCode.E_NOT_AVAILABLE_HERE,
+        "Cannot start picker on this page",
+        e instanceof Error ? e.message : String(e),
+      );
+    }
+  },
+);
+
+router.on<ExitPickerModePayload, ExitPickerModeResponse>(
+  MessageKind.ExitPickerMode,
+  async ({ tabId }) => {
+    try {
+      await sendToTab<{ tabId: number }, void>(tabId, MessageKind.ExitPickerMode, { tabId });
+    } catch {
+      // Tab may be closed; ignore.
+    }
+  },
 );
 
 router.attach();
