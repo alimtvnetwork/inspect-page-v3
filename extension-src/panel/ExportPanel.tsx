@@ -56,6 +56,38 @@ function isDisabledUrl(url?: string): boolean {
   return DISABLED_PREFIXES.some((p) => url.startsWith(p));
 }
 
+/** Format a positive byte count in a compact, panel-friendly way. */
+function fmtBytes(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  let i = 0;
+  let v = n;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i += 1; }
+  return `${v < 10 && i > 0 ? v.toFixed(1) : Math.round(v)} ${units[i]}`;
+}
+
+/** Build the rows for the "Captured in this export" telemetry block. */
+function telemetryRows(c: NonNullable<PanelState["successTelemetry"]>): Array<[string, string]> {
+  const rows: Array<[string, string]> = [];
+  if (typeof c.shadowRootsExpanded === "number" && c.shadowRootsExpanded > 0) {
+    rows.push([COPY.telemetryShadowRoots, String(c.shadowRootsExpanded)]);
+  }
+  if (typeof c.fontsInlined === "number" && c.fontsInlined > 0) {
+    const bytes = typeof c.fontsBytesInlined === "number" ? ` (${fmtBytes(c.fontsBytesInlined)})` : "";
+    rows.push([COPY.telemetryFonts, `${c.fontsInlined}${bytes}`]);
+  }
+  if (typeof c.iframesSameOrigin === "number" && c.iframesSameOrigin > 0) {
+    rows.push([COPY.telemetryIframesSame, String(c.iframesSameOrigin)]);
+  }
+  if (typeof c.iframesCrossOrigin === "number" && c.iframesCrossOrigin > 0) {
+    rows.push([COPY.telemetryIframesCross, String(c.iframesCrossOrigin)]);
+  }
+  const sheets = c.linkedStylesheets + c.inlineStyles;
+  if (sheets > 0) rows.push([COPY.telemetryStylesheets, String(sheets)]);
+  if (c.captureFrames > 0) rows.push([COPY.telemetryFrames, String(c.captureFrames)]);
+  return rows;
+}
+
 function statusLabel(s: PanelState): string {
   switch (s.status) {
     case PanelStatus.Idle: return COPY.statusIdle;
