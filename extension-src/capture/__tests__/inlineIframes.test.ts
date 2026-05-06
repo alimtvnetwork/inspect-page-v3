@@ -85,6 +85,8 @@ describe("inlineIframes", () => {
 
     const html = reSerialize();
     const r = await inlineIframes(html, document);
+    // eslint-disable-next-line no-console
+    console.log("DEBUG_HTML", JSON.stringify(r.html));
     expect(r.counts.total).toBe(3);
     expect(r.counts.sameOrigin).toBe(2);
     expect(r.counts.crossOrigin).toBe(1);
