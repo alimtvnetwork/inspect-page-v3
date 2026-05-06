@@ -12,8 +12,8 @@ export default defineConfig({
     globals: false,
     // Per-file environments: capture/* tests touch the DOM and need jsdom.
     environmentMatchGlobs: [
-      [path.resolve(srcRoot, "capture/**"), "jsdom"],
-      [path.resolve(srcRoot, "element/**"), "jsdom"],
+      [path.resolve(srcRoot, "capture/**"), "happy-dom"],
+      [path.resolve(srcRoot, "element/**"), "happy-dom"],
     ],
   },
   resolve: {
