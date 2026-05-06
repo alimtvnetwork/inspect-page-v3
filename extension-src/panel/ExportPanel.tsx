@@ -198,6 +198,21 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     }
   }, []);
 
+  const onOpenFloating = useCallback(async () => {
+    if (activeTabId === undefined) return;
+    try {
+      await sendToBackground<{ tabId: number }, void>(MessageKind.MountFloatingPanel, { tabId: activeTabId });
+      window.close();
+    } catch (err) {
+      const me = err instanceof MessageError ? err : null;
+      setState({
+        status: PanelStatus.Error,
+        message: me?.message ?? (err instanceof Error ? err.message : String(err)),
+        errorCode: me?.code,
+      });
+    }
+  }, [activeTabId]);
+
   const busy = useMemo(() => BUSY_STATUSES.has(state.status), [state.status]);
 
   return (
@@ -238,6 +253,16 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             >
               {COPY.btnPick}
             </button>
+            {surface === "popup" && (
+              <button
+                type="button"
+                className="lpe-btn"
+                onClick={onOpenFloating}
+                disabled={busy}
+              >
+                {COPY.btnOpenPanel}
+              </button>
+            )}
           </>
         )}
 
