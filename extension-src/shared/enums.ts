@@ -17,6 +17,8 @@ export enum MessageKind {
   OffscreenAddFrame = "OffscreenAddFrame",
   OffscreenStitchFinish = "OffscreenStitchFinish",
   OffscreenRenderIsolated = "OffscreenRenderIsolated",
+  OffscreenInit = "OffscreenInit",
+  OffscreenDispose = "OffscreenDispose",
   StatusUpdate = "StatusUpdate",
   GetSettings = "GetSettings",
   SetSettings = "SetSettings",
