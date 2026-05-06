@@ -1,4 +1,6 @@
 /**
+ * @vitest-environment jsdom
+ *
  * Tests for the v2 shadow-DOM-aware serializer.
  */
 import { describe, it, expect, beforeEach } from "vitest";
