@@ -20,6 +20,8 @@ import type {
 import { mountFloatingPanel } from "@panel/mountFloatingPanel";
 import { collectArtifacts } from "@capture/collectArtifacts";
 import { beginScrollCapture, restoreAfterCapture } from "@capture/scrollCapture";
+import { describe, enterPicker, exitPicker } from "@picker/picker";
+import type { EnterPickerModePayload, EnterPickerModeResponse, ExitPickerModePayload, ExitPickerModeResponse } from "@shared/types";
 
 logger.debug(LogCategory.Lifecycle, "Content script loaded");
 
@@ -61,6 +63,29 @@ router.on<BeginScrollCapturePayload, BeginScrollCaptureResponse>(
 router.on<RestoreAfterCapturePayload, RestoreAfterCaptureResponse>(
   MessageKind.RestoreAfterCapture,
   () => { restoreAfterCapture(); },
+);
+
+router.on<EnterPickerModePayload, EnterPickerModeResponse>(
+  MessageKind.EnterPickerMode,
+  () => {
+    enterPicker({
+      onSelect: ({ element, rect }) => {
+        // Stage 7: selection captured; the MD pipeline lands in Stage 8.
+        // For now we acknowledge the pick in the console so we can verify the
+        // overlay end-to-end; Stage 8 will replace this with RunElementExport.
+        logger.info(LogCategory.Picker, `Picked ${describe(element)} ${Math.round(rect.width)}x${Math.round(rect.height)}`);
+        exitPicker();
+      },
+      onCancel: () => {
+        logger.info(LogCategory.Picker, "Picker cancelled");
+      },
+    });
+  },
+);
+
+router.on<ExitPickerModePayload, ExitPickerModeResponse>(
+  MessageKind.ExitPickerMode,
+  () => { exitPicker(); },
 );
 
 router.attach();
