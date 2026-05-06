@@ -87,4 +87,41 @@ describe("telemetryRows", () => {
     });
     expect(rows).toEqual([]);
   });
+
+  it("emits element-export rows with formatted bytes and combined screenshots", () => {
+    const rows = telemetryRows({
+      ...empty,
+      elementOuterHtmlBytes: 4096,
+      elementMatchedRules: 17,
+      elementComputedDiffEntries: 23,
+      elementContextPngBytes: 51_200,
+      elementIsolatedPngBytes: 102_400,
+    });
+    const map = new Map(rows);
+    expect(map.get("outerHTML")).toBe("4.0 KB");
+    expect(map.get("matched CSS rules")).toBe("17");
+    expect(map.get("computed-style diffs")).toBe("23");
+    expect(map.get("screenshots (context + isolated)")).toBe("50 KB + 100 KB");
+  });
+
+  it("renders 'isolated skipped' when the offscreen render failed", () => {
+    const rows = telemetryRows({
+      ...empty,
+      elementContextPngBytes: 32_000,
+      elementIsolatedSkipped: true,
+    });
+    const screenshotRow = rows.find((r) => r[0] === "screenshots (context + isolated)");
+    expect(screenshotRow?.[1]).toBe("31 KB + isolated skipped");
+  });
+
+  it("element rows are omitted when their counters are zero/absent", () => {
+    const rows = telemetryRows({
+      ...empty,
+      elementOuterHtmlBytes: 0,
+      elementMatchedRules: 0,
+      elementComputedDiffEntries: 0,
+      elementContextPngBytes: 0,
+    });
+    expect(rows).toEqual([]);
+  });
 });
