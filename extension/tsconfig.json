@@ -21,7 +21,8 @@
       "@panel/*": ["../extension-src/panel/*"],
       "@picker/*": ["../extension-src/picker/*"],
       "@capture/*": ["../extension-src/capture/*"],
-      "@zip/*": ["../extension-src/zip/*"]
+      "@zip/*": ["../extension-src/zip/*"],
+      "@element/*": ["../extension-src/element/*"]
     }
   },
   "include": ["../extension-src/**/*"]
