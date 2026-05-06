@@ -172,6 +172,29 @@ its own playground) **and** a page with a YouTube/Twitter embed
       iframesSameOrigin / iframesCrossOrigin / iframesFailed`
       sum correctly
 
+### 7.5 In-panel telemetry surface
+
+Test on **S1** (article — minimal counters) and **S5** (Stripe — full
+counters). Open the floating panel via popup → **Open panel on page**.
+
+- [ ] AC-FD-17 — After a successful Full Page export the panel shows a
+      "Captured in this export" block directly under the status row,
+      styled with the green-tinted success surface
+- [ ] AC-FD-18 — Rows are omitted when their counter is zero. On a plain
+      article (no shadow DOM, no inlined fonts, no iframes) only
+      "Stylesheets" and "Capture frames" appear; on Stripe all five
+      labels appear (shadow roots, fonts, same/cross-origin iframes,
+      stylesheets, frames)
+- [ ] AC-FD-19 — The fonts row reads `N (X KB)` or `N (X.Y MB)` —
+      compact units, never raw bytes; matches `meta.json.counts
+      .fontsInlined` and `fontsBytesInlined`
+- [ ] AC-FD-20 — Numbers in the panel match the values in the exported
+      `meta.json` exactly (open both side by side)
+- [ ] AC-FD-21 — On a failed export (e.g. Full Page on **S6**) the
+      telemetry block is *not* rendered; only the red status row shows
+- [ ] AC-FD-22 — Re-running the export updates the telemetry block in
+      place; old counters do not linger from the previous run
+
 ## 6. Spec completeness (static review, T18-style)
 
 - [ ] AC-SP-1 — `grep -rh "MessageKind\." extension-src` covers every
