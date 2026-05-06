@@ -1,16 +1,73 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+/**
+ * Distribution landing page for the LLM Page Export Chrome extension.
+ * Source: spec/21-app/18-distribution-page.md.
+ */
+import { useEffect, useState } from "react";
+import { Hero } from "@/components/landing/Hero";
+import { HowItWorks } from "@/components/landing/HowItWorks";
+import { InstallSteps } from "@/components/landing/InstallSteps";
+import { WhatYouGet } from "@/components/landing/WhatYouGet";
+import { Privacy } from "@/components/landing/Privacy";
+import { Footer } from "@/components/landing/Footer";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const ZIP_URL = "/llm-export.zip";
+
+const Index = (): JSX.Element => {
+  const [meta, setMeta] = useState<{ version: string; sizeKb: number | null }>({
+    version: "1.0.0",
+    sizeKb: null,
+  });
+
+  useEffect(() => {
+    document.title = "LLM Page Export — Chrome extension";
+    // Best-effort metadata fetch (HEAD). If the build is missing, we keep
+    // sizeKb=null and the Hero hides the size pill.
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(ZIP_URL, { method: "HEAD" });
+        if (!res.ok) return;
+        const len = res.headers.get("content-length");
+        if (cancelled || !len) return;
+        setMeta((m) => ({ ...m, sizeKb: Math.round(parseInt(len, 10) / 1024) }));
+      } catch {
+        // Ignore — landing still renders.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // JSON-LD SoftwareApplication for SEO.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "LLM Page Export",
+    applicationCategory: "BrowserApplication",
+    operatingSystem: "Chromium",
+    description:
+      "Export any webpage as HTML, CSS, JS and a full-page screenshot, ready for your LLM.",
+    softwareVersion: meta.version,
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="min-h-screen bg-background text-foreground">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <main className="mx-auto w-full max-w-[720px] px-5 py-12 sm:py-16 space-y-16">
+        <Hero zipUrl={ZIP_URL} version={meta.version} sizeKb={meta.sizeKb} />
+        <HowItWorks />
+        <InstallSteps />
+        <WhatYouGet />
+        <Privacy />
+      </main>
+      <Footer version={meta.version} />
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
