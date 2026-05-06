@@ -64,6 +64,8 @@ export interface ExportMeta {
     iframesSameOrigin?: number;
     iframesCrossOrigin?: number;
     iframesFailed?: number;
+    /** v1.1: total open shadow roots expanded by the serializer. */
+    shadowRootsExpanded?: number;
   };
   extensionVersion: string;
 }
@@ -98,7 +100,16 @@ export interface PingPayload { sentAtMs: number }
 export interface PingResponse { extensionVersion: string; receivedAtMs: number }
 
 export interface RunFullPageExportPayload { tabId: number; settings: Settings }
-export interface RunFullPageExportResponse { bundleFilename: string; downloadId: number }
+export interface RunFullPageExportResponse {
+  bundleFilename: string;
+  downloadId: number;
+  /**
+   * Compact subset of `ExportMeta.counts` returned to the panel so it can
+   * surface "what was captured" telemetry to the user without needing to
+   * unzip the bundle. Optional — older background builds may omit it.
+   */
+  telemetry?: ExportMeta["counts"];
+}
 
 export interface RunElementExportPayload {
   tabId: number;

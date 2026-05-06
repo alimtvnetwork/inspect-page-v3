@@ -33,6 +33,13 @@ export const COPY = {
   lblNameFull: "Filename — full page",
   lblNameElem: "Filename — element",
   notAvailable: "Not available on browser pages.",
+  telemetryHeader: "Captured in this export",
+  telemetryShadowRoots: "shadow roots",
+  telemetryFonts: "fonts",
+  telemetryIframesSame: "same-origin iframes",
+  telemetryIframesCross: "cross-origin iframes (skipped)",
+  telemetryStylesheets: "stylesheets",
+  telemetryFrames: "screenshot tiles",
 } as const;
 
 export type CopyKey = keyof typeof COPY;
