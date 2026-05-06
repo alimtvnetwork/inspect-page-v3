@@ -340,6 +340,9 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
               <button type="button" className="lpe-btn lpe-btn-primary" onClick={onRetry}>{COPY.btnRetry}</button>
             </div>
           )}
+          {state.status === PanelStatus.Success && state.successTelemetry && (
+            <TelemetrySummary counts={state.successTelemetry} />
+          )}
         </div>
 
         {settings && !disabled && (
