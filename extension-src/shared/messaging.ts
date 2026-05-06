@@ -108,6 +108,7 @@ function toWireError(err: unknown): WireError {
 // Re-export for non-chrome ExtensionMessageEvent type used above.
 declare global {
   // chrome.runtime.ExtensionMessageEvent is the listener registry interface.
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace chrome.runtime {
     interface ExtensionMessageEvent {
       addListener(cb: (...args: unknown[]) => unknown): void;
