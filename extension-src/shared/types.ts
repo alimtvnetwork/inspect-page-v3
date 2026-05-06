@@ -57,6 +57,9 @@ export interface ExportMeta {
     linkedScripts: number;
     unreachableScripts: number;
     captureFrames: number;
+    fontsInlined?: number;
+    fontsBytesInlined?: number;
+    fontsFailed?: number;
   };
   extensionVersion: string;
 }
