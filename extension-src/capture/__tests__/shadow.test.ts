@@ -99,6 +99,46 @@ describe("serializeWithShadow", () => {
     const out = serializeWithShadow(node);
     expect(out).toContain(`if (a < b && c > d) {}`);
   });
+
+  it("inlines adoptedStyleSheets from an open shadow root", () => {
+    if (typeof CSSStyleSheet === "undefined" || !("replaceSync" in CSSStyleSheet.prototype)) {
+      // Environment doesn't support constructed stylesheets — skip silently.
+      return;
+    }
+    const host = document.createElement("lit-card");
+    document.body.appendChild(host);
+    const root = host.attachShadow({ mode: "open" });
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(`:host{display:block;color:rebeccapurple}`);
+    (root as ShadowRoot & { adoptedStyleSheets: CSSStyleSheet[] }).adoptedStyleSheets = [sheet];
+    root.innerHTML = `<p>hi</p>`;
+
+    const out = serializeWithShadow(host);
+    expect(out).toContain(`data-adopted-stylesheet="true"`);
+    expect(out).toContain(`rebeccapurple`);
+    // Adopted sheet appears INSIDE the declarative template, before children.
+    const tplIdx = out.indexOf(`<template shadowrootmode="open">`);
+    const styleIdx = out.indexOf(`data-adopted-stylesheet`);
+    const pIdx = out.indexOf(`<p>hi</p>`);
+    expect(tplIdx).toBeGreaterThan(-1);
+    expect(styleIdx).toBeGreaterThan(tplIdx);
+    expect(pIdx).toBeGreaterThan(styleIdx);
+  });
+
+  it("skips adoptedStyleSheets when captureAdoptedStyleSheets=false", () => {
+    if (typeof CSSStyleSheet === "undefined" || !("replaceSync" in CSSStyleSheet.prototype)) return;
+    const host = document.createElement("lit-card");
+    document.body.appendChild(host);
+    const root = host.attachShadow({ mode: "open" });
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(`p{color:red}`);
+    (root as ShadowRoot & { adoptedStyleSheets: CSSStyleSheet[] }).adoptedStyleSheets = [sheet];
+    root.innerHTML = `<p>x</p>`;
+
+    const out = serializeWithShadow(host, { captureAdoptedStyleSheets: false });
+    expect(out).not.toContain(`data-adopted-stylesheet`);
+    expect(out).not.toContain(`color:red`);
+  });
 });
 
 describe("countOpenShadowRoots", () => {
