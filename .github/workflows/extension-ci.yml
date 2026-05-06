@@ -1,0 +1,87 @@
+# CI for the LLM Page Export Chrome extension.
+# Mirrors the Stage 11 release pipeline (spec/21-app/12-build-and-package.md):
+#   lint → test → build → package → upload artifact.
+name: extension-ci
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "extension/**"
+      - "extension-src/**"
+      - ".github/workflows/extension-ci.yml"
+  pull_request:
+    paths:
+      - "extension/**"
+      - "extension-src/**"
+      - ".github/workflows/extension-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: lint · test · build · package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup zip (for packaging)
+        run: sudo apt-get update -y && sudo apt-get install -y --no-install-recommends zip
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Test
+        run: bun run test
+
+      - name: Build
+        run: bun run build
+
+      - name: Package (without nix — use system zip)
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          DIST="extension/dist/extension"
+          OUT="public/llm-export.zip"
+          if [ ! -d "$DIST" ]; then
+            echo "::error::extension/dist/extension not found"
+            exit 1
+          fi
+          # Mirror scripts/package.sh: ensure icons present, then zip, then sha256.
+          if [ -d "extension-src/icons" ]; then
+            mkdir -p "$DIST/icons"
+            cp -f extension-src/icons/*.png "$DIST/icons/"
+          fi
+          mkdir -p public
+          rm -f "$OUT" "$OUT.sha256"
+          ( cd "$DIST" && zip -r "${{ github.workspace }}/$OUT" . > /dev/null )
+          ( cd public && sha256sum "llm-export.zip" > "llm-export.zip.sha256" )
+          ls -la "$OUT" "$OUT.sha256"
+          # Hard size budget per spec/21-app/11 AC-BD-2 (1.5 MiB).
+          BYTES=$(stat -c '%s' "$OUT")
+          if [ "$BYTES" -gt 1572864 ]; then
+            echo "::error::ZIP exceeds 1.5 MiB budget ($BYTES bytes)"
+            exit 1
+          fi
+
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llm-export-zip
+          path: |
+            public/llm-export.zip
+            public/llm-export.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
