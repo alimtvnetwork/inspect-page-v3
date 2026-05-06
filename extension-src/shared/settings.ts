@@ -38,10 +38,17 @@ export function createSettingsFacade(opts: FacadeOpts = {}): SettingsFacade {
   let pending: StorageRoot | null = null;
   let handle: unknown = null;
   let pendingResolves: Array<() => void> = [];
+  let chain: Promise<unknown> = Promise.resolve();
 
   const loadRoot = async (): Promise<StorageRoot> => {
     if (pending) return pending;
     return readRoot(opts.driver);
+  };
+
+  const serialize = <T>(fn: () => Promise<T>): Promise<T> => {
+    const next = chain.then(fn, fn);
+    chain = next.catch(() => undefined);
+    return next;
   };
 
   const queueWrite = (next: StorageRoot): Promise<void> => {
@@ -65,26 +72,22 @@ export function createSettingsFacade(opts: FacadeOpts = {}): SettingsFacade {
   };
 
   return {
-    async getSettings() {
-      const root = await loadRoot();
-      return root.settings;
-    },
-    async setSettings(patch) {
-      const root = await loadRoot();
-      const next: StorageRoot = { ...root, settings: { ...root.settings, ...patch } };
-      await queueWrite(next);
-      return next.settings;
-    },
-    async getPanelPosition() {
-      const root = await loadRoot();
-      return root.panelPosition;
-    },
-    async setPanelPosition(patch) {
-      const root = await loadRoot();
-      const next: StorageRoot = { ...root, panelPosition: { ...root.panelPosition, ...patch } };
-      await queueWrite(next);
-      return next.panelPosition;
-    },
+    getSettings: () => serialize(async () => (await loadRoot()).settings),
+    setSettings: (patch) =>
+      serialize(async () => {
+        const root = await loadRoot();
+        const next: StorageRoot = { ...root, settings: { ...root.settings, ...patch } };
+        void queueWrite(next);
+        return next.settings;
+      }),
+    getPanelPosition: () => serialize(async () => (await loadRoot()).panelPosition),
+    setPanelPosition: (patch) =>
+      serialize(async () => {
+        const root = await loadRoot();
+        const next: StorageRoot = { ...root, panelPosition: { ...root.panelPosition, ...patch } };
+        void queueWrite(next);
+        return next.panelPosition;
+      }),
     flush: flushNow,
   };
 }
