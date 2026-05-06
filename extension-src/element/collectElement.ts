@@ -10,11 +10,14 @@ import { matchedCss } from "./matchedCss";
 import { computedDiff } from "./computedDiff";
 import { buildIsolatedHtml } from "./buildIsolatedHtml";
 import { redactPasswords } from "./redact";
+import { serializeWithShadow } from "../capture/shadowSerializer";
 
 export interface CollectElementOptions {
   redactPasswordFields: boolean;
   includeComputedStyles: boolean;
   includeMatchedRules: boolean;
+  /** v2: expand open shadow roots into declarative <template>. Default true. */
+  expandShadowRoots?: boolean;
 }
 
 export interface CollectElementResult extends RunElementExportPayload {
@@ -35,8 +38,17 @@ export async function collectElement(
   }
 
   const path = selectorPath(target);
-  let outer = target.outerHTML;
-  if (opts.redactPasswordFields) outer = redactPasswords(outer);
+  const expand = opts.expandShadowRoots !== false;
+  let outer: string;
+  if (expand) {
+    outer = serializeWithShadow(target, {
+      redactPasswordFields: opts.redactPasswordFields,
+      expandShadowRoots: true,
+    });
+  } else {
+    outer = target.outerHTML;
+    if (opts.redactPasswordFields) outer = redactPasswords(outer);
+  }
 
   const matched = await matchedCss(target, { include: opts.includeMatchedRules });
   const diff = computedDiff(target, { include: opts.includeComputedStyles });
