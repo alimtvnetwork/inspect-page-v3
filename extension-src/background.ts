@@ -21,8 +21,8 @@ import type {
 } from "@shared/types";
 import { PanelStatus } from "@shared/enums";
 import { buildBundle } from "@zip/buildBundle";
-import { placeholderPngBlob } from "@zip/placeholderPng";
 import { applyTemplate, domainFromUrl, localTimestamp } from "@zip/filename";
+import { captureFullPage } from "@capture/screenshotOrchestrator";
 
 logger.info(LogCategory.Lifecycle, `Service worker booted v${__EXT_VERSION__}`);
 
@@ -93,14 +93,32 @@ async function runFullPageExport(
     );
   }
 
+  // ---- Screenshot (Stage 6) ----
+  const tab = await chrome.tabs.get(tabId);
+  const screenshot = await captureFullPage({
+    tabId,
+    windowId: tab.windowId,
+    pageCssPx: artifacts.meta.pageCssPx,
+    viewportCssPx: artifacts.meta.viewportCssPx,
+    dpr: artifacts.meta.devicePixelRatio,
+    format: settings?.imageFormat ?? "png",
+    jpegQuality: settings?.jpegQuality ?? 90,
+    onProgress: (p) => broadcast(p),
+  });
+
+  // Update captureFrames count in meta now that we know it.
+  const finalMeta = {
+    ...artifacts.meta,
+    counts: { ...artifacts.meta.counts, captureFrames: screenshot.framesPlaced },
+  };
+
   await broadcast({ status: PanelStatus.Bundling });
-  const pngBlob = placeholderPngBlob();
   const bundle = await buildBundle({
     html: artifacts.html,
     css: artifacts.css,
     js: artifacts.js,
-    pngBlob,
-    meta: artifacts.meta,
+    pngBlob: screenshot.blob,
+    meta: finalMeta,
   });
 
   const filename = applyTemplate(
