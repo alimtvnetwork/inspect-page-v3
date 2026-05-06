@@ -10,6 +10,11 @@ export default defineConfig({
     environment: "node",
     include: [path.resolve(srcRoot, "**/__tests__/**/*.test.ts")],
     globals: false,
+    // Per-file environments: capture/* tests touch the DOM and need jsdom.
+    environmentMatchGlobs: [
+      [path.resolve(srcRoot, "capture/**"), "jsdom"],
+      [path.resolve(srcRoot, "element/**"), "jsdom"],
+    ],
   },
   resolve: {
     alias: {
