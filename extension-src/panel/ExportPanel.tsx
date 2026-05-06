@@ -17,6 +17,7 @@ import { ErrorCode, MessageKind, PanelStatus } from "@shared/enums";
 import { MessageError, sendToBackground } from "@shared/messaging";
 import type {
   GetSettingsResponse,
+  ExportMeta,
   Settings,
   StatusUpdatePayload,
 } from "@shared/types";
@@ -42,6 +43,8 @@ interface PanelState {
   errorDetail?: string;
   progress?: { done: number; total: number };
   successFilename?: string;
+  /** v1.1: counts surfaced to the user after a successful Full Page export. */
+  successTelemetry?: ExportMeta["counts"];
   /** When set, "Retry" reruns this kind. */
   lastAction?: "fullPage" | "pick";
 }
@@ -138,11 +141,19 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     setState({ status: PanelStatus.Collecting, lastAction: kind });
     try {
       if (kind === "fullPage") {
-        const res = await sendToBackground<{ tabId: number; settings: Settings }, { bundleFilename: string; downloadId: number }>(
+        const res = await sendToBackground<
+          { tabId: number; settings: Settings },
+          { bundleFilename: string; downloadId: number; telemetry?: ExportMeta["counts"] }
+        >(
           MessageKind.RunFullPageExport,
           { tabId: activeTabId, settings: settings! },
         );
-        setState({ status: PanelStatus.Success, successFilename: res.bundleFilename, lastAction: kind });
+        setState({
+          status: PanelStatus.Success,
+          successFilename: res.bundleFilename,
+          successTelemetry: res.telemetry,
+          lastAction: kind,
+        });
       } else {
         await sendToBackground<{ tabId: number }, void>(
           MessageKind.EnterPickerMode,
