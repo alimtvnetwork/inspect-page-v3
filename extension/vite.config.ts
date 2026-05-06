@@ -32,9 +32,7 @@ export default defineConfig({
     react(),
     webExtension({
       manifest: path.resolve(srcRoot, "manifest.json"),
-      additionalInputs: {
-        html: ["offscreen.html"],
-      },
+      additionalInputs: ["offscreen.html"],
     }),
   ],
 });
