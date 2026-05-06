@@ -5,9 +5,15 @@
  */
 import { StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { LogCategory } from "@shared/enums";
+import { LogCategory, MessageKind } from "@shared/enums";
 import { logger } from "@shared/logger";
-import { Z_INDEX_PANEL } from "@shared/constants";
+import { STORAGE_WRITE_DEBOUNCE_MS, Z_INDEX_PANEL } from "@shared/constants";
+import { sendToBackground } from "@shared/messaging";
+import type {
+  GetPanelPositionResponse,
+  SetPanelPositionPayload,
+  SetPanelPositionResponse,
+} from "@shared/types";
 import { ExportPanel } from "./ExportPanel";
 import panelCss from "./styles.css?raw";
 
@@ -54,15 +60,32 @@ export function mountFloatingPanel(): void {
   const root = createRoot(wrapper);
   const cleanup = installDrag(wrapper);
 
+  // Restore persisted position (best-effort, async).
+  void sendToBackground<Record<string, never>, GetPanelPositionResponse>(
+    MessageKind.GetPanelPosition, {},
+  ).then((pos) => {
+    if (!pos) return;
+    if (pos.minimized) {
+      host.style.display = "none";
+      return;
+    }
+    const w = wrapper.getBoundingClientRect().width || 320;
+    const h = wrapper.getBoundingClientRect().height || 240;
+    wrapper.style.left = `${clamp(pos.xPx, 0, window.innerWidth - w)}px`;
+    wrapper.style.top = `${clamp(pos.yPx, 0, window.innerHeight - h)}px`;
+  }).catch(() => undefined);
+
   const close = (): void => {
     try { root.unmount(); } catch { /* ignore */ }
     cleanup();
     host.remove();
     mounted = null;
+    void persistPosition({ minimized: false }).catch(() => undefined);
   };
 
   const minimize = (): void => {
     host.style.display = "none";
+    void persistPosition({ minimized: true }).catch(() => undefined);
   };
 
   root.render(
