@@ -1,0 +1,11 @@
+graph LR
+  Popup[Toolbar Popup] -->|MessageKind.RunExport| BG[Service Worker]
+  Panel[Floating Panel<br/>Shadow DOM] -->|MessageKind.RunExport| BG
+  BG -->|inject| CS[Content Script]
+  CS -->|DOM + CSS + JS| BG
+  BG -->|captureVisibleTab| Tab[(Active Tab)]
+  BG -->|frame data URL| OFF[Offscreen Doc<br/>OffscreenCanvas]
+  OFF -->|stitched PNG blob| BG
+  BG -->|JSZip blob| DL[chrome.downloads]
+  CS -->|mount| Panel
+  CS -->|picker overlay| Tab
