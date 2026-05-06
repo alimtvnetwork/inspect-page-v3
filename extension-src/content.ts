@@ -81,11 +81,8 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
           const settings = await sendToBackground<Record<string, never>, GetSettingsResponse>(
             MessageKind.GetSettings, {},
           );
-          const tab = await sendToBackground<Record<string, never>, { tabId: number }>(
-            // Reuses Ping just to get sender.tab.id back? Simpler: SW resolves via sender.
-            MessageKind.Ping, {} as never,
-          ).catch(() => ({ tabId: -1 }));
-          const payload = await collectElement(tab.tabId ?? -1, element, rect, {
+          // tabId is unknown from CS; SW resolves via sender.tab.id.
+          const payload = await collectElement(-1, element, rect, {
             redactPasswordFields: settings.redactPasswordFields,
             includeComputedStyles: settings.includeComputedStyles,
             includeMatchedRules: settings.includeMatchedRules,
