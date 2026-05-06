@@ -10,6 +10,13 @@ if [ ! -d "$DIST" ]; then
   exit 1
 fi
 
+# Ensure icons are in the bundle (vite-plugin-web-extension does not always copy them).
+ICONS_SRC="$ROOT/extension-src/icons"
+if [ -d "$ICONS_SRC" ]; then
+  mkdir -p "$DIST/icons"
+  cp -f "$ICONS_SRC"/*.png "$DIST/icons/"
+fi
+
 rm -f "$OUT" "$OUT.sha256"
 ( cd "$DIST" && nix run nixpkgs#zip -- -r "$OUT" . >/dev/null )
 ( cd "$ROOT/public" && sha256sum "llm-export.zip" > "llm-export.zip.sha256" )
