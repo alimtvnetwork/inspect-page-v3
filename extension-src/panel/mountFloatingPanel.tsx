@@ -159,6 +159,9 @@ function installDrag(wrapper: HTMLElement): () => void {
     if (!dragging) return;
     dragging = false;
     pointerId = -1;
+    const x = parseFloat(wrapper.style.left || "0");
+    const y = parseFloat(wrapper.style.top || "0");
+    schedulePersist({ xPx: x, yPx: y, minimized: false });
   };
   const onResize = (): void => {
     const rect = wrapper.getBoundingClientRect();
@@ -166,6 +169,7 @@ function installDrag(wrapper: HTMLElement): () => void {
     const y = clamp(parseFloat(wrapper.style.top || "0"), 0, window.innerHeight - rect.height);
     wrapper.style.left = `${x}px`;
     wrapper.style.top = `${y}px`;
+    schedulePersist({ xPx: x, yPx: y });
   };
 
   wrapper.addEventListener("pointerdown", onDown);
@@ -179,6 +183,27 @@ function installDrag(wrapper: HTMLElement): () => void {
     window.removeEventListener("pointerup", onUp);
     window.removeEventListener("resize", onResize);
   };
+}
+
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+let persistQueued: Partial<{ xPx: number; yPx: number; minimized: boolean }> = {};
+function schedulePersist(patch: Partial<{ xPx: number; yPx: number; minimized: boolean }>): void {
+  persistQueued = { ...persistQueued, ...patch };
+  if (persistTimer) clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => {
+    const payload = persistQueued;
+    persistQueued = {};
+    persistTimer = null;
+    void persistPosition(payload).catch(() => undefined);
+  }, STORAGE_WRITE_DEBOUNCE_MS);
+}
+
+async function persistPosition(
+  patch: Partial<{ xPx: number; yPx: number; minimized: boolean }>,
+): Promise<void> {
+  await sendToBackground<SetPanelPositionPayload, SetPanelPositionResponse>(
+    MessageKind.SetPanelPosition, patch,
+  );
 }
 
 export function clamp(value: number, min: number, max: number): number {
