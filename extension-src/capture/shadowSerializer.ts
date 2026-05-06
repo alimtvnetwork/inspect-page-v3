@@ -43,6 +43,13 @@ export interface ShadowSerializeOptions {
   redactPasswordFields?: boolean;
   /** When true, traverse open shadow roots (default true). */
   expandShadowRoots?: boolean;
+  /**
+   * When true (default), capture `adoptedStyleSheets` attached to the
+   * document or any open shadow root and inline them as <style> tags.
+   * Required to faithfully render Lit / FAST / Spectrum / Ionic / any
+   * web component that ships CSS via Constructed Stylesheets.
+   */
+  captureAdoptedStyleSheets?: boolean;
 }
 
 /**
@@ -55,6 +62,32 @@ export function serializeWithShadow(
 ): string {
   const expand = opts.expandShadowRoots !== false;
   const redact = !!opts.redactPasswordFields;
+  const captureAdopted = opts.captureAdoptedStyleSheets !== false;
+
+  /**
+   * Serialize a CSSStyleSheet (constructed or otherwise) into a CSS string.
+   * Falls back to "" if the sheet is cross-origin and `cssRules` access throws.
+   */
+  const sheetToCss = (sheet: CSSStyleSheet): string => {
+    try {
+      const rules = sheet.cssRules;
+      let css = "";
+      for (let i = 0; i < rules.length; i += 1) css += rules[i].cssText;
+      return css;
+    } catch {
+      return "";
+    }
+  };
+
+  const adoptedToStyleTag = (root: { adoptedStyleSheets?: readonly CSSStyleSheet[] }): string => {
+    if (!captureAdopted) return "";
+    const sheets = root.adoptedStyleSheets;
+    if (!sheets || sheets.length === 0) return "";
+    let css = "";
+    for (const s of sheets) css += sheetToCss(s);
+    if (!css) return "";
+    return `<style data-adopted-stylesheet="true">${css}</style>`;
+  };
 
   const walk = (n: Node): string => {
     if (n.nodeType === Node.TEXT_NODE) {
@@ -106,6 +139,8 @@ export function serializeWithShadow(
     const shadow = expand ? (el as Element & { shadowRoot: ShadowRoot | null }).shadowRoot : null;
     if (shadow && shadow.mode === "open") {
       let shadowInner = "";
+      // Inline any constructed stylesheets first so they apply before children.
+      shadowInner += adoptedToStyleTag(shadow as unknown as { adoptedStyleSheets?: readonly CSSStyleSheet[] });
       for (const c of Array.from(shadow.childNodes)) shadowInner += walk(c);
       inner += `<template shadowrootmode="open">${shadowInner}</template>`;
     }
@@ -115,7 +150,31 @@ export function serializeWithShadow(
     return `<${tag}${serializeAttrs(el)}>${inner}</${tag}>`;
   };
 
-  return walk(node);
+  // If serializing a Document or <html> root, prepend the document's own
+  // adoptedStyleSheets into <head> as a <style> tag.
+  let out = walk(node);
+  if (captureAdopted && node.nodeType === Node.ELEMENT_NODE) {
+    const docRoot = (node as Element).ownerDocument?.documentElement;
+    const isHtmlRoot = docRoot === node;
+    if (isHtmlRoot) {
+      const docAdopted = adoptedToStyleTag(
+        (node as Element).ownerDocument as unknown as { adoptedStyleSheets?: readonly CSSStyleSheet[] },
+      );
+      if (docAdopted) {
+        const headOpen = out.match(/<head(\s[^>]*)?>/i);
+        if (headOpen) {
+          const i = (headOpen.index ?? 0) + headOpen[0].length;
+          out = out.slice(0, i) + docAdopted + out.slice(i);
+        } else {
+          out = out.replace(
+            /<html(\s[^>]*)?>/i,
+            (m) => `${m}<head>${docAdopted}</head>`,
+          );
+        }
+      }
+    }
+  }
+  return out;
 }
 
 /** Count open shadow roots in a subtree. Useful for telemetry / tests. */
