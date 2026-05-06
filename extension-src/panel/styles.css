@@ -1,0 +1,88 @@
+/**
+ * Inline CSS for <ExportPanel/>. Used by both popup (global) and floating
+ * panel (Shadow DOM, injected at mount time). All selectors scoped to .lpe-*.
+ * Source: spec/21-app/02-ui-panel.md.
+ */
+:host, .lpe-root {
+  all: initial;
+  display: block;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #1f2328;
+}
+.lpe-root * { box-sizing: border-box; }
+.lpe-root {
+  width: 320px;
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+  overflow: hidden;
+}
+.lpe-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+  cursor: default;
+  user-select: none;
+}
+.lpe-header[data-draggable="true"] { cursor: move; }
+.lpe-header-title { flex: 1; font-weight: 600; }
+.lpe-header-btn {
+  border: none; background: transparent; cursor: pointer;
+  padding: 2px 6px; border-radius: 4px; font-size: 14px;
+}
+.lpe-header-btn:hover { background: #eaeef2; }
+.lpe-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.lpe-btn {
+  display: block; width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background: #f6f8fa;
+  font: inherit;
+  cursor: pointer;
+}
+.lpe-btn:hover:not([disabled]) { background: #eaeef2; }
+.lpe-btn-primary { background: #0969da; color: white; border-color: #0969da; }
+.lpe-btn-primary:hover:not([disabled]) { background: #0860c2; }
+.lpe-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+.lpe-status {
+  padding: 8px 10px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background: #f6f8fa;
+  min-height: 36px;
+}
+.lpe-status[data-status="Error"] { background: #ffebe9; border-color: #ff8182; }
+.lpe-status[data-status="Success"] { background: #dafbe1; border-color: #2da44e; }
+.lpe-progress {
+  height: 6px; width: 100%; background: #eaeef2; border-radius: 3px; overflow: hidden;
+  margin-top: 6px;
+}
+.lpe-progress-bar { height: 100%; background: #0969da; transition: width 120ms ease; }
+.lpe-row { display: flex; align-items: center; gap: 8px; }
+.lpe-settings { border-top: 1px solid #d0d7de; padding-top: 10px; }
+.lpe-settings summary {
+  cursor: pointer; font-weight: 600; padding: 4px 0;
+  list-style: none;
+}
+.lpe-settings summary::-webkit-details-marker { display: none; }
+.lpe-settings summary::before { content: "▸ "; font-size: 10px; }
+.lpe-settings[open] summary::before { content: "▾ "; }
+.lpe-settings-body { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; }
+.lpe-field { display: flex; flex-direction: column; gap: 4px; }
+.lpe-field-row { display: flex; align-items: center; gap: 8px; }
+.lpe-input, .lpe-select {
+  width: 100%; padding: 4px 6px;
+  border: 1px solid #d0d7de; border-radius: 4px; font: inherit; background: white;
+}
+.lpe-not-available {
+  padding: 8px 10px; background: #fff8c5; border: 1px solid #d4a72c;
+  border-radius: 6px;
+}
+.lpe-error-detail { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; }
