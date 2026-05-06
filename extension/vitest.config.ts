@@ -6,6 +6,13 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const srcRoot = path.resolve(here, "../extension-src");
 
 export default defineConfig({
+  server: {
+    fs: {
+      // Tests live outside the package root (../extension-src). Allow vite's
+      // web-mode loader (used by happy-dom/jsdom envs) to read them.
+      allow: [path.resolve(here, ".."), srcRoot],
+    },
+  },
   test: {
     environment: "node",
     include: [path.resolve(srcRoot, "**/__tests__/**/*.test.ts")],
