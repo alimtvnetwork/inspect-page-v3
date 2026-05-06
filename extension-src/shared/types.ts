@@ -64,6 +64,8 @@ export interface ExportMeta {
     iframesSameOrigin?: number;
     iframesCrossOrigin?: number;
     iframesFailed?: number;
+    /** v1.1: total open shadow roots expanded by the serializer. */
+    shadowRootsExpanded?: number;
   };
   extensionVersion: string;
 }
