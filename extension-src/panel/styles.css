@@ -86,3 +86,27 @@
   border-radius: 6px;
 }
 .lpe-error-detail { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; }
+
+/* v1.1 — "Captured in this export" telemetry block. */
+.lpe-telemetry {
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px solid #cfead4;
+  background: #f6fef8;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.lpe-telemetry-header {
+  font-weight: 600; color: #1a7f37; margin-bottom: 4px;
+}
+.lpe-telemetry-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.lpe-telemetry-row {
+  display: flex; justify-content: space-between; gap: 12px;
+}
+.lpe-telemetry-label { color: #57606a; }
+.lpe-telemetry-value {
+  font-variant-numeric: tabular-nums; font-weight: 500; color: #1f2328;
+}
