@@ -35,6 +35,8 @@ export function slugifyTitle(title: string): string {
 export function sanitize(name: string): string {
   let out = name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/-+/g, "-");
   out = out.replace(/^-+|-+$/g, "");
+  // Strip stray dashes immediately before a dot (e.g. "hello-world-.zip").
+  out = out.replace(/-+\./g, ".");
   // Trim base name to FILENAME_MAX_CHARS preserving extension.
   const dot = out.lastIndexOf(".");
   if (dot > 0) {
