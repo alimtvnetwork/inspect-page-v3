@@ -1,0 +1,13 @@
+stateDiagram-v2
+  [*] --> Idle
+  Idle --> Active: EnterPickerMode
+  Active --> Hovering: mousemove
+  Hovering --> Hovering: mousemove (update overlay)
+  Hovering --> Selecting: contextmenu (right-click)
+  Hovering --> Cancelling: Escape
+  Hovering --> Cancelling: ExitPickerMode
+  Active --> Cancelling: Escape
+  Selecting --> Idle: export ok (StatusUpdate=Success)
+  Selecting --> Idle: export error (StatusUpdate=Error)
+  Cancelling --> Idle
+  Idle --> [*]
