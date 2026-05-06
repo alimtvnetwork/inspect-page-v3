@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
-import { inlineIframes } from "../../extension-src/capture/inlineIframes";
-import { serializeWithShadow } from "../../extension-src/capture/shadowSerializer";
+import { inlineIframes } from "../inlineIframes";
+import { serializeWithShadow } from "../shadowSerializer";
 describe("p", () => {
   it("p", async () => {
     const f1 = document.createElement("iframe"); f1.setAttribute("src","https://example.com/a"); document.body.appendChild(f1);
