@@ -1,0 +1,30 @@
+sequenceDiagram
+  participant U as User
+  participant P as Panel/Popup
+  participant B as SW
+  participant C as Content Script
+  participant O as Offscreen Doc
+  participant T as Active Tab
+  participant D as Downloads
+
+  U->>P: Click Export Full Page
+  P->>B: RunFullPageExport
+  B->>C: CollectPageArtifacts
+  C-->>B: {html, css, js, meta}
+  B->>O: ensureOffscreen + init canvas (W x H)
+  loop for y in 0..pageH step viewportH
+    B->>C: BeginScrollCapture(y)
+    C-->>B: {actualY, dpr}
+    Note over B: wait CAPTURE_GAP_MS
+    B->>T: chrome.tabs.captureVisibleTab
+    T-->>B: dataUrl
+    B->>O: OffscreenAddFrame(dataUrl, 0, actualY*dpr)
+    O-->>B: {framesPlaced}
+  end
+  B->>O: OffscreenStitchFinish
+  O-->>B: {blobUrl, w, h, bytes}
+  B->>C: RestoreAfterCapture
+  B->>B: JSZip.assemble (page.html + styles.css + scripts.js + screenshot.png + manifest.json + README.txt)
+  B->>D: chrome.downloads.download(zipBlobUrl, filename)
+  D-->>B: downloadId
+  B-->>P: StatusUpdate(Success, filename)

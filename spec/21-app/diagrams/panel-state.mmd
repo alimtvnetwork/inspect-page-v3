@@ -1,0 +1,22 @@
+stateDiagram-v2
+  [*] --> Idle
+  Idle --> Collecting: ClickFullPage
+  Collecting --> Capturing: CollectPageArtifacts ok
+  Capturing --> Stitching: last frame placed
+  Stitching --> Bundling: stitched png ready
+  Bundling --> Downloading: zip ready
+  Downloading --> Success: download started
+  Idle --> PickerActive: ClickPick
+  PickerActive --> Selecting: element picked
+  Selecting --> Bundling: artifacts ready
+  Success --> Idle: SUCCESS_AUTO_DISMISS_MS elapsed
+  Collecting --> Error: any E_*
+  Capturing --> Error: any E_*
+  Stitching --> Error: any E_*
+  Bundling --> Error: any E_*
+  Downloading --> Error: E_DOWNLOAD_FAILED
+  PickerActive --> Idle: Escape | Cancel
+  Selecting --> Error: any E_*
+  Error --> Collecting: Retry (was full page)
+  Error --> PickerActive: Retry (was element)
+  Error --> Idle: Escape
