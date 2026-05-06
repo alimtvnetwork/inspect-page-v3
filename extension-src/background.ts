@@ -102,10 +102,14 @@ router.on<ExitPickerModePayload, ExitPickerModeResponse>(
 
 router.on<RunElementExportPayload, RunElementExportResponse>(
   MessageKind.RunElementExport,
-  async (payload) => {
-    const tab = await chrome.tabs.get(payload.tabId);
+  async (payload, sender) => {
+    const tabId = payload.tabId > 0 ? payload.tabId : sender.tab?.id;
+    if (tabId === undefined) {
+      throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, "Cannot resolve tab for element export");
+    }
+    const tab = await chrome.tabs.get(tabId);
     const settings = await getSettings();
-    return runElementExport(payload, {
+    return runElementExport({ ...payload, tabId }, {
       tab,
       settings,
       extensionVersion: __EXT_VERSION__,
