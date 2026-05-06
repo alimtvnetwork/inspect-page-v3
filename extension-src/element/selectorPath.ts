@@ -49,5 +49,5 @@ function cssEscape(s: string): string {
   // Use native CSS.escape when available; fall back to a conservative encoder.
   const css = (globalThis as { CSS?: { escape?: (s: string) => string } }).CSS;
   if (css?.escape) return css.escape(s);
-  return s.replace(/[^a-zA-Z0-9_\-]/g, (ch) => `\\${ch}`);
+  return s.replace(/[^a-zA-Z0-9_-]/g, (ch) => `\\${ch}`);
 }
