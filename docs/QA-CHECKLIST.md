@@ -7,7 +7,7 @@ box is checked or has a documented waiver.
 ## 0. Pre-flight (5 min)
 
 - [ ] `cd extension && bun run lint` exits 0 (AC-BD-1)
-- [ ] `cd extension && bun run test` reports 29/29 passing (AC-BD-1)
+- [ ] `cd extension && bun run test` reports 56/56 passing (AC-BD-1)
 - [ ] `cd extension && bun run build && bun run package` succeeds (AC-BD-2)
 - [ ] `public/llm-export.zip` ≤ 1.5 MiB and `public/llm-export.zip.sha256` exists (AC-BD-2)
 - [ ] Unzip the bundle locally; verify the 14 files: `manifest.json`,
@@ -105,6 +105,73 @@ Run on **S1** and **S2**.
       captures correctly; warnings panel logs `W_SHADOW_OPEN_SKIPPED` or
       `W_IFRAME_NOT_TRAVERSED` once each (open SW DevTools)
 
+## 7. v1.1 — Fidelity features (T19–T22)
+
+### 7.1 Open shadow DOM walker
+
+Test on a Lit / Spectrum / FAST / Ionic-powered page (e.g. **S4** YouTube
+player chrome, https://lit.dev, https://spectrum.adobe.com).
+
+- [ ] AC-FD-1 — Full Page export → `page.html` contains
+      `<template shadowrootmode="open">` blocks for every web component
+      whose chrome was visible in the live page
+- [ ] AC-FD-2 — Open `page.html` in a fresh Chromium tab → web components
+      render with their original markup (no empty hosts)
+- [ ] AC-FD-3 — `meta.json` records the host page's open-shadow count
+      (manually inspect; no UI surface yet)
+- [ ] AC-FD-4 — Closed shadow roots are *not* expanded (privacy);
+      verify by picking a YouTube player element — output should still
+      be a bare `<video>` host
+
+### 7.2 Constructed stylesheets (`adoptedStyleSheets`)
+
+Test on a page using Lit (https://lit.dev/playground or any Lit demo).
+
+- [ ] AC-FD-5 — Full Page export → unzip → `page.html` contains
+      `<style data-adopted-stylesheet="true">` inside the relevant
+      `<template shadowrootmode="open">`
+- [ ] AC-FD-6 — Reopen `page.html` offline → host components keep their
+      colors / spacing / typography (no FOUC, no broken layout)
+- [ ] AC-FD-7 — Document-level `adoptedStyleSheets` (rare; check via
+      `document.adoptedStyleSheets.length` in DevTools first) appear in
+      `<head>` as a single `<style data-adopted-stylesheet="true">`
+
+### 7.3 Font binary bundling
+
+Test on **S5** (stripe.com) and any Google-Fonts-heavy page.
+
+- [ ] AC-FD-8 — Full Page export → `page.html` opens **with no network**
+      (DevTools → Network → Offline) and renders with original fonts
+- [ ] AC-FD-9 — `style.css` contains `url("data:font/woff2;base64,…")`
+      for every previously-CDN-hosted face
+- [ ] AC-FD-10 — `meta.json.counts.fontsInlined` ≥ 1 and
+      `fontsBytesInlined` is reasonable (typically 50–500 KB per family)
+- [ ] AC-FD-11 — Per-font cap holds: a synthetic page referencing a
+      multi-MB font keeps the original `url(...)` (no inline) and
+      `fontsSkippedTooLarge` ≥ 1
+- [ ] AC-FD-12 — Bundle still ≤ 1.5 MiB after the export (the budget
+      governs the *extension*, not the export, but spot-check the export
+      stays under 25 MB for normal pages)
+
+### 7.4 Cross-origin iframe traversal
+
+Test on a page with a same-origin iframe (e.g. a docs site that embeds
+its own playground) **and** a page with a YouTube/Twitter embed
+(cross-origin).
+
+- [ ] AC-FD-13 — Same-origin iframe → exported `page.html` contains an
+      `<iframe ... srcdoc="…" data-llm-export-srcdoc="true">` with the
+      sub-document fully serialized inside (verify by viewing the iframe
+      in the offline export)
+- [ ] AC-FD-14 — Cross-origin iframe → exported `<iframe>` has
+      `data-llm-export-cross-origin="true"` and an unchanged `src`
+      (no srcdoc attempted)
+- [ ] AC-FD-15 — Recursion stops at depth 3 (no infinite loop on a page
+      that frames itself); the SW console shows no stack overflow
+- [ ] AC-FD-16 — `meta.json.counts.iframesTotal /
+      iframesSameOrigin / iframesCrossOrigin / iframesFailed`
+      sum correctly
+
 ## 6. Spec completeness (static review, T18-style)
 
 - [ ] AC-SP-1 — `grep -rh "MessageKind\." extension-src` covers every
@@ -119,7 +186,7 @@ Run on **S1** and **S2**.
 
 - Tester: __________________
 - Date:   __________________
-- Build:  v1.0.0 (sha256 from `public/llm-export.zip.sha256`)
+- Build:  v1.1.0 (sha256 from `public/llm-export.zip.sha256`)
 - Result: [ ] PASS  [ ] FAIL — see notes
 
 Notes / failures / waivers:
