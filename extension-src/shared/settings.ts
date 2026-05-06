@@ -4,7 +4,7 @@
  */
 import { DEFAULT_SETTINGS } from "./defaults";
 import { readRoot, writeRoot, type StorageDriver } from "./storage";
-import type { Settings } from "./types";
+import type { PanelPosition, Settings } from "./types";
 
 export async function getSettings(driver?: StorageDriver): Promise<Settings> {
   const root = await readRoot(driver);
@@ -24,4 +24,19 @@ export async function setSettings(
 function sanitize(s: Settings): Settings {
   const q = Math.max(1, Math.min(100, Math.round(s.jpegQuality)));
   return { ...s, jpegQuality: q };
+}
+
+export async function getPanelPosition(driver?: StorageDriver): Promise<PanelPosition> {
+  const root = await readRoot(driver);
+  return { ...root.panelPosition };
+}
+
+export async function setPanelPosition(
+  patch: Partial<PanelPosition>,
+  driver?: StorageDriver,
+): Promise<PanelPosition> {
+  const root = await readRoot(driver);
+  const merged: PanelPosition = { ...root.panelPosition, ...patch };
+  await writeRoot({ ...root, panelPosition: merged }, driver);
+  return merged;
 }

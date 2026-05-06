@@ -169,6 +169,12 @@ export type GetSettingsResponse = Settings;
 export type SetSettingsPayload = Partial<Settings>;
 export type SetSettingsResponse = Settings;
 
+export type GetPanelPositionPayload = Record<string, never>;
+export type GetPanelPositionResponse = PanelPosition;
+
+export type SetPanelPositionPayload = Partial<PanelPosition>;
+export type SetPanelPositionResponse = PanelPosition;
+
 export interface MountFloatingPanelPayload { tabId: number }
 export type MountFloatingPanelResponse = void;
 

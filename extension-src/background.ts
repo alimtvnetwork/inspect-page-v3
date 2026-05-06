@@ -4,7 +4,8 @@
 import { ErrorCode, LogCategory, MessageKind } from "@shared/enums";
 import { logger } from "@shared/logger";
 import { MessageError, MessageRouter, sendToTab } from "@shared/messaging";
-import { getSettings, setSettings } from "@shared/settings";
+import { getPanelPosition, getSettings, setPanelPosition, setSettings } from "@shared/settings";
+import { KEEPALIVE_INTERVAL_MS } from "@shared/constants";
 import type {
   CollectPageArtifactsResponse,
   EnterPickerModePayload,
@@ -13,6 +14,10 @@ import type {
   ExitPickerModeResponse,
   GetSettingsPayload,
   GetSettingsResponse,
+  GetPanelPositionPayload,
+  GetPanelPositionResponse,
+  SetPanelPositionPayload,
+  SetPanelPositionResponse,
   MountFloatingPanelPayload,
   MountFloatingPanelResponse,
   PingPayload,
@@ -50,6 +55,14 @@ router.on<GetSettingsPayload, GetSettingsResponse>(MessageKind.GetSettings, asyn
 router.on<SetSettingsPayload, SetSettingsResponse>(MessageKind.SetSettings, async (patch) => {
   return setSettings(patch);
 });
+
+router.on<GetPanelPositionPayload, GetPanelPositionResponse>(
+  MessageKind.GetPanelPosition, async () => getPanelPosition(),
+);
+
+router.on<SetPanelPositionPayload, SetPanelPositionResponse>(
+  MessageKind.SetPanelPosition, async (patch) => setPanelPosition(patch),
+);
 
 router.on<MountFloatingPanelPayload, MountFloatingPanelResponse>(
   MessageKind.MountFloatingPanel,
@@ -120,6 +133,40 @@ router.on<RunElementExportPayload, RunElementExportResponse>(
 
 router.attach();
 
+// ---- Stage 9: keyboard shortcuts (E20: chrome.commands → CS) ----
+chrome.commands?.onCommand?.addListener(async (command) => {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) return;
+    if (command === "trigger-full-page") {
+      const settings = await getSettings();
+      await runFullPageExport(tab.id, settings);
+    } else if (command === "trigger-pick-element") {
+      await sendToTab<{ tabId: number }, void>(tab.id, MessageKind.EnterPickerMode, { tabId: tab.id });
+    }
+  } catch (e) {
+    logger.error(LogCategory.Lifecycle, "CMD_FAIL", `command ${command} failed`, e);
+  }
+});
+
+// ---- Stage 9: SW keep-alive during exports (E20) ----
+let keepAliveTimer: ReturnType<typeof setInterval> | null = null;
+let keepAliveCount = 0;
+function startKeepAlive(): void {
+  keepAliveCount++;
+  if (keepAliveTimer) return;
+  keepAliveTimer = setInterval(() => {
+    chrome.runtime.getPlatformInfo().catch(() => undefined);
+  }, KEEPALIVE_INTERVAL_MS);
+}
+function stopKeepAlive(): void {
+  keepAliveCount = Math.max(0, keepAliveCount - 1);
+  if (keepAliveCount === 0 && keepAliveTimer) {
+    clearInterval(keepAliveTimer);
+    keepAliveTimer = null;
+  }
+}
+
 /**
  * Stage 5 orchestrator — collect artifacts via CS, build ZIP with placeholder
  * PNG, download. Stage 6 will replace placeholderPngBlob() with the real
@@ -129,6 +176,8 @@ async function runFullPageExport(
   tabId: number,
   settings: SetSettingsPayload,
 ): Promise<RunFullPageExportResponse> {
+  startKeepAlive();
+  try {
   await broadcast({ status: PanelStatus.Collecting });
 
   let artifacts: CollectPageArtifactsResponse;
@@ -197,6 +246,9 @@ async function runFullPageExport(
   await broadcast({ status: PanelStatus.Success, message: filename });
   logger.info(LogCategory.Download, `bundle saved as ${filename} (id=${downloadId})`);
   return { bundleFilename: filename, downloadId };
+  } finally {
+    stopKeepAlive();
+  }
 }
 
 async function blobToObjectUrl(blob: Blob): Promise<string> {

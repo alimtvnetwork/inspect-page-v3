@@ -5,9 +5,15 @@
  */
 import { StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { LogCategory } from "@shared/enums";
+import { LogCategory, MessageKind } from "@shared/enums";
 import { logger } from "@shared/logger";
-import { Z_INDEX_PANEL } from "@shared/constants";
+import { STORAGE_WRITE_DEBOUNCE_MS, Z_INDEX_PANEL } from "@shared/constants";
+import { sendToBackground } from "@shared/messaging";
+import type {
+  GetPanelPositionResponse,
+  SetPanelPositionPayload,
+  SetPanelPositionResponse,
+} from "@shared/types";
 import { ExportPanel } from "./ExportPanel";
 import panelCss from "./styles.css?raw";
 
@@ -54,15 +60,32 @@ export function mountFloatingPanel(): void {
   const root = createRoot(wrapper);
   const cleanup = installDrag(wrapper);
 
+  // Restore persisted position (best-effort, async).
+  void sendToBackground<Record<string, never>, GetPanelPositionResponse>(
+    MessageKind.GetPanelPosition, {},
+  ).then((pos) => {
+    if (!pos) return;
+    if (pos.minimized) {
+      host.style.display = "none";
+      return;
+    }
+    const w = wrapper.getBoundingClientRect().width || 320;
+    const h = wrapper.getBoundingClientRect().height || 240;
+    wrapper.style.left = `${clamp(pos.xPx, 0, window.innerWidth - w)}px`;
+    wrapper.style.top = `${clamp(pos.yPx, 0, window.innerHeight - h)}px`;
+  }).catch(() => undefined);
+
   const close = (): void => {
     try { root.unmount(); } catch { /* ignore */ }
     cleanup();
     host.remove();
     mounted = null;
+    void persistPosition({ minimized: false }).catch(() => undefined);
   };
 
   const minimize = (): void => {
     host.style.display = "none";
+    void persistPosition({ minimized: true }).catch(() => undefined);
   };
 
   root.render(
@@ -136,6 +159,9 @@ function installDrag(wrapper: HTMLElement): () => void {
     if (!dragging) return;
     dragging = false;
     pointerId = -1;
+    const x = parseFloat(wrapper.style.left || "0");
+    const y = parseFloat(wrapper.style.top || "0");
+    schedulePersist({ xPx: x, yPx: y, minimized: false });
   };
   const onResize = (): void => {
     const rect = wrapper.getBoundingClientRect();
@@ -143,6 +169,7 @@ function installDrag(wrapper: HTMLElement): () => void {
     const y = clamp(parseFloat(wrapper.style.top || "0"), 0, window.innerHeight - rect.height);
     wrapper.style.left = `${x}px`;
     wrapper.style.top = `${y}px`;
+    schedulePersist({ xPx: x, yPx: y });
   };
 
   wrapper.addEventListener("pointerdown", onDown);
@@ -156,6 +183,27 @@ function installDrag(wrapper: HTMLElement): () => void {
     window.removeEventListener("pointerup", onUp);
     window.removeEventListener("resize", onResize);
   };
+}
+
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+let persistQueued: Partial<{ xPx: number; yPx: number; minimized: boolean }> = {};
+function schedulePersist(patch: Partial<{ xPx: number; yPx: number; minimized: boolean }>): void {
+  persistQueued = { ...persistQueued, ...patch };
+  if (persistTimer) clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => {
+    const payload = persistQueued;
+    persistQueued = {};
+    persistTimer = null;
+    void persistPosition(payload).catch(() => undefined);
+  }, STORAGE_WRITE_DEBOUNCE_MS);
+}
+
+async function persistPosition(
+  patch: Partial<{ xPx: number; yPx: number; minimized: boolean }>,
+): Promise<void> {
+  await sendToBackground<SetPanelPositionPayload, SetPanelPositionResponse>(
+    MessageKind.SetPanelPosition, patch,
+  );
 }
 
 export function clamp(value: number, min: number, max: number): number {

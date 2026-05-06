@@ -22,6 +22,8 @@ export enum MessageKind {
   StatusUpdate = "StatusUpdate",
   GetSettings = "GetSettings",
   SetSettings = "SetSettings",
+  GetPanelPosition = "GetPanelPosition",
+  SetPanelPosition = "SetPanelPosition",
 }
 
 export enum PanelStatus {
