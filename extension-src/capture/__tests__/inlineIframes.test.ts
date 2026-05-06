@@ -23,9 +23,16 @@ function makeFrame(src: string, opts?: { crossOrigin?: boolean; bodyHtml?: strin
       get() { throw new Error("SecurityError"); },
     });
   } else if (opts?.bodyHtml !== undefined) {
-    // happy-dom auto-creates a contentDocument; populate it.
-    const d = f.contentDocument!;
-    d.documentElement.innerHTML = `<head><title>sub</title></head><body>${opts.bodyHtml}</body>`;
+    // happy-dom doesn't auto-create contentDocument for iframes with src,
+    // so build a synthetic Document via DOMParser and stub the getter.
+    const subDoc = new DOMParser().parseFromString(
+      `<!DOCTYPE html><html><head><title>sub</title></head><body>${opts.bodyHtml}</body></html>`,
+      "text/html",
+    );
+    Object.defineProperty(f, "contentDocument", {
+      configurable: true,
+      get() { return subDoc; },
+    });
   }
   return f;
 }
