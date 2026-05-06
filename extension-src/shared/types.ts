@@ -60,6 +60,10 @@ export interface ExportMeta {
     fontsInlined?: number;
     fontsBytesInlined?: number;
     fontsFailed?: number;
+    iframesTotal?: number;
+    iframesSameOrigin?: number;
+    iframesCrossOrigin?: number;
+    iframesFailed?: number;
   };
   extensionVersion: string;
 }
