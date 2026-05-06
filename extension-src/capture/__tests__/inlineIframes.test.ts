@@ -61,7 +61,7 @@ describe("inlineIframes", () => {
     expect(r.html).toContain(`srcdoc="`);
     expect(r.html).toContain(`data-llm-export-srcdoc="true"`);
     // Inner content is base64-or-escaped inside srcdoc; just check it's there.
-    expect(r.html).toMatch(/srcdoc="[^"]*&lt;h1&gt;inner&lt;\/h1&gt;[^"]*"/);
+    expect(r.html).toMatch(/srcdoc="[^"]*&lt;h1>inner&lt;\/h1>[^"]*"/);
     // Original src attribute preserved.
     expect(r.html).toContain(`src="https://example.com/sub"`);
   });
