@@ -17,6 +17,7 @@ interface CaptureState {
   prevScroll: { x: number; y: number };
   prevScrollBehavior: string;
   stuck: StuckSnapshot[];
+  startHref: string;
 }
 
 let state: CaptureState | null = null;
@@ -47,6 +48,7 @@ function snapshotPage(): CaptureState {
     prevScroll: { x: window.scrollX, y: window.scrollY },
     prevScrollBehavior,
     stuck,
+    startHref: location.href,
   };
 }
 
@@ -70,6 +72,11 @@ export async function beginScrollCapture(
   payload: BeginScrollCapturePayload,
 ): Promise<BeginScrollCaptureResponse> {
   if (!state) state = snapshotPage();
+  // E9 — SPA route change mid-export: abort if URL changed since snapshot.
+  if (location.href !== state.startHref) {
+    logger.error(LogCategory.Capture, ErrorCode.E_ROUTE_CHANGED, `href changed mid-capture`);
+    throw new Error(ErrorCode.E_ROUTE_CHANGED);
+  }
   window.scrollTo({ top: payload.y, left: 0, behavior: "auto" });
   await rafs(FRAME_SETTLE_RAFS);
   await sleep(payload.settleMs);
