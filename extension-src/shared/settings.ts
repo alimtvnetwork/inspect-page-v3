@@ -39,7 +39,10 @@ export function createSettingsFacade(opts: FacadeOpts = {}): SettingsFacade {
   let handle: unknown = null;
   let pendingResolves: Array<() => void> = [];
 
-  const loadRoot = (): Promise<StorageRoot> => readRoot(opts.driver);
+  const loadRoot = async (): Promise<StorageRoot> => {
+    if (pending) return pending;
+    return readRoot(opts.driver);
+  };
 
   const queueWrite = (next: StorageRoot): Promise<void> => {
     pending = next;
