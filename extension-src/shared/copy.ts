@@ -40,6 +40,11 @@ export const COPY = {
   telemetryIframesCross: "cross-origin iframes (skipped)",
   telemetryStylesheets: "stylesheets",
   telemetryFrames: "screenshot tiles",
+  telemetryElementOuterHtml: "outerHTML",
+  telemetryElementMatchedRules: "matched CSS rules",
+  telemetryElementComputedDiff: "computed-style diffs",
+  telemetryElementScreenshots: "screenshots (context + isolated)",
+  telemetryElementIsolatedSkipped: "isolated skipped",
 } as const;
 
 export type CopyKey = keyof typeof COPY;

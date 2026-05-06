@@ -118,6 +118,16 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         status: p.status,
         message: p.message ?? prev.message,
         progress: p.progress,
+        // v1.1: element-export Success arrives via StatusUpdate broadcast,
+        // not via a top-level response. When it carries telemetry, surface
+        // it in the same "Captured in this export" block. Also stash the
+        // filename so the success row reads correctly.
+        ...(p.status === PanelStatus.Success && p.telemetry
+          ? { successTelemetry: p.telemetry }
+          : {}),
+        ...(p.status === PanelStatus.Success && p.message
+          ? { successFilename: p.message }
+          : {}),
       }));
     };
     chrome.runtime.onMessage.addListener(listener as never);

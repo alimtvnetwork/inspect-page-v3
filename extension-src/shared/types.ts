@@ -66,6 +66,17 @@ export interface ExportMeta {
     iframesFailed?: number;
     /** v1.1: total open shadow roots expanded by the serializer. */
     shadowRootsExpanded?: number;
+    /**
+     * v1.1 element-export telemetry. These fields are only populated by
+     * `runElementExport` and surfaced in the "Captured in this export"
+     * panel block alongside the full-page counters.
+     */
+    elementOuterHtmlBytes?: number;
+    elementMatchedRules?: number;
+    elementComputedDiffEntries?: number;
+    elementContextPngBytes?: number;
+    elementIsolatedPngBytes?: number;
+    elementIsolatedSkipped?: boolean;
   };
   extensionVersion: string;
 }
@@ -178,6 +189,13 @@ export interface StatusUpdatePayload {
   status: PanelStatus;
   message?: string;
   progress?: { done: number; total: number };
+  /**
+   * v1.1: optional telemetry attached to a terminal Success update so the
+   * panel can render the "Captured in this export" block for flows whose
+   * top-level message has no return value to the panel (e.g. element
+   * export, which is initiated from CS via the picker).
+   */
+  telemetry?: ExportMeta["counts"];
 }
 export type StatusUpdateResponse = void;
 

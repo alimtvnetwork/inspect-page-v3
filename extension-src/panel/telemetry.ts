@@ -44,5 +44,27 @@ export function telemetryRows(c: TelemetryCounts): Array<[string, string]> {
   const sheets = c.linkedStylesheets + c.inlineStyles;
   if (sheets > 0) rows.push([COPY.telemetryStylesheets, String(sheets)]);
   if (c.captureFrames > 0) rows.push([COPY.telemetryFrames, String(c.captureFrames)]);
+  // ---- v1.1 element-export rows (only populated by runElementExport) ----
+  if (typeof c.elementOuterHtmlBytes === "number" && c.elementOuterHtmlBytes > 0) {
+    rows.push([COPY.telemetryElementOuterHtml, fmtBytes(c.elementOuterHtmlBytes)]);
+  }
+  if (typeof c.elementMatchedRules === "number" && c.elementMatchedRules > 0) {
+    rows.push([COPY.telemetryElementMatchedRules, String(c.elementMatchedRules)]);
+  }
+  if (typeof c.elementComputedDiffEntries === "number" && c.elementComputedDiffEntries > 0) {
+    rows.push([COPY.telemetryElementComputedDiff, String(c.elementComputedDiffEntries)]);
+  }
+  if (typeof c.elementContextPngBytes === "number" && c.elementContextPngBytes > 0) {
+    const isolated =
+      c.elementIsolatedSkipped === true
+        ? COPY.telemetryElementIsolatedSkipped
+        : typeof c.elementIsolatedPngBytes === "number" && c.elementIsolatedPngBytes > 0
+          ? fmtBytes(c.elementIsolatedPngBytes)
+          : null;
+    const value = isolated
+      ? `${fmtBytes(c.elementContextPngBytes)} + ${isolated}`
+      : fmtBytes(c.elementContextPngBytes);
+    rows.push([COPY.telemetryElementScreenshots, value]);
+  }
   return rows;
 }
