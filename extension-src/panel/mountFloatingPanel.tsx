@@ -1,0 +1,165 @@
+/**
+ * Mounts <ExportPanel surface="floating"/> into a Shadow DOM under <body>.
+ * Idempotent: a second call focuses the existing panel instead of duplicating.
+ * Source: spec/21-app/02-ui-panel.md §A2, §H, §I.
+ */
+import { StrictMode } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { LogCategory } from "@shared/enums";
+import { logger } from "@shared/logger";
+import { Z_INDEX_PANEL } from "@shared/constants";
+import { ExportPanel } from "./ExportPanel";
+import panelCss from "./styles.css?raw";
+
+const HOST_ID = "llm-page-export-panel-host";
+
+interface MountedPanel {
+  host: HTMLElement;
+  root: Root;
+  cleanup: () => void;
+}
+
+let mounted: MountedPanel | null = null;
+
+export function mountFloatingPanel(): void {
+  if (mounted) {
+    // Re-focus existing panel.
+    mounted.host.style.display = "block";
+    return;
+  }
+
+  const host = document.createElement("div");
+  host.id = HOST_ID;
+  host.style.cssText = [
+    "position: fixed",
+    "top: 0",
+    "left: 0",
+    "width: 0",
+    "height: 0",
+    `z-index: ${Z_INDEX_PANEL}`,
+    "pointer-events: none",
+  ].join(";");
+  document.documentElement.appendChild(host);
+
+  const shadow = host.attachShadow({ mode: "open" });
+
+  const styleEl = document.createElement("style");
+  styleEl.textContent = panelCss;
+  shadow.appendChild(styleEl);
+
+  const wrapper = document.createElement("div");
+  wrapper.style.cssText = "position: fixed; pointer-events: auto;";
+  shadow.appendChild(wrapper);
+
+  const root = createRoot(wrapper);
+  const cleanup = installDrag(wrapper);
+
+  const close = (): void => {
+    try { root.unmount(); } catch { /* ignore */ }
+    cleanup();
+    host.remove();
+    mounted = null;
+  };
+
+  const minimize = (): void => {
+    host.style.display = "none";
+  };
+
+  root.render(
+    <StrictMode>
+      <ExportPanel
+        surface="floating"
+        activeUrl={location.href}
+        onMinimize={minimize}
+        onClose={close}
+      />
+    </StrictMode>,
+  );
+
+  mounted = { host, root, cleanup, };
+  logger.info(LogCategory.Lifecycle, "Floating panel mounted");
+}
+
+export function unmountFloatingPanel(): void {
+  if (!mounted) return;
+  try { mounted.root.unmount(); } catch { /* ignore */ }
+  mounted.cleanup();
+  mounted.host.remove();
+  mounted = null;
+}
+
+// ---- Drag implementation ----
+//
+// We attach a pointerdown listener to the wrapper and only act when the
+// originating element has data-drag-handle="true" (the panel header). The
+// position is read from the wrapper's inline `top`/`left` and clamped to
+// the viewport. The pointerup persists via SetSettings (debounced upstream).
+
+function installDrag(wrapper: HTMLElement): () => void {
+  // Initial position: top-right with 16px gutter; size estimated at 320 wide.
+  const PANEL_W = 320;
+  const startX = Math.max(0, window.innerWidth - PANEL_W - 16);
+  wrapper.style.top = `16px`;
+  wrapper.style.left = `${startX}px`;
+
+  let dragging = false;
+  let startPointerX = 0;
+  let startPointerY = 0;
+  let startPanelX = 0;
+  let startPanelY = 0;
+  let pointerId = -1;
+
+  const onDown = (e: PointerEvent): void => {
+    const target = e.target as HTMLElement | null;
+    const handle = target?.closest("[data-drag-handle='true']") as HTMLElement | null;
+    if (!handle) return;
+    dragging = true;
+    pointerId = e.pointerId;
+    startPointerX = e.clientX;
+    startPointerY = e.clientY;
+    startPanelX = parseFloat(wrapper.style.left || "0");
+    startPanelY = parseFloat(wrapper.style.top || "0");
+    handle.setPointerCapture?.(pointerId);
+    e.preventDefault();
+  };
+  const onMove = (e: PointerEvent): void => {
+    if (!dragging) return;
+    const dx = e.clientX - startPointerX;
+    const dy = e.clientY - startPointerY;
+    const rect = wrapper.getBoundingClientRect();
+    const x = clamp(startPanelX + dx, 0, window.innerWidth - rect.width);
+    const y = clamp(startPanelY + dy, 0, window.innerHeight - rect.height);
+    wrapper.style.left = `${x}px`;
+    wrapper.style.top = `${y}px`;
+  };
+  const onUp = (): void => {
+    if (!dragging) return;
+    dragging = false;
+    pointerId = -1;
+  };
+  const onResize = (): void => {
+    const rect = wrapper.getBoundingClientRect();
+    const x = clamp(parseFloat(wrapper.style.left || "0"), 0, window.innerWidth - rect.width);
+    const y = clamp(parseFloat(wrapper.style.top || "0"), 0, window.innerHeight - rect.height);
+    wrapper.style.left = `${x}px`;
+    wrapper.style.top = `${y}px`;
+  };
+
+  wrapper.addEventListener("pointerdown", onDown);
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", onUp);
+  window.addEventListener("resize", onResize);
+
+  return () => {
+    wrapper.removeEventListener("pointerdown", onDown);
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+    window.removeEventListener("resize", onResize);
+  };
+}
+
+export function clamp(value: number, min: number, max: number): number {
+  if (Number.isNaN(value)) return min;
+  if (max < min) return min;
+  return Math.max(min, Math.min(max, value));
+}
