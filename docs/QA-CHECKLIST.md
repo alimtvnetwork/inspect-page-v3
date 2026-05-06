@@ -7,7 +7,7 @@ box is checked or has a documented waiver.
 ## 0. Pre-flight (5 min)
 
 - [ ] `cd extension && bun run lint` exits 0 (AC-BD-1)
-- [ ] `cd extension && bun run test` reports 56/56 passing (AC-BD-1)
+- [ ] `cd extension && bun run test` reports 64/64 passing (AC-BD-1)
 - [ ] `cd extension && bun run build && bun run package` succeeds (AC-BD-2)
 - [ ] `public/llm-export.zip` ≤ 1.5 MiB and `public/llm-export.zip.sha256` exists (AC-BD-2)
 - [ ] Unzip the bundle locally; verify the 14 files: `manifest.json`,
@@ -171,6 +171,29 @@ its own playground) **and** a page with a YouTube/Twitter embed
 - [ ] AC-FD-16 — `meta.json.counts.iframesTotal /
       iframesSameOrigin / iframesCrossOrigin / iframesFailed`
       sum correctly
+
+### 7.5 In-panel telemetry surface
+
+Test on **S1** (article — minimal counters) and **S5** (Stripe — full
+counters). Open the floating panel via popup → **Open panel on page**.
+
+- [ ] AC-FD-17 — After a successful Full Page export the panel shows a
+      "Captured in this export" block directly under the status row,
+      styled with the green-tinted success surface
+- [ ] AC-FD-18 — Rows are omitted when their counter is zero. On a plain
+      article (no shadow DOM, no inlined fonts, no iframes) only
+      "Stylesheets" and "Capture frames" appear; on Stripe all five
+      labels appear (shadow roots, fonts, same/cross-origin iframes,
+      stylesheets, frames)
+- [ ] AC-FD-19 — The fonts row reads `N (X KB)` or `N (X.Y MB)` —
+      compact units, never raw bytes; matches `meta.json.counts
+      .fontsInlined` and `fontsBytesInlined`
+- [ ] AC-FD-20 — Numbers in the panel match the values in the exported
+      `meta.json` exactly (open both side by side)
+- [ ] AC-FD-21 — On a failed export (e.g. Full Page on **S6**) the
+      telemetry block is *not* rendered; only the red status row shows
+- [ ] AC-FD-22 — Re-running the export updates the telemetry block in
+      place; old counters do not linger from the previous run
 
 ## 6. Spec completeness (static review, T18-style)
 

@@ -37,6 +37,12 @@ project adheres to [Semantic Versioning](https://semver.org/).
 - **Export metadata expansion** — `ExportMeta.counts` now reports
   `fontsInlined`, `fontsBytesInlined`, `fontsFailed`, `iframesTotal`,
   `iframesSameOrigin`, `iframesCrossOrigin`, and `iframesFailed`.
+- **In-panel telemetry surface** — successful Full Page exports now
+  render a "Captured in this export" block in the floating panel,
+  showing shadow roots expanded, fonts inlined (with compact byte
+  size), same/cross-origin iframes, stylesheets, and capture frames.
+  Zero-valued counters are omitted so minimal pages produce a minimal
+  block. Adds `shadowRootsExpanded` to `ExportMeta.counts`.
 
 ### Added — Tooling
 
@@ -48,9 +54,9 @@ project adheres to [Semantic Versioning](https://semver.org/).
   copy (`LISTING.md`), 5 × 1280×800 screenshots, a 440×280 small promo
   tile, and a 1400×560 marquee tile, all sized to spec.
 - **QA checklist (v1.1)** — `docs/QA-CHECKLIST.md` gains §7 (T19–T22)
-  covering the four v2 features above, with 16 new acceptance items
-  (AC-FD-1 … AC-FD-16) and a printable PDF mirror at
-  `/mnt/documents/llm-export-qa-checklist.pdf`.
+  covering the four v2 features plus the panel telemetry surface, with
+  22 new acceptance items (AC-FD-1 … AC-FD-22) and a printable PDF
+  mirror at `/mnt/documents/llm-export-qa-checklist.pdf`.
 
 ### Changed
 
@@ -70,14 +76,15 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Test coverage
 
-- 56/56 tests passing (29 → 56). New suites:
+- 64/64 tests passing (29 → 64). New suites:
   `extension-src/capture/__tests__/shadow.test.ts` (12),
   `extension-src/capture/__tests__/inlineFonts.test.ts` (9),
-  `extension-src/capture/__tests__/inlineIframes.test.ts` (6).
+  `extension-src/capture/__tests__/inlineIframes.test.ts` (6),
+  `extension-src/panel/__tests__/telemetry.test.ts` (8).
 
 ### Package
 
-- `public/llm-export.zip`: 168 KB (well under the 1.5 MiB AC-BD-2 budget).
+- `public/llm-export.zip`: 170 KB (well under the 1.5 MiB AC-BD-2 budget).
 - `public/llm-export.zip.sha256`: refreshed.
 
 ## [1.0.0] — 2026-05-06
