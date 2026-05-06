@@ -1,0 +1,34 @@
+sequenceDiagram
+  participant U as User
+  participant P as Panel/Popup
+  participant C as Content Script
+  participant B as Background (SW)
+  participant O as Offscreen Doc
+  participant D as Downloads
+
+  Note over U,D: Full Page export
+  U->>P: Click "Export Full Page"
+  P->>B: RunExport(fullPage)
+  B->>C: CollectPageArtifacts
+  C-->>B: {html, css, js}
+  loop for each viewport step
+    B->>B: captureVisibleTab
+    B->>O: AddFrame(dataUrl, y)
+  end
+  O-->>B: StitchedPng
+  B->>B: JSZip.assemble
+  B->>D: download(zip)
+  B-->>P: status=success
+
+  Note over U,D: Element export
+  U->>P: Click "Pick Element"
+  P->>C: EnterPickerMode
+  U->>C: Hover + right-click
+  C->>B: ExportElement(rect, selector)
+  B->>B: captureVisibleTab (context)
+  B->>O: CropToRect
+  C->>O: RenderIsolated(clone+css)
+  O-->>B: {contextPng, isolatedPng}
+  B->>B: buildMarkdown
+  B->>D: download(md)
+  B-->>P: status=success
