@@ -43,6 +43,18 @@ project adheres to [Semantic Versioning](https://semver.org/).
   size), same/cross-origin iframes, stylesheets, and capture frames.
   Zero-valued counters are omitted so minimal pages produce a minimal
   block. Adds `shadowRootsExpanded` to `ExportMeta.counts`.
+- **Element-export telemetry parity** — successful element exports now
+  surface the same "Captured in this export" block via a `Success`
+  `StatusUpdate` broadcast carrying telemetry (the element flow has no
+  top-level response). Reports `outerHTML` bytes, matched-CSS rule
+  count, computed-style diff entry count, and combined context +
+  isolated screenshot bytes. When the offscreen isolated render fails,
+  the row reads `X KB + isolated skipped`. Adds optional
+  `elementOuterHtmlBytes`, `elementMatchedRules`,
+  `elementComputedDiffEntries`, `elementContextPngBytes`,
+  `elementIsolatedPngBytes`, `elementIsolatedSkipped` to
+  `ExportMeta.counts`, and an optional `telemetry` field to
+  `StatusUpdatePayload`.
 
 ### Added — Tooling
 
@@ -54,9 +66,10 @@ project adheres to [Semantic Versioning](https://semver.org/).
   copy (`LISTING.md`), 5 × 1280×800 screenshots, a 440×280 small promo
   tile, and a 1400×560 marquee tile, all sized to spec.
 - **QA checklist (v1.1)** — `docs/QA-CHECKLIST.md` gains §7 (T19–T22)
-  covering the four v2 features plus the panel telemetry surface, with
-  22 new acceptance items (AC-FD-1 … AC-FD-22) and a printable PDF
-  mirror at `/mnt/documents/llm-export-qa-checklist.pdf`.
+  covering the four v2 features, the full-page panel telemetry, and the
+  element-export telemetry parity, with 27 new acceptance items
+  (AC-FD-1 … AC-FD-27) and a printable PDF mirror at
+  `/mnt/documents/llm-export-qa-checklist.pdf`.
 
 ### Changed
 
@@ -76,15 +89,16 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Test coverage
 
-- 64/64 tests passing (29 → 64). New suites:
+- 70/70 tests passing (29 → 70). New suites:
   `extension-src/capture/__tests__/shadow.test.ts` (12),
   `extension-src/capture/__tests__/inlineFonts.test.ts` (9),
   `extension-src/capture/__tests__/inlineIframes.test.ts` (6),
-  `extension-src/panel/__tests__/telemetry.test.ts` (8).
+  `extension-src/panel/__tests__/telemetry.test.ts` (11),
+  `extension-src/element/__tests__/elementTelemetry.test.ts` (3).
 
 ### Package
 
-- `public/llm-export.zip`: 170 KB (well under the 1.5 MiB AC-BD-2 budget).
+- `public/llm-export.zip`: 171 KB (well under the 1.5 MiB AC-BD-2 budget).
 - `public/llm-export.zip.sha256`: refreshed.
 
 ## [1.0.0] — 2026-05-06
