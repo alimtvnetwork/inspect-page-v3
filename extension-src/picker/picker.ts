@@ -110,6 +110,10 @@ export function enterPicker(handlers: PickerHandlers): void {
   };
 
   const onContextMenu = (e: MouseEvent): void => {
+    // Don't hijack right-clicks on our own floating panel — let the user
+    // interact with Cancel / Close / Minimize while picker is active.
+    const t = e.target as Element | null;
+    if (t?.closest?.("#llm-page-export-panel-host")) return;
     e.preventDefault(); e.stopPropagation();
     const target = pickTarget(e.clientX, e.clientY);
     if (!target) return;
@@ -120,7 +124,11 @@ export function enterPicker(handlers: PickerHandlers): void {
   };
 
   const onClick = (e: MouseEvent): void => {
-    // Consume so host doesn't navigate during picker mode.
+    // Let clicks on our own floating panel through (Cancel picker button,
+    // Close, Minimize, Settings, etc.). Only consume host-page clicks so
+    // the page doesn't navigate while the picker is active.
+    const t = e.target as Element | null;
+    if (t?.closest?.("#llm-page-export-panel-host")) return;
     e.preventDefault(); e.stopPropagation();
   };
 
