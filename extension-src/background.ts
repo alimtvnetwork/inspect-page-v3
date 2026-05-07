@@ -138,6 +138,10 @@ router.on<RunElementExportPayload, RunElementExportResponse>(
     return runElementExport({ ...payload, tabId }, {
       tab,
       settings,
+      url: payload.pageInfo.url,
+      title: payload.pageInfo.title,
+      viewportCssPx: payload.pageInfo.viewportCssPx,
+      dpr: payload.pageInfo.dpr,
       extensionVersion: __EXT_VERSION__,
       broadcast,
     });
