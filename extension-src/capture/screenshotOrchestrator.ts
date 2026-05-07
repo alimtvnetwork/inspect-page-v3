@@ -105,14 +105,28 @@ async function captureVisibleTabWithRetry(
 export async function captureFullPage(input: ScreenshotInput): Promise<ScreenshotOutput> {
   const { tabId, windowId, pageCssPx, viewportCssPx, dpr, format, jpegQuality } = input;
 
-  const canvasW = Math.round(pageCssPx.w * dpr);
-  const canvasH = Math.round(pageCssPx.h * dpr);
+  let effectivePageH = pageCssPx.h;
+  let effectivePageW = pageCssPx.w;
+  let canvasW = Math.round(effectivePageW * dpr);
+  let canvasH = Math.round(effectivePageH * dpr);
 
-  if (canvasW > STITCH_MAX_W_PX || canvasH > STITCH_MAX_H_PX) {
+  // Width too wide → hard fail (we can't shrink horizontally without distortion).
+  if (canvasW > STITCH_MAX_W_PX) {
     throw new MessageError(
       ErrorCode.E_PAGE_TOO_LARGE,
-      `Page too large to stitch (${canvasW}x${canvasH} > ${STITCH_MAX_W_PX}x${STITCH_MAX_H_PX})`,
+      `Page too wide to stitch (${canvasW}px > ${STITCH_MAX_W_PX}px). Try a narrower window or use Element export.`,
     );
+  }
+
+  // Height too tall → clamp to max canvas height and warn instead of failing.
+  if (canvasH > STITCH_MAX_H_PX) {
+    logger.warn(
+      LogCategory.Capture,
+      ErrorCode.E_PAGE_TOO_LARGE,
+      `Page taller than canvas cap; truncating from ${canvasH}px to ${STITCH_MAX_H_PX}px.`,
+    );
+    canvasH = STITCH_MAX_H_PX;
+    effectivePageH = Math.floor(STITCH_MAX_H_PX / dpr);
   }
 
   const sessionId = makeRequestId();
@@ -121,13 +135,13 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
     MessageKind.OffscreenInit, { widthPx: canvasW, heightPx: canvasH, sessionId },
   );
 
-  const steps = Math.max(1, Math.ceil(pageCssPx.h / viewportCssPx.h));
+  const steps = Math.max(1, Math.ceil(effectivePageH / viewportCssPx.h));
   let framesPlaced = 0;
   let lastCaptureAt = 0;
 
   try {
     for (let i = 0; i < steps; i++) {
-      const requestedY = Math.min(i * viewportCssPx.h, Math.max(0, pageCssPx.h - viewportCssPx.h));
+      const requestedY = Math.min(i * viewportCssPx.h, Math.max(0, effectivePageH - viewportCssPx.h));
 
       const scroll = await sendToTab<{ y: number; viewportHeight: number; settleMs: number }, BeginScrollCaptureResponse>(
         tabId, MessageKind.BeginScrollCapture,
