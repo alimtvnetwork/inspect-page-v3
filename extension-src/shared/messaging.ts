@@ -65,7 +65,10 @@ export class MessageRouter {
     const env = raw;
     const handler = this.handlers.get(env.kind);
     if (!handler) {
-      sendResponse(failResponse(ErrorCode.E_NOT_AVAILABLE_HERE, `no handler ${env.kind}`));
+      // Stay silent so other listeners in the extension (e.g. the SW
+      // when this router runs in the offscreen document, or vice versa)
+      // can answer. Returning false without calling sendResponse keeps
+      // the channel open for the real handler.
       return false;
     }
     Promise.resolve()
