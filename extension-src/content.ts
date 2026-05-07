@@ -31,6 +31,24 @@ import { collectElement } from "@element/collectElement";
 
 logger.debug(LogCategory.Lifecycle, "Content script loaded");
 
+/**
+ * Local in-page bus for StatusUpdate broadcasts.
+ *
+ * Why: chrome.runtime.sendMessage from a content script is delivered to the
+ * extension (popup, SW, offscreen) but NOT back to listeners in the same
+ * content-script context. The floating panel lives in this same context, so
+ * runtime messages never reach it and the panel appears frozen — no debug
+ * preview, no error surface. Mirroring the same payload as a window
+ * CustomEvent lets the floating panel pick it up locally without affecting
+ * the popup path.
+ */
+export const LPE_STATUS_EVENT = "llm-page-export:status";
+function dispatchStatusLocal(payload: StatusUpdatePayload): void {
+  try {
+    window.dispatchEvent(new CustomEvent(LPE_STATUS_EVENT, { detail: payload }));
+  } catch { /* ignore */ }
+}
+
 const router = new MessageRouter();
 
 router.on<PingPayload, PingResponse>(MessageKind.Ping, (payload) => {
@@ -91,20 +109,22 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
           // v1.2: stream the extracted artifacts into the panel for in-app
           // debugging *before* attempting the download. This way the user
           // always sees HTML/CSS/JS even if the bundle build/save fails.
+          const previewPayload: StatusUpdatePayload = {
+            status: PanelStatus.Selecting,
+            message: payload.selectorPath,
+            debugPreview: {
+              selectorPath: payload.selectorPath,
+              html: payload.outerHtml,
+              css: payload.matchedCss,
+              js: JSON.stringify(payload.computedDiff, null, 2),
+            },
+          };
+          dispatchStatusLocal(previewPayload);
           try {
             await chrome.runtime.sendMessage({
               kind: MessageKind.StatusUpdate,
               requestId: `cs_dbg_${Date.now()}`,
-              payload: {
-                status: PanelStatus.Selecting,
-                message: payload.selectorPath,
-                debugPreview: {
-                  selectorPath: payload.selectorPath,
-                  html: payload.outerHtml,
-                  css: payload.matchedCss,
-                  js: JSON.stringify(payload.computedDiff, null, 2),
-                },
-              } as StatusUpdatePayload,
+              payload: previewPayload,
             });
           } catch { /* panel may be closed */ }
           await sendToBackground<typeof payload, RunElementExportResponse>(
@@ -124,6 +144,7 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
             errorCode: code,
             errorDetail: detail,
           };
+          dispatchStatusLocal(status);
           try {
             await chrome.runtime.sendMessage({
               kind: MessageKind.StatusUpdate,
@@ -135,6 +156,7 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
       },
       onCancel: () => {
         logger.info(LogCategory.Picker, "Picker cancelled");
+          dispatchStatusLocal({ status: PanelStatus.Idle });
           void chrome.runtime.sendMessage({
             kind: MessageKind.StatusUpdate,
             requestId: `cs_cancel_${Date.now()}`,
