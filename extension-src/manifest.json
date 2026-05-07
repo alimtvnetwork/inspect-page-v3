@@ -12,7 +12,6 @@
   },
   "action": {
     "default_title": "Paste Port",
-    "default_popup": "popup/index.html",
     "default_icon": {
       "16": "icons/16.png",
       "48": "icons/48.png"
