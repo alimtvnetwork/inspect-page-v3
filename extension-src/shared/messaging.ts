@@ -98,10 +98,6 @@ function isEnvelope(value: unknown): value is Envelope<MessageKind, unknown> {
   );
 }
 
-function failResponse(code: ErrorCode, message: string): WireResponse<never> {
-  return { ok: false, error: { code, message } };
-}
-
 function toWireError(err: unknown): WireError {
   if (err instanceof MessageError) return err.toWire();
   const message = err instanceof Error ? err.message : String(err);
