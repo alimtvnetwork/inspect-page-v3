@@ -135,13 +135,13 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
     MessageKind.OffscreenInit, { widthPx: canvasW, heightPx: canvasH, sessionId },
   );
 
-  const steps = Math.max(1, Math.ceil(pageCssPx.h / viewportCssPx.h));
+  const steps = Math.max(1, Math.ceil(effectivePageH / viewportCssPx.h));
   let framesPlaced = 0;
   let lastCaptureAt = 0;
 
   try {
     for (let i = 0; i < steps; i++) {
-      const requestedY = Math.min(i * viewportCssPx.h, Math.max(0, pageCssPx.h - viewportCssPx.h));
+      const requestedY = Math.min(i * viewportCssPx.h, Math.max(0, effectivePageH - viewportCssPx.h));
 
       const scroll = await sendToTab<{ y: number; viewportHeight: number; settleMs: number }, BeginScrollCaptureResponse>(
         tabId, MessageKind.BeginScrollCapture,
