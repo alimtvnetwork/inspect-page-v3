@@ -92,18 +92,17 @@ export async function runElementExport(
     timestamp: localTimestamp(),
   });
   const blob = new Blob([md.md], { type: "text/markdown;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
+  // MV3 service workers don't expose URL.createObjectURL — use a data: URL.
+  const url = await blobToDataUrl(blob);
   let downloadId: number;
   try {
-    downloadId = await chrome.downloads.download({ url, filename, saveAs: false });
+    downloadId = await chrome.downloads.download({ url, filename, saveAs: true });
   } catch (e) {
-    URL.revokeObjectURL(url);
     throw new MessageError(
       ErrorCode.E_DOWNLOAD_FAILED, "chrome.downloads failed",
       e instanceof Error ? e.message : String(e),
     );
   }
-  scheduleRevoke(downloadId, url);
 
   const telemetry = buildElementTelemetry(payload, {
     contextBytes: contextBlob.size,
@@ -185,13 +184,12 @@ async function sendOffscreen<R>(kind: MessageKind, payload: unknown): Promise<R>
   return res.data;
 }
 
-function scheduleRevoke(downloadId: number, url: string): void {
-  const listener = (delta: chrome.downloads.DownloadDelta): void => {
-    if (delta.id !== downloadId) return;
-    if (delta.state?.current === "complete" || delta.state?.current === "interrupted") {
-      URL.revokeObjectURL(url);
-      chrome.downloads.onChanged.removeListener(listener);
-    }
-  };
-  chrome.downloads.onChanged.addListener(listener);
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  const buf = new Uint8Array(await blob.arrayBuffer());
+  let bin = "";
+  const CHUNK = 0x8000;
+  for (let i = 0; i < buf.length; i += CHUNK) {
+    bin += String.fromCharCode(...buf.subarray(i, i + CHUNK));
+  }
+  return `data:${blob.type || "application/octet-stream"};base64,${btoa(bin)}`;
 }
