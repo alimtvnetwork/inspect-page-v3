@@ -24,17 +24,30 @@ describe("MessageRouter", () => {
     expect(res).toEqual({ ok: true, data: { extensionVersion: "1.2.3", receivedAtMs: 101 } });
   });
 
-  it("returns E_NOT_AVAILABLE_HERE when no handler is registered", async () => {
+  it("stays silent when no handler is registered (lets other listeners reply)", () => {
     const router = new MessageRouter();
-    const res = await invoke(router, makeEnvelope(MessageKind.GetSettings, {}));
-    expect(res.ok).toBe(false);
-    if (!res.ok) expect(res.error.code).toBe(ErrorCode.E_NOT_AVAILABLE_HERE);
+    const sender = {} as chrome.runtime.MessageSender;
+    const sendResponse = vi.fn();
+    const kept = router.listener(
+      makeEnvelope(MessageKind.GetSettings, {}),
+      sender,
+      sendResponse,
+    );
+    expect(kept).toBe(false);
+    expect(sendResponse).not.toHaveBeenCalled();
   });
 
-  it("rejects malformed envelopes", async () => {
+  it("stays silent on malformed envelopes (not ours)", () => {
     const router = new MessageRouter();
-    const res = await invoke(router, { kind: "Bogus", requestId: "x", payload: {} });
-    expect(res.ok).toBe(false);
+    const sender = {} as chrome.runtime.MessageSender;
+    const sendResponse = vi.fn();
+    const kept = router.listener(
+      { kind: "Bogus", requestId: "x", payload: {} },
+      sender,
+      sendResponse,
+    );
+    expect(kept).toBe(false);
+    expect(sendResponse).not.toHaveBeenCalled();
   });
 
   it("serializes MessageError thrown by handler", async () => {

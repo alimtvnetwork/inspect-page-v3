@@ -59,13 +59,16 @@ export class MessageRouter {
     sendResponse: (r: WireResponse<unknown>) => void,
   ): boolean => {
     if (!isEnvelope(raw)) {
-      sendResponse(failResponse(ErrorCode.E_PERMISSION_DENIED, "malformed envelope"));
+      // Not ours — let other listeners handle it.
       return false;
     }
     const env = raw;
     const handler = this.handlers.get(env.kind);
     if (!handler) {
-      sendResponse(failResponse(ErrorCode.E_NOT_AVAILABLE_HERE, `no handler ${env.kind}`));
+      // Stay silent so other listeners in the extension (e.g. the SW
+      // when this router runs in the offscreen document, or vice versa)
+      // can answer. Returning false without calling sendResponse keeps
+      // the channel open for the real handler.
       return false;
     }
     Promise.resolve()
@@ -93,10 +96,6 @@ function isEnvelope(value: unknown): value is Envelope<MessageKind, unknown> {
     "payload" in v &&
     Object.values(MessageKind).includes(v.kind as MessageKind)
   );
-}
-
-function failResponse(code: ErrorCode, message: string): WireResponse<never> {
-  return { ok: false, error: { code, message } };
 }
 
 function toWireError(err: unknown): WireError {
