@@ -2,9 +2,9 @@
  * Content script entry. Stages 2/4/5/6 — message router for picker mount,
  * panel mount, artifact collection, and scroll-capture.
  */
-import { LogCategory, MessageKind } from "@shared/enums";
+import { ErrorCode, LogCategory, MessageKind, PanelStatus } from "@shared/enums";
 import { logger } from "@shared/logger";
-import { MessageRouter, sendToBackground } from "@shared/messaging";
+import { MessageError, MessageRouter, sendToBackground } from "@shared/messaging";
 import type {
   BeginScrollCapturePayload,
   BeginScrollCaptureResponse,
@@ -25,6 +25,7 @@ import type {
   EnterPickerModePayload, EnterPickerModeResponse,
   ExitPickerModePayload, ExitPickerModeResponse,
   RunElementExportResponse,
+  StatusUpdatePayload,
 } from "@shared/types";
 import { collectElement } from "@element/collectElement";
 
@@ -92,10 +93,34 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
           );
         } catch (e) {
           logger.error(LogCategory.Element, "EXPORT_FAIL", "element export failed", e);
+          const me = e instanceof MessageError ? e : null;
+          const message = me?.message ?? (e instanceof Error ? e.message : String(e));
+          const detail = me?.detail ?? (e instanceof Error ? e.stack : undefined);
+          const code = me?.code ?? ErrorCode.E_PERMISSION_DENIED;
+          // Surface the failure in the panel — otherwise it stays stuck in
+          // "PickerActive" forever and the user sees "nothing happens".
+          const status: StatusUpdatePayload = {
+            status: PanelStatus.Error,
+            message,
+            errorCode: code,
+            errorDetail: detail,
+          };
+          try {
+            await chrome.runtime.sendMessage({
+              kind: MessageKind.StatusUpdate,
+              requestId: `cs_err_${Date.now()}`,
+              payload: status,
+            });
+          } catch { /* panel may be closed */ }
         }
       },
       onCancel: () => {
         logger.info(LogCategory.Picker, "Picker cancelled");
+          void chrome.runtime.sendMessage({
+            kind: MessageKind.StatusUpdate,
+            requestId: `cs_cancel_${Date.now()}`,
+            payload: { status: PanelStatus.Idle } as StatusUpdatePayload,
+          }).catch(() => undefined);
       },
     });
   },
