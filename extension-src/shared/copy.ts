@@ -51,6 +51,7 @@ export const COPY = {
   debugTabCss: "CSS",
   debugTabJs: "JS",
   debugCopy: "Copy",
+  debugDownload: "Download ZIP",
   debugClear: "Clear",
   debugJsEmpty: "Element-scoped JS is not extracted. Showing computed-style diff (JSON).",
 } as const;
