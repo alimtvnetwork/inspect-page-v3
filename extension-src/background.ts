@@ -69,9 +69,7 @@ router.on<MountFloatingPanelPayload, MountFloatingPanelResponse>(
   MessageKind.MountFloatingPanel,
   async ({ tabId }) => {
     try {
-      // The CS is declared in manifest content_scripts so it should already
-      // be alive on http(s) tabs. We forward; if the tab is a disabled URL
-      // the send will reject and we surface E_NOT_AVAILABLE_HERE.
+      await ensureContentScript(tabId);
       await sendToTab<{ tabId: number }, void>(tabId, MessageKind.MountFloatingPanel, { tabId });
     } catch (e) {
       throw new MessageError(
@@ -85,13 +83,17 @@ router.on<MountFloatingPanelPayload, MountFloatingPanelResponse>(
 
 router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
   MessageKind.RunFullPageExport,
-  async ({ tabId, settings }) => runFullPageExport(tabId, settings),
+  async ({ tabId, settings }) => {
+    await ensureContentScript(tabId);
+    return runFullPageExport(tabId, settings);
+  },
 );
 
 router.on<EnterPickerModePayload, EnterPickerModeResponse>(
   MessageKind.EnterPickerMode,
   async ({ tabId }) => {
     try {
+      await ensureContentScript(tabId);
       await sendToTab<{ tabId: number }, void>(tabId, MessageKind.EnterPickerMode, { tabId });
     } catch (e) {
       throw new MessageError(
