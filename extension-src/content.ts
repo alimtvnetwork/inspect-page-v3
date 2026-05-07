@@ -88,6 +88,25 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
             includeComputedStyles: settings.includeComputedStyles,
             includeMatchedRules: settings.includeMatchedRules,
           });
+          // v1.2: stream the extracted artifacts into the panel for in-app
+          // debugging *before* attempting the download. This way the user
+          // always sees HTML/CSS/JS even if the bundle build/save fails.
+          try {
+            await chrome.runtime.sendMessage({
+              kind: MessageKind.StatusUpdate,
+              requestId: `cs_dbg_${Date.now()}`,
+              payload: {
+                status: PanelStatus.Selecting,
+                message: payload.selectorPath,
+                debugPreview: {
+                  selectorPath: payload.selectorPath,
+                  html: payload.outerHtml,
+                  css: payload.matchedCss,
+                  js: JSON.stringify(payload.computedDiff, null, 2),
+                },
+              } as StatusUpdatePayload,
+            });
+          } catch { /* panel may be closed */ }
           await sendToBackground<typeof payload, RunElementExportResponse>(
             MessageKind.RunElementExport, payload,
           );
