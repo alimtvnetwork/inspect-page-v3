@@ -6,6 +6,7 @@ import { logger } from "@shared/logger";
 import { MessageError, MessageRouter, sendToTab } from "@shared/messaging";
 import { getPanelPosition, getSettings, setPanelPosition, setSettings } from "@shared/settings";
 import { KEEPALIVE_INTERVAL_MS } from "@shared/constants";
+import { COLLECT_TIMEOUT_MS } from "@shared/constants";
 import type {
   CollectPageArtifactsResponse,
   EnterPickerModePayload,
@@ -182,14 +183,35 @@ async function runFullPageExport(
 
   let artifacts: CollectPageArtifactsResponse;
   try {
-    artifacts = await sendToTab<{ tabId: number }, CollectPageArtifactsResponse>(
-      tabId, MessageKind.CollectPageArtifacts, { tabId },
+    artifacts = await withTimeout(
+      sendToTab<{ tabId: number }, CollectPageArtifactsResponse>(
+        tabId, MessageKind.CollectPageArtifacts, { tabId },
+      ),
+      COLLECT_TIMEOUT_MS,
+      "collect artifacts",
     );
   } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    // chrome.tabs.sendMessage rejects with this exact phrase when the CS
+    // isn't injected (chrome://, edge://, file://, new tab, Web Store, PDFs).
+    if (/Receiving end does not exist|Could not establish connection/i.test(msg)) {
+      throw new MessageError(
+        ErrorCode.E_NOT_AVAILABLE_HERE,
+        "This page can't be exported. Open a regular http(s):// site and try again.",
+        msg,
+      );
+    }
+    if (/timed out/i.test(msg)) {
+      throw new MessageError(
+        ErrorCode.E_COLLECT_TIMEOUT,
+        "Page took too long to collect. Try a smaller page or use Pick Element.",
+        msg,
+      );
+    }
     throw new MessageError(
       ErrorCode.E_COLLECT_TIMEOUT,
       "Could not collect page artifacts",
-      e instanceof Error ? e.message : String(e),
+      msg,
     );
   }
 
@@ -278,4 +300,21 @@ async function broadcast(payload: StatusUpdatePayload): Promise<void> {
   } catch {
     // Popup closed.
   }
+}
+
+/**
+ * Wrap a promise with a timeout. Rejects with `<label> timed out after Nms`
+ * so the caller can map it to E_COLLECT_TIMEOUT cleanly.
+ */
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms}ms`)),
+      ms,
+    );
+    p.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      (e) => { clearTimeout(t); reject(e); },
+    );
+  });
 }
