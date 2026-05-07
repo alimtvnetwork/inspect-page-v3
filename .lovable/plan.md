@@ -1,30 +1,55 @@
-# Plan — LLM Page Export Chrome Extension
+# Extension Bug Fixes — Root Cause Analysis & Plan
 
-## Spec phase — DONE
-The spec under `spec/21-app/` is blind-implementable. Index in `spec/21-app/README.md`. File-by-file build order in `spec/21-app/23-implementation-order.md`.
+You reported 4 problems. Here's what each one actually is, and the fix order.
 
-## Locked decisions
-See `spec/21-app/13-decisions.md`.
+---
 
-## Build phases (you drive with "next")
+## Bug 1 — `Error: URL.createObjectURL is not a function (E_PERMISSION_DENIED)` on Export Full Page
 
-1. **Stage 0 — Skeleton** — `package.json`, `tsconfig.json`, `vite.config.ts`, `manifest.json`, icons, `shared/constants.ts`, `shared/types.ts`, `shared/copy.ts`, `shared/defaults.ts`, `shared/logger.ts`. Verify `bun run lint && bun run build` clean.
-2. **Stage 1 — Storage / settings facade** — `shared/settings.ts` + Vitest tests.
-3. **Stage 2 — SW + CS message routers** — Envelope dispatcher, `Ping`, `GetSettings`, `SetSettings`.
-4. **Stage 3 — Popup UI** — `<ExportPanel>` shared component, popup shell, settings form, disabled state for unsupported pages.
-5. **Stage 4 — Floating panel mount** — Shadow DOM mount, drag, position persistence.
-6. **Stage 5 — Full Page collection** — HTML/CSS/JS collectors, naming, ZIP bundle (placeholder PNG).
-7. **Stage 6 — Offscreen + screenshot** — Offscreen document, stitch loop, sticky restore, keep-alive alarm.
-8. **Stage 7 — Element picker** — Overlay, state machine, capture-phase listeners.
-9. **Stage 8 — Element export** — selector path, matched rules, computed diff, in-context shot, isolated render, MD assembly with budget degradation.
-10. **Stage 9 — Edge cases & polish** — SPA abort, page-too-large, disabled URLs, reduced-motion, keyboard commands.
-11. **Stage 10 — Distribution landing page** — In `src/pages/Index.tsx` per `spec/21-app/18-distribution-page.md`. Fetch+blob download.
-12. **Stage 11 — Package & ship** — `scripts/package.sh`, lint+test+build+package, verify size + sha256, walk through `spec/21-app/11-acceptance-criteria.md`.
+**Root cause.** In Chrome MV3, the Service Worker global **does not expose `URL.createObjectURL`** (it was removed). `background.ts` line 322 calls it directly to hand a Blob to `chrome.downloads.download`. That throws immediately, surfaces as `E_PERMISSION_DENIED`, and breaks every full-page export.
 
-If a stage grows past one "next", the remaining sub-tasks will be listed at the end of that response.
+**Fix.** Convert the ZIP Blob to a `data:` URL inside the SW (FileReader/`blob.arrayBuffer()` + base64). `chrome.downloads.download` accepts data URLs. Remove the `URL.revokeObjectURL` machinery for that path.
 
-```text
-Do you understand?
-```
+---
 
-Say **next** to start Stage 0.
+## Bug 2 — "Pick Element" does nothing
+
+**Root cause.** `EnterPickerMode` reaches the content script, but the picker overlay needs the CS to be loaded **and** listening. Two things conspire:
+- After the recent messaging refactor, the in-page CS router also returns `false` for unknown messages, but the picker handler is registered on `document` (not the runtime router) — so `EnterPickerMode` arrives, the SW returns `ok`, but no overlay is mounted because `picker.ts` was never initialized in already-open tabs (same root cause as the earlier ensureContentScript bug, but for the picker module which is bundled separately into the floating panel chunk, not `content.js`).
+- Also, `ExitPickerMode` from the floating panel sends `tabId: -1` and the SW's `if (tid === undefined) return;` silently drops it on no-sender — picker stays stuck.
+
+**Fix.**
+1. In `content.ts`, ensure the picker module is imported eagerly (not lazy) so `EnterPickerMode` always has a handler.
+2. Make sure `picker.ts` registers its handler on the shared MessageRouter, not just `document`.
+3. Verify with a console log on `EnterPickerMode` receipt.
+
+---
+
+## Bug 3 — "Open panel on page" does nothing / panel buttons inert
+
+**Root cause.** `mountFloatingPanel.tsx` mounts `<ExportPanel surface="floating">` without `activeUrl`. `ExportPanel` then calls `isDisabledUrl(undefined)` → `false` (good), but when buttons fire, `runAction` sends `tabId: -1` to the SW. The SW resolves it from `sender.tab?.id` — that works for full-page export, **but** `chrome.tabs.captureVisibleTab` in `screenshotOrchestrator` needs `windowId`, which we fetch via `chrome.tabs.get(tabId)` — fine. The actual breakage: when invoked from the floating panel, the SW path eventually hits Bug 1 (`URL.createObjectURL`) and dies with the same `E_PERMISSION_DENIED`. Fixing Bug 1 unblocks this.
+
+Separately, "Open panel on page" itself works (panel mounts), but you said it "doesn't work properly" — likely meaning the buttons inside the mounted panel don't do anything. That is Bug 1 again.
+
+**Fix.** No standalone change needed beyond Bug 1 + Bug 2. Verify after.
+
+---
+
+## Bug 4 — "Idle" label is confusing
+
+**Root cause.** UX wording. The status row literally renders the enum name `Idle` from `COPY.statusIdle`. Users don't know what it means.
+
+**Fix.** Change `COPY.statusIdle` from `"Idle"` to something self-explanatory like `"Ready — choose an action above"`. Also tighten the visual: render the status block only when there's something useful to say (busy / error / success), and otherwise show a quiet hint.
+
+---
+
+## Order of execution (one at a time, on your "next")
+
+1. **Bug 1** — replace `URL.createObjectURL` with data-URL conversion in `background.ts`. Rebuild + repackage ZIP.
+2. **Bug 2** — wire picker handler properly in `content.ts` / `picker.ts`. Rebuild + repackage.
+3. **Bug 4** — reword `COPY.statusIdle` and tweak the status block. (Pure UI.)
+4. **Bug 3** — verify it now works end-to-end after 1+2; only edit if a separate issue remains.
+
+Each step ships: edit → build → repackage `public/llm-export.zip` + sha256.
+
+Say **next** to start with Bug 1.
