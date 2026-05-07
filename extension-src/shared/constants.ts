@@ -58,6 +58,6 @@ export const LOG_PREFIX = "[llm-export]";
 
 // ---- Static text ----
 export const README_TXT =
-  "This bundle was produced by the LLM Page Export Chrome extension.\n" +
+  "This bundle was produced by the Paste Port Chrome extension.\n" +
   "Feed the four files to your LLM together with your restyle prompt.\n" +
   "manifest.json contains capture metadata; screenshot.png is the full page.\n";
