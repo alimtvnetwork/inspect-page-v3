@@ -83,18 +83,26 @@ router.on<MountFloatingPanelPayload, MountFloatingPanelResponse>(
 
 router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
   MessageKind.RunFullPageExport,
-  async ({ tabId, settings }) => {
-    await ensureContentScript(tabId);
-    return runFullPageExport(tabId, settings);
+  async ({ tabId, settings }, sender) => {
+    const tid = tabId > 0 ? tabId : sender.tab?.id;
+    if (tid === undefined) {
+      throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, "Cannot resolve tab for export");
+    }
+    await ensureContentScript(tid);
+    return runFullPageExport(tid, settings);
   },
 );
 
 router.on<EnterPickerModePayload, EnterPickerModeResponse>(
   MessageKind.EnterPickerMode,
-  async ({ tabId }) => {
+  async ({ tabId }, sender) => {
+    const tid = tabId > 0 ? tabId : sender.tab?.id;
+    if (tid === undefined) {
+      throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, "Cannot resolve tab for picker");
+    }
     try {
-      await ensureContentScript(tabId);
-      await sendToTab<{ tabId: number }, void>(tabId, MessageKind.EnterPickerMode, { tabId });
+      await ensureContentScript(tid);
+      await sendToTab<{ tabId: number }, void>(tid, MessageKind.EnterPickerMode, { tabId: tid });
     } catch (e) {
       throw new MessageError(
         ErrorCode.E_NOT_AVAILABLE_HERE,
@@ -107,9 +115,11 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
 
 router.on<ExitPickerModePayload, ExitPickerModeResponse>(
   MessageKind.ExitPickerMode,
-  async ({ tabId }) => {
+  async ({ tabId }, sender) => {
+    const tid = tabId > 0 ? tabId : sender.tab?.id;
+    if (tid === undefined) return;
     try {
-      await sendToTab<{ tabId: number }, void>(tabId, MessageKind.ExitPickerMode, { tabId });
+      await sendToTab<{ tabId: number }, void>(tid, MessageKind.ExitPickerMode, { tabId: tid });
     } catch {
       // Tab may be closed; ignore.
     }
