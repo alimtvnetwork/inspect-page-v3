@@ -301,3 +301,20 @@ async function broadcast(payload: StatusUpdatePayload): Promise<void> {
     // Popup closed.
   }
 }
+
+/**
+ * Wrap a promise with a timeout. Rejects with `<label> timed out after Nms`
+ * so the caller can map it to E_COLLECT_TIMEOUT cleanly.
+ */
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms}ms`)),
+      ms,
+    );
+    p.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      (e) => { clearTimeout(t); reject(e); },
+    );
+  });
+}
