@@ -198,6 +198,23 @@ chrome.commands?.onCommand?.addListener(async (command) => {
   }
 });
 
+// Toolbar icon click — mount the floating panel on the active tab directly.
+// (No popup is registered in the manifest, so onClicked fires.)
+chrome.action?.onClicked?.addListener(async (tab) => {
+  if (!tab?.id) return;
+  try {
+    await ensureContentScript(tab.id);
+    await sendToTab<{ tabId: number }, void>(
+      tab.id, MessageKind.MountFloatingPanel, { tabId: tab.id },
+    );
+  } catch (e) {
+    logger.error(
+      LogCategory.Lifecycle, "ACTION_CLICK_FAIL",
+      "Failed to mount floating panel from toolbar click", e,
+    );
+  }
+});
+
 // ---- Stage 9: SW keep-alive during exports (E20) ----
 let keepAliveTimer: ReturnType<typeof setInterval> | null = null;
 let keepAliveCount = 0;
