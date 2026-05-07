@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "LLM Page Export",
-  "short_name": "LLM Export",
+  "name": "Paste Port",
+  "short_name": "Paste Port",
   "version": "1.0.0",
   "description": "Export any web page (or one element) for your LLM: HTML, CSS, JS and a full-page screenshot.",
   "minimum_chrome_version": "116",
@@ -11,8 +11,7 @@
     "128": "icons/128.png"
   },
   "action": {
-    "default_title": "LLM Page Export",
-    "default_popup": "popup/index.html",
+    "default_title": "Paste Port",
     "default_icon": {
       "16": "icons/16.png",
       "48": "icons/48.png"
