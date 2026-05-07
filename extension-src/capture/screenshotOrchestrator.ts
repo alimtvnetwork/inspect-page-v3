@@ -45,7 +45,7 @@ export interface ScreenshotOutput {
 const OFFSCREEN_URL = "offscreen.html";
 let offscreenReady: Promise<void> | null = null;
 
-async function ensureOffscreen(): Promise<void> {
+export async function ensureOffscreen(): Promise<void> {
   if (offscreenReady) return offscreenReady;
   offscreenReady = (async () => {
     // chrome.offscreen.hasDocument may be missing on older Chromes.
