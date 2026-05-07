@@ -130,6 +130,14 @@ export function enterPicker(handlers: PickerHandlers): void {
     const t = e.target as Element | null;
     if (t?.closest?.("#llm-page-export-panel-host")) return;
     e.preventDefault(); e.stopPropagation();
+    // Treat a left-click as a selection too (in addition to right-click)
+    // so the picker is discoverable without needing the context menu.
+    const target = pickTarget(e.clientX, e.clientY);
+    if (!target) return;
+    const rect = target.getBoundingClientRect();
+    void Promise.resolve(handlers.onSelect({ element: target, rect })).catch((err) => {
+      logger.warn(LogCategory.Picker, "SELECT_FAIL", "select handler threw", err);
+    });
   };
 
   const onKeyDown = (e: KeyboardEvent): void => {
