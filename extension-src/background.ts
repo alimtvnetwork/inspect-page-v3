@@ -296,19 +296,17 @@ async function runFullPageExport(
   );
 
   await broadcast({ status: PanelStatus.Downloading });
-  const url = await blobToObjectUrl(bundle);
+  // MV3 service workers don't expose URL.createObjectURL — use a data URL.
+  const url = await blobToDataUrl(bundle);
   let downloadId: number;
   try {
     downloadId = await chrome.downloads.download({ url, filename, saveAs: false });
   } catch (e) {
-    URL.revokeObjectURL(url);
     throw new MessageError(
       ErrorCode.E_DOWNLOAD_FAILED, "chrome.downloads failed",
       e instanceof Error ? e.message : String(e),
     );
   }
-
-  scheduleObjectUrlRevoke(downloadId, url);
   await broadcast({ status: PanelStatus.Success, message: filename });
   logger.info(LogCategory.Download, `bundle saved as ${filename} (id=${downloadId})`);
   return { bundleFilename: filename, downloadId };
@@ -317,20 +315,20 @@ async function runFullPageExport(
   }
 }
 
-async function blobToObjectUrl(blob: Blob): Promise<string> {
-  // SW global URL works in MV3.
-  return URL.createObjectURL(blob);
-}
-
-function scheduleObjectUrlRevoke(downloadId: number, url: string): void {
-  const listener = (delta: chrome.downloads.DownloadDelta): void => {
-    if (delta.id !== downloadId) return;
-    if (delta.state?.current === "complete" || delta.state?.current === "interrupted") {
-      URL.revokeObjectURL(url);
-      chrome.downloads.onChanged.removeListener(listener);
-    }
-  };
-  chrome.downloads.onChanged.addListener(listener);
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  const buf = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  // Chunked btoa to avoid call-stack overflow on large bundles.
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(
+      null,
+      bytes.subarray(i, i + chunk) as unknown as number[],
+    );
+  }
+  const b64 = btoa(binary);
+  return `data:application/zip;base64,${b64}`;
 }
 
 async function broadcast(payload: StatusUpdatePayload): Promise<void> {
