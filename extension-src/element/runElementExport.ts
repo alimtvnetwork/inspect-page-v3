@@ -20,6 +20,7 @@ import type {
 import { applyTemplate, domainFromUrl, localTimestamp } from "@zip/filename";
 import { blobToBase64, buildMarkdown } from "./buildMarkdown";
 import { captureAndCrop } from "./screenshotElement";
+import { ensureOffscreen } from "../capture/screenshotOrchestrator";
 
 interface OrchestratorEnv {
   tab: chrome.tabs.Tab;
@@ -37,6 +38,12 @@ export async function runElementExport(
   env: OrchestratorEnv,
 ): Promise<RunElementExportResponse> {
   await env.broadcast({ status: PanelStatus.Selecting });
+
+  // Element export uses the offscreen document for both crop-canvas and the
+  // isolated iframe render. The full-page orchestrator lazily creates it; the
+  // element path must do so explicitly or every offscreen message has no
+  // receiver and the export silently fails.
+  await ensureOffscreen();
 
   // P5 — context screenshot.
   const contextBlob = await captureAndCrop({
