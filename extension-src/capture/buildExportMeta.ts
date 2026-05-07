@@ -16,6 +16,16 @@ export function buildExportMeta(input: BuildMetaInput, doc: Document = document)
   const url = doc.location?.href ?? "";
   const w = (typeof window !== "undefined" ? window : { innerWidth: 0, innerHeight: 0, devicePixelRatio: 1 }) as Window;
   const ua = (typeof navigator !== "undefined" ? navigator.userAgent : "");
+  const de = doc.documentElement;
+  const body = doc.body;
+  const pageW = Math.max(
+    de?.scrollWidth ?? 0, de?.offsetWidth ?? 0, de?.clientWidth ?? 0,
+    body?.scrollWidth ?? 0, body?.offsetWidth ?? 0,
+  );
+  const pageH = Math.max(
+    de?.scrollHeight ?? 0, de?.offsetHeight ?? 0, de?.clientHeight ?? 0,
+    body?.scrollHeight ?? 0, body?.offsetHeight ?? 0,
+  );
   return {
     schemaVersion: 1,
     kind: "fullPage",
@@ -23,10 +33,7 @@ export function buildExportMeta(input: BuildMetaInput, doc: Document = document)
     title: doc.title ?? "",
     capturedAtIso: new Date().toISOString(),
     viewportCssPx: { w: w.innerWidth, h: w.innerHeight },
-    pageCssPx: {
-      w: doc.documentElement?.scrollWidth ?? 0,
-      h: doc.documentElement?.scrollHeight ?? 0,
-    },
+    pageCssPx: { w: pageW, h: pageH },
     devicePixelRatio: w.devicePixelRatio ?? 1,
     userAgent: ua,
     counts: {
