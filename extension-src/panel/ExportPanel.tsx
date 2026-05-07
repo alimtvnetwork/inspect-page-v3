@@ -148,7 +148,10 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
 
   // ---- Action handlers ----
   const runAction = useCallback(async (kind: "fullPage" | "pick") => {
-    if (disabled || activeTabId === undefined) return;
+    if (disabled) return;
+    // Floating panel doesn't know its own tabId — SW resolves via sender.tab.id
+    // when we send -1.
+    const tid = activeTabId ?? -1;
     setState({ status: PanelStatus.Collecting, lastAction: kind });
     try {
       if (kind === "fullPage") {
@@ -157,7 +160,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           { bundleFilename: string; downloadId: number; telemetry?: ExportMeta["counts"] }
         >(
           MessageKind.RunFullPageExport,
-          { tabId: activeTabId, settings: settings! },
+          { tabId: tid, settings: settings! },
         );
         setState({
           status: PanelStatus.Success,
@@ -168,7 +171,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       } else {
         await sendToBackground<{ tabId: number }, void>(
           MessageKind.EnterPickerMode,
-          { tabId: activeTabId },
+          { tabId: tid },
         );
         setState({ status: PanelStatus.PickerActive, lastAction: kind });
       }
@@ -190,9 +193,9 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const onCancel = useCallback(async () => {
     if (state.lastAction === "pick") {
       try {
-        if (activeTabId !== undefined) {
-          await sendToBackground<{ tabId: number }, void>(MessageKind.ExitPickerMode, { tabId: activeTabId });
-        }
+        await sendToBackground<{ tabId: number }, void>(
+          MessageKind.ExitPickerMode, { tabId: activeTabId ?? -1 },
+        );
       } catch {
         // best effort
       }
