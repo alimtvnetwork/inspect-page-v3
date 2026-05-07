@@ -200,7 +200,7 @@
   color: #1f2328;
 }
 .lpe-debug-tabs {
-  display: flex; align-items: center; gap: 4px;
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
   padding: 6px 8px;
   border-bottom: 1px solid #eaeef2;
 }
@@ -218,8 +218,11 @@
   font-variant-numeric: tabular-nums;
 }
 .lpe-debug-copy {
-  margin-left: auto; width: auto !important; padding: 3px 10px !important;
+  width: auto !important; padding: 3px 10px !important;
   font-size: 12px;
+}
+.lpe-debug-copy:first-of-type {
+  margin-left: auto;
 }
 .lpe-debug-note {
   padding: 6px 8px; font-size: 11px; color: #57606a;
