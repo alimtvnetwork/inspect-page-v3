@@ -59,7 +59,7 @@ export class MessageRouter {
     sendResponse: (r: WireResponse<unknown>) => void,
   ): boolean => {
     if (!isEnvelope(raw)) {
-      sendResponse(failResponse(ErrorCode.E_PERMISSION_DENIED, "malformed envelope"));
+      // Not ours — let other listeners handle it.
       return false;
     }
     const env = raw;
