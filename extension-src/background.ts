@@ -300,7 +300,7 @@ async function runFullPageExport(
   const url = await blobToDataUrl(bundle);
   let downloadId: number;
   try {
-    downloadId = await chrome.downloads.download({ url, filename, saveAs: false });
+    downloadId = await chrome.downloads.download({ url, filename, saveAs: true });
   } catch (e) {
     throw new MessageError(
       ErrorCode.E_DOWNLOAD_FAILED, "chrome.downloads failed",
