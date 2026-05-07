@@ -48,6 +48,8 @@ interface PanelState {
   successTelemetry?: ExportMeta["counts"];
   /** When set, "Retry" reruns this kind. */
   lastAction?: "fullPage" | "pick";
+  /** v1.2: in-panel debug preview for the picked element. */
+  debugPreview?: NonNullable<StatusUpdatePayload["debugPreview"]>;
 }
 
 const DISABLED_PREFIXES = ["chrome://", "edge://", "about:", "chrome-extension://", "view-source:"];
@@ -124,6 +126,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
               errorDetail: p.errorDetail,
             }
           : {}),
+        ...(p.debugPreview ? { debugPreview: p.debugPreview } : {}),
         // v1.1: element-export Success arrives via StatusUpdate broadcast,
         // not via a top-level response. When it carries telemetry, surface
         // it in the same "Captured in this export" block. Also stash the
@@ -333,6 +336,13 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           )}
         </div>
 
+        {state.debugPreview && (
+          <DebugPreview
+            preview={state.debugPreview}
+            onClear={() => setState((s) => ({ ...s, debugPreview: undefined }))}
+          />
+        )}
+
         {settings && !disabled && (
           <SettingsSection
             settings={settings}
@@ -459,6 +469,53 @@ function TelemetrySummary({ counts }: TelemetrySummaryProps): JSX.Element | null
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+interface DebugPreviewProps {
+  preview: NonNullable<StatusUpdatePayload["debugPreview"]>;
+  onClear: () => void;
+}
+
+function DebugPreview({ preview, onClear }: DebugPreviewProps): JSX.Element {
+  const [tab, setTab] = useState<"html" | "css" | "js">("html");
+  const value = preview[tab];
+  const onCopy = useCallback(async () => {
+    try { await navigator.clipboard.writeText(value); } catch { /* ignore */ }
+  }, [value]);
+  return (
+    <div className="lpe-debug" aria-label={COPY.debugHeader}>
+      <div className="lpe-debug-header">
+        <span className="lpe-debug-title">{COPY.debugHeader}</span>
+        <button type="button" className="lpe-header-btn" onClick={onClear} aria-label={COPY.debugClear}>✕</button>
+      </div>
+      <div className="lpe-debug-selector" title={preview.selectorPath}>
+        <span className="lpe-telemetry-label">{COPY.debugSelector}: </span>
+        <code>{preview.selectorPath}</code>
+      </div>
+      <div className="lpe-debug-tabs" role="tablist">
+        {(["html", "css", "js"] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            role="tab"
+            aria-selected={tab === k}
+            className={`lpe-debug-tab${tab === k ? " is-active" : ""}`}
+            onClick={() => setTab(k)}
+          >
+            {k === "html" ? COPY.debugTabHtml : k === "css" ? COPY.debugTabCss : COPY.debugTabJs}
+            <span className="lpe-debug-count">{preview[k].length}</span>
+          </button>
+        ))}
+        <button type="button" className="lpe-btn lpe-debug-copy" onClick={onCopy}>
+          {COPY.debugCopy}
+        </button>
+      </div>
+      {tab === "js" && (
+        <div className="lpe-debug-note">{COPY.debugJsEmpty}</div>
+      )}
+      <pre className="lpe-debug-pre"><code>{value || "(empty)"}</code></pre>
     </div>
   );
 }
