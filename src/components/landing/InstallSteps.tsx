@@ -1,6 +1,7 @@
+import type { ReactNode } from "react";
 import { Download, FolderOpen, ToggleRight, Upload, FolderInput } from "lucide-react";
 
-const STEPS: Array<{ icon: typeof Download; title: string; body: React.ReactNode }> = [
+const STEPS: Array<{ icon: typeof Download; title: string; body: ReactNode }> = [
   { icon: Download, title: "Download & unzip", body: "Grab the ZIP above and extract it somewhere you'll keep." },
   {
     icon: FolderOpen,
