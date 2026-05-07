@@ -13,7 +13,7 @@
 }
 .lpe-root * { box-sizing: border-box; }
 .lpe-root {
-  width: 320px;
+  width: 360px;
   background: #ffffff;
   border: 1px solid #d0d7de;
   border-radius: 8px;
