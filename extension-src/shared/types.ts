@@ -196,6 +196,14 @@ export interface StatusUpdatePayload {
    * export, which is initiated from CS via the picker).
    */
   telemetry?: ExportMeta["counts"];
+  /**
+   * Optional error metadata attached to terminal Error broadcasts so the
+   * panel can render `[code] message` and surface a copyable detail blob.
+   * Used by the content-script picker path which has no top-level reply to
+   * the panel (errors there would otherwise vanish into console.error).
+   */
+  errorCode?: ErrorCode;
+  errorDetail?: string;
 }
 export type StatusUpdateResponse = void;
 
