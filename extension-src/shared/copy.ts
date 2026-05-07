@@ -20,7 +20,7 @@ export const COPY = {
   statusStitching: "Stitching image…",
   statusBundling: "Building ZIP…",
   statusDownloading: "Downloading…",
-  statusPicker: "Picker active. Right-click an element. Esc to cancel.",
+  statusPicker: "Picker active. Click (or right-click) an element. Esc to cancel.",
   statusSelecting: "Building element export…",
   statusSuccess: "Saved {filename}",
   statusError: "Error: {message} ({code})",
