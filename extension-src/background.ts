@@ -136,6 +136,38 @@ router.on<RunElementExportPayload, RunElementExportResponse>(
 
 router.attach();
 
+/**
+ * Ensure the content script is alive in the target tab. The manifest
+ * `content_scripts` entry only injects on navigation — tabs already open
+ * before the extension was installed/reloaded won't have it. We ping; if
+ * that fails, we programmatically inject `content.js` and retry once.
+ * Throws E_NOT_AVAILABLE_HERE on restricted URLs (chrome://, web store, …).
+ */
+async function ensureContentScript(tabId: number): Promise<void> {
+  try {
+    await chrome.tabs.sendMessage(tabId, {
+      kind: MessageKind.Ping,
+      requestId: `ensure_${Date.now()}`,
+      payload: { sentAtMs: Date.now() },
+    });
+    return;
+  } catch {
+    // CS not loaded — try to inject.
+  }
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: false },
+      files: ["content.js"],
+    });
+  } catch (e) {
+    throw new MessageError(
+      ErrorCode.E_NOT_AVAILABLE_HERE,
+      "This page can't be exported. Open a regular http(s):// site and try again.",
+      e instanceof Error ? e.message : String(e),
+    );
+  }
+}
+
 // ---- Stage 9: keyboard shortcuts (E20: chrome.commands → CS) ----
 chrome.commands?.onCommand?.addListener(async (command) => {
   try {
