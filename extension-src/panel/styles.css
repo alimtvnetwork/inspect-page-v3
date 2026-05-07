@@ -110,3 +110,64 @@
 .lpe-telemetry-value {
   font-variant-numeric: tabular-nums; font-weight: 500; color: #1f2328;
 }
+
+/* v1.2 — picked-element debug preview (HTML / CSS / JS tabs). */
+.lpe-debug {
+  margin-top: 4px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background: #fbfcfd;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.lpe-debug-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 8px;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+}
+.lpe-debug-title { font-weight: 600; font-size: 12px; }
+.lpe-debug-selector {
+  padding: 4px 8px; font-size: 11px; color: #57606a;
+  border-bottom: 1px solid #eaeef2;
+  word-break: break-all;
+}
+.lpe-debug-selector code {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  color: #1f2328;
+}
+.lpe-debug-tabs {
+  display: flex; align-items: center; gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #eaeef2;
+}
+.lpe-debug-tab {
+  border: 1px solid #d0d7de; background: white;
+  padding: 3px 8px; border-radius: 4px;
+  cursor: pointer; font: inherit; font-size: 12px;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.lpe-debug-tab.is-active {
+  background: #0969da; color: white; border-color: #0969da;
+}
+.lpe-debug-count {
+  font-size: 10px; opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+.lpe-debug-copy {
+  margin-left: auto; width: auto !important; padding: 3px 10px !important;
+  font-size: 12px;
+}
+.lpe-debug-note {
+  padding: 6px 8px; font-size: 11px; color: #57606a;
+  background: #fff8c5; border-bottom: 1px solid #eaeef2;
+}
+.lpe-debug-pre {
+  margin: 0; padding: 8px;
+  max-height: 240px; overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px; line-height: 1.4;
+  background: #ffffff;
+  white-space: pre-wrap; word-break: break-word;
+}

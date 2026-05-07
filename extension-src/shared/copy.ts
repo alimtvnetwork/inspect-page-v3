@@ -45,6 +45,14 @@ export const COPY = {
   telemetryElementComputedDiff: "computed-style diffs",
   telemetryElementScreenshots: "screenshots (context + isolated)",
   telemetryElementIsolatedSkipped: "isolated skipped",
+  debugHeader: "Picked element",
+  debugSelector: "Selector",
+  debugTabHtml: "HTML",
+  debugTabCss: "CSS",
+  debugTabJs: "JS",
+  debugCopy: "Copy",
+  debugClear: "Clear",
+  debugJsEmpty: "Element-scoped JS is not extracted. Showing computed-style diff (JSON).",
 } as const;
 
 export type CopyKey = keyof typeof COPY;

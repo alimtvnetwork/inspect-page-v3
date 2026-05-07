@@ -204,6 +204,19 @@ export interface StatusUpdatePayload {
    */
   errorCode?: ErrorCode;
   errorDetail?: string;
+  /**
+   * v1.2: debug preview for the element picker. When present, the panel
+   * renders an in-panel HTML / CSS / JS inspector so the user can see what
+   * was extracted without unzipping the bundle. Populated by the content
+   * script immediately after `collectElement` succeeds, regardless of
+   * whether the downstream export later fails.
+   */
+  debugPreview?: {
+    selectorPath: string;
+    html: string;
+    css: string;
+    js: string;
+  };
 }
 export type StatusUpdateResponse = void;
 
