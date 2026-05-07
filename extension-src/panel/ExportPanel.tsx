@@ -23,6 +23,7 @@ import type {
 } from "@shared/types";
 import { format } from "./format";
 import { telemetryRows } from "./telemetry";
+import JSZip from "jszip";
 
 export type PanelSurface = "popup" | "floating";
 
@@ -489,6 +490,28 @@ function DebugPreview({ preview, onClear }: DebugPreviewProps): JSX.Element {
   const onCopy = useCallback(async () => {
     try { await navigator.clipboard.writeText(value); } catch { /* ignore */ }
   }, [value]);
+  const onDownload = useCallback(async () => {
+    try {
+      const zip = new JSZip();
+      zip.file("element.html", preview.html || "");
+      zip.file("element.css", preview.css || "");
+      zip.file("element.js", preview.js || "");
+      zip.file(
+        "selector.txt",
+        `${preview.selectorPath}\n`,
+      );
+      const blob = await zip.generateAsync({ type: "blob" });
+      const safe = (preview.selectorPath || "element")
+        .split(" > ").pop()!
+        .replace(/[^a-z0-9_-]+/gi, "_").slice(0, 40) || "element";
+      const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `pageport-element-${safe}-${ts}.zip`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } catch { /* ignore */ }
+  }, [preview]);
   return (
     <div className="lpe-debug" aria-label={COPY.debugHeader}>
       <div className="lpe-debug-header">
@@ -515,6 +538,9 @@ function DebugPreview({ preview, onClear }: DebugPreviewProps): JSX.Element {
         ))}
         <button type="button" className="lpe-btn lpe-debug-copy" onClick={onCopy}>
           {COPY.debugCopy}
+        </button>
+        <button type="button" className="lpe-btn lpe-debug-copy" onClick={onDownload}>
+          {COPY.debugDownload}
         </button>
       </div>
       {tab === "js" && (
