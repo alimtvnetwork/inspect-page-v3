@@ -134,6 +134,12 @@ function installDrag(wrapper: HTMLElement): () => void {
 
   const onDown = (e: PointerEvent): void => {
     const target = e.target as HTMLElement | null;
+    // Don't start a drag when the user is interacting with controls inside
+    // the header (close, minimize, etc.). preventDefault() on those would
+    // swallow the subsequent click.
+    if (target?.closest("button, a, input, select, textarea, [role='button']")) {
+      return;
+    }
     const handle = target?.closest("[data-drag-handle='true']") as HTMLElement | null;
     if (!handle) return;
     dragging = true;
