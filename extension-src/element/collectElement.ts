@@ -66,5 +66,11 @@ export async function collectElement(
     matchedCss: matched.css,
     computedDiff: diff,
     isolatedHtml,
+    pageInfo: {
+      url: location.href,
+      title: document.title,
+      viewportCssPx: { w: window.innerWidth, h: window.innerHeight },
+      dpr: window.devicePixelRatio || 1,
+    },
   };
 }
