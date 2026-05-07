@@ -118,6 +118,12 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         status: p.status,
         message: p.message ?? prev.message,
         progress: p.progress,
+        ...(p.status === PanelStatus.Error
+          ? {
+              errorCode: p.errorCode,
+              errorDetail: p.errorDetail,
+            }
+          : {}),
         // v1.1: element-export Success arrives via StatusUpdate broadcast,
         // not via a top-level response. When it carries telemetry, surface
         // it in the same "Captured in this export" block. Also stash the
