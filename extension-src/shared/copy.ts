@@ -3,7 +3,7 @@
  * Source: spec/21-app/02-ui-panel.md §D.
  */
 export const COPY = {
-  appName: "Paste Port",
+  appName: "PagePort",
   btnFullPage: "Export Full Page",
   btnPick: "Pick Element",
   btnCancel: "Cancel",

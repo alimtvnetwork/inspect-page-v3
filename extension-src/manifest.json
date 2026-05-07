@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Paste Port",
-  "short_name": "Paste Port",
+  "name": "PagePort",
+  "short_name": "PagePort",
   "version": "1.0.0",
   "description": "Export any web page (or one element) for your LLM: HTML, CSS, JS and a full-page screenshot.",
   "minimum_chrome_version": "116",
@@ -11,7 +11,7 @@
     "128": "icons/128.png"
   },
   "action": {
-    "default_title": "Paste Port",
+    "default_title": "PagePort",
     "default_icon": {
       "16": "icons/16.png",
       "48": "icons/48.png"
