@@ -109,28 +109,16 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
 
   // ---- Listen for StatusUpdate broadcasts from SW (stages 5+) ----
   useEffect(() => {
-    if (!chrome?.runtime?.onMessage) return;
-    const listener = (raw: unknown): void => {
-      if (typeof raw !== "object" || raw === null) return;
-      const env = raw as { kind?: string; payload?: unknown };
-      if (env.kind !== MessageKind.StatusUpdate) return;
-      const p = env.payload as StatusUpdatePayload;
+    const handlePayload = (p: StatusUpdatePayload): void => {
       setState((prev) => ({
         ...prev,
         status: p.status,
         message: p.message ?? prev.message,
         progress: p.progress,
         ...(p.status === PanelStatus.Error
-          ? {
-              errorCode: p.errorCode,
-              errorDetail: p.errorDetail,
-            }
+          ? { errorCode: p.errorCode, errorDetail: p.errorDetail }
           : {}),
         ...(p.debugPreview ? { debugPreview: p.debugPreview } : {}),
-        // v1.1: element-export Success arrives via StatusUpdate broadcast,
-        // not via a top-level response. When it carries telemetry, surface
-        // it in the same "Captured in this export" block. Also stash the
-        // filename so the success row reads correctly.
         ...(p.status === PanelStatus.Success && p.telemetry
           ? { successTelemetry: p.telemetry }
           : {}),
@@ -139,8 +127,25 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           : {}),
       }));
     };
-    chrome.runtime.onMessage.addListener(listener as never);
-    return () => chrome.runtime.onMessage.removeListener(listener as never);
+    const runtimeListener = (raw: unknown): void => {
+      if (typeof raw !== "object" || raw === null) return;
+      const env = raw as { kind?: string; payload?: unknown };
+      if (env.kind !== MessageKind.StatusUpdate) return;
+      handlePayload(env.payload as StatusUpdatePayload);
+    };
+    // Local in-page bus — required for the floating panel because Chrome
+    // does not deliver runtime messages back to the originating content-
+    // script context.
+    const winListener = (e: Event): void => {
+      const ce = e as CustomEvent<StatusUpdatePayload>;
+      if (ce.detail) handlePayload(ce.detail);
+    };
+    chrome?.runtime?.onMessage?.addListener?.(runtimeListener as never);
+    window.addEventListener("llm-page-export:status", winListener as EventListener);
+    return () => {
+      chrome?.runtime?.onMessage?.removeListener?.(runtimeListener as never);
+      window.removeEventListener("llm-page-export:status", winListener as EventListener);
+    };
   }, []);
 
   // ---- Auto-dismiss Success ----
