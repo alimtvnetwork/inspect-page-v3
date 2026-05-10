@@ -572,10 +572,12 @@ function TelemetrySummary({ counts }: TelemetrySummaryProps): JSX.Element | null
 interface DebugPreviewProps {
   preview: NonNullable<StatusUpdatePayload["debugPreview"]>;
   activeUrl?: string;
+  shareEnabled?: boolean;
+  onShare?: (artifacts: ExportArtifacts) => Promise<void>;
   onClear: () => void;
 }
 
-function DebugPreview({ preview, activeUrl, onClear }: DebugPreviewProps): JSX.Element {
+function DebugPreview({ preview, activeUrl, shareEnabled, onShare, onClear }: DebugPreviewProps): JSX.Element {
   const [tab, setTab] = useState<"html" | "css" | "js">("html");
   const [fmt, setFmt] = useState<"raw" | "md">("raw");
   const value = preview[tab];
@@ -700,7 +702,11 @@ function DebugPreview({ preview, activeUrl, onClear }: DebugPreviewProps): JSX.E
         <div className="lpe-debug-note">{COPY.debugJsEmpty}</div>
       )}
       <pre className="lpe-debug-pre"><code>{value || "(empty)"}</code></pre>
-      <ExportModes artifacts={buildElementArtifacts(preview, activeUrl)} />
+      <ExportModes
+        artifacts={buildElementArtifacts(preview, activeUrl)}
+        shareEnabled={shareEnabled}
+        onShare={onShare}
+      />
     </div>
   );
 }
@@ -733,9 +739,11 @@ function buildElementArtifacts(
 interface FullPageActionsProps {
   artifacts: NonNullable<PanelState["fullPageArtifacts"]>;
   activeUrl?: string;
+  shareEnabled?: boolean;
+  onShare?: (artifacts: ExportArtifacts) => Promise<void>;
 }
 
-function FullPageActions({ artifacts, activeUrl }: FullPageActionsProps): JSX.Element {
+function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }: FullPageActionsProps): JSX.Element {
   const [fmt, setFmt] = useState<"raw" | "md">("raw");
 
   const domainSafe = (): string => {
@@ -853,7 +861,11 @@ function FullPageActions({ artifacts, activeUrl }: FullPageActionsProps): JSX.El
           {COPY.fullPageDownloadAllZip}
         </button>
       </div>
-      <ExportModes artifacts={buildFullPageArtifacts(artifacts, activeUrl)} />
+      <ExportModes
+        artifacts={buildFullPageArtifacts(artifacts, activeUrl)}
+        shareEnabled={shareEnabled}
+        onShare={onShare}
+      />
     </div>
   );
 }
