@@ -49,6 +49,9 @@
 | `E_SHARE_AUTH` | Messaging | Error | WordPress rejected credentials (HTTP 401/403). | WordPress login failed — check the Application Password. | Abort, open Settings. |
 | `E_SHARE_NETWORK` | Messaging | Error | Network failure reaching WordPress site. | Could not reach your WordPress site. | Abort, Retry button shown. |
 | `E_SHARE_UPSTREAM` | Messaging | Error | WordPress returned non-2xx (`{status}`). | Your WordPress site rejected the upload ({status}). | Abort, surface server message. |
+| `W_FONT_UNREACHABLE` | CssCollect | Warn | `@font-face` URL `{url}` could not be fetched. | — | Skip inlining; screenshot still uses page-loaded font. |
+| `W_WEB_COMPONENT_SKIPPED` | HtmlSerialize | Warn | Page declares custom elements; behavior not bundled. | — | Preserve `outerHTML`, continue. |
+| `E_IFRAME_CROSS_ORIGIN` | HtmlSerialize | Warn | Cross-origin iframe could not be inlined; original `src` kept. | — | Continue; offline export will not render iframe contents. |
 
 ## Logging surface
 - SW logs visible in `chrome://extensions` → service worker DevTools.
@@ -64,4 +67,4 @@ RIGHT  try { ... } catch (e) { logger.error(LogCategory.Stitch, 'E_STITCH_FAILED
 ```
 
 ## Reserved future codes
-`E_IFRAME_CROSS_ORIGIN`, `W_FONT_UNREACHABLE`, `W_WEB_COMPONENT_SKIPPED` — defined in `19-edge-cases.md` for v2 once supported.
+_(none — all edge-case codes from `19-edge-cases.md` are now wired in source.)_

@@ -133,7 +133,7 @@ export async function inlineFonts(
         return `data:${mime};base64,${b64}`;
       } catch (e) {
         counts.failed += 1;
-        logger.warn(LogCategory.CssCollect, ErrorCode.W_CSS_FETCH_FAILED, `font fetch failed: ${absUrl}`, e);
+        logger.warn(LogCategory.CssCollect, ErrorCode.W_FONT_UNREACHABLE, `font fetch failed: ${absUrl}`, e);
         return null;
       }
     })();
