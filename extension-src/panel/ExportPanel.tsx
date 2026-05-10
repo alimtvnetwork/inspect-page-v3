@@ -486,32 +486,73 @@ interface DebugPreviewProps {
 
 function DebugPreview({ preview, onClear }: DebugPreviewProps): JSX.Element {
   const [tab, setTab] = useState<"html" | "css" | "js">("html");
+  const [fmt, setFmt] = useState<"raw" | "md">("raw");
   const value = preview[tab];
   const onCopy = useCallback(async () => {
     try { await navigator.clipboard.writeText(value); } catch { /* ignore */ }
   }, [value]);
-  const onDownload = useCallback(async () => {
+
+  const safeName = (): string => {
+    return (preview.selectorPath || "element")
+      .split(" > ").pop()!
+      .replace(/[^a-z0-9_-]+/gi, "_").slice(0, 40) || "element";
+  };
+  const tsNow = (): string =>
+    new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const triggerDownload = (blob: Blob, filename: string): void => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  const fenceFor = (k: "html" | "css" | "js"): string =>
+    k === "js" ? "javascript" : k;
+  const buildSingleMd = (k: "html" | "css" | "js", v: string): string =>
+    `# Element — ${preview.selectorPath}\n\n## ${k.toUpperCase()}\n\n\`\`\`${fenceFor(k)}\n${v}\n\`\`\`\n`;
+  const buildCombinedMd = (): string =>
+    `# Element — ${preview.selectorPath}\n\n## HTML\n\n\`\`\`html\n${preview.html || ""}\n\`\`\`\n\n## CSS\n\n\`\`\`css\n${preview.css || ""}\n\`\`\`\n\n## JS\n\n\`\`\`javascript\n${preview.js || ""}\n\`\`\`\n`;
+
+  const onDownloadCurrent = useCallback(() => {
     try {
-      const zip = new JSZip();
-      zip.file("element.html", preview.html || "");
-      zip.file("element.css", preview.css || "");
-      zip.file("element.js", preview.js || "");
-      zip.file(
-        "selector.txt",
-        `${preview.selectorPath}\n`,
-      );
-      const blob = await zip.generateAsync({ type: "blob" });
-      const safe = (preview.selectorPath || "element")
-        .split(" > ").pop()!
-        .replace(/[^a-z0-9_-]+/gi, "_").slice(0, 40) || "element";
-      const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `pageport-element-${safe}-${ts}.zip`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      const safe = safeName();
+      const ts = tsNow();
+      if (fmt === "md") {
+        const md = buildSingleMd(tab, value || "");
+        triggerDownload(
+          new Blob([md], { type: "text/markdown;charset=utf-8" }),
+          `pageport-element-${safe}-${tab}-${ts}.md`,
+        );
+      } else {
+        const mime =
+          tab === "html" ? "text/html"
+          : tab === "css" ? "text/css"
+          : "text/javascript";
+        triggerDownload(
+          new Blob([value || ""], { type: `${mime};charset=utf-8` }),
+          `pageport-element-${safe}-${ts}.${tab}`,
+        );
+      }
     } catch { /* ignore */ }
-  }, [preview]);
+  }, [preview, tab, value, fmt]);
+
+  const onDownloadAll = useCallback(async () => {
+    try {
+      const safe = safeName();
+      const ts = tsNow();
+      const zip = new JSZip();
+      if (fmt === "md") {
+        zip.file("element.md", buildCombinedMd());
+      } else {
+        zip.file("element.html", preview.html || "");
+        zip.file("element.css", preview.css || "");
+        zip.file("element.js", preview.js || "");
+      }
+      zip.file("selector.txt", `${preview.selectorPath}\n`);
+      const blob = await zip.generateAsync({ type: "blob" });
+      triggerDownload(blob, `pageport-element-${safe}-${ts}.zip`);
+    } catch { /* ignore */ }
+  }, [preview, fmt]);
   return (
     <div className="lpe-debug" aria-label={COPY.debugHeader}>
       <div className="lpe-debug-header">
@@ -536,11 +577,32 @@ function DebugPreview({ preview, onClear }: DebugPreviewProps): JSX.Element {
             <span className="lpe-debug-count">{preview[k].length}</span>
           </button>
         ))}
-        <button type="button" className="lpe-btn lpe-debug-copy" onClick={onCopy}>
+      </div>
+      <div className="lpe-debug-actions">
+        <span className="lpe-debug-fmt" role="group" aria-label={COPY.debugFormatLabel}>
+          <span>{COPY.debugFormatLabel}:</span>
+          <button
+            type="button"
+            className="lpe-debug-fmt-btn"
+            aria-pressed={fmt === "raw"}
+            onClick={() => setFmt("raw")}
+          >{COPY.debugFormatRaw}</button>
+          <button
+            type="button"
+            className="lpe-debug-fmt-btn"
+            aria-pressed={fmt === "md"}
+            onClick={() => setFmt("md")}
+          >{COPY.debugFormatMd}</button>
+        </span>
+        <span className="lpe-spacer" />
+        <button type="button" className="lpe-btn" onClick={onCopy}>
           {COPY.debugCopy}
         </button>
-        <button type="button" className="lpe-btn lpe-debug-copy" onClick={onDownload}>
-          {COPY.debugDownload}
+        <button type="button" className="lpe-btn" onClick={onDownloadCurrent}>
+          {COPY.debugDownloadCurrent}
+        </button>
+        <button type="button" className="lpe-btn lpe-btn-primary" onClick={onDownloadAll}>
+          {COPY.debugDownloadAll}
         </button>
       </div>
       {tab === "js" && (
