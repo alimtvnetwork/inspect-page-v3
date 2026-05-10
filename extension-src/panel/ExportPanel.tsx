@@ -274,6 +274,42 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     }
   }, []);
 
+  const onShareSettingsPatch = useCallback(async (patch: Partial<ShareSettings>) => {
+    try {
+      const next = await sendToBackground<Partial<ShareSettings>, ShareSettings>(
+        MessageKind.SetShareSettings, patch,
+      );
+      setShareSettingsState(next);
+    } catch { /* ignore */ }
+  }, []);
+
+  const onShare = useCallback(async (artifacts: ExportArtifacts): Promise<void> => {
+    const primary = artifacts.images[0];
+    if (!primary) {
+      throw new Error("No image to upload — Share Links requires a screenshot.");
+    }
+    const res = await sendToBackground<
+      {
+        kind: string; sourceUrl: string;
+        html: string; css: string;
+        imageBase64: string; imageMime: string;
+      },
+      CreateShareSessionResponse
+    >(MessageKind.CreateShareSession, {
+      kind: artifacts.flow,
+      sourceUrl: activeUrl ?? artifacts.meta?.url ?? "",
+      html: artifacts.html,
+      css: artifacts.css,
+      imageBase64: primary.base64,
+      imageMime: primary.mime,
+    });
+    const block = interpolateAi({
+      htmlRef: res.urls.html, cssRef: res.urls.css, imageRef: res.urls.image,
+    });
+    try { await navigator.clipboard.writeText(block); } catch { /* clipboard may be blocked */ }
+    return;
+  }, [activeUrl]);
+
   const onOpenFloating = useCallback(async () => {
     if (activeTabId === undefined) return;
     try {
