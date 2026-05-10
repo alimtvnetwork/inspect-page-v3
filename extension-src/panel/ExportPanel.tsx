@@ -893,3 +893,49 @@ function buildFullPageArtifacts(
     meta: src.meta,
   };
 }
+
+interface ShareSettingsSectionProps {
+  settings: ShareSettings;
+  onPatch: (patch: Partial<ShareSettings>) => void;
+}
+
+function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps): JSX.Element {
+  return (
+    <details className="lpe-settings">
+      <summary>{COPY.shareSettingsHeader}</summary>
+      <div className="lpe-settings-body">
+        <div className="lpe-field">
+          <label htmlFor="lpe-share-base">{COPY.shareLblBaseUrl}</label>
+          <input
+            id="lpe-share-base"
+            className="lpe-input"
+            placeholder={COPY.sharePlaceholderBaseUrl}
+            value={settings.baseUrl}
+            onChange={(e) => onPatch({ baseUrl: e.target.value })}
+          />
+        </div>
+        <div className="lpe-field">
+          <label htmlFor="lpe-share-user">{COPY.shareLblUsername}</label>
+          <input
+            id="lpe-share-user"
+            className="lpe-input"
+            value={settings.username}
+            onChange={(e) => onPatch({ username: e.target.value })}
+          />
+        </div>
+        <div className="lpe-field">
+          <label htmlFor="lpe-share-pass">{COPY.shareLblAppPassword}</label>
+          <input
+            id="lpe-share-pass"
+            type="password"
+            className="lpe-input"
+            placeholder={COPY.sharePlaceholderAppPassword}
+            value={settings.appPassword}
+            onChange={(e) => onPatch({ appPassword: e.target.value })}
+          />
+        </div>
+        <div className="lpe-debug-note">{COPY.shareHelp}</div>
+      </div>
+    </details>
+  );
+}
