@@ -24,6 +24,9 @@ export enum MessageKind {
   SetSettings = "SetSettings",
   GetPanelPosition = "GetPanelPosition",
   SetPanelPosition = "SetPanelPosition",
+  GetShareSettings = "GetShareSettings",
+  SetShareSettings = "SetShareSettings",
+  CreateShareSession = "CreateShareSession",
 }
 
 export enum PanelStatus {
@@ -104,4 +107,8 @@ export enum ErrorCode {
   W_FONT_NOT_BUNDLED = "W_FONT_NOT_BUNDLED",
   W_WEB_COMPONENT_SKIPPED = "W_WEB_COMPONENT_SKIPPED",
   W_BLANK_PAGE_SUSPECTED = "W_BLANK_PAGE_SUSPECTED",
+  E_SHARE_AUTH = "E_SHARE_AUTH",
+  E_SHARE_NETWORK = "E_SHARE_NETWORK",
+  E_SHARE_UPSTREAM = "E_SHARE_UPSTREAM",
+  E_SHARE_BAD_INPUT = "E_SHARE_BAD_INPUT",
 }

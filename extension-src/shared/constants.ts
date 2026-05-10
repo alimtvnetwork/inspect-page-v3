@@ -52,6 +52,7 @@ export const FILENAME_MAX_CHARS = 120;
 // ---- Schema ----
 export const CURRENT_SCHEMA_VERSION = 1 as const;
 export const STORAGE_ROOT_KEY = "pageport";
+export const STORAGE_SHARE_KEY = "pageport.share";
 
 // ---- Logger ----
 export const LOG_PREFIX = "[pageport]";
