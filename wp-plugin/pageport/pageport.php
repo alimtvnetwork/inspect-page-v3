@@ -24,6 +24,9 @@ require_once PAGEPORT_DIR . 'includes/class-activator.php';
 require_once PAGEPORT_DIR . 'includes/class-storage.php';
 require_once PAGEPORT_DIR . 'includes/class-rest.php';
 require_once PAGEPORT_DIR . 'includes/class-cleanup.php';
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+    require_once PAGEPORT_DIR . 'includes/class-cli.php';
+}
 
 register_activation_hook( __FILE__, [ 'PagePort_Activator', 'activate' ] );
 register_deactivation_hook( __FILE__, [ 'PagePort_Cleanup', 'deactivate' ] );
