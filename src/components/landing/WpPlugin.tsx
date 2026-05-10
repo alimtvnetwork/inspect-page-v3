@@ -89,8 +89,8 @@ export const WpPlugin = (): JSX.Element => {
       </div>
       <ol className="list-decimal pl-5 text-sm text-muted-foreground space-y-1">
         <li>Upload the unzipped <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">pageport</code> folder to <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">wp-content/plugins/</code> and activate it.</li>
-        <li>Create a WordPress Application Password under your user profile.</li>
-        <li>Open the extension's Settings panel and paste your site URL, username, and Application Password.</li>
+        <li>In wp-admin, go to <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">Tools → PagePort</code> and click <strong>Mint new pairing token</strong>.</li>
+        <li>Copy the <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">PPT1.…</code> token and paste it into the extension's <strong>Settings → Share Links</strong> panel. The site URL is decoded from the token automatically.</li>
       </ol>
       {error ? (
         <p role="alert" className="text-sm text-destructive">
