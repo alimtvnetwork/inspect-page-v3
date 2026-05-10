@@ -24,6 +24,9 @@ import type {
 import { format } from "./format";
 import { telemetryRows } from "./telemetry";
 import JSZip from "jszip";
+import { ExportFlow } from "@shared/enums";
+import type { ExportArtifacts } from "@shared/types";
+import { ExportModes } from "./ExportModes";
 
 export type PanelSurface = "popup" | "floating";
 
