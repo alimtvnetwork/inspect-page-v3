@@ -56,8 +56,8 @@ All numeric constants used anywhere in the extension live here. Source of truth.
 
 | Constant | Value |
 |---|---|
-| `DEFAULT_NAME_FULLPAGE_TEMPLATE` | `'llm-export-fullpage-{domain}-{timestamp}.zip'` |
-| `DEFAULT_NAME_ELEMENT_TEMPLATE` | `'llm-export-element-{domain}-{tag}-{timestamp}.md'` |
+| `DEFAULT_NAME_FULLPAGE_TEMPLATE` | `'pageport-fullpage-{domain}-{timestamp}.zip'` |
+| `DEFAULT_NAME_ELEMENT_TEMPLATE` | `'pageport-element-{domain}-{tag}-{timestamp}.md'` |
 | `FILENAME_MAX_CHARS` | 120 (excluding extension) |
 
 ## Performance targets (acceptance, not enforcement)
@@ -85,6 +85,6 @@ All numeric constants used anywhere in the extension live here. Source of truth.
 | `popup.html` + JS + CSS | ≤ 250 KiB total. |
 | `panel.js` (injected) | ≤ 250 KiB minified. |
 | `offscreen.html` + JS | ≤ 200 KiB total. |
-| Final ZIP `public/llm-export.zip` | ≤ 1.5 MiB. |
+| Final ZIP `public/pageport.zip` | ≤ 1.5 MiB. |
 
 If a budget is breached, the implementing AI MUST flag it in the build log and either remove a dep or split. Do not silently exceed.

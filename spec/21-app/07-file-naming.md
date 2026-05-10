@@ -3,8 +3,8 @@
 ## Pattern
 Default tokens, joined with `-`, lowercased, ASCII-sanitized:
 
-- Full page: `llm-export-fullpage-{domain}-{timestamp}.zip`
-- Element:   `llm-export-element-{domain}-{tag}-{timestamp}.md`
+- Full page: `pageport-fullpage-{domain}-{timestamp}.zip`
+- Element:   `pageport-element-{domain}-{tag}-{timestamp}.md`
 
 ## Tokens
 - `{domain}` — `location.hostname` with `www.` stripped, dots → `_`.

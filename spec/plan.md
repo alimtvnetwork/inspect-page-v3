@@ -1,4 +1,4 @@
-# Implementation Plan — LLM Page Export Chrome Extension
+# Implementation Plan — PagePort Chrome Extension
 
 Mirror of `.lovable/plan.md`. Source of truth for phase tracking.
 

@@ -1,4 +1,4 @@
-# spec/21-app — LLM Page Export Chrome Extension
+# spec/21-app — PagePort Chrome Extension
 
 This folder is the **single source of truth** for building the extension. An implementing AI must be able to read these documents in order and ship the product without asking a question.
 

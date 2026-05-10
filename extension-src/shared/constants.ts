@@ -51,10 +51,10 @@ export const FILENAME_MAX_CHARS = 120;
 
 // ---- Schema ----
 export const CURRENT_SCHEMA_VERSION = 1 as const;
-export const STORAGE_ROOT_KEY = "llmExport";
+export const STORAGE_ROOT_KEY = "pageport";
 
 // ---- Logger ----
-export const LOG_PREFIX = "[llm-export]";
+export const LOG_PREFIX = "[pageport]";
 
 // ---- Static text ----
 export const README_TXT =

@@ -1,4 +1,4 @@
-# CI for the LLM Page Export Chrome extension.
+# CI for the PagePort Chrome extension.
 # Mirrors the Stage 11 release pipeline (spec/21-app/12-build-and-package.md):
 #   lint → test → build → package → upload artifact.
 name: extension-ci
@@ -54,7 +54,7 @@ jobs:
         run: |
           set -euo pipefail
           DIST="extension/dist/extension"
-          OUT="public/llm-export.zip"
+          OUT="public/pageport.zip"
           if [ ! -d "$DIST" ]; then
             echo "::error::extension/dist/extension not found"
             exit 1
@@ -67,7 +67,7 @@ jobs:
           mkdir -p public
           rm -f "$OUT" "$OUT.sha256"
           ( cd "$DIST" && zip -r "${{ github.workspace }}/$OUT" . > /dev/null )
-          ( cd public && sha256sum "llm-export.zip" > "llm-export.zip.sha256" )
+          ( cd public && sha256sum "pageport.zip" > "pageport.zip.sha256" )
           ls -la "$OUT" "$OUT.sha256"
           # Hard size budget per spec/21-app/11 AC-BD-2 (1.5 MiB).
           BYTES=$(stat -c '%s' "$OUT")
@@ -79,9 +79,9 @@ jobs:
       - name: Upload extension artifact
         uses: actions/upload-artifact@v4
         with:
-          name: llm-export-zip
+          name: pageport-zip
           path: |
-            public/llm-export.zip
-            public/llm-export.zip.sha256
+            public/pageport.zip
+            public/pageport.zip.sha256
           if-no-files-found: error
           retention-days: 30

@@ -34,7 +34,7 @@ Each item references a test ID in `22-test-plan.md`. An AC is satisfied iff the 
 
 ## E. Build / Distribution
 - [ ] AC-BD-1 — `bun run lint` and `bun run test` both exit 0. (T18)
-- [ ] AC-BD-2 — `bun run package` produces `public/llm-export.zip` ≤ `1.5 MiB` with sidecar `.sha256`. (T17)
+- [ ] AC-BD-2 — `bun run package` produces `public/pageport.zip` ≤ `1.5 MiB` with sidecar `.sha256`. (T17)
 - [ ] AC-BD-3 — `chrome://extensions` → Load unpacked succeeds with zero warnings.
 - [ ] AC-BD-4 — Lovable landing page downloads the ZIP via fetch+blob. (manual: visit `/`, click Download.)
 

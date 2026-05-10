@@ -1,6 +1,6 @@
 # 18 — Distribution page (Lovable landing page)
 
-A single page in the Lovable host project that distributes `public/llm-export.zip`.
+A single page in the Lovable host project that distributes `public/pageport.zip`.
 
 ## Route
 `/` (the landing page is the project's home route in this project).
@@ -62,18 +62,18 @@ A single page in the Lovable host project that distributes `public/llm-export.zi
 | Step 3 | Choose **Full Page** or **Pick Element** |
 | Privacy line | Everything runs in your browser. No network calls beyond fetching the page you’re already on. |
 
-`{version}` and `{sizeKb}` resolved at build time from `public/llm-export.zip`.
+`{version}` and `{sizeKb}` resolved at build time from `public/pageport.zip`.
 
 ## Download button behavior
 
 - The Lovable preview environment requires authenticated fetches for static files. Use **fetch + blob**:
-  1. `res = await fetch('/llm-export.zip')`
+  1. `res = await fetch('/pageport.zip')`
   2. If `!res.ok` → show inline error `Download failed: {status}`.
   3. `blob = await res.blob()`.
-  4. Create `<a href={URL.createObjectURL(blob)} download="llm-export.zip">` and `.click()`.
+  4. Create `<a href={URL.createObjectURL(blob)} download="pageport.zip">` and `.click()`.
   5. Revoke object URL.
 - Disable button while in flight; show spinner.
-- After success, show toast `Downloaded llm-export.zip`.
+- After success, show toast `Downloaded pageport.zip`.
 
 ## Sections rendered as components
 - `Hero` (uses semantic `<header>` with `<h1>`).
@@ -84,7 +84,7 @@ A single page in the Lovable host project that distributes `public/llm-export.zi
 - `Footer` (`<footer>`).
 
 ## SEO
-- `<title>`: `LLM Page Export — Chrome extension` (≤ 60 chars).
+- `<title>`: `PagePort — Chrome extension` (≤ 60 chars).
 - `<meta name="description">`: `Export any webpage as HTML, CSS, JS and a full-page screenshot, ready for your LLM.` (≤ 160 chars).
 - Single `<h1>`. Semantic landmarks. Alt text on any screenshots added later.
 - `<link rel="canonical">` to deployed URL.

@@ -27,13 +27,13 @@ export const Hero = ({ zipUrl, version, sizeKb }: HeroProps): JSX.Element => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "llm-export.zip";
+      a.download = "pageport.zip";
       document.body.appendChild(a);
       a.click();
       a.remove();
       // Defer revoke so the browser can pick up the download.
       setTimeout(() => URL.revokeObjectURL(url), 1_000);
-      toast({ title: "Downloaded llm-export.zip" });
+      toast({ title: "Downloaded pageport.zip" });
     } catch (e) {
       setError(`Download failed: ${e instanceof Error ? e.message : "network error"}`);
     } finally {

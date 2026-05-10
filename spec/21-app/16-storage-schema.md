@@ -1,6 +1,6 @@
 # 16 — Storage schema (`chrome.storage.local`)
 
-Single root key: `llmExport`. Atomic writes only — read, mutate locally, write whole object back.
+Single root key: `pageport`. Atomic writes only — read, mutate locally, write whole object back.
 
 ## Shape (TypeScript)
 
@@ -42,7 +42,7 @@ Constants live in `shared/defaults.ts`. The SW writes defaults on `chrome.runtim
 
 ## Migration rule
 On SW startup:
-1. Read `llmExport`.
+1. Read `pageport`.
 2. If undefined → write defaults.
 3. If `schemaVersion < CURRENT_SCHEMA_VERSION` → run migration table in `shared/migrations.ts`, then write back.
 4. Never throw on read; on parse failure, log `E_STORAGE_PARSE` and overwrite with defaults.

@@ -2,14 +2,14 @@
 
 Two improvements:
 
-1. **Rebrand all generated filenames** from `llm-export-*` to `pageport-*`.
+1. **Rebrand all generated filenames** from `pageport-*` to `pageport-*`.
 2. **Bring the same atomic download options** (per-file HTML / CSS / JS, Raw or Markdown, or all-as-zip) that exist for Pick Element to the **Full Page export** flow.
 
 ---
 
-## Part 1 — Filename rebrand (`llm-export-` → `pageport-`)
+## Part 1 — Filename rebrand (`pageport-` → `pageport-`)
 
-Replace the `llm-export-` prefix wherever it appears in defaults and tests. User-customized templates already saved in storage are untouched (the change only affects the defaults shipped with the extension).
+Replace the `pageport-` prefix wherever it appears in defaults and tests. User-customized templates already saved in storage are untouched (the change only affects the defaults shipped with the extension).
 
 Files:
 - `extension-src/shared/constants.ts`
@@ -19,7 +19,7 @@ Files:
 - `extension-src/zip/__tests__/filename.test.ts` — update expected strings.
 - `extension-src/capture/inlineIframes.ts` + its test — only references in code comments / fixture identifiers; rename for consistency.
 - `extension-src/offscreen.html` — title/identifier reference if any.
-- `extension/scripts/package.sh` — output zip name stays `llm-export.zip` (that's the **distribution** zip downloaded from the landing page, separate from generated exports). Leave it. Only rename references that affect end-user generated files.
+- `extension/scripts/package.sh` — output zip name stays `pageport.zip` (that's the **distribution** zip downloaded from the landing page, separate from generated exports). Leave it. Only rename references that affect end-user generated files.
 - `extension-src/panel/ExportPanel.tsx` — already uses `pageport-element-…` for the new debug downloads; keep as-is.
 
 ## Part 2 — Atomic + Markdown downloads for Full Page

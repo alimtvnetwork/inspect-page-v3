@@ -19,7 +19,7 @@ Each test has: ID, preconditions, steps, expected outcome (file shape + UI state
 ### T1 — Smoke full-page (S1)
 1. Open `S1`.
 2. Click extension icon → click `Export Full Page`.
-3. **Expect**: ZIP downloaded `llm-export-fullpage-example_com-{ts}.zip`.
+3. **Expect**: ZIP downloaded `pageport-fullpage-example_com-{ts}.zip`.
 4. Unzip → verify presence of `page.html`, `styles.css`, `scripts.js`, `screenshot.png`, `manifest.json`, `README.txt`.
 5. Open `page.html` in browser standalone → renders the example page (with some CSS via merged styles).
 6. `manifest.json.kind === 'fullPage'`, `counts.captureFrames === 1`.
@@ -97,7 +97,7 @@ Each test has: ID, preconditions, steps, expected outcome (file shape + UI state
 3. **Expect**: no entrance animation; status changes are instant.
 
 ### T17 — Bundle size budget
-1. After `bun run package`, check `du -h public/llm-export.zip`.
+1. After `bun run package`, check `du -h public/pageport.zip`.
 2. **Expect**: ≤ `1.5 MiB`.
 
 ### T18 — Lint / unit tests
