@@ -64,6 +64,12 @@ export const COPY = {
   fullPageDownloadJs: "JS",
   fullPageDownloadScreenshot: "Screenshot",
   fullPageDownloadAllZip: "Download all (zip)",
+  exportModesHeader: "Export for AI",
+  exportModeMd: "MD",
+  exportModeMdFiles: "MD + files",
+  exportModeZip: "ZIP",
+  exportModeShare: "Share Links",
+  exportModeShareDisabledTip: "Add WordPress credentials in Settings → Share Links",
 } as const;
 
 export type CopyKey = keyof typeof COPY;
