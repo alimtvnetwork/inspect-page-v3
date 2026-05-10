@@ -76,6 +76,7 @@ export const COPY = {
   shareHelp: "Generate a pairing token in wp-admin → Tools → PagePort, then paste it here.",
   sharePairBtn: "Pair",
   shareUnpairBtn: "Unpair",
+  shareUnpairedToastPrefix: "Unpaired from",
   sharePairedWithPrefix: "Paired with",
   sharePairedDevicePrefix: "device",
   shareBadTokenMsg: "That token does not look like a PagePort pairing token (PPT1.…).",
