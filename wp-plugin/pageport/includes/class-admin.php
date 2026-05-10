@@ -132,6 +132,20 @@ final class PagePort_Admin {
             'pageport-sessions',
             [ __CLASS__, 'render' ]
         );
+        add_management_page(
+            __( 'PagePort', 'pageport' ),
+            __( 'PagePort', 'pageport' ),
+            'upload_files',
+            'pageport',
+            [ __CLASS__, 'render_pairing' ]
+        );
+    }
+
+    public static function render_pairing() {
+        if ( ! current_user_can( 'upload_files' ) ) { wp_die( 'forbidden' ); }
+        echo '<div class="wrap"><h1>' . esc_html__( 'PagePort', 'pageport' ) . '</h1>';
+        echo '<p>' . esc_html__( 'Pair a new device with the PagePort extension. (Pairing UI lands in the next stage.)', 'pageport' ) . '</p>';
+        echo '</div>';
     }
 
     public static function render() {
