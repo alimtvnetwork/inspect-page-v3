@@ -180,7 +180,18 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       if (kind === "fullPage") {
         const res = await sendToBackground<
           { tabId: number; settings: Settings },
-          { bundleFilename: string; downloadId: number; telemetry?: ExportMeta["counts"] }
+          {
+            bundleFilename: string;
+            downloadId: number;
+            telemetry?: ExportMeta["counts"];
+            artifacts?: {
+              html: string;
+              css: string;
+              js: string;
+              screenshotDataUrl: string;
+              meta: ExportMeta;
+            };
+          }
         >(
           MessageKind.RunFullPageExport,
           { tabId: tid, settings: settings! },
@@ -189,6 +200,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           status: PanelStatus.Success,
           successFilename: res.bundleFilename,
           successTelemetry: res.telemetry,
+          fullPageArtifacts: res.artifacts,
           lastAction: kind,
         });
       } else {
