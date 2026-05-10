@@ -16,7 +16,7 @@ const ZIP_URL = "/pageport.zip";
 
 const Index = (): JSX.Element => {
   const [meta, setMeta] = useState<{ version: string; sizeKb: number | null }>({
-    version: "1.1.0",
+    version: "2.0.0",
     sizeKb: null,
   });
 
