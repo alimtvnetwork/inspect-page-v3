@@ -809,7 +809,7 @@ function buildFullPageArtifacts(
   let mime = "image/png";
   let base64 = "";
   const m = /^data:([^;]+);base64,(.*)$/.exec(src.screenshotDataUrl || "");
-  if (m) { mime = m[1]; base64 = m[2]; }
+  if (m && m[1] && m[2] !== undefined) { mime = m[1]; base64 = m[2]; }
   const ext = mime.includes("jpeg") ? "jpg" : "png";
   return {
     flow: ExportFlow.FullPage,
