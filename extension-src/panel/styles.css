@@ -224,6 +224,29 @@
 .lpe-debug-copy:first-of-type {
   margin-left: auto;
 }
+.lpe-debug-actions {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  padding: 6px 8px;
+  border-bottom: 1px solid #eaeef2;
+  background: #fbfcfd;
+}
+.lpe-debug-fmt {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; color: #57606a;
+}
+.lpe-debug-fmt-btn {
+  border: 1px solid #d0d7de; background: white;
+  padding: 2px 8px; border-radius: 4px;
+  cursor: pointer; font: inherit; font-size: 11px;
+}
+.lpe-debug-fmt-btn[aria-pressed="true"] {
+  background: #0969da; color: white; border-color: #0969da;
+}
+.lpe-debug-actions .lpe-btn {
+  width: auto; padding: 3px 10px; font-size: 12px;
+  margin-left: 0;
+}
+.lpe-debug-actions .lpe-spacer { flex: 1 1 auto; }
 .lpe-debug-note {
   padding: 6px 8px; font-size: 11px; color: #57606a;
   background: #fff8c5; border-bottom: 1px solid #eaeef2;
