@@ -45,16 +45,24 @@ Each item references a test ID in `22-test-plan.md`. An AC is satisfied iff the 
 - [ ] AC-EM-2 — MD single inlines images as base64; MD+files emits a zip with `index.md` and `assets/`.
 - [ ] AC-EM-3 — ZIP mode includes `prompt.md` with the AI instruction block.
 - [ ] AC-EM-4 — Share Links uploads HTML/CSS/image to WordPress and copies the AI instruction block with the three public URLs.
-- [ ] AC-EM-5 — Share Links button is disabled until WP credentials are saved in Settings.
+- [ ] AC-EM-5 — Share Links button is disabled until a pairing token is saved in Settings.
 - [ ] AC-EM-6 — On success an "Expires in Xh Ym" countdown chip is rendered next to the mode.
 
 ## H. WordPress backend
-- [ ] AC-WP-1 — Plugin activates on WordPress 6.4+/PHP 8.1+ and creates `wp_pageport_sessions` + `wp_pageport_assets`.
-- [ ] AC-WP-2 — `POST /pageport/v1/sessions` requires Application Password auth and returns `{session_id, expires_at, urls}`.
+- [ ] AC-WP-1 — Plugin activates on WordPress 6.4+/PHP 8.1+ and creates `wp_pp_share_sessions`, `wp_pp_share_assets`, and `wp_pp_pairing_tokens`; generates `pageport_signing_key` (32 random bytes hex).
+- [ ] AC-WP-2 — `POST /pageport/v1/sessions` requires `Authorization: Bearer <PPT1.…>` and returns `{session_id, expires_at, urls}`.
 - [ ] AC-WP-3 — `GET /pageport/v1/share/{id}/{html|css|image}` is publicly readable until expiry/revocation, then 404.
 - [ ] AC-WP-4 — Hourly cron sweep deletes files for expired sessions and marks them `Expired` (also runnable via `wp pageport cleanup`).
 - [ ] AC-WP-5 — Tools → PagePort Sessions lists user's sessions (admins see all) and supports per-row + bulk Revoke.
-- [ ] AC-WP-6 — Errors map to `E_SHARE_AUTH` / `E_SHARE_NETWORK` / `E_SHARE_UPSTREAM` / `E_SHARE_BAD_INPUT` in the panel.
+- [ ] AC-WP-6 — Errors map to `E_SHARE_AUTH` / `E_SHARE_NETWORK` / `E_SHARE_UPSTREAM` / `E_SHARE_BAD_INPUT` / `E_SHARE_QUOTA` / `E_SHARE_BAD_TOKEN` in the panel.
+
+## I. Pairing tokens
+- [ ] AC-SH-PAIR-1 — `Tools → PagePort` mints a one-shot `PPT1.<payload>.<sig>` token and lists paired devices with revoke action.
+- [ ] AC-SH-PAIR-2 — Pasting a valid token in extension Settings stores `{ pairingToken, siteUrl, tokenId, pairedAtIso }`; `siteUrl` is decoded from the token, never typed.
+- [ ] AC-SH-PAIR-3 — Malformed or non-`PPT1.` input is rejected client-side with `E_SHARE_BAD_TOKEN` and never written to storage.
+- [ ] AC-SH-PAIR-4 — Tampering with payload bytes invalidates the HMAC → server returns `401 E_SHARE_AUTH`; revoking a token in wp-admin yields the same response on the next request.
+- [ ] AC-SH-PAIR-5 — Extension **Unpair** clears local storage; `DELETE /pairing/self` revokes the matching server-side row.
+- [ ] AC-SH-QUOTA-1 — POSTing beyond `pageport_max_active_per_token` (default 30) returns `429` with code `E_SHARE_QUOTA`; the panel surfaces a clear "quota reached" message and the user can revoke old sessions to recover.
 
 ## F. Spec completeness
 - [ ] AC-SP-1 — Every `MessageKind` in code has a matching entry in `15-message-contracts.md`.
