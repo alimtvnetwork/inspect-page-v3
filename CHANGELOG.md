@@ -4,6 +4,70 @@ All notable changes to **PagePort** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] — 2026-05-10
+
+### Added — v2 PagePort backend (`spec/21-app/`)
+
+- **WordPress companion plugin** (`wp-plugin/pageport/`, distributed as
+  `public/pageport-wp.zip`). Registers REST namespace `pageport/v1` with
+  routes `POST /sessions`, `GET /sessions`, `DELETE /sessions/{id}`,
+  `GET /share/{id}/{html|css|image}`, and `DELETE /pairing/self`. Stores
+  uploads under `wp-content/uploads/pageport/{user_id}/{session_id}/` and
+  records sessions + assets in `wp_pp_share_sessions` /
+  `wp_pp_share_assets` with normalized enum tables (kinds, statuses,
+  asset types).
+- **PagePort pairing tokens** (`PPT1.<base64url(payload)>.<base64url(hmac)>`).
+  Admin mints a token in **Tools → PagePort**; the payload encodes
+  `{ v:1, site, tid, uid }` so the extension never asks the user to
+  type a site URL or password. Server signs with
+  `pageport_signing_key` (auto-generated on activation) and verifies on
+  every Bearer-authenticated request. Tokens are tracked in
+  `wp_pp_pairing_tokens` and revocable from wp-admin or via
+  `DELETE /pairing/self`.
+- **Per-token quota** of 30 active sessions
+  (`pageport_max_active_per_token`). Excess uploads return HTTP 429 →
+  `E_SHARE_QUOTA`; the extension surfaces a "Revoke old links" hint.
+- **24h share-link TTL** (`PAGEPORT_SHARE_TTL`). Expired or revoked
+  sessions return 404 `E_SHARE_EXPIRED` and their files are pruned.
+- **Four export modes** (`spec/21-app/24-export-modes.md`): MD single
+  (base64 inline), MD + files (zip), ZIP (with `prompt.md`), and Share
+  Links (3 WP URLs + AI instruction block). Both Full Page and Element
+  flows expose all four.
+- **Extension Settings — Share Links section**: paste a `PPT1.…` token
+  to pair; site URL is decoded automatically. "Unpair" now performs a
+  best-effort `DELETE /pairing/self` so the server-side token is revoked
+  in the same click.
+
+### Changed
+
+- Auth model migrated **from WordPress Application Passwords to PagePort
+  pairing tokens**. The `siteUrl` / `username` / `appPassword` fields in
+  `ShareSettings` are gone; the new shape is
+  `{ pairingToken, siteUrl, tokenId, pairedAtIso }`.
+- Landing-page WP install instructions rewritten to match the new flow.
+- Spec docs `25-share-links.md`, `26-implementation-order-v2.md`,
+  `09-error-handling.md`, and `11-acceptance-criteria.md` updated for
+  pairing-token auth, quota error, and unpair flow.
+
+### Security
+
+- HMAC-SHA256 signature is verified for every Bearer request; tampered
+  tokens are rejected with 401 `E_SHARE_AUTH` (covered by smoke test
+  `extension-src/share/__tests__/smokeE2E.test.ts`).
+- Capability check `upload_files` enforced on all write routes.
+- Asset reads emit `X-Content-Type-Options: nosniff` and
+  `Content-Disposition: inline`.
+
+### Tests
+
+- `parsePairingToken` (10 cases): happy path, malformed prefix,
+  segmenting, b64url errors, version mismatch, missing/typed fields.
+- `createShareSession` (8 cases): unpaired guard, multipart payload,
+  jpg/png suffix, network error, 401, 429, 5xx, 4xx.
+- `smokeE2E` (2 cases): full mint → pair → 30 uploads → 31st quota → unpair → 401
+  flow, plus tampered-signature rejection (in-memory WP REST mirror with
+  real HMAC verification).
+
 ## [1.1.0] — 2026-05-06
 
 ### Added — v2 fidelity pass (`spec/19-edge-cases.md`)
