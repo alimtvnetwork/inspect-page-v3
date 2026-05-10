@@ -635,3 +635,129 @@ function DebugPreview({ preview, onClear }: DebugPreviewProps): JSX.Element {
     </div>
   );
 }
+
+interface FullPageActionsProps {
+  artifacts: NonNullable<PanelState["fullPageArtifacts"]>;
+}
+
+function FullPageActions({ artifacts }: FullPageActionsProps): JSX.Element {
+  const [fmt, setFmt] = useState<"raw" | "md">("raw");
+
+  const domainSafe = (): string => {
+    try {
+      const u = new URL(artifacts.meta.url);
+      return u.hostname.replace(/^www\./, "").replace(/[^a-z0-9_-]+/gi, "_");
+    } catch {
+      return "page";
+    }
+  };
+  const tsNow = (): string =>
+    new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const triggerDownload = (blob: Blob, filename: string): void => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  const dataUrlToBlob = async (dataUrl: string): Promise<Blob> =>
+    (await fetch(dataUrl)).blob();
+  const fenceFor = (k: "html" | "css" | "js"): string =>
+    k === "js" ? "javascript" : k;
+  const buildSingleMd = (k: "html" | "css" | "js"): string =>
+    `# Page — ${artifacts.meta.url}\n\n## ${k.toUpperCase()}\n\n\`\`\`${fenceFor(k)}\n${artifacts[k] || ""}\n\`\`\`\n`;
+  const buildCombinedMd = (): string =>
+    `# Page — ${artifacts.meta.url}\n\n_Captured ${artifacts.meta.capturedAtIso}_\n\n## HTML\n\n\`\`\`html\n${artifacts.html}\n\`\`\`\n\n## CSS\n\n\`\`\`css\n${artifacts.css}\n\`\`\`\n\n## JS\n\n\`\`\`javascript\n${artifacts.js}\n\`\`\`\n`;
+
+  const onDownloadOne = useCallback((k: "html" | "css" | "js") => {
+    const safe = domainSafe();
+    const ts = tsNow();
+    if (fmt === "md") {
+      triggerDownload(
+        new Blob([buildSingleMd(k)], { type: "text/markdown;charset=utf-8" }),
+        `pageport-fullpage-${safe}-${k}-${ts}.md`,
+      );
+    } else {
+      const mime =
+        k === "html" ? "text/html"
+        : k === "css" ? "text/css"
+        : "text/javascript";
+      triggerDownload(
+        new Blob([artifacts[k] || ""], { type: `${mime};charset=utf-8` }),
+        `pageport-fullpage-${safe}-${ts}.${k}`,
+      );
+    }
+  }, [artifacts, fmt]);
+
+  const onDownloadScreenshot = useCallback(async () => {
+    try {
+      const blob = await dataUrlToBlob(artifacts.screenshotDataUrl);
+      const ext = blob.type.includes("jpeg") ? "jpg" : "png";
+      triggerDownload(blob, `pageport-fullpage-${domainSafe()}-${tsNow()}.${ext}`);
+    } catch { /* ignore */ }
+  }, [artifacts]);
+
+  const onDownloadAll = useCallback(async () => {
+    try {
+      const safe = domainSafe();
+      const ts = tsNow();
+      const zip = new JSZip();
+      if (fmt === "md") {
+        zip.file("page.md", buildCombinedMd());
+      } else {
+        zip.file("page.html", artifacts.html);
+        zip.file("styles.css", artifacts.css);
+        zip.file("scripts.js", artifacts.js);
+      }
+      try {
+        const shot = await dataUrlToBlob(artifacts.screenshotDataUrl);
+        const ext = shot.type.includes("jpeg") ? "jpg" : "png";
+        zip.file(`screenshot.${ext}`, shot);
+      } catch { /* skip screenshot if conversion fails */ }
+      zip.file("manifest.json", `${JSON.stringify(artifacts.meta, null, 2)}\n`);
+      const blob = await zip.generateAsync({ type: "blob" });
+      triggerDownload(blob, `pageport-fullpage-${safe}-${ts}.zip`);
+    } catch { /* ignore */ }
+  }, [artifacts, fmt]);
+
+  return (
+    <div className="lpe-debug" aria-label={COPY.fullPageActionsHeader}>
+      <div className="lpe-debug-header">
+        <span className="lpe-debug-title">{COPY.fullPageActionsHeader}</span>
+      </div>
+      <div className="lpe-debug-actions">
+        <span className="lpe-debug-fmt" role="group" aria-label={COPY.debugFormatLabel}>
+          <span>{COPY.debugFormatLabel}:</span>
+          <button
+            type="button"
+            className="lpe-debug-fmt-btn"
+            aria-pressed={fmt === "raw"}
+            onClick={() => setFmt("raw")}
+          >{COPY.debugFormatRaw}</button>
+          <button
+            type="button"
+            className="lpe-debug-fmt-btn"
+            aria-pressed={fmt === "md"}
+            onClick={() => setFmt("md")}
+          >{COPY.debugFormatMd}</button>
+        </span>
+        <span className="lpe-spacer" />
+        <button type="button" className="lpe-btn" onClick={() => onDownloadOne("html")}>
+          {COPY.fullPageDownloadHtml}
+        </button>
+        <button type="button" className="lpe-btn" onClick={() => onDownloadOne("css")}>
+          {COPY.fullPageDownloadCss}
+        </button>
+        <button type="button" className="lpe-btn" onClick={() => onDownloadOne("js")}>
+          {COPY.fullPageDownloadJs}
+        </button>
+        <button type="button" className="lpe-btn" onClick={onDownloadScreenshot}>
+          {COPY.fullPageDownloadScreenshot}
+        </button>
+        <button type="button" className="lpe-btn lpe-btn-primary" onClick={onDownloadAll}>
+          {COPY.fullPageDownloadAllZip}
+        </button>
+      </div>
+    </div>
+  );
+}
