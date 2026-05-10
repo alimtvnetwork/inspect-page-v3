@@ -67,3 +67,35 @@ export const COPY = {
 } as const;
 
 export type CopyKey = keyof typeof COPY;
+
+/**
+ * Canonical AI instruction block embedded in every export mode.
+ * Source: spec/21-app/24-export-modes.md §D.
+ * Tokens: {{HTML_REF}}, {{CSS_REF}}, {{IMAGE_REF}}.
+ */
+export const AI_INSTRUCTION_BLOCK = `You are an expert front-end developer.
+- HTML:  {{HTML_REF}}
+- CSS:   {{CSS_REF}}
+- Image: {{IMAGE_REF}}
+
+Read all three. Understand the UI. Then follow the user's verbatim
+instruction below and modify the CSS or HTML accordingly, including
+animation. Output only the changed files.
+
+--- USER INSTRUCTION ---
+(write your instruction here)
+`;
+
+export interface AiRefs {
+  htmlRef: string;
+  cssRef: string;
+  imageRef: string;
+}
+
+/** Replace {{HTML_REF}} / {{CSS_REF}} / {{IMAGE_REF}} placeholders. */
+export function interpolateAi(refs: AiRefs): string {
+  return AI_INSTRUCTION_BLOCK
+    .replace("{{HTML_REF}}", refs.htmlRef)
+    .replace("{{CSS_REF}}", refs.cssRef)
+    .replace("{{IMAGE_REF}}", refs.imageRef);
+}

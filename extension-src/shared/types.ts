@@ -2,7 +2,7 @@
  * Cross-context types: settings, storage, export metadata, message envelopes.
  * Source: spec/21-app/15, /16, /17.
  */
-import type { ErrorCode, MessageKind, PanelStatus } from "./enums";
+import type { ErrorCode, ExportFlow, MessageKind, PanelStatus } from "./enums";
 
 // ---- Settings & storage ----
 export type ImageFormat = "png" | "jpeg";
@@ -254,3 +254,28 @@ export type EnterPickerModeResponse = void;
 
 export interface ExitPickerModePayload { tabId: number }
 export type ExitPickerModeResponse = void;
+
+// ---- v2 export artifacts ----
+/**
+ * In-memory artifact bundle handed to the v2 export-mode toolbar.
+ * Source: spec/21-app/24-export-modes.md.
+ */
+export interface ExportImage {
+  /** Filename used inside MD+files / ZIP exports (e.g. "screenshot.png"). */
+  name: string;
+  /** MIME type, e.g. "image/png". */
+  mime: string;
+  /** Base64-encoded image data, no data: prefix. */
+  base64: string;
+}
+
+export interface ExportArtifacts {
+  flow: ExportFlow;
+  /** Site domain for filename templating. */
+  domain: string;
+  html: string;
+  css: string;
+  js: string;
+  images: ExportImage[];
+  meta: ExportMeta;
+}

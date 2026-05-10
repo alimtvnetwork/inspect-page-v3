@@ -30,6 +30,7 @@ export default defineConfig({
       "@picker": path.resolve(srcRoot, "picker"),
       "@capture": path.resolve(srcRoot, "capture"),
       "@zip": path.resolve(srcRoot, "zip"),
+      "@share": path.resolve(srcRoot, "share"),
     },
   },
   define: {
