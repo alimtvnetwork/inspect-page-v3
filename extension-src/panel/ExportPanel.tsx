@@ -364,7 +364,10 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             <TelemetrySummary counts={state.successTelemetry} />
           )}
           {state.status === PanelStatus.Success && state.fullPageArtifacts && (
-            <FullPageActions artifacts={state.fullPageArtifacts} />
+            <FullPageActions
+              artifacts={state.fullPageArtifacts}
+              activeUrl={activeUrl}
+            />
           )}
         </div>
 
@@ -669,9 +672,10 @@ function buildElementArtifacts(
 
 interface FullPageActionsProps {
   artifacts: NonNullable<PanelState["fullPageArtifacts"]>;
+  activeUrl?: string;
 }
 
-function FullPageActions({ artifacts }: FullPageActionsProps): JSX.Element {
+function FullPageActions({ artifacts, activeUrl }: FullPageActionsProps): JSX.Element {
   const [fmt, setFmt] = useState<"raw" | "md">("raw");
 
   const domainSafe = (): string => {
