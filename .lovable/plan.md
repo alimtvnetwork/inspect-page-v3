@@ -1,55 +1,69 @@
-# Extension Bug Fixes — Root Cause Analysis & Plan
+## Goal
 
-You reported 4 problems. Here's what each one actually is, and the fix order.
+Enhance the Pick Element debug panel so the user can download captured element artifacts in flexible ways:
 
----
+1. Download a single file (HTML only, CSS only, JS only) — per the active tab.
+2. Download all three together — bundled as a ZIP.
+3. Choose the output format for code files: raw (`.html` / `.css` / `.js`) **or** a Markdown (`.md`) file with fenced code blocks.
 
-## Bug 1 — `Error: URL.createObjectURL is not a function (E_PERMISSION_DENIED)` on Export Full Page
+The current panel only has a single Copy button and one "Download ZIP" button. We will replace that with a clear two-axis chooser.
 
-**Root cause.** In Chrome MV3, the Service Worker global **does not expose `URL.createObjectURL`** (it was removed). `background.ts` line 322 calls it directly to hand a Blob to `chrome.downloads.download`. That throws immediately, surfaces as `E_PERMISSION_DENIED`, and breaks every full-page export.
+## UX changes (extension-src/panel/ExportPanel.tsx)
 
-**Fix.** Convert the ZIP Blob to a `data:` URL inside the SW (FileReader/`blob.arrayBuffer()` + base64). `chrome.downloads.download` accepts data URLs. Remove the `URL.revokeObjectURL` machinery for that path.
+In `DebugPreview`, replace the existing `Copy` + `Download` row with a small download toolbar placed beneath the HTML/CSS/JS tab strip:
 
----
+```text
+Format: ( ) Raw  ( ) Markdown
+[ Download current ]   [ Download all (zip) ]   [ Copy ]
+```
 
-## Bug 2 — "Pick Element" does nothing
+- **Format toggle** — small segmented control (two `<button>`s) bound to local state `format: "raw" | "md"`.
+- **Download current** — downloads only the currently active tab (html / css / js).
+  - Raw → `pageport-element-{safe}-{ts}.{ext}` containing the raw text.
+  - MD → `pageport-element-{safe}-{tab}-{ts}.md` containing a single fenced code block (` ```html `, ` ```css `, ` ```js `).
+- **Download all (zip)** — always produces a ZIP.
+  - Raw → `element.html`, `element.css`, `element.js`, `selector.txt` (current behavior).
+  - MD → single `element.md` inside the zip with three fenced sections + selector header, plus `selector.txt`.
+- **Copy** — unchanged; copies the active tab's text.
 
-**Root cause.** `EnterPickerMode` reaches the content script, but the picker overlay needs the CS to be loaded **and** listening. Two things conspire:
-- After the recent messaging refactor, the in-page CS router also returns `false` for unknown messages, but the picker handler is registered on `document` (not the runtime router) — so `EnterPickerMode` arrives, the SW returns `ok`, but no overlay is mounted because `picker.ts` was never initialized in already-open tabs (same root cause as the earlier ensureContentScript bug, but for the picker module which is bundled separately into the floating panel chunk, not `content.js`).
-- Also, `ExitPickerMode` from the floating panel sends `tabId: -1` and the SW's `if (tid === undefined) return;` silently drops it on no-sender — picker stays stuck.
+All four controls share the `lpe-btn` style; the format toggle uses `aria-pressed` for the active option. No scrollbar regressions: the toolbar wraps via the existing `.lpe-debug-tabs { flex-wrap: wrap }` rule (we'll add a sibling `.lpe-debug-actions` row with the same wrapping).
 
-**Fix.**
-1. In `content.ts`, ensure the picker module is imported eagerly (not lazy) so `EnterPickerMode` always has a handler.
-2. Make sure `picker.ts` registers its handler on the shared MessageRouter, not just `document`.
-3. Verify with a console log on `EnterPickerMode` receipt.
+## Implementation details
 
----
+1. **State** — add `const [fmt, setFmt] = useState<"raw" | "md">("raw")` inside `DebugPreview`.
+2. **Helpers** (local to the component file):
+   - `mimeFor(tab)` → `text/html | text/css | text/javascript`.
+   - `extFor(tab)` → `html | css | js`.
+   - `buildSingleMd(tab, value, selectorPath)` → returns a string with a `# Element — {selector}` header and one fenced block.
+   - `buildCombinedMd(preview)` → returns a string with three fenced sections (HTML / CSS / JS) under one header.
+   - `triggerDownload(blob, filename)` — extract the existing object-URL pattern so it's reused.
+3. **`onDownloadCurrent`** — uses `fmt` and `tab` to produce a single-file blob, then `triggerDownload`.
+4. **`onDownloadAll`** — keeps JSZip; if `fmt === "md"` write one `element.md` instead of three raw files.
+5. Filenames reuse the existing `safe` selector slug + ISO timestamp pattern.
 
-## Bug 3 — "Open panel on page" does nothing / panel buttons inert
+## Copy strings (extension-src/shared/copy.ts)
 
-**Root cause.** `mountFloatingPanel.tsx` mounts `<ExportPanel surface="floating">` without `activeUrl`. `ExportPanel` then calls `isDisabledUrl(undefined)` → `false` (good), but when buttons fire, `runAction` sends `tabId: -1` to the SW. The SW resolves it from `sender.tab?.id` — that works for full-page export, **but** `chrome.tabs.captureVisibleTab` in `screenshotOrchestrator` needs `windowId`, which we fetch via `chrome.tabs.get(tabId)` — fine. The actual breakage: when invoked from the floating panel, the SW path eventually hits Bug 1 (`URL.createObjectURL`) and dies with the same `E_PERMISSION_DENIED`. Fixing Bug 1 unblocks this.
+Add:
+- `debugFormatLabel: "Format"`
+- `debugFormatRaw: "Raw"`
+- `debugFormatMd: "Markdown"`
+- `debugDownloadCurrent: "Download current"`
+- `debugDownloadAll: "Download all (zip)"`
 
-Separately, "Open panel on page" itself works (panel mounts), but you said it "doesn't work properly" — likely meaning the buttons inside the mounted panel don't do anything. That is Bug 1 again.
+Keep existing `debugCopy` and `debugDownload` keys (the latter becomes unused; remove it to avoid drift).
 
-**Fix.** No standalone change needed beyond Bug 1 + Bug 2. Verify after.
+## Styles (extension-src/panel/styles.css)
 
----
+Add a `.lpe-debug-actions` row: `display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:6px;` and a `.lpe-debug-fmt` segmented group styled like the existing tab buttons but smaller. No layout-width changes needed beyond the existing 360px panel.
 
-## Bug 4 — "Idle" label is confusing
+## Build / verify
 
-**Root cause.** UX wording. The status row literally renders the enum name `Idle` from `COPY.statusIdle`. Users don't know what it means.
+1. `cd extension && bun run build` to regenerate the bundle.
+2. `bun run test` (existing 70 tests must still pass; no test changes required since this is UI-only).
+3. Repackage `public/llm-export.zip` via the existing `scripts/package.sh` and refresh the SHA file.
+4. User reloads the unpacked extension and verifies: Pick element → Format toggle works → "Download current" yields the correct single file in the chosen format → "Download all (zip)" yields a ZIP with either three raw files or one combined `.md`.
 
-**Fix.** Change `COPY.statusIdle` from `"Idle"` to something self-explanatory like `"Ready — choose an action above"`. Also tighten the visual: render the status block only when there's something useful to say (busy / error / success), and otherwise show a quiet hint.
+## Out of scope
 
----
-
-## Order of execution (one at a time, on your "next")
-
-1. **Bug 1** — replace `URL.createObjectURL` with data-URL conversion in `background.ts`. Rebuild + repackage ZIP.
-2. **Bug 2** — wire picker handler properly in `content.ts` / `picker.ts`. Rebuild + repackage.
-3. **Bug 4** — reword `COPY.statusIdle` and tweak the status block. (Pure UI.)
-4. **Bug 3** — verify it now works end-to-end after 1+2; only edit if a separate issue remains.
-
-Each step ships: edit → build → repackage `public/llm-export.zip` + sha256.
-
-Say **next** to start with Bug 1.
+- No changes to the SW element-export pipeline or to the existing full-page ZIP export.
+- No changes to the spec'd `.md` element export (`runElementExport.ts`); the new MD here is panel-local convenience.
