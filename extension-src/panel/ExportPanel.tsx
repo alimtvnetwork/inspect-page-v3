@@ -917,8 +917,21 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
       pairedAtIso: new Date().toISOString(),
     });
   };
-  const onUnpair = (): void => {
+  const [unpairing, setUnpairing] = useState(false);
+  const onUnpair = async (): Promise<void> => {
+    setUnpairing(true);
+    // Best-effort: tell the WP server to revoke this pairing token. We
+    // always clear local state, even if the network call fails (the user
+    // can manually revoke from wp-admin → Tools → PagePort).
+    try {
+      const base = settings.siteUrl.replace(/\/+$/, "");
+      await fetch(`${base}/wp-json/pageport/v1/pairing/self`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${settings.pairingToken}` },
+      });
+    } catch { /* offline or 4xx — ignore, still unpair locally */ }
     onPatch({ pairingToken: "", siteUrl: "", tokenId: "", pairedAtIso: "" });
+    setUnpairing(false);
   };
 
   return (
@@ -932,8 +945,8 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
               <strong>{hostnameOf(settings.siteUrl)}</strong>{" · "}
               {COPY.sharePairedDevicePrefix} <code>{settings.tokenId}</code>
             </div>
-            <button type="button" className="lpe-btn" onClick={onUnpair}>
-              {COPY.shareUnpairBtn}
+            <button type="button" className="lpe-btn" onClick={onUnpair} disabled={unpairing}>
+              {unpairing ? "…" : COPY.shareUnpairBtn}
             </button>
           </div>
         ) : (
