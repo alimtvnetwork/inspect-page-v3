@@ -51,6 +51,21 @@ interface PanelState {
   lastAction?: "fullPage" | "pick";
   /** v1.2: in-panel debug preview for the picked element. */
   debugPreview?: NonNullable<StatusUpdatePayload["debugPreview"]>;
+  /** v1.3: artifacts returned by a successful Full Page export. */
+  fullPageArtifacts?: NonNullable<
+    Awaited<ReturnType<typeof sendToBackground<unknown, {
+      bundleFilename: string;
+      downloadId: number;
+      telemetry?: ExportMeta["counts"];
+      artifacts?: {
+        html: string;
+        css: string;
+        js: string;
+        screenshotDataUrl: string;
+        meta: ExportMeta;
+      };
+    }>>>["artifacts"]
+  >;
 }
 
 const DISABLED_PREFIXES = ["chrome://", "edge://", "about:", "chrome-extension://", "view-source:"];
