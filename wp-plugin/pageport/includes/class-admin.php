@@ -122,6 +122,7 @@ final class PagePort_Admin {
     public static function init() {
         add_action( 'admin_menu',  [ __CLASS__, 'menu' ] );
         add_action( 'admin_init',  [ __CLASS__, 'handle_actions' ] );
+        add_action( 'admin_init',  [ __CLASS__, 'handle_pairing_actions' ] );
     }
 
     public static function menu() {
@@ -143,9 +144,90 @@ final class PagePort_Admin {
 
     public static function render_pairing() {
         if ( ! current_user_can( 'upload_files' ) ) { wp_die( 'forbidden' ); }
+        $user_id = get_current_user_id();
+        $tokens  = PagePort_Pairing::list_for_user( $user_id );
+        $minted  = isset( $_GET['minted'] ) ? sanitize_text_field( wp_unslash( $_GET['minted'] ) ) : '';
+
         echo '<div class="wrap"><h1>' . esc_html__( 'PagePort', 'pageport' ) . '</h1>';
-        echo '<p>' . esc_html__( 'Pair a new device with the PagePort extension. (Pairing UI lands in the next stage.)', 'pageport' ) . '</p>';
+        echo '<p>' . esc_html__( 'Pair the PagePort Chrome extension with this WordPress site. Click the button below to mint a one-time pairing token; copy and paste it into the extension Settings → Share Links.', 'pageport' ) . '</p>';
+
+        if ( $minted ) {
+            echo '<div class="notice notice-success"><p><strong>' . esc_html__( 'Copy this pairing token. It will not be shown again:', 'pageport' ) . '</strong></p>';
+            echo '<p><textarea readonly rows="3" style="width:100%;font-family:monospace" onclick="this.select()">' . esc_textarea( $minted ) . '</textarea></p></div>';
+        }
+
+        $mint_url = wp_nonce_url(
+            add_query_arg( [ 'page' => 'pageport', 'action' => 'mint' ], admin_url( 'tools.php' ) ),
+            'pageport_mint'
+        );
+        echo '<p><a href="' . esc_url( $mint_url ) . '" class="button button-primary">' . esc_html__( 'Mint new pairing token', 'pageport' ) . '</a></p>';
+
+        echo '<h2>' . esc_html__( 'Paired devices', 'pageport' ) . '</h2>';
+        if ( empty( $tokens ) ) {
+            echo '<p><em>' . esc_html__( 'No paired devices yet.', 'pageport' ) . '</em></p>';
+        } else {
+            echo '<table class="widefat striped"><thead><tr>';
+            echo '<th>' . esc_html__( 'Token ID', 'pageport' ) . '</th>';
+            echo '<th>' . esc_html__( 'Label', 'pageport' ) . '</th>';
+            echo '<th>' . esc_html__( 'Created (UTC)', 'pageport' ) . '</th>';
+            echo '<th>' . esc_html__( 'Last used (UTC)', 'pageport' ) . '</th>';
+            echo '<th>' . esc_html__( 'Status', 'pageport' ) . '</th>';
+            echo '<th></th></tr></thead><tbody>';
+            foreach ( $tokens as $t ) {
+                $revoke_url = wp_nonce_url(
+                    add_query_arg( [
+                        'page'   => 'pageport',
+                        'action' => 'revoke_token',
+                        'tid'    => $t['tid'],
+                    ], admin_url( 'tools.php' ) ),
+                    'pageport_revoke_token_' . $t['tid']
+                );
+                $status = ! empty( $t['revoked_at'] ) ? __( 'Revoked', 'pageport' ) : __( 'Active', 'pageport' );
+                echo '<tr>';
+                echo '<td><code>' . esc_html( $t['tid'] ) . '</code></td>';
+                echo '<td>' . esc_html( $t['label'] ) . '</td>';
+                echo '<td>' . esc_html( $t['created_at'] ) . '</td>';
+                echo '<td>' . esc_html( (string) $t['last_used_at'] ) . '</td>';
+                echo '<td>' . esc_html( $status ) . '</td>';
+                echo '<td>';
+                if ( empty( $t['revoked_at'] ) ) {
+                    echo '<a href="' . esc_url( $revoke_url ) . '" onclick="return confirm(\'Revoke this token?\')">' . esc_html__( 'Revoke', 'pageport' ) . '</a>';
+                }
+                echo '</td></tr>';
+            }
+            echo '</tbody></table>';
+        }
         echo '</div>';
+    }
+
+    public static function handle_pairing_actions() {
+        if ( empty( $_GET['page'] ) || $_GET['page'] !== 'pageport' ) return;
+        if ( empty( $_GET['action'] ) ) return;
+        if ( ! current_user_can( 'upload_files' ) ) { wp_die( 'forbidden' ); }
+        $action = sanitize_text_field( wp_unslash( $_GET['action'] ) );
+        $user_id = get_current_user_id();
+
+        if ( $action === 'mint' ) {
+            check_admin_referer( 'pageport_mint' );
+            $label = '';
+            if ( ! empty( $_SERVER['HTTP_USER_AGENT'] ) ) {
+                $label = substr( sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ), 0, 80 );
+            }
+            $token = PagePort_Pairing::mint( $user_id, $label );
+            if ( is_wp_error( $token ) ) { wp_die( esc_html( $token->get_error_message() ) ); }
+            wp_safe_redirect( add_query_arg( [
+                'page'   => 'pageport',
+                'minted' => rawurlencode( $token ),
+            ], admin_url( 'tools.php' ) ) );
+            exit;
+        }
+        if ( $action === 'revoke_token' ) {
+            $tid = sanitize_text_field( wp_unslash( $_GET['tid'] ?? '' ) );
+            check_admin_referer( 'pageport_revoke_token_' . $tid );
+            PagePort_Pairing::revoke_by_tid( $tid, $user_id );
+            wp_safe_redirect( add_query_arg( [ 'page' => 'pageport' ], admin_url( 'tools.php' ) ) );
+            exit;
+        }
     }
 
     public static function render() {
