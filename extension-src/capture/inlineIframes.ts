@@ -7,7 +7,7 @@
  *     bundling), base64 it, and replace the live `src` with a
  *     `srcdoc="…"` so the export renders fully offline.
  *   - **Cross-origin**: leave the original `src` untouched, add a
- *     `data-llm-export-cross-origin="true"` marker, and bump a counter so
+ *     `data-pageport-cross-origin="true"` marker, and bump a counter so
  *     QA and meta can surface the limitation.
  *
  * This runs against the serialized HTML *string* (not the live DOM) so we
@@ -104,7 +104,7 @@ async function serializeSubDocument(
   }
 
   if (css) {
-    const styleTag = `<style data-llm-export-iframe-css="true">${css}</style>`;
+    const styleTag = `<style data-pageport-iframe-css="true">${css}</style>`;
     const headOpen = html.match(/<head(\s[^>]*)?>/i);
     if (headOpen) {
       const i = (headOpen.index ?? 0) + headOpen[0].length;
@@ -192,11 +192,11 @@ export async function inlineIframesInDocument(
     const tag = match[0];
     let rewritten: string;
     if (edit.markCrossOrigin) {
-      rewritten = injectAttrs(tag, { "data-llm-export-cross-origin": "true" });
+      rewritten = injectAttrs(tag, { "data-pageport-cross-origin": "true" });
     } else {
       rewritten = injectAttrs(tag, {
         srcdoc: edit.replacement,
-        "data-llm-export-srcdoc": "true",
+        "data-pageport-srcdoc": "true",
       });
     }
     html = html.slice(0, match.index) + rewritten + html.slice(match.index + tag.length);

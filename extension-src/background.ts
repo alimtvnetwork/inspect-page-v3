@@ -309,7 +309,7 @@ async function runFullPageExport(
   });
 
   const filename = applyTemplate(
-    settings?.namingTemplateFullPage ?? "llm-export-fullpage-{domain}-{timestamp}.zip",
+    settings?.namingTemplateFullPage ?? "pageport-fullpage-{domain}-{timestamp}.zip",
     {
       domain: domainFromUrl(artifacts.meta.url),
       timestamp: localTimestamp(),
@@ -330,7 +330,19 @@ async function runFullPageExport(
   }
   await broadcast({ status: PanelStatus.Success, message: filename });
   logger.info(LogCategory.Download, `bundle saved as ${filename} (id=${downloadId})`);
-  return { bundleFilename: filename, downloadId };
+  const screenshotDataUrl = await blobToDataUrl(screenshot.blob);
+  return {
+    bundleFilename: filename,
+    downloadId,
+    telemetry: finalMeta.counts,
+    artifacts: {
+      html: artifacts.html,
+      css: artifacts.css,
+      js: artifacts.js,
+      screenshotDataUrl,
+      meta: finalMeta,
+    },
+  };
   } finally {
     stopKeepAlive();
   }

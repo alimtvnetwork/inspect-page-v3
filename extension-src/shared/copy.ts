@@ -51,7 +51,6 @@ export const COPY = {
   debugTabCss: "CSS",
   debugTabJs: "JS",
   debugCopy: "Copy",
-  debugDownload: "Download ZIP",
   debugFormatLabel: "Format",
   debugFormatRaw: "Raw",
   debugFormatMd: "Markdown",
@@ -59,6 +58,12 @@ export const COPY = {
   debugDownloadAll: "Download all (zip)",
   debugClear: "Clear",
   debugJsEmpty: "Element-scoped JS is not extracted. Showing computed-style diff (JSON).",
+  fullPageActionsHeader: "Re-download captured files",
+  fullPageDownloadHtml: "HTML",
+  fullPageDownloadCss: "CSS",
+  fullPageDownloadJs: "JS",
+  fullPageDownloadScreenshot: "Screenshot",
+  fullPageDownloadAllZip: "Download all (zip)",
 } as const;
 
 export type CopyKey = keyof typeof COPY;

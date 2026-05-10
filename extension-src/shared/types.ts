@@ -120,6 +120,19 @@ export interface RunFullPageExportResponse {
    * unzip the bundle. Optional — older background builds may omit it.
    */
   telemetry?: ExportMeta["counts"];
+  /**
+   * v1.3: in-memory copy of the captured artifacts, returned to the panel
+   * so it can offer atomic per-file / Markdown / zip re-downloads after
+   * the default bundle has been written to disk. Optional — only present
+   * when capture succeeded.
+   */
+  artifacts?: {
+    html: string;
+    css: string;
+    js: string;
+    screenshotDataUrl: string;
+    meta: ExportMeta;
+  };
 }
 
 export interface RunElementExportPayload {
