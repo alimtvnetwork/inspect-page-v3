@@ -63,11 +63,31 @@ final class PagePort_Activator {
             UNIQUE KEY session_asset (session_id, asset_type_id)
         ) {$charset};";
 
+        $sql[] = "CREATE TABLE {$p}pairing_tokens (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            tid CHAR(22) NOT NULL,
+            user_id BIGINT UNSIGNED NOT NULL,
+            label VARCHAR(120) NOT NULL DEFAULT '',
+            created_at DATETIME NOT NULL,
+            last_used_at DATETIME NULL,
+            revoked_at DATETIME NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY tid (tid),
+            KEY user_id (user_id)
+        ) {$charset};";
+
         foreach ( $sql as $stmt ) { dbDelta( $stmt ); }
 
         self::seed_enum( "{$p}share_session_statuses", PagePort_SessionStatus::all() );
         self::seed_enum( "{$p}share_session_kinds",    PagePort_SessionKind::all() );
         self::seed_enum( "{$p}share_asset_types",      PagePort_AssetType::all() );
+
+        if ( ! get_option( 'pageport_signing_key' ) ) {
+            add_option( 'pageport_signing_key', bin2hex( random_bytes( 32 ) ), '', 'no' );
+        }
+        if ( false === get_option( 'pageport_max_active_per_token' ) ) {
+            add_option( 'pageport_max_active_per_token', 30, '', 'no' );
+        }
 
         if ( ! wp_next_scheduled( 'pageport_cleanup' ) ) {
             wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'pageport_cleanup' );
