@@ -150,10 +150,10 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       if (ce.detail) handlePayload(ce.detail);
     };
     chrome?.runtime?.onMessage?.addListener?.(runtimeListener as never);
-    window.addEventListener("llm-page-export:status", winListener as EventListener);
+    window.addEventListener("pageport:status", winListener as EventListener);
     return () => {
       chrome?.runtime?.onMessage?.removeListener?.(runtimeListener as never);
-      window.removeEventListener("llm-page-export:status", winListener as EventListener);
+      window.removeEventListener("pageport:status", winListener as EventListener);
     };
   }, []);
 

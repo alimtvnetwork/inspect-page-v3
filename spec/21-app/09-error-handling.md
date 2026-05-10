@@ -48,8 +48,8 @@
 
 ## Logging surface
 - SW logs visible in `chrome://extensions` → service worker DevTools.
-- CS / panel logs in host page DevTools, prefixed `[llm-export]`.
-- Offscreen logs in offscreen DevTools, prefixed `[llm-export:offscreen]`.
+- CS / panel logs in host page DevTools, prefixed `[pageport]`.
+- Offscreen logs in offscreen DevTools, prefixed `[pageport:offscreen]`.
 
 ## Never-swallow examples
 ```text

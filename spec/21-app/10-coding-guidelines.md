@@ -79,7 +79,7 @@ Use `chrome.alarms` (see `19-edge-cases.md` E20).
 Use the panel's status row + Copy details.
 
 ## R14. No console logging directly
-Always `logger.{level}(category, code, message, error?)`. Logger handles prefix (`[llm-export]`).
+Always `logger.{level}(category, code, message, error?)`. Logger handles prefix (`[pageport]`).
 
 ## R15. No I/O in module top-level
 Side-effects only inside functions invoked by event handlers, message handlers, or `chrome.runtime.onInstalled`.

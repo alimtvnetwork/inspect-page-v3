@@ -1,5 +1,5 @@
 /**
- * Distribution landing page for the LLM Page Export Chrome extension.
+ * Distribution landing page for the PagePort Chrome extension.
  * Source: spec/21-app/18-distribution-page.md.
  */
 import { useEffect, useState } from "react";
@@ -11,7 +11,7 @@ import { WhatsNew } from "@/components/landing/WhatsNew";
 import { Privacy } from "@/components/landing/Privacy";
 import { Footer } from "@/components/landing/Footer";
 
-const ZIP_URL = "/llm-export.zip";
+const ZIP_URL = "/pageport.zip";
 
 const Index = (): JSX.Element => {
   const [meta, setMeta] = useState<{ version: string; sizeKb: number | null }>({
@@ -20,7 +20,7 @@ const Index = (): JSX.Element => {
   });
 
   useEffect(() => {
-    document.title = "LLM Page Export — Chrome extension";
+    document.title = "PagePort — Chrome extension";
     // Best-effort metadata fetch (HEAD). If the build is missing, we keep
     // sizeKb=null and the Hero hides the size pill.
     let cancelled = false;
@@ -44,7 +44,7 @@ const Index = (): JSX.Element => {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "LLM Page Export",
+    name: "PagePort",
     applicationCategory: "BrowserApplication",
     operatingSystem: "Chromium",
     description:

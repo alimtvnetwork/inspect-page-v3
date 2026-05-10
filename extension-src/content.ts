@@ -42,7 +42,7 @@ logger.debug(LogCategory.Lifecycle, "Content script loaded");
  * CustomEvent lets the floating panel pick it up locally without affecting
  * the popup path.
  */
-export const LPE_STATUS_EVENT = "llm-page-export:status";
+export const LPE_STATUS_EVENT = "pageport:status";
 function dispatchStatusLocal(payload: StatusUpdatePayload): void {
   try {
     window.dispatchEvent(new CustomEvent(LPE_STATUS_EVENT, { detail: payload }));

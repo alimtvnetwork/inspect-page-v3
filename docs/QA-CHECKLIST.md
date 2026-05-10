@@ -1,4 +1,4 @@
-# LLM Page Export — Manual QA Checklist
+# PagePort — Manual QA Checklist
 
 Use this before every release. Maps 1:1 to the 36 acceptance criteria in
 `spec/21-app/11-acceptance-criteria.md`. A release is shippable iff every
@@ -9,7 +9,7 @@ box is checked or has a documented waiver.
 - [ ] `cd extension && bun run lint` exits 0 (AC-BD-1)
 - [ ] `cd extension && bun run test` reports 70/70 passing (AC-BD-1)
 - [ ] `cd extension && bun run build && bun run package` succeeds (AC-BD-2)
-- [ ] `public/llm-export.zip` ≤ 1.5 MiB and `public/llm-export.zip.sha256` exists (AC-BD-2)
+- [ ] `public/pageport.zip` ≤ 1.5 MiB and `public/pageport.zip.sha256` exists (AC-BD-2)
 - [ ] Unzip the bundle locally; verify the 14 files: `manifest.json`,
       `background.js`, `content.js`, `messaging.js`, `offscreen.{html,js}`,
       `index.css`, `popup/index.{html,js}`, `icons/{16,48,128}.png`
@@ -35,7 +35,7 @@ box is checked or has a documented waiver.
 Run on **S1** then **S2** then **S5**.
 
 - [ ] AC-FP-1 — Click toolbar action → **Export Full Page** → a `.zip`
-      downloads with name `llm-export-fullpage-{domain}-{timestamp}.zip`
+      downloads with name `pageport-fullpage-{domain}-{timestamp}.zip`
 - [ ] AC-FP-2 — Unzip → open `page.html` directly in a new tab → renders
       visually similar to the live page (subject to host CSS/fonts)
 - [ ] AC-FP-3 — `styles.css` opens, contains `/* === <source> === */`
@@ -160,11 +160,11 @@ its own playground) **and** a page with a YouTube/Twitter embed
 (cross-origin).
 
 - [ ] AC-FD-13 — Same-origin iframe → exported `page.html` contains an
-      `<iframe ... srcdoc="…" data-llm-export-srcdoc="true">` with the
+      `<iframe ... srcdoc="…" data-pageport-srcdoc="true">` with the
       sub-document fully serialized inside (verify by viewing the iframe
       in the offline export)
 - [ ] AC-FD-14 — Cross-origin iframe → exported `<iframe>` has
-      `data-llm-export-cross-origin="true"` and an unchanged `src`
+      `data-pageport-cross-origin="true"` and an unchanged `src`
       (no srcdoc attempted)
 - [ ] AC-FD-15 — Recursion stops at depth 3 (no infinite loop on a page
       that frames itself); the SW console shows no stack overflow
@@ -230,7 +230,7 @@ pricing card with web fonts). Open the floating panel.
 
 - Tester: __________________
 - Date:   __________________
-- Build:  v1.1.0 (sha256 from `public/llm-export.zip.sha256`)
+- Build:  v1.1.0 (sha256 from `public/pageport.zip.sha256`)
 - Result: [ ] PASS  [ ] FAIL — see notes
 
 Notes / failures / waivers:

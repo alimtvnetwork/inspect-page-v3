@@ -167,7 +167,7 @@ Spec: `04-element-picker.md` (state machine, listeners, capture phase rules).
 ## Stage 10 — Distribution page
 
 ### 10.1 In the Lovable host project (`src/pages/Index.tsx`), implement page per `18-distribution-page.md`.
-### 10.2 Wire fetch+blob download for `/llm-export.zip`.
+### 10.2 Wire fetch+blob download for `/pageport.zip`.
 ### 10.3 SEO meta + JSON-LD per `18`.
 
 ### Verification gate 10
@@ -177,7 +177,7 @@ Spec: `04-element-picker.md` (state machine, listeners, capture phase rules).
 
 ### 11.1 `scripts/package.sh`. Spec: `12` §package script.
 ### 11.2 Run `bun run lint && bun run test && bun run build && bun run package`.
-### 11.3 Confirm `public/llm-export.zip` ≤ 1.5 MiB; `.sha256` next to it.
+### 11.3 Confirm `public/pageport.zip` ≤ 1.5 MiB; `.sha256` next to it.
 
 ### Verification gate 11 (T17, T18, AC-BD)
 - All items in `11-acceptance-criteria.md` checked.

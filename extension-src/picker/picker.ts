@@ -31,7 +31,7 @@ interface PickerState {
   cleanup: () => void;
 }
 
-const HOST_ID = "llm-page-export-picker-host";
+const HOST_ID = "pageport-picker-host";
 let state: PickerState | null = null;
 
 const STYLE = `
@@ -113,7 +113,7 @@ export function enterPicker(handlers: PickerHandlers): void {
     // Don't hijack right-clicks on our own floating panel — let the user
     // interact with Cancel / Close / Minimize while picker is active.
     const t = e.target as Element | null;
-    if (t?.closest?.("#llm-page-export-panel-host")) return;
+    if (t?.closest?.("#pageport-panel-host")) return;
     e.preventDefault(); e.stopPropagation();
     const target = pickTarget(e.clientX, e.clientY);
     if (!target) return;
@@ -128,7 +128,7 @@ export function enterPicker(handlers: PickerHandlers): void {
     // Close, Minimize, Settings, etc.). Only consume host-page clicks so
     // the page doesn't navigate while the picker is active.
     const t = e.target as Element | null;
-    if (t?.closest?.("#llm-page-export-panel-host")) return;
+    if (t?.closest?.("#pageport-panel-host")) return;
     e.preventDefault(); e.stopPropagation();
     // Treat a left-click as a selection too (in addition to right-click)
     // so the picker is discoverable without needing the context menu.
@@ -194,7 +194,7 @@ function pickTarget(x: number, y: number): Element | null {
   // Reject anything inside our shadow host (for any other extension overlay
   // we own). The check above covers the picker; the panel host is also
   // skipped via `closest`.
-  if ((el as Element).closest("#llm-page-export-panel-host")) return null;
+  if ((el as Element).closest("#pageport-panel-host")) return null;
   return el;
 }
 

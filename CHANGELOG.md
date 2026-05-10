@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to **LLM Page Export** are recorded here. The format
+All notable changes to **PagePort** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
@@ -30,9 +30,9 @@ project adheres to [Semantic Versioning](https://semver.org/).
 - **Cross-origin iframe traversal** — same-origin `<iframe>`s have their
   `contentDocument` recursively serialized (HTML + CSS + adopted sheets +
   font bundling) and inlined as `srcdoc="…"` plus a
-  `data-llm-export-srcdoc="true"` marker. Cross-origin frames are left
+  `data-pageport-srcdoc="true"` marker. Cross-origin frames are left
   with their original `src` and tagged
-  `data-llm-export-cross-origin="true"` so consumers can see what was
+  `data-pageport-cross-origin="true"` so consumers can see what was
   unreachable. Recursion depth is capped at 3.
 - **Export metadata expansion** — `ExportMeta.counts` now reports
   `fontsInlined`, `fontsBytesInlined`, `fontsFailed`, `iframesTotal`,
@@ -69,7 +69,7 @@ project adheres to [Semantic Versioning](https://semver.org/).
   covering the four v2 features, the full-page panel telemetry, and the
   element-export telemetry parity, with 27 new acceptance items
   (AC-FD-1 … AC-FD-27) and a printable PDF mirror at
-  `/mnt/documents/llm-export-qa-checklist.pdf`.
+  `/mnt/documents/pageport-qa-checklist.pdf`.
 
 ### Changed
 
@@ -98,8 +98,8 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Package
 
-- `public/llm-export.zip`: 171 KB (well under the 1.5 MiB AC-BD-2 budget).
-- `public/llm-export.zip.sha256`: refreshed.
+- `public/pageport.zip`: 171 KB (well under the 1.5 MiB AC-BD-2 budget).
+- `public/pageport.zip.sha256`: refreshed.
 
 ## [1.0.0] — 2026-05-06
 
