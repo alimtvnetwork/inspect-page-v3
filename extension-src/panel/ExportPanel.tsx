@@ -371,6 +371,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         {state.debugPreview && (
           <DebugPreview
             preview={state.debugPreview}
+            activeUrl={activeUrl}
             onClear={() => setState((s) => ({ ...s, debugPreview: undefined }))}
           />
         )}
@@ -507,10 +508,11 @@ function TelemetrySummary({ counts }: TelemetrySummaryProps): JSX.Element | null
 
 interface DebugPreviewProps {
   preview: NonNullable<StatusUpdatePayload["debugPreview"]>;
+  activeUrl?: string;
   onClear: () => void;
 }
 
-function DebugPreview({ preview, onClear }: DebugPreviewProps): JSX.Element {
+function DebugPreview({ preview, activeUrl, onClear }: DebugPreviewProps): JSX.Element {
   const [tab, setTab] = useState<"html" | "css" | "js">("html");
   const [fmt, setFmt] = useState<"raw" | "md">("raw");
   const value = preview[tab];
@@ -635,8 +637,34 @@ function DebugPreview({ preview, onClear }: DebugPreviewProps): JSX.Element {
         <div className="lpe-debug-note">{COPY.debugJsEmpty}</div>
       )}
       <pre className="lpe-debug-pre"><code>{value || "(empty)"}</code></pre>
+      <ExportModes artifacts={buildElementArtifacts(preview, activeUrl)} />
     </div>
   );
+}
+
+function deriveDomain(url: string | undefined): string {
+  if (!url) return "page";
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "page";
+  }
+}
+
+function buildElementArtifacts(
+  preview: NonNullable<StatusUpdatePayload["debugPreview"]>,
+  activeUrl: string | undefined,
+): ExportArtifacts {
+  return {
+    flow: ExportFlow.Element,
+    domain: deriveDomain(activeUrl),
+    html: preview.html || "",
+    css: preview.css || "",
+    js: preview.js || "",
+    images: [],
+    // meta is unused by ExportModes for element flow.
+    meta: {} as ExportArtifacts["meta"],
+  };
 }
 
 interface FullPageActionsProps {
