@@ -23,11 +23,11 @@ describe("filename", () => {
   });
   it("applies template tokens", () => {
     expect(
-      applyTemplate("llm-export-fullpage-{domain}-{timestamp}.zip", {
+      applyTemplate("pageport-fullpage-{domain}-{timestamp}.zip", {
         domain: "example_com",
         timestamp: "20260506-090703",
       }),
-    ).toBe("llm-export-fullpage-example_com-20260506-090703.zip");
+    ).toBe("pageport-fullpage-example_com-20260506-090703.zip");
   });
   it("drops empty tokens cleanly", () => {
     expect(applyTemplate("a-{missing}-b", {})).toBe("a-b");
