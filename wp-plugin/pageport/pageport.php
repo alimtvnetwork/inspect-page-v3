@@ -3,7 +3,7 @@
  * Plugin Name:       PagePort
  * Plugin URI:        https://pageport.dev/
  * Description:       Share-Links backend for the PagePort Chrome extension. Hosts captured HTML / CSS / image bundles for 24 hours and exposes them via signed public URLs.
- * Version:           0.1.0
+ * Version:           2.0.0
  * Requires at least: 5.6
  * Requires PHP:      7.4
  * Author:            PagePort
@@ -13,7 +13,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'PAGEPORT_VERSION', '0.1.0' );
+define( 'PAGEPORT_VERSION', '2.0.0' );
 define( 'PAGEPORT_REST_NS', 'pageport/v1' );
 define( 'PAGEPORT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'PAGEPORT_URL', plugin_dir_url( __FILE__ ) );
