@@ -1,5 +1,5 @@
 {
-  "name": "llm-page-export",
+  "name": "pageport",
   "private": true,
   "version": "1.0.0",
   "description": "Export any web page (or one element) for your LLM.",
