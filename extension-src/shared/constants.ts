@@ -44,9 +44,9 @@ export const ZIP_COMPRESSION_LEVEL = 6;
 
 // ---- Filenames ----
 export const DEFAULT_NAME_FULLPAGE_TEMPLATE =
-  "llm-export-fullpage-{domain}-{timestamp}.zip";
+  "pageport-fullpage-{domain}-{timestamp}.zip";
 export const DEFAULT_NAME_ELEMENT_TEMPLATE =
-  "llm-export-element-{domain}-{tag}-{timestamp}.md";
+  "pageport-element-{domain}-{tag}-{timestamp}.md";
 export const FILENAME_MAX_CHARS = 120;
 
 // ---- Schema ----
