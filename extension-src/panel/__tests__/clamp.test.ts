@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clamp } from "../mountFloatingPanel";
+import { clamp } from "../clamp";
 
 describe("clamp", () => {
   it("returns value when in range", () => expect(clamp(50, 0, 100)).toBe(50));
