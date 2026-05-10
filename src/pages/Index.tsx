@@ -9,6 +9,7 @@ import { InstallSteps } from "@/components/landing/InstallSteps";
 import { WhatYouGet } from "@/components/landing/WhatYouGet";
 import { WhatsNew } from "@/components/landing/WhatsNew";
 import { Privacy } from "@/components/landing/Privacy";
+import { WpPlugin } from "@/components/landing/WpPlugin";
 import { Footer } from "@/components/landing/Footer";
 
 const ZIP_URL = "/pageport.zip";
@@ -65,6 +66,7 @@ const Index = (): JSX.Element => {
         <InstallSteps />
         <WhatYouGet />
         <WhatsNew />
+        <WpPlugin />
         <Privacy />
       </main>
       <Footer version={meta.version} />
