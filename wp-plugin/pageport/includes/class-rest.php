@@ -13,25 +13,31 @@ final class PagePort_REST {
             [
                 'methods'             => 'POST',
                 'callback'            => [ __CLASS__, 'create_session' ],
-                'permission_callback' => [ __CLASS__, 'auth_can_upload' ],
+                'permission_callback' => [ 'PagePort_Auth', 'require_bearer' ],
             ],
             [
                 'methods'             => 'GET',
                 'callback'            => [ __CLASS__, 'list_sessions' ],
-                'permission_callback' => [ __CLASS__, 'auth_can_upload' ],
+                'permission_callback' => [ 'PagePort_Auth', 'require_bearer' ],
             ],
         ] );
 
         register_rest_route( $ns, '/sessions/(?P<id>[A-Za-z0-9_-]{43})', [
             'methods'             => 'DELETE',
             'callback'            => [ __CLASS__, 'delete_session' ],
-            'permission_callback' => [ __CLASS__, 'auth_can_upload' ],
+            'permission_callback' => [ 'PagePort_Auth', 'require_bearer' ],
         ] );
 
         register_rest_route( $ns, '/share/(?P<id>[A-Za-z0-9_-]{43})/(?P<kind>html|css|image)', [
             'methods'             => 'GET',
             'callback'            => [ __CLASS__, 'read_asset' ],
             'permission_callback' => '__return_true',
+        ] );
+
+        register_rest_route( $ns, '/pairing/self', [
+            'methods'             => 'DELETE',
+            'callback'            => [ __CLASS__, 'unpair_self' ],
+            'permission_callback' => [ 'PagePort_Auth', 'require_bearer' ],
         ] );
     }
 
@@ -56,7 +62,26 @@ final class PagePort_REST {
     public static function create_session( WP_REST_Request $req ) {
         global $wpdb;
         $p = $wpdb->prefix . 'pp_';
-        $user_id = get_current_user_id();
+        $user_id = PagePort_Auth::current_user_id() ?: get_current_user_id();
+
+        // Per-token active-session quota.
+        $token = PagePort_Auth::current_token();
+        if ( $token ) {
+            $max = (int) get_option( 'pageport_max_active_per_token', 30 );
+            $active_status_id = self::enum_id( "{$p}share_session_statuses", PagePort_SessionStatus::ACTIVE );
+            $count = (int) $wpdb->get_var( $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$p}share_sessions
+                 WHERE user_id = %d AND status_id = %d AND expires_at > UTC_TIMESTAMP()",
+                $user_id, $active_status_id
+            ) );
+            if ( $count >= $max ) {
+                return new WP_Error(
+                    PagePort_ErrorCode::E_SHARE_QUOTA,
+                    sprintf( 'Active session quota reached (%d). Revoke old sessions first.', $max ),
+                    [ 'status' => 429 ]
+                );
+            }
+        }
 
         $kind_name = $req->get_param( 'kind' ) ?: PagePort_SessionKind::FULL_PAGE;
         if ( ! in_array( $kind_name, PagePort_SessionKind::all(), true ) ) {
@@ -123,7 +148,7 @@ final class PagePort_REST {
     public static function list_sessions( WP_REST_Request $req ) {
         global $wpdb;
         $p = $wpdb->prefix . 'pp_';
-        $user_id = get_current_user_id();
+        $user_id = PagePort_Auth::current_user_id() ?: get_current_user_id();
         $rows = $wpdb->get_results( $wpdb->prepare(
             "SELECT s.session_id, k.name AS kind, st.name AS status, s.source_url, s.created_at, s.expires_at
              FROM {$p}share_sessions s
@@ -142,7 +167,7 @@ final class PagePort_REST {
     public static function delete_session( WP_REST_Request $req ) {
         global $wpdb;
         $p = $wpdb->prefix . 'pp_';
-        $user_id = get_current_user_id();
+        $user_id = PagePort_Auth::current_user_id() ?: get_current_user_id();
         $sid = $req['id'];
         $row = $wpdb->get_row( $wpdb->prepare(
             "SELECT id, user_id FROM {$p}share_sessions WHERE session_id = %s", $sid
@@ -157,6 +182,15 @@ final class PagePort_REST {
         $status_id = self::enum_id( "{$p}share_session_statuses", PagePort_SessionStatus::REVOKED );
         $wpdb->update( "{$p}share_sessions", [ 'status_id' => $status_id ], [ 'id' => $row->id ] );
         return new WP_REST_Response( [ 'session_id' => $sid, 'status' => 'Revoked' ], 200 );
+    }
+
+    public static function unpair_self( WP_REST_Request $req ) {
+        $token = PagePort_Auth::current_token();
+        if ( ! $token ) {
+            return new WP_Error( PagePort_ErrorCode::E_SHARE_AUTH, 'no token', [ 'status' => 401 ] );
+        }
+        PagePort_Pairing::revoke_by_tid( $token->tid, PagePort_Auth::current_user_id() );
+        return new WP_REST_Response( [ 'tid' => $token->tid, 'status' => 'Revoked' ], 200 );
     }
 
     public static function read_asset( WP_REST_Request $req ) {
