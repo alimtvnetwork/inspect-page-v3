@@ -63,6 +63,12 @@ export enum LogLevel {
   Error = "Error",
 }
 
+/** v2 — which export flow produced an artifact bundle. */
+export enum ExportFlow {
+  FullPage = "FullPage",
+  Element = "Element",
+}
+
 export enum ErrorCode {
   E_HTML_SERIALIZE = "E_HTML_SERIALIZE",
   W_CSS_FETCH_FAILED = "W_CSS_FETCH_FAILED",
