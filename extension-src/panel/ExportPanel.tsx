@@ -918,8 +918,10 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
     });
   };
   const [unpairing, setUnpairing] = useState(false);
+  const [unpairedHost, setUnpairedHost] = useState("");
   const onUnpair = async (): Promise<void> => {
     setUnpairing(true);
+    const host = hostnameOf(settings.siteUrl);
     // Best-effort: tell the WP server to revoke this pairing token. We
     // always clear local state, even if the network call fails (the user
     // can manually revoke from wp-admin → Tools → PagePort).
@@ -932,6 +934,8 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
     } catch { /* offline or 4xx — ignore, still unpair locally */ }
     onPatch({ pairingToken: "", siteUrl: "", tokenId: "", pairedAtIso: "" });
     setUnpairing(false);
+    setUnpairedHost(host);
+    window.setTimeout(() => setUnpairedHost(""), 3000);
   };
 
   return (
@@ -951,6 +955,11 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
           </div>
         ) : (
           <>
+            {unpairedHost && (
+              <div className="lpe-field" role="status" aria-live="polite">
+                {COPY.shareUnpairedToastPrefix} <strong>{unpairedHost}</strong>
+              </div>
+            )}
             <div className="lpe-field">
               <label htmlFor="lpe-share-token">{COPY.shareLblPairingToken}</label>
               <input
