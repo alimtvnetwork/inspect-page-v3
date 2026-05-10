@@ -22,7 +22,8 @@
       "@picker/*": ["../extension-src/picker/*"],
       "@capture/*": ["../extension-src/capture/*"],
       "@zip/*": ["../extension-src/zip/*"],
-      "@element/*": ["../extension-src/element/*"]
+      "@element/*": ["../extension-src/element/*"],
+      "@share/*": ["../extension-src/share/*"]
     }
   },
   "include": ["../extension-src/**/*"]
