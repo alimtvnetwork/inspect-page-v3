@@ -43,6 +43,9 @@ export const Hero = ({ zipUrl, version, sizeKb }: HeroProps): JSX.Element => {
 
   return (
     <header className="space-y-6">
+      <span className="inline-flex items-center rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
+        v2.0 · WordPress Share Links
+      </span>
       <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight text-foreground">
         Export any web page for your LLM
       </h1>
