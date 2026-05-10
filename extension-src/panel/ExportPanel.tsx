@@ -416,6 +416,8 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             <FullPageActions
               artifacts={state.fullPageArtifacts}
               activeUrl={activeUrl}
+              shareEnabled={!!shareSettings && !!shareSettings.baseUrl && !!shareSettings.username && !!shareSettings.appPassword}
+              onShare={onShare}
             />
           )}
         </div>
@@ -424,6 +426,8 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           <DebugPreview
             preview={state.debugPreview}
             activeUrl={activeUrl}
+            shareEnabled={!!shareSettings && !!shareSettings.baseUrl && !!shareSettings.username && !!shareSettings.appPassword}
+            onShare={onShare}
             onClear={() => setState((s) => ({ ...s, debugPreview: undefined }))}
           />
         )}
@@ -433,6 +437,13 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             settings={settings}
             error={settingsError}
             onPatch={onSettingsPatch}
+          />
+        )}
+
+        {shareSettings && !disabled && (
+          <ShareSettingsSection
+            settings={shareSettings}
+            onPatch={onShareSettingsPatch}
           />
         )}
       </div>
