@@ -43,14 +43,28 @@ Verification: cURL the routes locally; expiry test by setting `expires_at` in pa
 - Revoke action.
 Verification: visible in wp-admin; revoke works.
 
-## Stage V7 — Extension Share Links integration
-- Add Settings group `Share Links` (base URL, username, app password) + persistence.
-- SW handler `CreateShareSession` (Basic auth multipart POST).
-- Enable Share Links button when creds present; on click → POST → copy 3 URLs + AI block.
-- Toast countdown chip.
-Verification: end-to-end real WP install; URLs resolve; clipboard payload correct.
+## Stage V4' — WP scaffold + pairing tokens table
+- `wp_options`: `pageport_signing_key` (32 random bytes hex), `pageport_max_active_per_token` (default 30).
+- New table `{$prefix}pp_pairing_tokens` (`tid`, `user_id`, `label`, `created_at`, `last_used_at`, `revoked_at`).
+- Empty `Tools → PagePort` admin screen.
 
-## Stage V8 — Polish + AC
-- Error codes wired (`E_SHARE_AUTH`, `E_SHARE_NETWORK`, `E_SHARE_UPSTREAM`) in `09-error-handling.md`.
+## Stage V5' — Pairing UI + Bearer middleware
+- `class-pairing.php`: mint (`PPT1.<b64url(payload)>.<b64url(hmac)>`), verify (HMAC + `tid` lookup + revocation check + `last_used_at` touch), revoke, list.
+- `class-auth.php`: `require_bearer()` REST permission_callback; `wp_set_current_user` on success.
+- `Tools → PagePort` screen: mint button (one-shot token display), paired-devices table, per-row revoke.
+
+## Stage V6' — REST `/sessions` on Bearer + quota
+- Switch `/sessions` POST/LIST/DELETE permission_callback to `PagePort_Auth::require_bearer`.
+- Enforce `pageport_max_active_per_token` on POST → `429 E_SHARE_QUOTA`.
+- New `DELETE /pairing/self` for extension-side unpair.
+
+## Stage V7' — Extension Settings rewrite
+- `ShareSettings = { pairingToken, siteUrl, tokenId, pairedAtIso }`.
+- `parsePairingToken()` decodes payload client-side for display; signature verified by WP on every request.
+- Settings panel: single token field + Pair / Unpair buttons + paired-with display.
+- `createShareSession` switches to `Authorization: Bearer`; adds 429 → `E_SHARE_QUOTA` mapping.
+
+## Stage V8' — Polish + AC
+- Error codes wired: `E_SHARE_AUTH`, `E_SHARE_NETWORK`, `E_SHARE_UPSTREAM`, `E_SHARE_BAD_INPUT`, `E_SHARE_QUOTA`, `E_SHARE_BAD_TOKEN`.
 - Acceptance checklist in `11-acceptance-criteria.md` extended with AC-EX-* and AC-SH-*.
-- Repackage `pageport.zip` and `wp-plugin/pageport.zip`; landing page links both.
+- Repackage `pageport.zip` and `pageport-wp.zip`; landing page links both and documents the pairing flow.
