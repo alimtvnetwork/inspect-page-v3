@@ -29,6 +29,10 @@ This folder is the **single source of truth** for building the extension. An imp
 23. `11-acceptance-criteria.md` — executable checklist.
 24. `18-distribution-page.md` — Lovable landing page spec.
 25. `23-implementation-order.md` — file-by-file build order. Read this last, code from it first.
+26. `24-export-modes.md` — v2 four-mode export toolbar (MD / MD+files / ZIP / Share Links).
+27. `25-share-links.md` — WordPress plugin backend, App-Password auth, REST routes, expiry.
+28. `26-implementation-order-v2.md` — v2 staged rollout.
+
 
 ## Conventions
 
