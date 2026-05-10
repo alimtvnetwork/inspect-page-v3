@@ -80,7 +80,7 @@ All character counts respect Chrome Web Store limits as of 2025.
       we never read pages you haven't explicitly exported.
 
     Open source. Issue tracker and changelog at:
-    https://github.com/<your-org>/llm-page-export
+    https://github.com/<your-org>/pageport
 
 ## Single-purpose statement (required at submission)
 

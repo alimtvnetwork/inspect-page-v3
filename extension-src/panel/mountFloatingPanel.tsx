@@ -17,7 +17,7 @@ import type {
 import { ExportPanel } from "./ExportPanel";
 import panelCss from "./styles.css?raw";
 
-const HOST_ID = "llm-page-export-panel-host";
+const HOST_ID = "pageport-panel-host";
 
 interface MountedPanel {
   host: HTMLElement;
