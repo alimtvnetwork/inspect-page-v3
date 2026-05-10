@@ -37,6 +37,24 @@ Each item references a test ID in `22-test-plan.md`. An AC is satisfied iff the 
 - [ ] AC-BD-2 — `bun run package` produces `public/pageport.zip` ≤ `1.5 MiB` with sidecar `.sha256`. (T17)
 - [ ] AC-BD-3 — `chrome://extensions` → Load unpacked succeeds with zero warnings.
 - [ ] AC-BD-4 — Lovable landing page downloads the ZIP via fetch+blob. (manual: visit `/`, click Download.)
+- [ ] AC-BD-5 — `wp-plugin/scripts/package.sh` produces `public/pageport-wp.zip` with sidecar `.sha256`.
+- [ ] AC-BD-6 — Landing page exposes the WP plugin download alongside the extension ZIP.
+
+## G. Export modes
+- [ ] AC-EM-1 — Both flows expose all four modes: MD single, MD+files, ZIP, Share Links.
+- [ ] AC-EM-2 — MD single inlines images as base64; MD+files emits a zip with `index.md` and `assets/`.
+- [ ] AC-EM-3 — ZIP mode includes `prompt.md` with the AI instruction block.
+- [ ] AC-EM-4 — Share Links uploads HTML/CSS/image to WordPress and copies the AI instruction block with the three public URLs.
+- [ ] AC-EM-5 — Share Links button is disabled until WP credentials are saved in Settings.
+- [ ] AC-EM-6 — On success an "Expires in Xh Ym" countdown chip is rendered next to the mode.
+
+## H. WordPress backend
+- [ ] AC-WP-1 — Plugin activates on WordPress 6.4+/PHP 8.1+ and creates `wp_pageport_sessions` + `wp_pageport_assets`.
+- [ ] AC-WP-2 — `POST /pageport/v1/sessions` requires Application Password auth and returns `{session_id, expires_at, urls}`.
+- [ ] AC-WP-3 — `GET /pageport/v1/share/{id}/{html|css|image}` is publicly readable until expiry/revocation, then 404.
+- [ ] AC-WP-4 — Hourly cron sweep deletes files for expired sessions and marks them `Expired` (also runnable via `wp pageport cleanup`).
+- [ ] AC-WP-5 — Tools → PagePort Sessions lists user's sessions (admins see all) and supports per-row + bulk Revoke.
+- [ ] AC-WP-6 — Errors map to `E_SHARE_AUTH` / `E_SHARE_NETWORK` / `E_SHARE_UPSTREAM` / `E_SHARE_BAD_INPUT` in the panel.
 
 ## F. Spec completeness
 - [ ] AC-SP-1 — Every `MessageKind` in code has a matching entry in `15-message-contracts.md`.
