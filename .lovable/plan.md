@@ -1,69 +1,58 @@
 ## Goal
 
-Enhance the Pick Element debug panel so the user can download captured element artifacts in flexible ways:
+Two improvements:
 
-1. Download a single file (HTML only, CSS only, JS only) — per the active tab.
-2. Download all three together — bundled as a ZIP.
-3. Choose the output format for code files: raw (`.html` / `.css` / `.js`) **or** a Markdown (`.md`) file with fenced code blocks.
+1. **Rebrand all generated filenames** from `llm-export-*` to `pageport-*`.
+2. **Bring the same atomic download options** (per-file HTML / CSS / JS, Raw or Markdown, or all-as-zip) that exist for Pick Element to the **Full Page export** flow.
 
-The current panel only has a single Copy button and one "Download ZIP" button. We will replace that with a clear two-axis chooser.
+---
 
-## UX changes (extension-src/panel/ExportPanel.tsx)
+## Part 1 — Filename rebrand (`llm-export-` → `pageport-`)
 
-In `DebugPreview`, replace the existing `Copy` + `Download` row with a small download toolbar placed beneath the HTML/CSS/JS tab strip:
+Replace the `llm-export-` prefix wherever it appears in defaults and tests. User-customized templates already saved in storage are untouched (the change only affects the defaults shipped with the extension).
 
-```text
-Format: ( ) Raw  ( ) Markdown
-[ Download current ]   [ Download all (zip) ]   [ Copy ]
-```
+Files:
+- `extension-src/shared/constants.ts`
+  - `DEFAULT_NAME_FULLPAGE_TEMPLATE` → `pageport-fullpage-{domain}-{timestamp}.zip`
+  - `DEFAULT_NAME_ELEMENT_TEMPLATE` → `pageport-element-{domain}-{tag}-{timestamp}.md`
+  - Leave `STORAGE_ROOT_KEY` and `LOG_PREFIX` alone (internal, not user-visible).
+- `extension-src/zip/__tests__/filename.test.ts` — update expected strings.
+- `extension-src/capture/inlineIframes.ts` + its test — only references in code comments / fixture identifiers; rename for consistency.
+- `extension-src/offscreen.html` — title/identifier reference if any.
+- `extension/scripts/package.sh` — output zip name stays `llm-export.zip` (that's the **distribution** zip downloaded from the landing page, separate from generated exports). Leave it. Only rename references that affect end-user generated files.
+- `extension-src/panel/ExportPanel.tsx` — already uses `pageport-element-…` for the new debug downloads; keep as-is.
 
-- **Format toggle** — small segmented control (two `<button>`s) bound to local state `format: "raw" | "md"`.
-- **Download current** — downloads only the currently active tab (html / css / js).
-  - Raw → `pageport-element-{safe}-{ts}.{ext}` containing the raw text.
-  - MD → `pageport-element-{safe}-{tab}-{ts}.md` containing a single fenced code block (` ```html `, ` ```css `, ` ```js `).
-- **Download all (zip)** — always produces a ZIP.
-  - Raw → `element.html`, `element.css`, `element.js`, `selector.txt` (current behavior).
-  - MD → single `element.md` inside the zip with three fenced sections + selector header, plus `selector.txt`.
-- **Copy** — unchanged; copies the active tab's text.
+## Part 2 — Atomic + Markdown downloads for Full Page
 
-All four controls share the `lpe-btn` style; the format toggle uses `aria-pressed` for the active option. No scrollbar regressions: the toolbar wraps via the existing `.lpe-debug-tabs { flex-wrap: wrap }` rule (we'll add a sibling `.lpe-debug-actions` row with the same wrapping).
+Today: Full Page export builds a ZIP in the service worker and triggers a `chrome.downloads.download`. The panel only sees the resulting filename. We will:
 
-## Implementation details
+1. **Have the SW return the raw `html`, `css`, `js` strings (and the screenshot Blob) back to the panel**, in addition to still triggering the default ZIP download.
+   - Extend the `RunFullPageExport` response in `extension-src/shared/types.ts` with optional `artifacts: { html, css, js, screenshotDataUrl, meta }`.
+   - In `extension-src/background.ts` (RunFullPageExport handler), include the in-memory artifacts on the response.
+   - Screenshot is sent as a data URL (base64) so it survives `postMessage`.
 
-1. **State** — add `const [fmt, setFmt] = useState<"raw" | "md">("raw")` inside `DebugPreview`.
-2. **Helpers** (local to the component file):
-   - `mimeFor(tab)` → `text/html | text/css | text/javascript`.
-   - `extFor(tab)` → `html | css | js`.
-   - `buildSingleMd(tab, value, selectorPath)` → returns a string with a `# Element — {selector}` header and one fenced block.
-   - `buildCombinedMd(preview)` → returns a string with three fenced sections (HTML / CSS / JS) under one header.
-   - `triggerDownload(blob, filename)` — extract the existing object-URL pattern so it's reused.
-3. **`onDownloadCurrent`** — uses `fmt` and `tab` to produce a single-file blob, then `triggerDownload`.
-4. **`onDownloadAll`** — keeps JSZip; if `fmt === "md"` write one `element.md` instead of three raw files.
-5. Filenames reuse the existing `safe` selector slug + ISO timestamp pattern.
+2. **Store artifacts in panel state** (`ExportPanel.tsx`): when Success arrives with `artifacts`, set `fullPageArtifacts`.
 
-## Copy strings (extension-src/shared/copy.ts)
+3. **Render a `<FullPageActions/>` block under the Success status**, modeled on `DebugPreview`:
+   - Format toggle: Raw / Markdown.
+   - Buttons: Download HTML, Download CSS, Download JS, Download Screenshot (always raw PNG), Download All (zip).
+   - Raw single-file download → `pageport-fullpage-{domain}-{ts}.{ext}`.
+   - Markdown single-file → wraps the chosen content in a fenced block (`html`/`css`/`javascript`) with an H1 of the page URL.
+   - "Download All (zip)" in Markdown mode produces one `page.md` with three fenced sections + screenshot + manifest, instead of separate `.html`/`.css`/`.js` files. Reuses existing `JSZip` already in `ExportPanel.tsx`.
 
-Add:
-- `debugFormatLabel: "Format"`
-- `debugFormatRaw: "Raw"`
-- `debugFormatMd: "Markdown"`
-- `debugDownloadCurrent: "Download current"`
-- `debugDownloadAll: "Download all (zip)"`
+4. **Copy strings** added to `extension-src/shared/copy.ts`:
+   - `fullPageActionsHeader`, `fullPageDownloadHtml`, `fullPageDownloadCss`, `fullPageDownloadJs`, `fullPageDownloadScreenshot`, `fullPageDownloadAllZip`, plus reuse the existing `debugFormat*` strings.
 
-Keep existing `debugCopy` and `debugDownload` keys (the latter becomes unused; remove it to avoid drift).
-
-## Styles (extension-src/panel/styles.css)
-
-Add a `.lpe-debug-actions` row: `display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:6px;` and a `.lpe-debug-fmt` segmented group styled like the existing tab buttons but smaller. No layout-width changes needed beyond the existing 360px panel.
-
-## Build / verify
-
-1. `cd extension && bun run build` to regenerate the bundle.
-2. `bun run test` (existing 70 tests must still pass; no test changes required since this is UI-only).
-3. Repackage `public/llm-export.zip` via the existing `scripts/package.sh` and refresh the SHA file.
-4. User reloads the unpacked extension and verifies: Pick element → Format toggle works → "Download current" yields the correct single file in the chosen format → "Download all (zip)" yields a ZIP with either three raw files or one combined `.md`.
+5. **Styles** in `extension-src/panel/styles.css`: reuse `.lpe-debug-actions` / `.lpe-debug-fmt` patterns inside a new `.lpe-fullpage-actions` block (or just reuse the same classes wholesale).
 
 ## Out of scope
 
-- No changes to the SW element-export pipeline or to the existing full-page ZIP export.
-- No changes to the spec'd `.md` element export (`runElementExport.ts`); the new MD here is panel-local convenience.
+- No change to the auto-trigger download behaviour (default ZIP still drops on disk on success — the new buttons are additive).
+- No change to the SW-side bundle composition.
+- No changes to `extension/scripts/package.sh` distribution zip.
+
+## Verification
+
+- Run `vitest` (existing 70 tests + updated filename tests).
+- Build + repackage via `extension/scripts/package.sh`.
+- Manual: trigger Full Page export, confirm new toolbar appears post-success and each button produces the correct file with `pageport-` prefix.
