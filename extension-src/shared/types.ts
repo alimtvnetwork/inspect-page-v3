@@ -250,9 +250,14 @@ export type MountFloatingPanelResponse = void;
 
 // ---- v2 Share Links (WP plugin backend) ----
 export interface ShareSettings {
-  baseUrl: string;
-  username: string;
-  appPassword: string;
+  /** Full printable PagePort pairing token: `PPT1.<payload>.<sig>`. */
+  pairingToken: string;
+  /** WP base URL decoded from the token at pair time (no trailing slash). */
+  siteUrl: string;
+  /** Token row PK decoded from the token, surfaced for display + unpair. */
+  tokenId: string;
+  /** ISO timestamp of pairing, or "" when unpaired. */
+  pairedAtIso: string;
 }
 
 export type GetShareSettingsPayload = Record<string, never>;

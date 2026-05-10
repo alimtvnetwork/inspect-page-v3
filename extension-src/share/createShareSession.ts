@@ -25,11 +25,11 @@ export async function createShareSession(
   if (!shareConfigured(cfg)) {
     throw new MessageError(
       ErrorCode.E_SHARE_AUTH,
-      "Share Links is not configured. Add your WordPress credentials in Settings.",
+      "Share Links is not paired. Paste a pairing token in Settings → Share Links.",
     );
   }
-  const url = `${normalizeBaseUrl(cfg.baseUrl)}/wp-json/pageport/v1/sessions`;
-  const auth = "Basic " + btoa(`${cfg.username}:${cfg.appPassword}`);
+  const url = `${normalizeBaseUrl(cfg.siteUrl)}/wp-json/pageport/v1/sessions`;
+  const auth = "Bearer " + cfg.pairingToken;
 
   const fd = new FormData();
   fd.append("kind", p.kind);
@@ -52,6 +52,12 @@ export async function createShareSession(
   }
   if (res.status === 401 || res.status === 403) {
     throw new MessageError(ErrorCode.E_SHARE_AUTH, "WordPress rejected the credentials");
+  }
+  if (res.status === 429) {
+    throw new MessageError(
+      ErrorCode.E_SHARE_QUOTA,
+      "Active share-link quota reached. Revoke old links in WordPress and try again.",
+    );
   }
   if (res.status >= 500) {
     throw new MessageError(ErrorCode.E_SHARE_UPSTREAM, `WordPress error ${res.status}`);
