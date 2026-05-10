@@ -364,7 +364,10 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             <TelemetrySummary counts={state.successTelemetry} />
           )}
           {state.status === PanelStatus.Success && state.fullPageArtifacts && (
-            <FullPageActions artifacts={state.fullPageArtifacts} />
+            <FullPageActions
+              artifacts={state.fullPageArtifacts}
+              activeUrl={activeUrl}
+            />
           )}
         </div>
 
@@ -669,9 +672,10 @@ function buildElementArtifacts(
 
 interface FullPageActionsProps {
   artifacts: NonNullable<PanelState["fullPageArtifacts"]>;
+  activeUrl?: string;
 }
 
-function FullPageActions({ artifacts }: FullPageActionsProps): JSX.Element {
+function FullPageActions({ artifacts, activeUrl }: FullPageActionsProps): JSX.Element {
   const [fmt, setFmt] = useState<"raw" | "md">("raw");
 
   const domainSafe = (): string => {
@@ -789,6 +793,31 @@ function FullPageActions({ artifacts }: FullPageActionsProps): JSX.Element {
           {COPY.fullPageDownloadAllZip}
         </button>
       </div>
+      <ExportModes artifacts={buildFullPageArtifacts(artifacts, activeUrl)} />
     </div>
   );
+}
+
+function buildFullPageArtifacts(
+  src: NonNullable<PanelState["fullPageArtifacts"]>,
+  activeUrl: string | undefined,
+): ExportArtifacts {
+  const url = activeUrl || src.meta.url || "";
+  let domain = "page";
+  try { domain = new URL(url).hostname.replace(/^www\./, ""); } catch { /* keep default */ }
+  // Parse data URL: "data:<mime>;base64,<b64>"
+  let mime = "image/png";
+  let base64 = "";
+  const m = /^data:([^;]+);base64,(.*)$/.exec(src.screenshotDataUrl || "");
+  if (m && m[1] && m[2] !== undefined) { mime = m[1]; base64 = m[2]; }
+  const ext = mime.includes("jpeg") ? "jpg" : "png";
+  return {
+    flow: ExportFlow.FullPage,
+    domain,
+    html: src.html,
+    css: src.css,
+    js: src.js,
+    images: base64 ? [{ name: `screenshot.${ext}`, mime, base64 }] : [],
+    meta: src.meta,
+  };
 }

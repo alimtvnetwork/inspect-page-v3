@@ -8,6 +8,7 @@ import { ErrorCode, LogCategory } from "@shared/enums";
 import { logger } from "@shared/logger";
 import { MessageError } from "@shared/messaging";
 import type { ExportMeta } from "@shared/types";
+import { AI_INSTRUCTION_BLOCK } from "@shared/copy";
 
 export interface BundleInput {
   html: string;
@@ -26,6 +27,14 @@ export async function buildBundle(input: BundleInput): Promise<Blob> {
     zip.file("screenshot.png", input.pngBlob);
     zip.file("manifest.json", `${JSON.stringify(input.meta, null, 2)}\n`);
     zip.file("README.txt", README_TXT);
+    // v2 — AI instruction block at root, refs point at the bundled assets.
+    zip.file(
+      "prompt.md",
+      AI_INSTRUCTION_BLOCK
+        .replace("{{HTML_REF}}", "./page.html")
+        .replace("{{CSS_REF}}", "./styles.css")
+        .replace("{{IMAGE_REF}}", "./screenshot.png"),
+    );
     return await zip.generateAsync({
       type: "blob",
       compression: "DEFLATE",
