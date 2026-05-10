@@ -20,13 +20,16 @@ import type {
   ExportMeta,
   Settings,
   StatusUpdatePayload,
+  ShareSettings,
+  CreateShareSessionResponse,
+  ExportArtifacts,
 } from "@shared/types";
 import { format } from "./format";
 import { telemetryRows } from "./telemetry";
 import JSZip from "jszip";
 import { ExportFlow } from "@shared/enums";
-import type { ExportArtifacts } from "@shared/types";
 import { ExportModes } from "./ExportModes";
+import { interpolateAi } from "@shared/copy";
 
 export type PanelSurface = "popup" | "floating";
 
