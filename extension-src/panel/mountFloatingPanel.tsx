@@ -16,6 +16,8 @@ import type {
 } from "@shared/types";
 import { ExportPanel } from "./ExportPanel";
 import panelCss from "./styles.css?raw";
+import { clamp } from "./clamp";
+export { clamp } from "./clamp";
 
 const HOST_ID = "pageport-panel-host";
 
@@ -212,8 +214,3 @@ async function persistPosition(
   );
 }
 
-export function clamp(value: number, min: number, max: number): number {
-  if (Number.isNaN(value)) return min;
-  if (max < min) return min;
-  return Math.max(min, Math.min(max, value));
-}
