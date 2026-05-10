@@ -30,6 +30,7 @@ import JSZip from "jszip";
 import { ExportFlow } from "@shared/enums";
 import { ExportModes } from "./ExportModes";
 import { interpolateAi } from "@shared/copy";
+import { parsePairingToken } from "@shared/shareSettings";
 
 export type PanelSurface = "popup" | "floating";
 
