@@ -5,9 +5,14 @@ import { MessageError } from "@shared/messaging";
 import type { CreateShareSessionPayload, ShareSettings } from "@shared/types";
 
 const validCfg: ShareSettings = {
-  baseUrl: "https://example.com/",
-  username: "alice",
-  appPassword: "abcd efgh ijkl mnop",
+  pairingToken: "PPT1.eyJ2IjoxLCJzaXRlIjoiaHR0cHM6Ly9leGFtcGxlLmNvbSIsInRpZCI6InRva18xMjMiLCJ1aWQiOjQyfQ.SIG",
+  siteUrl: "https://example.com",
+  tokenId: "tok_123",
+  pairedAtIso: "2025-01-01T00:00:00Z",
+};
+
+const emptyCfg: ShareSettings = {
+  pairingToken: "", siteUrl: "", tokenId: "", pairedAtIso: "",
 };
 
 const payload: CreateShareSessionPayload = {
@@ -21,8 +26,7 @@ const payload: CreateShareSessionPayload = {
 
 function jsonRes(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" },
+    status, headers: { "content-type": "application/json" },
   });
 }
 
@@ -32,20 +36,17 @@ async function expectMsgErr(p: Promise<unknown>, code: ErrorCode): Promise<void>
 }
 
 describe("createShareSession", () => {
-  it("throws E_SHARE_AUTH when credentials missing", async () => {
+  it("throws E_SHARE_AUTH when not paired", async () => {
     const fetchImpl = vi.fn();
     await expectMsgErr(
-      createShareSession(payload, {
-        getShareSettings: async () => ({ baseUrl: "", username: "", appPassword: "" }),
-        fetchImpl,
-      }),
+      createShareSession(payload, { getShareSettings: async () => emptyCfg, fetchImpl }),
       ErrorCode.E_SHARE_AUTH,
     );
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it("posts multipart to /wp-json/pageport/v1/sessions with Basic auth + trimmed base URL", async () => {
-    const fetchImpl = vi.fn(async (_url: string, _init?: RequestInit) =>
+  it("posts multipart to /wp-json/pageport/v1/sessions with Bearer auth", async () => {
+    const fetchImpl = vi.fn(async () =>
       jsonRes({
         session_id: "abc",
         expires_at: "2099-01-01T00:00:00Z",
@@ -64,14 +65,13 @@ describe("createShareSession", () => {
     const [calledUrl, init] = fetchImpl.mock.calls[0];
     expect(calledUrl).toBe("https://example.com/wp-json/pageport/v1/sessions");
     expect((init?.headers as Record<string, string>).Authorization).toBe(
-      "Basic " + btoa("alice:abcd efgh ijkl mnop"),
+      "Bearer " + validCfg.pairingToken,
     );
     expect(init?.method).toBe("POST");
     expect(init?.body).toBeInstanceOf(FormData);
     const fd = init!.body as FormData;
     expect(fd.get("kind")).toBe("FullPage");
     expect(fd.get("source_url")).toBe("https://news.ycombinator.com/");
-    expect(fd.get("html")).toBeInstanceOf(Blob);
     expect((fd.get("image") as File).name).toBe("screenshot.png");
   });
 
@@ -109,14 +109,14 @@ describe("createShareSession", () => {
     );
   });
 
-  it("maps 403 into E_SHARE_AUTH", async () => {
-    const fetchImpl = vi.fn(async () => new Response("forbidden", { status: 403 }));
+  it("maps 429 into E_SHARE_QUOTA", async () => {
+    const fetchImpl = vi.fn(async () => new Response("quota", { status: 429 }));
     await expectMsgErr(
       createShareSession(payload, {
         getShareSettings: async () => validCfg,
         fetchImpl: fetchImpl as unknown as typeof fetch,
       }),
-      ErrorCode.E_SHARE_AUTH,
+      ErrorCode.E_SHARE_QUOTA,
     );
   });
 
@@ -132,9 +132,7 @@ describe("createShareSession", () => {
   });
 
   it("maps other 4xx into E_SHARE_BAD_INPUT", async () => {
-    const fetchImpl = vi.fn(async () =>
-      new Response("missing field", { status: 400 }),
-    );
+    const fetchImpl = vi.fn(async () => new Response("missing field", { status: 400 }));
     await expectMsgErr(
       createShareSession(payload, {
         getShareSettings: async () => validCfg,
