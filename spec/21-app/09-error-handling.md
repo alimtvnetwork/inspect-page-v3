@@ -46,9 +46,11 @@
 | `E_NOT_AVAILABLE_HERE` | Lifecycle | Error | Page type not supported. | Not available on browser pages. | Disable buttons. |
 | `E_PERMISSION_DENIED` | Lifecycle | Error | Required permission missing. | Re-install the extension. | Abort, link to install steps. |
 | `E_SHARE_BAD_INPUT` | Messaging | Error | Share Links called without WP credentials or assets. | Configure WordPress in Settings before sharing. | Abort, open Settings. |
-| `E_SHARE_AUTH` | Messaging | Error | WordPress rejected credentials (HTTP 401/403). | WordPress login failed — check the Application Password. | Abort, open Settings. |
+| `E_SHARE_AUTH` | Messaging | Error | WordPress rejected the pairing token (HTTP 401/403, missing/revoked/tampered). | WordPress rejected the pairing token — re-pair from Tools → PagePort. | Abort, open Settings. |
 | `E_SHARE_NETWORK` | Messaging | Error | Network failure reaching WordPress site. | Could not reach your WordPress site. | Abort, Retry button shown. |
 | `E_SHARE_UPSTREAM` | Messaging | Error | WordPress returned non-2xx (`{status}`). | Your WordPress site rejected the upload ({status}). | Abort, surface server message. |
+| `E_SHARE_QUOTA` | Messaging | Error | Per-token active-session quota exceeded (HTTP 429). | Active share-link quota reached — revoke old links in WordPress and try again. | Abort, link to Tools → PagePort Sessions. |
+| `E_SHARE_BAD_TOKEN` | Messaging | Error | Pasted string is not a well-formed `PPT1.<payload>.<sig>` token (rejected client-side, never written to storage). | That token does not look like a PagePort pairing token (PPT1.…). | Stay on Settings, keep field focused. |
 | `W_FONT_UNREACHABLE` | CssCollect | Warn | `@font-face` URL `{url}` could not be fetched. | — | Skip inlining; screenshot still uses page-loaded font. |
 | `W_WEB_COMPONENT_SKIPPED` | HtmlSerialize | Warn | Page declares custom elements; behavior not bundled. | — | Preserve `outerHTML`, continue. |
 | `E_IFRAME_CROSS_ORIGIN` | HtmlSerialize | Warn | Cross-origin iframe could not be inlined; original `src` kept. | — | Continue; offline export will not render iframe contents. |
