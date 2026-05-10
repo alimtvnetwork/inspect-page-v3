@@ -1,58 +1,26 @@
-## Goal
+# PagePort v2 plan — Export Modes + Share Links
 
-Two improvements:
+Locked decisions (from user):
+- Backend = **WordPress plugin** (self-hosted), shipped from this repo as `wp-plugin/pageport.zip`.
+- Auth = **WP Application Passwords** (WP 5.6+ core feature). User pastes username + app password into PagePort Settings.
+- Scope = **both** Full Page AND Pick Element flows.
+- Single MD = **base64 inline** images (with degradation fallback per `05` P7).
 
-1. **Rebrand all generated filenames** from `pageport-*` to `pageport-*`.
-2. **Bring the same atomic download options** (per-file HTML / CSS / JS, Raw or Markdown, or all-as-zip) that exist for Pick Element to the **Full Page export** flow.
+Detailed spec lives in `spec/21-app/24-export-modes.md`, `spec/21-app/25-share-links.md`, and `spec/21-app/26-implementation-order-v2.md`. The plan below is the user-facing rollup; the spec files are the source of truth.
 
----
+## Stages (user types `next` to advance)
 
-## Part 1 — Filename rebrand (`pageport-` → `pageport-`)
+- **V1 — Shared groundwork.** AI instruction block template, `ExportFlow` enum, `ExportArtifacts` type, `buildPromptMd` helper + tests.
+- **V2 — Pick Element 4-mode toolbar.** MD / MD+files / ZIP buttons (Share Links rendered disabled).
+- **V3 — Full Page 4-mode toolbar.** Same component reused; bundled ZIP gains `prompt.md` at root.
+- **V4 — WP plugin scaffold.** Plugin headers, activator, table schema, route registration stubs, packaging script.
+- **V5 — WP plugin sessions/uploads/reads.** POST /sessions, GET /share/{id}/{kind}, DELETE, LIST, hourly wp-cron expiry.
+- **V6 — WP admin UI.** Tools → PagePort Sessions table with revoke.
+- **V7 — Extension Share Links integration.** Settings UI, SW `CreateShareSession`, button enable + clipboard payload.
+- **V8 — Polish + AC.** Error codes, acceptance checklist, repackage both zips, landing page links.
 
-Replace the `pageport-` prefix wherever it appears in defaults and tests. User-customized templates already saved in storage are untouched (the change only affects the defaults shipped with the extension).
+## Out of scope (deferred)
 
-Files:
-- `extension-src/shared/constants.ts`
-  - `DEFAULT_NAME_FULLPAGE_TEMPLATE` → `pageport-fullpage-{domain}-{timestamp}.zip`
-  - `DEFAULT_NAME_ELEMENT_TEMPLATE` → `pageport-element-{domain}-{tag}-{timestamp}.md`
-  - Leave `STORAGE_ROOT_KEY` and `LOG_PREFIX` alone (internal, not user-visible).
-- `extension-src/zip/__tests__/filename.test.ts` — update expected strings.
-- `extension-src/capture/inlineIframes.ts` + its test — only references in code comments / fixture identifiers; rename for consistency.
-- `extension-src/offscreen.html` — title/identifier reference if any.
-- `extension/scripts/package.sh` — output zip name stays `pageport.zip` (that's the **distribution** zip downloaded from the landing page, separate from generated exports). Leave it. Only rename references that affect end-user generated files.
-- `extension-src/panel/ExportPanel.tsx` — already uses `pageport-element-…` for the new debug downloads; keep as-is.
-
-## Part 2 — Atomic + Markdown downloads for Full Page
-
-Today: Full Page export builds a ZIP in the service worker and triggers a `chrome.downloads.download`. The panel only sees the resulting filename. We will:
-
-1. **Have the SW return the raw `html`, `css`, `js` strings (and the screenshot Blob) back to the panel**, in addition to still triggering the default ZIP download.
-   - Extend the `RunFullPageExport` response in `extension-src/shared/types.ts` with optional `artifacts: { html, css, js, screenshotDataUrl, meta }`.
-   - In `extension-src/background.ts` (RunFullPageExport handler), include the in-memory artifacts on the response.
-   - Screenshot is sent as a data URL (base64) so it survives `postMessage`.
-
-2. **Store artifacts in panel state** (`ExportPanel.tsx`): when Success arrives with `artifacts`, set `fullPageArtifacts`.
-
-3. **Render a `<FullPageActions/>` block under the Success status**, modeled on `DebugPreview`:
-   - Format toggle: Raw / Markdown.
-   - Buttons: Download HTML, Download CSS, Download JS, Download Screenshot (always raw PNG), Download All (zip).
-   - Raw single-file download → `pageport-fullpage-{domain}-{ts}.{ext}`.
-   - Markdown single-file → wraps the chosen content in a fenced block (`html`/`css`/`javascript`) with an H1 of the page URL.
-   - "Download All (zip)" in Markdown mode produces one `page.md` with three fenced sections + screenshot + manifest, instead of separate `.html`/`.css`/`.js` files. Reuses existing `JSZip` already in `ExportPanel.tsx`.
-
-4. **Copy strings** added to `extension-src/shared/copy.ts`:
-   - `fullPageActionsHeader`, `fullPageDownloadHtml`, `fullPageDownloadCss`, `fullPageDownloadJs`, `fullPageDownloadScreenshot`, `fullPageDownloadAllZip`, plus reuse the existing `debugFormat*` strings.
-
-5. **Styles** in `extension-src/panel/styles.css`: reuse `.lpe-debug-actions` / `.lpe-debug-fmt` patterns inside a new `.lpe-fullpage-actions` block (or just reuse the same classes wholesale).
-
-## Out of scope
-
-- No change to the auto-trigger download behaviour (default ZIP still drops on disk on success — the new buttons are additive).
-- No change to the SW-side bundle composition.
-- No changes to `extension/scripts/package.sh` distribution zip.
-
-## Verification
-
-- Run `vitest` (existing 70 tests + updated filename tests).
-- Build + repackage via `extension/scripts/package.sh`.
-- Manual: trigger Full Page export, confirm new toolbar appears post-success and each button produces the correct file with `pageport-` prefix.
+- Lovable Cloud backend (kept in reserve; settings already structured to swap base URL).
+- OAuth / SSO. App passwords are sufficient.
+- Multi-image uploads beyond the primary screenshot.
