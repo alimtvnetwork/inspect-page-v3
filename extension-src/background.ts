@@ -5,6 +5,7 @@ import { ErrorCode, LogCategory, MessageKind } from "@shared/enums";
 import { logger } from "@shared/logger";
 import { MessageError, MessageRouter, sendToTab } from "@shared/messaging";
 import { getPanelPosition, getSettings, setPanelPosition, setSettings } from "@shared/settings";
+import { getShareSettings, setShareSettings, shareConfigured, normalizeBaseUrl } from "@shared/shareSettings";
 import { KEEPALIVE_INTERVAL_MS } from "@shared/constants";
 import { COLLECT_TIMEOUT_MS } from "@shared/constants";
 import type {
@@ -13,6 +14,12 @@ import type {
   EnterPickerModeResponse,
   ExitPickerModePayload,
   ExitPickerModeResponse,
+  CreateShareSessionPayload,
+  CreateShareSessionResponse,
+  GetShareSettingsPayload,
+  GetShareSettingsResponse,
+  SetShareSettingsPayload,
+  SetShareSettingsResponse,
   GetSettingsPayload,
   GetSettingsResponse,
   GetPanelPositionPayload,
@@ -63,6 +70,18 @@ router.on<GetPanelPositionPayload, GetPanelPositionResponse>(
 
 router.on<SetPanelPositionPayload, SetPanelPositionResponse>(
   MessageKind.SetPanelPosition, async (patch) => setPanelPosition(patch),
+);
+
+router.on<GetShareSettingsPayload, GetShareSettingsResponse>(
+  MessageKind.GetShareSettings, async () => getShareSettings(),
+);
+
+router.on<SetShareSettingsPayload, SetShareSettingsResponse>(
+  MessageKind.SetShareSettings, async (patch) => setShareSettings(patch),
+);
+
+router.on<CreateShareSessionPayload, CreateShareSessionResponse>(
+  MessageKind.CreateShareSession, async (payload) => createShareSession(payload),
 );
 
 router.on<MountFloatingPanelPayload, MountFloatingPanelResponse>(
@@ -392,4 +411,75 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
       (e) => { clearTimeout(t); reject(e); },
     );
   });
+}
+
+/**
+ * v2 — Share Links upload. POSTs multipart to the user's WP plugin and
+ * returns the three public URLs + expiry. Translates network / auth /
+ * upstream failures into the dedicated error codes from `25-share-links.md`.
+ */
+async function createShareSession(
+  p: CreateShareSessionPayload,
+): Promise<CreateShareSessionResponse> {
+  const cfg = await getShareSettings();
+  if (!shareConfigured(cfg)) {
+    throw new MessageError(
+      ErrorCode.E_SHARE_AUTH,
+      "Share Links is not configured. Add your WordPress credentials in Settings.",
+    );
+  }
+  const url = `${normalizeBaseUrl(cfg.baseUrl)}/wp-json/pageport/v1/sessions`;
+  const auth = "Basic " + btoa(`${cfg.username}:${cfg.appPassword}`);
+
+  const fd = new FormData();
+  fd.append("kind", p.kind);
+  fd.append("source_url", p.sourceUrl);
+  fd.append("html", new Blob([p.html], { type: "text/html" }), "index.html");
+  fd.append("css",  new Blob([p.css],  { type: "text/css"  }), "style.css");
+  const imgBytes = base64ToBytes(p.imageBase64);
+  const ext = p.imageMime.includes("jpeg") ? "jpg" : "png";
+  fd.append("image", new Blob([imgBytes], { type: p.imageMime }), `screenshot.${ext}`);
+
+  let res: Response;
+  try {
+    res = await fetch(url, { method: "POST", headers: { Authorization: auth }, body: fd });
+  } catch (e) {
+    throw new MessageError(
+      ErrorCode.E_SHARE_NETWORK, "Could not reach WordPress site",
+      e instanceof Error ? e.message : String(e),
+    );
+  }
+  if (res.status === 401 || res.status === 403) {
+    throw new MessageError(ErrorCode.E_SHARE_AUTH, "WordPress rejected the credentials");
+  }
+  if (res.status >= 500) {
+    throw new MessageError(ErrorCode.E_SHARE_UPSTREAM, `WordPress error ${res.status}`);
+  }
+  if (!res.ok) {
+    const text = await safeText(res);
+    throw new MessageError(
+      ErrorCode.E_SHARE_BAD_INPUT,
+      `WordPress refused upload (${res.status})`, text,
+    );
+  }
+  const json = (await res.json()) as {
+    session_id: string; expires_at: string;
+    urls: { html: string; css: string; image: string };
+  };
+  return {
+    sessionId: json.session_id,
+    expiresAt: json.expires_at,
+    urls: json.urls,
+  };
+}
+
+function base64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+async function safeText(res: Response): Promise<string> {
+  try { return (await res.text()).slice(0, 500); } catch { return ""; }
 }

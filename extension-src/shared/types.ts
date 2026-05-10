@@ -248,6 +248,34 @@ export type SetPanelPositionResponse = PanelPosition;
 export interface MountFloatingPanelPayload { tabId: number }
 export type MountFloatingPanelResponse = void;
 
+// ---- v2 Share Links (WP plugin backend) ----
+export interface ShareSettings {
+  baseUrl: string;
+  username: string;
+  appPassword: string;
+}
+
+export type GetShareSettingsPayload = Record<string, never>;
+export type GetShareSettingsResponse = ShareSettings;
+export type SetShareSettingsPayload = Partial<ShareSettings>;
+export type SetShareSettingsResponse = ShareSettings;
+
+export interface CreateShareSessionPayload {
+  /** "FullPage" | "Element" — sent verbatim to the WP plugin. */
+  kind: string;
+  sourceUrl: string;
+  html: string;
+  css: string;
+  /** PNG/JPEG bytes as base64 (no data: prefix). */
+  imageBase64: string;
+  imageMime: string;
+}
+export interface CreateShareSessionResponse {
+  sessionId: string;
+  expiresAt: string;
+  urls: { html: string; css: string; image: string };
+}
+
 export interface EnterPickerModePayload { tabId: number }
 export type EnterPickerModePayload_ = EnterPickerModePayload;
 export type EnterPickerModeResponse = void;

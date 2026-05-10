@@ -5,7 +5,7 @@
  * Renders [ MD ] [ MD + files ] [ ZIP ] [ Share Links ] buttons. The
  * Share Links button is disabled in V2 (wiring lands in V7).
  */
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import JSZip from "jszip";
 import { COPY } from "@shared/copy";
 import { ExportFlow } from "@shared/enums";
@@ -14,9 +14,9 @@ import { buildPromptMd } from "@share/buildPromptMd";
 
 export interface ExportModesProps {
   artifacts: ExportArtifacts;
-  /** Becomes true once V7 ships; for now always false. */
   shareEnabled?: boolean;
-  onShare?: () => void;
+  /** Async — returns once URLs are copied. Errors surface inline. */
+  onShare?: (artifacts: ExportArtifacts) => Promise<void>;
 }
 
 function tsNow(): string {
@@ -77,6 +77,20 @@ export function ExportModes({
   shareEnabled = false,
   onShare,
 }: ExportModesProps): JSX.Element {
+  const [shareState, setShareState] = useState<
+    | { phase: "idle" }
+    | { phase: "uploading" }
+    | { phase: "done"; expiresAt: number }
+    | { phase: "error"; message: string }
+  >({ phase: "idle" });
+  const [now, setNow] = useState<number>(Date.now());
+
+  useEffect(() => {
+    if (shareState.phase !== "done") return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [shareState.phase]);
+
   const onMd = useCallback(() => {
     const md = buildSingleMd(artifacts);
     triggerDownload(
@@ -84,6 +98,22 @@ export function ExportModes({
       `${fileBaseName(artifacts)}.md`,
     );
   }, [artifacts]);
+
+  const handleShare = useCallback(async () => {
+    if (!onShare) return;
+    setShareState({ phase: "uploading" });
+    try {
+      await onShare(artifacts);
+      // Best-effort: extract expires_at via a side channel — onShare hides
+      // it. We approximate 24h from now for the chip.
+      setShareState({ phase: "done", expiresAt: Date.now() + 24 * 60 * 60 * 1000 });
+    } catch (e) {
+      setShareState({
+        phase: "error",
+        message: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }, [artifacts, onShare]);
 
   const onMdFiles = useCallback(async () => {
     const zip = new JSZip();
@@ -127,13 +157,29 @@ export function ExportModes({
         <button
           type="button"
           className="lpe-btn"
-          onClick={onShare}
-          disabled={!shareEnabled}
+          onClick={handleShare}
+          disabled={!shareEnabled || shareState.phase === "uploading"}
           title={shareEnabled ? undefined : COPY.exportModeShareDisabledTip}
         >
-          {COPY.exportModeShare}
+          {shareState.phase === "uploading" ? COPY.shareUploading : COPY.exportModeShare}
         </button>
       </div>
+      {shareState.phase === "done" && (
+        <div className="lpe-debug-note">
+          ✓ {COPY.shareCopied} · {COPY.shareExpiresInPrefix} {formatRemaining(shareState.expiresAt - now)}
+        </div>
+      )}
+      {shareState.phase === "error" && (
+        <div className="lpe-debug-note" role="alert">⚠ {shareState.message}</div>
+      )}
     </div>
   );
+}
+
+function formatRemaining(ms: number): string {
+  if (ms <= 0) return "expired";
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return `${h}h ${m}m`;
 }

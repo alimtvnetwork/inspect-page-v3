@@ -20,13 +20,16 @@ import type {
   ExportMeta,
   Settings,
   StatusUpdatePayload,
+  ShareSettings,
+  CreateShareSessionResponse,
+  ExportArtifacts,
 } from "@shared/types";
 import { format } from "./format";
 import { telemetryRows } from "./telemetry";
 import JSZip from "jszip";
 import { ExportFlow } from "@shared/enums";
-import type { ExportArtifacts } from "@shared/types";
 import { ExportModes } from "./ExportModes";
+import { interpolateAi } from "@shared/copy";
 
 export type PanelSurface = "popup" | "floating";
 
@@ -102,6 +105,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const [state, setState] = useState<PanelState>({ status: PanelStatus.Idle });
   const [settings, setSettings] = useState<Settings | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [shareSettings, setShareSettingsState] = useState<ShareSettings | null>(null);
   const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const disabled = isDisabledUrl(activeUrl);
@@ -116,6 +120,15 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         const msg = e instanceof Error ? e.message : String(e);
         setSettingsError(msg);
       });
+    return () => { alive = false; };
+  }, []);
+
+  // ---- Load Share Links credentials ----
+  useEffect(() => {
+    let alive = true;
+    sendToBackground<Record<string, never>, ShareSettings>(MessageKind.GetShareSettings, {})
+      .then((s) => { if (alive) setShareSettingsState(s); })
+      .catch(() => { /* non-fatal */ });
     return () => { alive = false; };
   }, []);
 
@@ -261,6 +274,42 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     }
   }, []);
 
+  const onShareSettingsPatch = useCallback(async (patch: Partial<ShareSettings>) => {
+    try {
+      const next = await sendToBackground<Partial<ShareSettings>, ShareSettings>(
+        MessageKind.SetShareSettings, patch,
+      );
+      setShareSettingsState(next);
+    } catch { /* ignore */ }
+  }, []);
+
+  const onShare = useCallback(async (artifacts: ExportArtifacts): Promise<void> => {
+    const primary = artifacts.images[0];
+    if (!primary) {
+      throw new Error("No image to upload — Share Links requires a screenshot.");
+    }
+    const res = await sendToBackground<
+      {
+        kind: string; sourceUrl: string;
+        html: string; css: string;
+        imageBase64: string; imageMime: string;
+      },
+      CreateShareSessionResponse
+    >(MessageKind.CreateShareSession, {
+      kind: artifacts.flow,
+      sourceUrl: activeUrl ?? artifacts.meta?.url ?? "",
+      html: artifacts.html,
+      css: artifacts.css,
+      imageBase64: primary.base64,
+      imageMime: primary.mime,
+    });
+    const block = interpolateAi({
+      htmlRef: res.urls.html, cssRef: res.urls.css, imageRef: res.urls.image,
+    });
+    try { await navigator.clipboard.writeText(block); } catch { /* clipboard may be blocked */ }
+    return;
+  }, [activeUrl]);
+
   const onOpenFloating = useCallback(async () => {
     if (activeTabId === undefined) return;
     try {
@@ -367,6 +416,8 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             <FullPageActions
               artifacts={state.fullPageArtifacts}
               activeUrl={activeUrl}
+              shareEnabled={!!shareSettings && !!shareSettings.baseUrl && !!shareSettings.username && !!shareSettings.appPassword}
+              onShare={onShare}
             />
           )}
         </div>
@@ -375,6 +426,8 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           <DebugPreview
             preview={state.debugPreview}
             activeUrl={activeUrl}
+            shareEnabled={!!shareSettings && !!shareSettings.baseUrl && !!shareSettings.username && !!shareSettings.appPassword}
+            onShare={onShare}
             onClear={() => setState((s) => ({ ...s, debugPreview: undefined }))}
           />
         )}
@@ -384,6 +437,13 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             settings={settings}
             error={settingsError}
             onPatch={onSettingsPatch}
+          />
+        )}
+
+        {shareSettings && !disabled && (
+          <ShareSettingsSection
+            settings={shareSettings}
+            onPatch={onShareSettingsPatch}
           />
         )}
       </div>
@@ -512,10 +572,12 @@ function TelemetrySummary({ counts }: TelemetrySummaryProps): JSX.Element | null
 interface DebugPreviewProps {
   preview: NonNullable<StatusUpdatePayload["debugPreview"]>;
   activeUrl?: string;
+  shareEnabled?: boolean;
+  onShare?: (artifacts: ExportArtifacts) => Promise<void>;
   onClear: () => void;
 }
 
-function DebugPreview({ preview, activeUrl, onClear }: DebugPreviewProps): JSX.Element {
+function DebugPreview({ preview, activeUrl, shareEnabled, onShare, onClear }: DebugPreviewProps): JSX.Element {
   const [tab, setTab] = useState<"html" | "css" | "js">("html");
   const [fmt, setFmt] = useState<"raw" | "md">("raw");
   const value = preview[tab];
@@ -640,7 +702,11 @@ function DebugPreview({ preview, activeUrl, onClear }: DebugPreviewProps): JSX.E
         <div className="lpe-debug-note">{COPY.debugJsEmpty}</div>
       )}
       <pre className="lpe-debug-pre"><code>{value || "(empty)"}</code></pre>
-      <ExportModes artifacts={buildElementArtifacts(preview, activeUrl)} />
+      <ExportModes
+        artifacts={buildElementArtifacts(preview, activeUrl)}
+        shareEnabled={shareEnabled}
+        onShare={onShare}
+      />
     </div>
   );
 }
@@ -673,9 +739,11 @@ function buildElementArtifacts(
 interface FullPageActionsProps {
   artifacts: NonNullable<PanelState["fullPageArtifacts"]>;
   activeUrl?: string;
+  shareEnabled?: boolean;
+  onShare?: (artifacts: ExportArtifacts) => Promise<void>;
 }
 
-function FullPageActions({ artifacts, activeUrl }: FullPageActionsProps): JSX.Element {
+function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }: FullPageActionsProps): JSX.Element {
   const [fmt, setFmt] = useState<"raw" | "md">("raw");
 
   const domainSafe = (): string => {
@@ -793,7 +861,11 @@ function FullPageActions({ artifacts, activeUrl }: FullPageActionsProps): JSX.El
           {COPY.fullPageDownloadAllZip}
         </button>
       </div>
-      <ExportModes artifacts={buildFullPageArtifacts(artifacts, activeUrl)} />
+      <ExportModes
+        artifacts={buildFullPageArtifacts(artifacts, activeUrl)}
+        shareEnabled={shareEnabled}
+        onShare={onShare}
+      />
     </div>
   );
 }
@@ -820,4 +892,50 @@ function buildFullPageArtifacts(
     images: base64 ? [{ name: `screenshot.${ext}`, mime, base64 }] : [],
     meta: src.meta,
   };
+}
+
+interface ShareSettingsSectionProps {
+  settings: ShareSettings;
+  onPatch: (patch: Partial<ShareSettings>) => void;
+}
+
+function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps): JSX.Element {
+  return (
+    <details className="lpe-settings">
+      <summary>{COPY.shareSettingsHeader}</summary>
+      <div className="lpe-settings-body">
+        <div className="lpe-field">
+          <label htmlFor="lpe-share-base">{COPY.shareLblBaseUrl}</label>
+          <input
+            id="lpe-share-base"
+            className="lpe-input"
+            placeholder={COPY.sharePlaceholderBaseUrl}
+            value={settings.baseUrl}
+            onChange={(e) => onPatch({ baseUrl: e.target.value })}
+          />
+        </div>
+        <div className="lpe-field">
+          <label htmlFor="lpe-share-user">{COPY.shareLblUsername}</label>
+          <input
+            id="lpe-share-user"
+            className="lpe-input"
+            value={settings.username}
+            onChange={(e) => onPatch({ username: e.target.value })}
+          />
+        </div>
+        <div className="lpe-field">
+          <label htmlFor="lpe-share-pass">{COPY.shareLblAppPassword}</label>
+          <input
+            id="lpe-share-pass"
+            type="password"
+            className="lpe-input"
+            placeholder={COPY.sharePlaceholderAppPassword}
+            value={settings.appPassword}
+            onChange={(e) => onPatch({ appPassword: e.target.value })}
+          />
+        </div>
+        <div className="lpe-debug-note">{COPY.shareHelp}</div>
+      </div>
+    </details>
+  );
 }

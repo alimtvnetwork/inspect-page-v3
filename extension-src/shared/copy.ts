@@ -70,6 +70,16 @@ export const COPY = {
   exportModeZip: "ZIP",
   exportModeShare: "Share Links",
   exportModeShareDisabledTip: "Add WordPress credentials in Settings → Share Links",
+  shareSettingsHeader: "Share Links (WordPress)",
+  shareLblBaseUrl: "WordPress base URL",
+  shareLblUsername: "WordPress username",
+  shareLblAppPassword: "Application Password",
+  sharePlaceholderBaseUrl: "https://your-site.com",
+  sharePlaceholderAppPassword: "xxxx xxxx xxxx xxxx xxxx xxxx",
+  shareHelp: "Generate an Application Password in wp-admin → Users → Profile.",
+  shareUploading: "Uploading to WordPress…",
+  shareCopied: "3 URLs + AI prompt copied to clipboard",
+  shareExpiresInPrefix: "Expires in",
 } as const;
 
 export type CopyKey = keyof typeof COPY;
