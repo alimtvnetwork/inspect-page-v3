@@ -202,6 +202,18 @@ export async function inlineIframesInDocument(
     html = html.slice(0, match.index) + rewritten + html.slice(match.index + tag.length);
   }
 
+  // Surface cross-origin frames once per traversal pass: spec/19-edge-cases E1/E2.
+  if (counts.crossOrigin > 0 && depth === 0) {
+    logger.warn(
+      LogCategory.HtmlSerialize, ErrorCode.W_IFRAME_NOT_TRAVERSED,
+      `${counts.crossOrigin} cross-origin iframe(s) left as opaque references`,
+    );
+    logger.warn(
+      LogCategory.HtmlSerialize, ErrorCode.E_IFRAME_CROSS_ORIGIN,
+      "cross-origin iframe contents could not be inlined; export keeps the original src",
+    );
+  }
+
   return { html, counts };
 }
 
