@@ -22,6 +22,8 @@ define( 'PAGEPORT_SHARE_TTL', DAY_IN_SECONDS ); // 24h
 require_once PAGEPORT_DIR . 'includes/enums.php';
 require_once PAGEPORT_DIR . 'includes/class-activator.php';
 require_once PAGEPORT_DIR . 'includes/class-storage.php';
+require_once PAGEPORT_DIR . 'includes/class-pairing.php';
+require_once PAGEPORT_DIR . 'includes/class-auth.php';
 require_once PAGEPORT_DIR . 'includes/class-rest.php';
 require_once PAGEPORT_DIR . 'includes/class-cleanup.php';
 if ( is_admin() ) {
