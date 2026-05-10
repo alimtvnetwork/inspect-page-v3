@@ -416,7 +416,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             <FullPageActions
               artifacts={state.fullPageArtifacts}
               activeUrl={activeUrl}
-              shareEnabled={!!shareSettings && !!shareSettings.baseUrl && !!shareSettings.username && !!shareSettings.appPassword}
+              shareEnabled={!!shareSettings && !!shareSettings.pairingToken && !!shareSettings.siteUrl}
               onShare={onShare}
             />
           )}
@@ -426,7 +426,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           <DebugPreview
             preview={state.debugPreview}
             activeUrl={activeUrl}
-            shareEnabled={!!shareSettings && !!shareSettings.baseUrl && !!shareSettings.username && !!shareSettings.appPassword}
+            shareEnabled={!!shareSettings && !!shareSettings.pairingToken && !!shareSettings.siteUrl}
             onShare={onShare}
             onClear={() => setState((s) => ({ ...s, debugPreview: undefined }))}
           />
@@ -900,42 +900,65 @@ interface ShareSettingsSectionProps {
 }
 
 function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps): JSX.Element {
+  const [draft, setDraft] = useState("");
+  const [err, setErr] = useState("");
+  const paired = !!settings.pairingToken && !!settings.siteUrl;
+
+  const onPair = (): void => {
+    const parsed = parsePairingToken(draft);
+    if (!parsed) { setErr(COPY.shareBadTokenMsg); return; }
+    setErr("");
+    setDraft("");
+    onPatch({
+      pairingToken: draft.trim(),
+      siteUrl: parsed.siteUrl,
+      tokenId: parsed.tokenId,
+      pairedAtIso: new Date().toISOString(),
+    });
+  };
+  const onUnpair = (): void => {
+    onPatch({ pairingToken: "", siteUrl: "", tokenId: "", pairedAtIso: "" });
+  };
+
   return (
     <details className="lpe-settings">
       <summary>{COPY.shareSettingsHeader}</summary>
       <div className="lpe-settings-body">
-        <div className="lpe-field">
-          <label htmlFor="lpe-share-base">{COPY.shareLblBaseUrl}</label>
-          <input
-            id="lpe-share-base"
-            className="lpe-input"
-            placeholder={COPY.sharePlaceholderBaseUrl}
-            value={settings.baseUrl}
-            onChange={(e) => onPatch({ baseUrl: e.target.value })}
-          />
-        </div>
-        <div className="lpe-field">
-          <label htmlFor="lpe-share-user">{COPY.shareLblUsername}</label>
-          <input
-            id="lpe-share-user"
-            className="lpe-input"
-            value={settings.username}
-            onChange={(e) => onPatch({ username: e.target.value })}
-          />
-        </div>
-        <div className="lpe-field">
-          <label htmlFor="lpe-share-pass">{COPY.shareLblAppPassword}</label>
-          <input
-            id="lpe-share-pass"
-            type="password"
-            className="lpe-input"
-            placeholder={COPY.sharePlaceholderAppPassword}
-            value={settings.appPassword}
-            onChange={(e) => onPatch({ appPassword: e.target.value })}
-          />
-        </div>
+        {paired ? (
+          <div className="lpe-field">
+            <div>
+              {COPY.sharePairedWithPrefix}{" "}
+              <strong>{hostnameOf(settings.siteUrl)}</strong>{" · "}
+              {COPY.sharePairedDevicePrefix} <code>{settings.tokenId}</code>
+            </div>
+            <button type="button" className="lpe-btn" onClick={onUnpair}>
+              {COPY.shareUnpairBtn}
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="lpe-field">
+              <label htmlFor="lpe-share-token">{COPY.shareLblPairingToken}</label>
+              <input
+                id="lpe-share-token"
+                className="lpe-input"
+                placeholder={COPY.sharePlaceholderPairingToken}
+                value={draft}
+                onChange={(e) => { setDraft(e.target.value); if (err) setErr(""); }}
+              />
+            </div>
+            <button type="button" className="lpe-btn" onClick={onPair} disabled={!draft.trim()}>
+              {COPY.sharePairBtn}
+            </button>
+            {err && <div className="lpe-debug-note" role="alert">{err}</div>}
+          </>
+        )}
         <div className="lpe-debug-note">{COPY.shareHelp}</div>
       </div>
     </details>
   );
+}
+
+function hostnameOf(url: string): string {
+  try { return new URL(url).hostname; } catch { return url; }
 }
