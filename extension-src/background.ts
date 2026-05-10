@@ -5,7 +5,7 @@ import { ErrorCode, LogCategory, MessageKind } from "@shared/enums";
 import { logger } from "@shared/logger";
 import { MessageError, MessageRouter, sendToTab } from "@shared/messaging";
 import { getPanelPosition, getSettings, setPanelPosition, setSettings } from "@shared/settings";
-import { getShareSettings, setShareSettings, shareConfigured, normalizeBaseUrl } from "@shared/shareSettings";
+import { getShareSettings, setShareSettings } from "@shared/shareSettings";
 import { createShareSession as createShareSessionImpl } from "@share/createShareSession";
 import { KEEPALIVE_INTERVAL_MS } from "@shared/constants";
 import { COLLECT_TIMEOUT_MS } from "@shared/constants";
