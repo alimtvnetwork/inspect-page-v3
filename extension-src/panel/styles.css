@@ -259,3 +259,11 @@
   background: #ffffff;
   white-space: pre-wrap; word-break: break-word;
 }
+
+.lpe-export-modes {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #d0d7de;
+}
+.lpe-export-modes .lpe-debug-title { margin-bottom: 6px; }
+
