@@ -105,6 +105,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const [state, setState] = useState<PanelState>({ status: PanelStatus.Idle });
   const [settings, setSettings] = useState<Settings | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [shareSettings, setShareSettingsState] = useState<ShareSettings | null>(null);
   const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const disabled = isDisabledUrl(activeUrl);
@@ -119,6 +120,15 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         const msg = e instanceof Error ? e.message : String(e);
         setSettingsError(msg);
       });
+    return () => { alive = false; };
+  }, []);
+
+  // ---- Load Share Links credentials ----
+  useEffect(() => {
+    let alive = true;
+    sendToBackground<Record<string, never>, ShareSettings>(MessageKind.GetShareSettings, {})
+      .then((s) => { if (alive) setShareSettingsState(s); })
+      .catch(() => { /* non-fatal */ });
     return () => { alive = false; };
   }, []);
 
