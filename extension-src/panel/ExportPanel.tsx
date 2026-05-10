@@ -360,6 +360,9 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           {state.status === PanelStatus.Success && state.successTelemetry && (
             <TelemetrySummary counts={state.successTelemetry} />
           )}
+          {state.status === PanelStatus.Success && state.fullPageArtifacts && (
+            <FullPageActions artifacts={state.fullPageArtifacts} />
+          )}
         </div>
 
         {state.debugPreview && (
