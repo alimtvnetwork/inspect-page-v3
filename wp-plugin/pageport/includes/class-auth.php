@@ -48,14 +48,24 @@ final class PagePort_Auth {
 
     /** Register the auth-related REST route(s). Called from rest_api_init. */
     public static function register_routes() {
-        register_rest_route( PAGEPORT_REST_NS, '/me', [
+        // Public probe — uses the WP cookie only (no nonce). Tells the
+        // extension whether the user is signed in on this site and hands
+        // back a fresh `wp_rest` nonce + identity for follow-up calls.
+        register_rest_route( PAGEPORT_REST_NS, '/auth-status', [
             'methods'             => 'GET',
-            'callback'            => [ __CLASS__, 'rest_me' ],
-            'permission_callback' => [ __CLASS__, 'require_wp_user' ],
+            'callback'            => [ __CLASS__, 'rest_auth_status' ],
+            'permission_callback' => '__return_true',
         ] );
     }
 
-    public static function rest_me() {
+    public static function rest_auth_status() {
+        if ( ! is_user_logged_in() ) {
+            return new WP_REST_Response( [ 'logged_in' => false ], 200 );
+        }
+        return self::rest_me_payload( true );
+    }
+
+    private static function rest_me_payload( $logged_in ) {
         global $wpdb;
         $p       = $wpdb->prefix . 'pp_';
         $user    = wp_get_current_user();
@@ -80,6 +90,7 @@ final class PagePort_Auth {
         ) );
 
         return new WP_REST_Response( [
+            'logged_in'    => (bool) $logged_in,
             'user_id'      => $user_id,
             'display_name' => $user->display_name,
             'email'        => $user->user_email,
@@ -91,6 +102,22 @@ final class PagePort_Auth {
                 'max_hourly'  => $max_hour,
             ],
         ], 200 );
+    }
+
+    /**
+     * CORS allow-listing for browser extensions (chrome-extension://* /
+     * moz-extension://*). Hooked from pageport.php on rest_api_init.
+     */
+    public static function send_cors_headers( $served, $result, $request ) {
+        $origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) : '';
+        if ( $origin && preg_match( '#^(chrome-extension|moz-extension|safari-web-extension)://[A-Za-z0-9_-]+$#', $origin ) ) {
+            header( 'Access-Control-Allow-Origin: ' . $origin );
+            header( 'Access-Control-Allow-Credentials: true' );
+            header( 'Vary: Origin' );
+            header( 'Access-Control-Allow-Headers: Content-Type, X-WP-Nonce, Authorization' );
+            header( 'Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS' );
+        }
+        return $served;
     }
 
     private static function read_nonce() {
