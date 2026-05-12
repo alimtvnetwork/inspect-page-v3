@@ -69,19 +69,20 @@ export const COPY = {
   exportModeMdFiles: "MD + files",
   exportModeZip: "ZIP",
   exportModeShare: "Share Links",
-  exportModeShareDisabledTip: "Pair PagePort with WordPress in Settings → Share Links",
-  shareSettingsHeader: "Share Links (WordPress)",
-  shareLblPairingToken: "Pairing token",
-  sharePlaceholderPairingToken: "PPT1.…",
-  shareHelp: "Generate a pairing token in wp-admin → Tools → PagePort, then paste it here.",
-  sharePairBtn: "Pair",
-  shareUnpairBtn: "Unpair",
-  shareUnpairedToastPrefix: "Unpaired from",
-  sharePairedWithPrefix: "Paired with",
-  sharePairedDevicePrefix: "device",
-  shareBadTokenMsg: "That token does not look like a PagePort pairing token (PPT1.…).",
+  exportModeShareDisabledTip: "Sign in to your WordPress site in Settings → Smart Share",
+  shareSettingsHeader: "Smart Share (WordPress)",
+  shareLblSiteUrl: "WordPress site URL",
+  sharePlaceholderSiteUrl: "https://example.com",
+  shareHelp: "Install the PagePort plugin on your WordPress site, then sign in below. The extension will store a cookie nonce — no passwords or tokens are saved.",
+  shareSignInBtn: "Sign in",
+  shareSignOutBtn: "Sign out",
+  shareCheckBtn: "I'm signed in — refresh",
+  shareSignedInAsPrefix: "Signed in as",
+  shareSignedOutMsg: "Not signed in to this site.",
+  shareBadUrlMsg: "Enter a valid http(s) site URL (e.g. https://example.com).",
+  shareLoginOpenedMsg: "A WordPress login tab was opened. Sign in there, then come back and click \"refresh\".",
   shareUploading: "Uploading to WordPress…",
-  shareCopied: "3 URLs + AI prompt copied to clipboard",
+  shareCopied: "4 URLs + AI prompt copied to clipboard",
   shareExpiresInPrefix: "Expires in",
 } as const;
 
@@ -90,31 +91,38 @@ export type CopyKey = keyof typeof COPY;
 /**
  * Canonical AI instruction block embedded in every export mode.
  * Source: spec/21-app/24-export-modes.md §D.
- * Tokens: {{HTML_REF}}, {{CSS_REF}}, {{IMAGE_REF}}.
+ * Tokens: {{HTML_REF}}, {{CSS_REF}}, {{JS_REF}}, {{IMAGE_REF}}.
  */
-export const AI_INSTRUCTION_BLOCK = `You are an expert front-end developer.
-- HTML:  {{HTML_REF}}
-- CSS:   {{CSS_REF}}
-- Image: {{IMAGE_REF}}
+export const AI_INSTRUCTION_BLOCK = `I'm sharing a UI component with you. Please read all four files first, then apply the change I describe at the end.
 
-Read all three. Understand the UI. Then follow the user's verbatim
-instruction below and modify the CSS or HTML accordingly, including
-animation. Output only the changed files.
+HTML:    {{HTML_REF}}
+CSS:     {{CSS_REF}}
+JS:      {{JS_REF}}
+Image:   {{IMAGE_REF}}
 
---- USER INSTRUCTION ---
-(write your instruction here)
+Instructions:
+1. Fetch and read the HTML to understand the current markup and structure.
+2. Fetch and read the CSS to understand the current styling, tokens, and breakpoints.
+3. Fetch and read the JS to understand any current behavior.
+4. Open the image to see how the component currently renders.
+5. Then make the change requested below — modify HTML/CSS/JS only. Do not break the existing structure, semantics, or responsiveness unless I ask for it. You may add animations, restyle, or adjust layout.
+
+My request:
+<write your change request here>
 `;
 
 export interface AiRefs {
   htmlRef: string;
   cssRef: string;
+  jsRef: string;
   imageRef: string;
 }
 
-/** Replace {{HTML_REF}} / {{CSS_REF}} / {{IMAGE_REF}} placeholders. */
+/** Replace {{HTML_REF}} / {{CSS_REF}} / {{JS_REF}} / {{IMAGE_REF}} placeholders. */
 export function interpolateAi(refs: AiRefs): string {
   return AI_INSTRUCTION_BLOCK
     .replace("{{HTML_REF}}", refs.htmlRef)
     .replace("{{CSS_REF}}", refs.cssRef)
+    .replace("{{JS_REF}}", refs.jsRef)
     .replace("{{IMAGE_REF}}", refs.imageRef);
 }
