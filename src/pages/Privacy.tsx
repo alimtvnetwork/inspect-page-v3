@@ -47,7 +47,7 @@ const Privacy = (): JSX.Element => {
             <li>We do not sell, share, or transfer any data.</li>
             <li>
               The only network requests the extension initiates are stylesheets and scripts
-              the page already references, and — only if you enable Share Links — a single
+              the page already references, and — only if you enable Smart Share — a single
               upload to the WordPress site you point it at.
             </li>
           </ul>
@@ -67,8 +67,8 @@ const Privacy = (): JSX.Element => {
               <tbody className="divide-y divide-border">
                 <tr><td className="p-3">Your settings</td><td className="p-3"><code className="font-mono text-xs">chrome.storage.local</code></td><td className="p-3">No</td></tr>
                 <tr><td className="p-3">Floating-panel position</td><td className="p-3"><code className="font-mono text-xs">chrome.storage.local</code></td><td className="p-3">No</td></tr>
-                <tr><td className="p-3">WordPress credentials (Share Links only)</td><td className="p-3"><code className="font-mono text-xs">chrome.storage.local</code></td><td className="p-3">Only to the site URL you entered, over HTTPS</td></tr>
-                <tr><td className="p-3">Page HTML / CSS / JS being exported</td><td className="p-3">RAM during export</td><td className="p-3">Saved to your Downloads only (or your WP if you choose Share Links)</td></tr>
+                <tr><td className="p-3">WordPress site URL + cached display name / cookie nonce (Smart Share only)</td><td className="p-3"><code className="font-mono text-xs">chrome.storage.local</code></td><td className="p-3">Only to the site URL you entered, over HTTPS. No passwords or tokens are stored.</td></tr>
+                <tr><td className="p-3">Page HTML / CSS / JS being exported</td><td className="p-3">RAM during export</td><td className="p-3">Saved to your Downloads only (or your WP if you choose Smart Share)</td></tr>
                 <tr><td className="p-3">Screenshot pixels</td><td className="p-3">RAM (<code className="font-mono text-xs">OffscreenCanvas</code>)</td><td className="p-3">Same as above</td></tr>
                 <tr><td className="p-3">Logs</td><td className="p-3">DevTools console</td><td className="p-3">Never sent</td></tr>
               </tbody>
@@ -87,16 +87,17 @@ const Privacy = (): JSX.Element => {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-semibold tracking-tight">Share Links (optional)</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">Smart Share (optional)</h2>
           <p className="text-base text-muted-foreground">
-            If you install the companion WordPress plugin and enter your site URL,
-            username, and Application Password in PagePort's Settings, the Share Links
-            export uploads the captured HTML, CSS, and screenshot to your WordPress site
-            and returns three short public URLs valid for 24 hours. After 24 hours an
-            hourly cron job on your site deletes the files and marks the session
-            expired. You can revoke any session earlier from <strong>Tools → PagePort
-            Sessions</strong> in WordPress admin. We do not operate the WordPress site —
-            you do.
+            If you install the companion WordPress plugin and sign in via the popup
+            launched from PagePort's Settings, the Smart Share export uploads the
+            captured HTML, CSS, JS, and screenshot to your WordPress site and returns
+            four short public URLs valid for 24 hours. Authentication uses your existing
+            WordPress login cookie plus a short-lived REST nonce — no passwords or
+            tokens are saved. After 24 hours an hourly cron job on your site deletes
+            the files and marks the session expired. You can revoke any session earlier
+            from the share dialog or from <strong>Tools → PagePort Sessions</strong> in
+            WordPress admin. We do not operate the WordPress site — you do.
           </p>
         </section>
 
