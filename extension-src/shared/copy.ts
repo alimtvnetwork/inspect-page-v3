@@ -84,6 +84,21 @@ export const COPY = {
   shareUploading: "Uploading to WordPress…",
   shareCopied: "4 URLs + AI prompt copied to clipboard",
   shareExpiresInPrefix: "Expires in",
+  shareDialogHeader: "Share links created",
+  shareDialogIntro: "These 4 URLs are publicly fetchable for 24 hours. Anyone with a link can read the file.",
+  shareLblHtml: "HTML",
+  shareLblCss: "CSS",
+  shareLblJs: "JS",
+  shareLblImage: "Image",
+  shareCopyOne: "Copy",
+  shareCopyAll: "Copy AI prompt + 4 URLs",
+  shareCopyAllDone: "Copied!",
+  shareCopyOneDone: "Copied",
+  shareRevokeBtn: "Revoke now",
+  shareRevokedMsg: "Revoked. The links no longer work.",
+  shareRevokingMsg: "Revoking…",
+  shareCloseBtn: "Close",
+  shareExpiredMsg: "Expired",
 } as const;
 
 export type CopyKey = keyof typeof COPY;
