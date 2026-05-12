@@ -30,7 +30,8 @@ import JSZip from "jszip";
 import { ExportFlow } from "@shared/enums";
 import { ExportModes } from "./ExportModes";
 import { interpolateAi } from "@shared/copy";
-import { parsePairingToken } from "@shared/shareSettings";
+import { parseSiteUrl } from "@shared/shareSettings";
+import { MessageKind as MK } from "@shared/enums";
 
 export type PanelSurface = "popup" | "floating";
 
@@ -292,7 +293,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     const res = await sendToBackground<
       {
         kind: string; sourceUrl: string;
-        html: string; css: string;
+        html: string; css: string; js: string;
         imageBase64: string; imageMime: string;
       },
       CreateShareSessionResponse
@@ -301,11 +302,13 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       sourceUrl: activeUrl ?? artifacts.meta?.url ?? "",
       html: artifacts.html,
       css: artifacts.css,
+      js: artifacts.js,
       imageBase64: primary.base64,
       imageMime: primary.mime,
     });
     const block = interpolateAi({
-      htmlRef: res.urls.html, cssRef: res.urls.css, imageRef: res.urls.image,
+      htmlRef: res.urls.html, cssRef: res.urls.css,
+      jsRef: res.urls.js, imageRef: res.urls.image,
     });
     try { await navigator.clipboard.writeText(block); } catch { /* clipboard may be blocked */ }
     return;
@@ -417,7 +420,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             <FullPageActions
               artifacts={state.fullPageArtifacts}
               activeUrl={activeUrl}
-              shareEnabled={!!shareSettings && !!shareSettings.pairingToken && !!shareSettings.siteUrl}
+              shareEnabled={!!shareSettings && !!shareSettings.nonce && !!shareSettings.siteUrl}
               onShare={onShare}
             />
           )}
@@ -427,7 +430,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           <DebugPreview
             preview={state.debugPreview}
             activeUrl={activeUrl}
-            shareEnabled={!!shareSettings && !!shareSettings.pairingToken && !!shareSettings.siteUrl}
+            shareEnabled={!!shareSettings && !!shareSettings.nonce && !!shareSettings.siteUrl}
             onShare={onShare}
             onClear={() => setState((s) => ({ ...s, debugPreview: undefined }))}
           />
@@ -901,81 +904,94 @@ interface ShareSettingsSectionProps {
 }
 
 function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps): JSX.Element {
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(settings.siteUrl);
   const [err, setErr] = useState("");
-  const paired = !!settings.pairingToken && !!settings.siteUrl;
+  const [busy, setBusy] = useState(false);
+  const [hint, setHint] = useState("");
+  const signedIn = !!settings.nonce && !!settings.userId && !!settings.siteUrl;
 
-  const onPair = (): void => {
-    const parsed = parsePairingToken(draft);
-    if (!parsed) { setErr(COPY.shareBadTokenMsg); return; }
+  const onSaveUrl = (): void => {
+    const parsed = parseSiteUrl(draft);
+    if (!parsed) { setErr(COPY.shareBadUrlMsg); return; }
     setErr("");
-    setDraft("");
-    onPatch({
-      pairingToken: draft.trim(),
-      siteUrl: parsed.siteUrl,
-      tokenId: parsed.tokenId,
-      pairedAtIso: new Date().toISOString(),
-    });
+    onPatch({ siteUrl: parsed });
   };
-  const [unpairing, setUnpairing] = useState(false);
-  const [unpairedHost, setUnpairedHost] = useState("");
-  const onUnpair = async (): Promise<void> => {
-    setUnpairing(true);
-    const host = hostnameOf(settings.siteUrl);
-    // Best-effort: tell the WP server to revoke this pairing token. We
-    // always clear local state, even if the network call fails (the user
-    // can manually revoke from wp-admin → Tools → PagePort).
+
+  const onSignIn = async (): Promise<void> => {
+    const url = parseSiteUrl(draft || settings.siteUrl);
+    if (!url) { setErr(COPY.shareBadUrlMsg); return; }
+    if (url !== settings.siteUrl) onPatch({ siteUrl: url });
     try {
-      const base = settings.siteUrl.replace(/\/+$/, "");
-      await fetch(`${base}/wp-json/pageport/v1/pairing/self`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${settings.pairingToken}` },
-      });
-    } catch { /* offline or 4xx — ignore, still unpair locally */ }
-    onPatch({ pairingToken: "", siteUrl: "", tokenId: "", pairedAtIso: "" });
-    setUnpairing(false);
-    setUnpairedHost(host);
-    window.setTimeout(() => setUnpairedHost(""), 3000);
+      await sendToBackground<{ siteUrl: string }, void>(MK.OpenLoginPopup, { siteUrl: url });
+      setHint(COPY.shareLoginOpenedMsg);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const onRefresh = async (): Promise<void> => {
+    setBusy(true); setErr(""); setHint("");
+    try {
+      const r = await sendToBackground<Record<string, never>, {
+        loggedIn: boolean; userId: number; displayName: string; email: string; nonce: string;
+      }>(MK.CheckShareAuth, {});
+      if (!r.loggedIn) {
+        setErr(COPY.shareSignedOutMsg);
+      } else {
+        // Patch already persisted by SW — refresh local view via parent.
+        onPatch({
+          userId: r.userId, displayName: r.displayName,
+          email: r.email, nonce: r.nonce,
+          signedInAtIso: new Date().toISOString(),
+        });
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally { setBusy(false); }
+  };
+
+  const onSignOut = (): void => {
+    onPatch({ userId: 0, displayName: "", email: "", nonce: "", signedInAtIso: "" });
   };
 
   return (
     <details className="lpe-settings">
       <summary>{COPY.shareSettingsHeader}</summary>
       <div className="lpe-settings-body">
-        {paired ? (
+        <div className="lpe-field">
+          <label htmlFor="lpe-share-url">{COPY.shareLblSiteUrl}</label>
+          <input
+            id="lpe-share-url"
+            className="lpe-input"
+            placeholder={COPY.sharePlaceholderSiteUrl}
+            value={draft}
+            onChange={(e) => { setDraft(e.target.value); if (err) setErr(""); }}
+            onBlur={onSaveUrl}
+          />
+        </div>
+        {signedIn ? (
           <div className="lpe-field">
             <div>
-              {COPY.sharePairedWithPrefix}{" "}
-              <strong>{hostnameOf(settings.siteUrl)}</strong>{" · "}
-              {COPY.sharePairedDevicePrefix} <code>{settings.tokenId}</code>
+              {COPY.shareSignedInAsPrefix}{" "}
+              <strong>{settings.displayName || settings.email}</strong>{" · "}
+              <code>{hostnameOf(settings.siteUrl)}</code>
             </div>
-            <button type="button" className="lpe-btn" onClick={onUnpair} disabled={unpairing}>
-              {unpairing ? "…" : COPY.shareUnpairBtn}
+            <button type="button" className="lpe-btn" onClick={onSignOut}>
+              {COPY.shareSignOutBtn}
             </button>
           </div>
         ) : (
-          <>
-            {unpairedHost && (
-              <div className="lpe-field" role="status" aria-live="polite">
-                {COPY.shareUnpairedToastPrefix} <strong>{unpairedHost}</strong>
-              </div>
-            )}
-            <div className="lpe-field">
-              <label htmlFor="lpe-share-token">{COPY.shareLblPairingToken}</label>
-              <input
-                id="lpe-share-token"
-                className="lpe-input"
-                placeholder={COPY.sharePlaceholderPairingToken}
-                value={draft}
-                onChange={(e) => { setDraft(e.target.value); if (err) setErr(""); }}
-              />
-            </div>
-            <button type="button" className="lpe-btn" onClick={onPair} disabled={!draft.trim()}>
-              {COPY.sharePairBtn}
+          <div className="lpe-field">
+            <button type="button" className="lpe-btn lpe-btn-primary" onClick={onSignIn} disabled={!draft.trim()}>
+              {COPY.shareSignInBtn}
             </button>
-            {err && <div className="lpe-debug-note" role="alert">{err}</div>}
-          </>
+            <button type="button" className="lpe-btn" onClick={onRefresh} disabled={busy || !settings.siteUrl}>
+              {busy ? "…" : COPY.shareCheckBtn}
+            </button>
+          </div>
         )}
+        {hint && <div className="lpe-debug-note">{hint}</div>}
+        {err && <div className="lpe-debug-note" role="alert">{err}</div>}
         <div className="lpe-debug-note">{COPY.shareHelp}</div>
       </div>
     </details>

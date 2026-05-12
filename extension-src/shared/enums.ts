@@ -27,6 +27,8 @@ export enum MessageKind {
   GetShareSettings = "GetShareSettings",
   SetShareSettings = "SetShareSettings",
   CreateShareSession = "CreateShareSession",
+  CheckShareAuth = "CheckShareAuth",
+  OpenLoginPopup = "OpenLoginPopup",
 }
 
 export enum PanelStatus {

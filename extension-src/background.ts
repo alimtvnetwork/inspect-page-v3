@@ -5,7 +5,7 @@ import { ErrorCode, LogCategory, MessageKind } from "@shared/enums";
 import { logger } from "@shared/logger";
 import { MessageError, MessageRouter, sendToTab } from "@shared/messaging";
 import { getPanelPosition, getSettings, setPanelPosition, setSettings } from "@shared/settings";
-import { getShareSettings, setShareSettings } from "@shared/shareSettings";
+import { getShareSettings, normalizeBaseUrl, setShareSettings } from "@shared/shareSettings";
 import { createShareSession as createShareSessionImpl } from "@share/createShareSession";
 import { KEEPALIVE_INTERVAL_MS } from "@shared/constants";
 import { COLLECT_TIMEOUT_MS } from "@shared/constants";
@@ -17,6 +17,10 @@ import type {
   ExitPickerModeResponse,
   CreateShareSessionPayload,
   CreateShareSessionResponse,
+  CheckShareAuthPayload,
+  CheckShareAuthResponse,
+  OpenLoginPopupPayload,
+  OpenLoginPopupResponse,
   GetShareSettingsPayload,
   GetShareSettingsResponse,
   SetShareSettingsPayload,
@@ -83,7 +87,29 @@ router.on<SetShareSettingsPayload, SetShareSettingsResponse>(
 
 router.on<CreateShareSessionPayload, CreateShareSessionResponse>(
   MessageKind.CreateShareSession,
-  async (payload) => createShareSessionImpl(payload, { getShareSettings }),
+  async (payload) => createShareSessionImpl(payload, { getShareSettings, setShareSettings }),
+);
+
+router.on<CheckShareAuthPayload, CheckShareAuthResponse>(
+  MessageKind.CheckShareAuth,
+  async () => checkShareAuth(),
+);
+
+router.on<OpenLoginPopupPayload, OpenLoginPopupResponse>(
+  MessageKind.OpenLoginPopup,
+  async ({ siteUrl }) => {
+    const base = normalizeBaseUrl(siteUrl);
+    const url = `${base}/wp-admin/admin.php?page=pageport-bridge`;
+    try {
+      await chrome.tabs.create({ url, active: true });
+    } catch (e) {
+      throw new MessageError(
+        ErrorCode.E_SHARE_NETWORK,
+        "Could not open WordPress login tab",
+        e instanceof Error ? e.message : String(e),
+      );
+    }
+  },
 );
 
 router.on<MountFloatingPanelPayload, MountFloatingPanelResponse>(
@@ -413,5 +439,56 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
       (e) => { clearTimeout(t); reject(e); },
     );
   });
+}
+
+/**
+ * Probe `/wp-json/pageport/v1/auth-status` on the saved WP site, persist the
+ * latest identity + nonce, and return a panel-friendly summary. Public route
+ * so it works with the WP cookie alone (no nonce needed yet).
+ */
+async function checkShareAuth(): Promise<CheckShareAuthResponse> {
+  const cfg = await getShareSettings();
+  const empty: CheckShareAuthResponse = {
+    loggedIn: false, userId: 0, displayName: "", email: "", nonce: "",
+  };
+  if (!cfg.siteUrl) return empty;
+  const url = `${normalizeBaseUrl(cfg.siteUrl)}/wp-json/pageport/v1/auth-status`;
+  let res: Response;
+  try {
+    res = await fetch(url, { credentials: "include" });
+  } catch {
+    return empty;
+  }
+  if (!res.ok) return empty;
+  let json: {
+    logged_in: boolean; user_id?: number; display_name?: string;
+    email?: string; nonce?: string;
+    quota?: { active: number; max_active: number; hourly_used: number; max_hourly: number };
+  };
+  try { json = await res.json(); } catch { return empty; }
+  if (!json.logged_in) {
+    await setShareSettings({ userId: 0, displayName: "", email: "", nonce: "", signedInAtIso: "" });
+    return empty;
+  }
+  await setShareSettings({
+    userId: json.user_id ?? 0,
+    displayName: json.display_name ?? "",
+    email: json.email ?? "",
+    nonce: json.nonce ?? "",
+    signedInAtIso: new Date().toISOString(),
+  });
+  return {
+    loggedIn: true,
+    userId: json.user_id ?? 0,
+    displayName: json.display_name ?? "",
+    email: json.email ?? "",
+    nonce: json.nonce ?? "",
+    quota: json.quota ? {
+      active: json.quota.active,
+      maxActive: json.quota.max_active,
+      hourlyUsed: json.quota.hourly_used,
+      maxHourly: json.quota.max_hourly,
+    } : undefined,
+  };
 }
 

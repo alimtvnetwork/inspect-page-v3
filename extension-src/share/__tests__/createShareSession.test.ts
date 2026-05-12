@@ -5,14 +5,16 @@ import { MessageError } from "@shared/messaging";
 import type { CreateShareSessionPayload, ShareSettings } from "@shared/types";
 
 const validCfg: ShareSettings = {
-  pairingToken: "PPT1.eyJ2IjoxLCJzaXRlIjoiaHR0cHM6Ly9leGFtcGxlLmNvbSIsInRpZCI6InRva18xMjMiLCJ1aWQiOjQyfQ.SIG",
   siteUrl: "https://example.com",
-  tokenId: "tok_123",
-  pairedAtIso: "2025-01-01T00:00:00Z",
+  userId: 42,
+  displayName: "Alice",
+  email: "alice@example.com",
+  nonce: "abc123",
+  signedInAtIso: "2025-01-01T00:00:00Z",
 };
 
 const emptyCfg: ShareSettings = {
-  pairingToken: "", siteUrl: "", tokenId: "", pairedAtIso: "",
+  siteUrl: "", userId: 0, displayName: "", email: "", nonce: "", signedInAtIso: "",
 };
 
 const payload: CreateShareSessionPayload = {
@@ -20,6 +22,7 @@ const payload: CreateShareSessionPayload = {
   sourceUrl: "https://news.ycombinator.com/",
   html: "<html></html>",
   css: "body{}",
+  js: "console.log(1)",
   imageBase64: "AAAA",
   imageMime: "image/png",
 };
@@ -36,7 +39,7 @@ async function expectMsgErr(p: Promise<unknown>, code: ErrorCode): Promise<void>
 }
 
 describe("createShareSession", () => {
-  it("throws E_SHARE_AUTH when not paired", async () => {
+  it("throws E_SHARE_AUTH when not signed in", async () => {
     const fetchImpl = vi.fn();
     await expectMsgErr(
       createShareSession(payload, { getShareSettings: async () => emptyCfg, fetchImpl }),
@@ -45,12 +48,12 @@ describe("createShareSession", () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it("posts multipart to /wp-json/pageport/v1/sessions with Bearer auth", async () => {
+  it("posts multipart with cookie + nonce, including js field", async () => {
     const fetchImpl = vi.fn(async () =>
       jsonRes({
         session_id: "abc",
         expires_at: "2099-01-01T00:00:00Z",
-        urls: { html: "h", css: "c", image: "i" },
+        urls: { html: "h", css: "c", js: "j", image: "i" },
       }),
     );
     const out = await createShareSession(payload, {
@@ -60,31 +63,31 @@ describe("createShareSession", () => {
     expect(out).toEqual({
       sessionId: "abc",
       expiresAt: "2099-01-01T00:00:00Z",
-      urls: { html: "h", css: "c", image: "i" },
+      urls: { html: "h", css: "c", js: "j", image: "i" },
     });
     const [calledUrl, init] = fetchImpl.mock.calls[0];
     expect(calledUrl).toBe("https://example.com/wp-json/pageport/v1/sessions");
-    expect((init?.headers as Record<string, string>).Authorization).toBe(
-      "Bearer " + validCfg.pairingToken,
-    );
+    expect((init?.headers as Record<string, string>)["X-WP-Nonce"]).toBe("abc123");
+    expect((init as RequestInit).credentials).toBe("include");
     expect(init?.method).toBe("POST");
     expect(init?.body).toBeInstanceOf(FormData);
     const fd = init!.body as FormData;
     expect(fd.get("kind")).toBe("FullPage");
     expect(fd.get("source_url")).toBe("https://news.ycombinator.com/");
-    expect((fd.get("image") as File).name).toBe("screenshot.png");
+    expect((fd.get("image") as File).name).toBe("preview.png");
+    expect((fd.get("js") as File).name).toBe("script.js");
   });
 
   it("uses .jpg suffix for image/jpeg", async () => {
     const fetchImpl = vi.fn(async () =>
-      jsonRes({ session_id: "x", expires_at: "z", urls: { html: "", css: "", image: "" } }),
+      jsonRes({ session_id: "x", expires_at: "z", urls: { html: "", css: "", js: "", image: "" } }),
     );
     await createShareSession(
       { ...payload, imageMime: "image/jpeg" },
       { getShareSettings: async () => validCfg, fetchImpl: fetchImpl as unknown as typeof fetch },
     );
     const fd = fetchImpl.mock.calls[0][1]!.body as FormData;
-    expect((fd.get("image") as File).name).toBe("screenshot.jpg");
+    expect((fd.get("image") as File).name).toBe("preview.jpg");
   });
 
   it("maps thrown fetch into E_SHARE_NETWORK", async () => {
@@ -98,15 +101,18 @@ describe("createShareSession", () => {
     );
   });
 
-  it("maps 401 into E_SHARE_AUTH", async () => {
+  it("maps 401 into E_SHARE_AUTH and clears stale nonce", async () => {
     const fetchImpl = vi.fn(async () => new Response("nope", { status: 401 }));
+    const setShareSettings = vi.fn(async (p) => ({ ...validCfg, ...p }));
     await expectMsgErr(
       createShareSession(payload, {
         getShareSettings: async () => validCfg,
+        setShareSettings: setShareSettings as never,
         fetchImpl: fetchImpl as unknown as typeof fetch,
       }),
       ErrorCode.E_SHARE_AUTH,
     );
+    expect(setShareSettings).toHaveBeenCalledWith(expect.objectContaining({ nonce: "" }));
   });
 
   it("maps 429 into E_SHARE_QUOTA", async () => {

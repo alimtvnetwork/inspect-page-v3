@@ -37,6 +37,7 @@ register_deactivation_hook( __FILE__, [ 'PagePort_Cleanup', 'deactivate' ] );
 
 add_action( 'rest_api_init', [ 'PagePort_REST', 'register_routes' ] );
 add_action( 'rest_api_init', [ 'PagePort_Auth', 'register_routes' ] );
+add_filter( 'rest_pre_serve_request', [ 'PagePort_Auth', 'send_cors_headers' ], 10, 3 );
 add_action( 'pageport_cleanup', [ 'PagePort_Cleanup', 'run' ] );
 
 // Run schema upgrade when the plugin file version is newer than what's stored.
