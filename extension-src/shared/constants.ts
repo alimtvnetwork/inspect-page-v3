@@ -62,3 +62,10 @@ export const README_TXT =
   "This bundle was produced by the PagePort Chrome extension.\n" +
   "Feed the four files to your LLM together with your restyle prompt.\n" +
   "manifest.json contains capture metadata; screenshot.png is the full page.\n";
+
+// ---- Smart Share backend (v2.2) ----
+// The official PagePort WordPress backend. Baked into the extension so users
+// never have to type a site URL. Leave empty until the production site is
+// chosen; the Share Links export mode stays disabled while empty.
+// TODO: set this to the production WordPress URL before publishing.
+export const PAGEPORT_WP_SITE_URL = "" as const;

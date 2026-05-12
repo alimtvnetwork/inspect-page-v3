@@ -12,7 +12,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COPY } from "@shared/copy";
-import { SUCCESS_AUTO_DISMISS_MS } from "@shared/constants";
+import { PAGEPORT_WP_SITE_URL, SUCCESS_AUTO_DISMISS_MS } from "@shared/constants";
 import { ErrorCode, MessageKind, PanelStatus } from "@shared/enums";
 import { MessageError, sendToBackground } from "@shared/messaging";
 import type {
@@ -30,7 +30,6 @@ import JSZip from "jszip";
 import { ExportFlow } from "@shared/enums";
 import { ExportModes } from "./ExportModes";
 import { interpolateAi } from "@shared/copy";
-import { parseSiteUrl } from "@shared/shareSettings";
 import { MessageKind as MK } from "@shared/enums";
 
 export type PanelSurface = "popup" | "floating";
@@ -907,25 +906,18 @@ interface ShareSettingsSectionProps {
 }
 
 function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps): JSX.Element {
-  const [draft, setDraft] = useState(settings.siteUrl);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [hint, setHint] = useState("");
-  const signedIn = !!settings.nonce && !!settings.userId && !!settings.siteUrl;
-
-  const onSaveUrl = (): void => {
-    const parsed = parseSiteUrl(draft);
-    if (!parsed) { setErr(COPY.shareBadUrlMsg); return; }
-    setErr("");
-    onPatch({ siteUrl: parsed });
-  };
+  const siteUrl = PAGEPORT_WP_SITE_URL;
+  const configured = !!siteUrl;
+  const signedIn = configured && !!settings.nonce && !!settings.userId;
 
   const onSignIn = async (): Promise<void> => {
-    const url = parseSiteUrl(draft || settings.siteUrl);
-    if (!url) { setErr(COPY.shareBadUrlMsg); return; }
-    if (url !== settings.siteUrl) onPatch({ siteUrl: url });
+    if (!configured) { setErr(COPY.shareNotConfiguredMsg); return; }
+    setErr("");
     try {
-      await sendToBackground<{ siteUrl: string }, void>(MK.OpenLoginPopup, { siteUrl: url });
+      await sendToBackground<{ siteUrl: string }, void>(MK.OpenLoginPopup, { siteUrl });
       setHint(COPY.shareLoginOpenedMsg);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -933,6 +925,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
   };
 
   const onRefresh = async (): Promise<void> => {
+    if (!configured) { setErr(COPY.shareNotConfiguredMsg); return; }
     setBusy(true); setErr(""); setHint("");
     try {
       const r = await sendToBackground<Record<string, never>, {
@@ -961,23 +954,15 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
     <details className="lpe-settings">
       <summary>{COPY.shareSettingsHeader}</summary>
       <div className="lpe-settings-body">
-        <div className="lpe-field">
-          <label htmlFor="lpe-share-url">{COPY.shareLblSiteUrl}</label>
-          <input
-            id="lpe-share-url"
-            className="lpe-input"
-            placeholder={COPY.sharePlaceholderSiteUrl}
-            value={draft}
-            onChange={(e) => { setDraft(e.target.value); if (err) setErr(""); }}
-            onBlur={onSaveUrl}
-          />
-        </div>
-        {signedIn ? (
+        {!configured ? (
+          <div className="lpe-debug-note" role="status">
+            {COPY.shareNotConfiguredMsg}
+          </div>
+        ) : signedIn ? (
           <div className="lpe-field">
             <div>
               {COPY.shareSignedInAsPrefix}{" "}
-              <strong>{settings.displayName || settings.email}</strong>{" · "}
-              <code>{hostnameOf(settings.siteUrl)}</code>
+              <strong>{settings.displayName || settings.email}</strong>
             </div>
             <button type="button" className="lpe-btn" onClick={onSignOut}>
               {COPY.shareSignOutBtn}
@@ -985,10 +970,10 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
           </div>
         ) : (
           <div className="lpe-field">
-            <button type="button" className="lpe-btn lpe-btn-primary" onClick={onSignIn} disabled={!draft.trim()}>
+            <button type="button" className="lpe-btn lpe-btn-primary" onClick={onSignIn}>
               {COPY.shareSignInBtn}
             </button>
-            <button type="button" className="lpe-btn" onClick={onRefresh} disabled={busy || !settings.siteUrl}>
+            <button type="button" className="lpe-btn" onClick={onRefresh} disabled={busy}>
               {busy ? "…" : COPY.shareCheckBtn}
             </button>
           </div>
@@ -999,10 +984,6 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
       </div>
     </details>
   );
-}
-
-function hostnameOf(url: string): string {
-  try { return new URL(url).hostname; } catch { return url; }
 }
 
 interface ShareDialogProps {
