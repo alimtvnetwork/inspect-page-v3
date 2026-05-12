@@ -30,6 +30,10 @@ final class PagePort_Cleanup {
             $wpdb->update( "{$p}share_sessions", [ 'status_id' => $expired ], [ 'id' => $row->id ] );
             $n++;
         }
+        // Prune old rate-limit events (> 2h) so the table stays small.
+        $wpdb->query(
+            "DELETE FROM {$p}rate_events WHERE created_at < (UTC_TIMESTAMP() - INTERVAL 2 HOUR)"
+        );
         return $n;
     }
 

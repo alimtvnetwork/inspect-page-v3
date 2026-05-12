@@ -20,9 +20,8 @@ final class PagePort_Storage {
         $dir = self::base_dir();
         if ( ! file_exists( $dir ) ) { wp_mkdir_p( $dir ); }
         $ht = $dir . '/.htaccess';
-        if ( ! file_exists( $ht ) ) {
-            file_put_contents( $ht, "<FilesMatch \"^(?!html\\.|css\\.|image\\.).*$\">\nDeny from all\n</FilesMatch>\n" );
-        }
+        // Always rewrite to keep the allow-list current across upgrades.
+        file_put_contents( $ht, "<FilesMatch \"^(?!html\\.|css\\.|js\\.|image\\.).*$\">\nDeny from all\n</FilesMatch>\n" );
     }
 
     public static function session_dir( $user_id, $session_id ) {
@@ -54,6 +53,7 @@ final class PagePort_Storage {
     public static function ext_for( $kind, $mime ) {
         if ( $kind === PagePort_AssetType::HTML ) return 'html';
         if ( $kind === PagePort_AssetType::CSS )  return 'css';
+        if ( $kind === PagePort_AssetType::JS )   return 'js';
         if ( strpos( $mime, 'jpeg' ) !== false )  return 'jpg';
         if ( strpos( $mime, 'webp' ) !== false )  return 'webp';
         return 'png';
