@@ -29,6 +29,7 @@ export enum MessageKind {
   CreateShareSession = "CreateShareSession",
   CheckShareAuth = "CheckShareAuth",
   OpenLoginPopup = "OpenLoginPopup",
+  RevokeShareSession = "RevokeShareSession",
 }
 
 export enum PanelStatus {
