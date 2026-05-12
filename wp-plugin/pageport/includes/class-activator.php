@@ -42,6 +42,7 @@ final class PagePort_Activator {
             kind_id TINYINT UNSIGNED NOT NULL,
             status_id TINYINT UNSIGNED NOT NULL,
             source_url TEXT NULL,
+            prompt TEXT NULL,
             created_at DATETIME NOT NULL,
             expires_at DATETIME NOT NULL,
             PRIMARY KEY (id),
@@ -63,17 +64,12 @@ final class PagePort_Activator {
             UNIQUE KEY session_asset (session_id, asset_type_id)
         ) {$charset};";
 
-        $sql[] = "CREATE TABLE {$p}pairing_tokens (
+        $sql[] = "CREATE TABLE {$p}rate_events (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            tid CHAR(22) NOT NULL,
             user_id BIGINT UNSIGNED NOT NULL,
-            label VARCHAR(120) NOT NULL DEFAULT '',
             created_at DATETIME NOT NULL,
-            last_used_at DATETIME NULL,
-            revoked_at DATETIME NULL,
             PRIMARY KEY (id),
-            UNIQUE KEY tid (tid),
-            KEY user_id (user_id)
+            KEY user_created (user_id, created_at)
         ) {$charset};";
 
         foreach ( $sql as $stmt ) { dbDelta( $stmt ); }
@@ -82,12 +78,17 @@ final class PagePort_Activator {
         self::seed_enum( "{$p}share_session_kinds",    PagePort_SessionKind::all() );
         self::seed_enum( "{$p}share_asset_types",      PagePort_AssetType::all() );
 
-        if ( ! get_option( 'pageport_signing_key' ) ) {
-            add_option( 'pageport_signing_key', bin2hex( random_bytes( 32 ) ), '', 'no' );
+        if ( false === get_option( 'pageport_max_active_per_user' ) ) {
+            add_option( 'pageport_max_active_per_user', 30, '', 'no' );
         }
-        if ( false === get_option( 'pageport_max_active_per_token' ) ) {
-            add_option( 'pageport_max_active_per_token', 30, '', 'no' );
+        if ( false === get_option( 'pageport_max_per_hour_per_user' ) ) {
+            add_option( 'pageport_max_per_hour_per_user', 30, '', 'no' );
         }
+
+        // Drop legacy pairing_tokens table + signing key option (v2.0/v2.1 → v2.2).
+        $wpdb->query( "DROP TABLE IF EXISTS {$p}pairing_tokens" );
+        delete_option( 'pageport_signing_key' );
+        delete_option( 'pageport_max_active_per_token' );
 
         if ( ! wp_next_scheduled( 'pageport_cleanup' ) ) {
             wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'pageport_cleanup' );
