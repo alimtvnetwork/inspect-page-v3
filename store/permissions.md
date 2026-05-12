@@ -36,9 +36,10 @@ single multipart POST to the WordPress site URL the user entered.
 - [x] We do **not** collect health information.
 - [x] We do **not** collect financial information.
 - [x] We do **not** collect authentication information beyond what the
-      user voluntarily enters into Settings (WordPress site URL,
-      username, and Application Password) and which is stored only in
-      `chrome.storage.local` on the user's machine.
+      user voluntarily enters into Settings (WordPress site URL) and
+      WordPress login cookies set by the user's own browser when they
+      sign in to their WordPress site through the standard WP login
+      page. No passwords are stored by PagePort.
 - [x] We do **not** collect personal communications.
 - [x] We do **not** collect location.
 - [x] We do **not** collect web history.
