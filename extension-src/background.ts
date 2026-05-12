@@ -7,6 +7,7 @@ import { MessageError, MessageRouter, sendToTab } from "@shared/messaging";
 import { getPanelPosition, getSettings, setPanelPosition, setSettings } from "@shared/settings";
 import { getShareSettings, normalizeBaseUrl, setShareSettings } from "@shared/shareSettings";
 import { createShareSession as createShareSessionImpl } from "@share/createShareSession";
+import { revokeShareSession as revokeShareSessionImpl } from "@share/revokeShareSession";
 import { KEEPALIVE_INTERVAL_MS } from "@shared/constants";
 import { COLLECT_TIMEOUT_MS } from "@shared/constants";
 import type {
@@ -99,41 +100,8 @@ router.on<CheckShareAuthPayload, CheckShareAuthResponse>(
 
 router.on<RevokeShareSessionPayload, RevokeShareSessionResponse>(
   MessageKind.RevokeShareSession,
-  async ({ sessionId }) => {
-    const cfg = await getShareSettings();
-    if (!cfg.siteUrl || !cfg.nonce) {
-      throw new MessageError(
-        ErrorCode.E_SHARE_AUTH,
-        "Sign in to your WordPress site in Settings → Smart Share.",
-      );
-    }
-    const url = `${normalizeBaseUrl(cfg.siteUrl)}/wp-json/pageport/v1/sessions/${encodeURIComponent(sessionId)}`;
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        method: "DELETE",
-        headers: { "X-WP-Nonce": cfg.nonce },
-        credentials: "include",
-      });
-    } catch (e) {
-      throw new MessageError(
-        ErrorCode.E_SHARE_NETWORK, "Could not reach WordPress site",
-        e instanceof Error ? e.message : String(e),
-      );
-    }
-    if (res.status === 401 || res.status === 403) {
-      await setShareSettings({ nonce: "", userId: 0, displayName: "", email: "", signedInAtIso: "" });
-      throw new MessageError(
-        ErrorCode.E_SHARE_AUTH,
-        "WordPress session expired — sign in again.",
-      );
-    }
-    if (!res.ok && res.status !== 404) {
-      throw new MessageError(
-        ErrorCode.E_SHARE_UPSTREAM, `WordPress error ${res.status}`,
-      );
-    }
-  },
+  async ({ sessionId }) =>
+    revokeShareSessionImpl(sessionId, { getShareSettings, setShareSettings }),
 );
 
 router.on<OpenLoginPopupPayload, OpenLoginPopupResponse>(
