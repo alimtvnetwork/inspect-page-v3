@@ -248,16 +248,20 @@ export type SetPanelPositionResponse = PanelPosition;
 export interface MountFloatingPanelPayload { tabId: number }
 export type MountFloatingPanelResponse = void;
 
-// ---- v2 Share Links (WP plugin backend) ----
+// ---- v2.2 Smart Share (WP plugin backend, cookie + nonce auth) ----
 export interface ShareSettings {
-  /** Full printable PagePort pairing token: `PPT1.<payload>.<sig>`. */
-  pairingToken: string;
-  /** WP base URL decoded from the token at pair time (no trailing slash). */
+  /** WP base URL the user typed (no trailing slash). */
   siteUrl: string;
-  /** Token row PK decoded from the token, surfaced for display + unpair. */
-  tokenId: string;
-  /** ISO timestamp of pairing, or "" when unpaired. */
-  pairedAtIso: string;
+  /** Latest known WP user id, or 0 when not signed in. */
+  userId: number;
+  /** Display name from /auth-status, or "". */
+  displayName: string;
+  /** Email from /auth-status, or "". */
+  email: string;
+  /** Latest fetched `wp_rest` nonce, or "". */
+  nonce: string;
+  /** ISO timestamp of last successful sign-in probe, or "". */
+  signedInAtIso: string;
 }
 
 export type GetShareSettingsPayload = Record<string, never>;
@@ -271,6 +275,8 @@ export interface CreateShareSessionPayload {
   sourceUrl: string;
   html: string;
   css: string;
+  js: string;
+  prompt?: string;
   /** PNG/JPEG bytes as base64 (no data: prefix). */
   imageBase64: string;
   imageMime: string;
@@ -278,8 +284,25 @@ export interface CreateShareSessionPayload {
 export interface CreateShareSessionResponse {
   sessionId: string;
   expiresAt: string;
-  urls: { html: string; css: string; image: string };
+  urls: { html: string; css: string; js: string; image: string };
 }
+
+// ---- v2.2 sign-in probe ----
+export type CheckShareAuthPayload = Record<string, never>;
+export interface CheckShareAuthResponse {
+  loggedIn: boolean;
+  userId: number;
+  displayName: string;
+  email: string;
+  nonce: string;
+  quota?: {
+    active: number; maxActive: number;
+    hourlyUsed: number; maxHourly: number;
+  };
+}
+
+export interface OpenLoginPopupPayload { siteUrl: string }
+export type OpenLoginPopupResponse = void;
 
 export interface EnterPickerModePayload { tabId: number }
 export type EnterPickerModePayload_ = EnterPickerModePayload;
