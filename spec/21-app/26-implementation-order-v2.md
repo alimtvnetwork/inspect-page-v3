@@ -68,3 +68,38 @@ Verification: visible in wp-admin; revoke works.
 - Error codes wired: `E_SHARE_AUTH`, `E_SHARE_NETWORK`, `E_SHARE_UPSTREAM`, `E_SHARE_BAD_INPUT`, `E_SHARE_QUOTA`, `E_SHARE_BAD_TOKEN`.
 - Acceptance checklist in `11-acceptance-criteria.md` extended with AC-EX-* and AC-SH-*.
 - Repackage `pageport.zip` and `pageport-wp.zip`; landing page links both and documents the pairing flow.
+
+## Stages V4''–V8'' — v2.2 Smart Share rewrite (cookie + nonce)
+
+Supersedes V4'–V8' (the pairing-token track is removed).
+
+- **V4'' Auth swap** — Delete `class-pairing.php` and the
+  `pp_pairing_tokens` table. Replace `require_bearer()` with
+  `PagePort_Auth::require_wp_user()` (checks `is_user_logged_in()` +
+  `wp_verify_nonce(.., 'wp_rest')`). Add `GET /me` returning
+  `{ logged_in, user_id, display_name, email, nonce, quota }`.
+  Bridge admin page (`pageport-bridge`, hidden) `postMessage`s the
+  fresh nonce back to the extension.
+- **V5'' Sessions on cookie + 4 files** — `POST/GET/DELETE /sessions`
+  switch to `require_wp_user`. Accept `js` part. Strip EXIF on image.
+  Public reads renamed to
+  `/share/{id}/{index.html|style.css|script.js|preview.png}`. New
+  `pp_rate_events` table; per-user **active** + **uploads/hour**
+  quotas, both → `429 E_SHARE_QUOTA`.
+- **V6'' Extension SW + Settings** — Drop `pairingToken` / `tokenId` /
+  `pairedAtIso` from `ShareSettings`; add `userId`, `displayName`,
+  `email`, `nonce`, `signedInAtIso`. New SW handlers `OpenLoginPopup`,
+  `CheckShareAuth`, `RevokeShareSession`. `createShareSession` posts
+  4 multipart parts with `credentials: 'include'` + `X-WP-Nonce`.
+- **V7'' Share dialog** — Modal showing all 4 URLs (per-row Copy),
+  live 24h countdown derived from `expires_at`, **Copy AI prompt + 4
+  URLs**, **Revoke now** (calls `RevokeShareSession`).
+- **V8'' Acceptance + ship** — All 86 in-sandbox tests green
+  (`smokeE2E` rewritten for cookie+nonce, `buildPromptMd` updated for
+  4-URL refs). Manual checklist in
+  [`docs/ACCEPTANCE-v2.2.md`](../../docs/ACCEPTANCE-v2.2.md). WP plugin
+  bumped to **2.2.0**; both `pageport.zip` and `pageport-wp.zip`
+  repackaged; landing copy + Privacy page rewritten for the cookie
+  flow.
+
+Status: **shipped** (CHANGELOG 2.2.0, 2026-05-12).
