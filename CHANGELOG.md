@@ -4,6 +4,31 @@ All notable changes to **PagePort** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] — 2026-05-12
+
+### Changed — Smart Share v2.2 (no more pairing tokens)
+
+- **Auth replaced**: PagePort pairing tokens (`PPT1.…`) are gone. The
+  WordPress plugin now authenticates the extension via the standard
+  WordPress login cookie + `X-WP-Nonce`. Users sign in by clicking
+  **Sign in** in the extension's `Settings → Smart Share (WordPress)`
+  panel, which opens a hidden `pageport-bridge` admin page that forwards
+  the `wp_rest` nonce to the extension via `postMessage`.
+- **Four files, four URLs**: Smart Share now uploads HTML / CSS / **JS**
+  / screenshot and serves them at `/share/{id}/index.html`,
+  `/style.css`, `/script.js`, `/preview.png`. The AI instruction block
+  references all four.
+- **Quotas per WP user** (not per token): 30 active sessions, 60
+  uploads/hour. New table `pp_rate_events` is pruned hourly.
+- **New share dialog** in the extension lists the four URLs with copy
+  buttons, a live 24-hour countdown, "Copy AI prompt + 4 URLs", and an
+  inline **Revoke now** button (calls `DELETE /sessions/{id}`).
+- **Removed**: `class-pairing.php`, `pairingToken` / `tokenId` /
+  `pairedAtIso` extension settings, the pairing token UI in
+  `Tools → PagePort`, and the `DELETE /pairing/self` REST route.
+- **WP plugin version bumped** to 2.2.0; landing copy and Privacy page
+  updated for cookie-based Smart Share; `pageport-wp.zip` repackaged.
+
 ## [2.0.0] — 2026-05-10
 
 ### Added — v2 PagePort backend (`spec/21-app/`)
