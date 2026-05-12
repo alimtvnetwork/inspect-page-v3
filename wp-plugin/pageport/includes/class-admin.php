@@ -157,15 +157,127 @@ final class PagePort_Admin {
         if ( ! function_exists( 'is_plugin_active' ) ) {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
         }
+        global $wpdb;
+        $p = $wpdb->prefix . 'pp_';
+        $user = wp_get_current_user();
+        $uid  = (int) $user->ID;
+
         $max_active = (int) get_option( 'pageport_max_active_per_user', 30 );
         $max_hour   = (int) get_option( 'pageport_max_per_hour_per_user', 30 );
+        $ttl_hours  = (int) ( defined( 'PAGEPORT_SHARE_TTL' ) ? PAGEPORT_SHARE_TTL / HOUR_IN_SECONDS : 24 );
         $nextend    = is_plugin_active( 'nextend-facebook-connect/nextend-facebook-connect.php' )
             || class_exists( 'NextendSocialLogin' );
 
-        echo '<div class="wrap"><h1>' . esc_html__( 'PagePort', 'pageport' ) . '</h1>';
-        echo '<p>' . esc_html__( 'PagePort Smart Share lets the Chrome extension publish HTML/CSS/JS/preview bundles for 24 hours, then hand the AI prompt off to ChatGPT, Claude, Cursor, or Lovable.', 'pageport' ) . '</p>';
+        $active_status_id = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT id FROM {$p}share_session_statuses WHERE name = %s",
+            PagePort_SessionStatus::ACTIVE
+        ) );
+        $active_count = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$p}share_sessions WHERE user_id = %d AND status_id = %d AND expires_at > UTC_TIMESTAMP()",
+            $uid, $active_status_id
+        ) );
+        $hour_count = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$p}rate_events WHERE user_id = %d AND created_at > (UTC_TIMESTAMP() - INTERVAL 1 HOUR)",
+            $uid
+        ) );
 
-        echo '<h2>' . esc_html__( 'Sign-in', 'pageport' ) . '</h2>';
+        $recent = $wpdb->get_results( $wpdb->prepare(
+            "SELECT s.session_id, s.created_at, s.expires_at, s.source_url,
+                    k.name AS kind, st.name AS status
+               FROM {$p}share_sessions s
+               JOIN {$p}share_session_kinds k    ON k.id = s.kind_id
+               JOIN {$p}share_session_statuses st ON st.id = s.status_id
+              WHERE s.user_id = %d
+              ORDER BY s.created_at DESC
+              LIMIT 10",
+            $uid
+        ), ARRAY_A );
+
+        $site_url     = untrailingslashit( home_url( '/' ) );
+        $bridge_url   = admin_url( 'admin.php?page=pageport-bridge' );
+        $sessions_url = admin_url( 'tools.php?page=pageport-sessions' );
+        $rest_health  = esc_url_raw( rest_url( PAGEPORT_REST_NS . '/auth-status' ) );
+        $permalinks_ok = (bool) get_option( 'permalink_structure' );
+
+        echo '<div class="wrap"><h1>' . esc_html__( 'PagePort', 'pageport' ) . '</h1>';
+        echo '<p style="max-width:780px">' . esc_html__( 'PagePort Smart Share is the WordPress backend for the PagePort Chrome extension. It hosts captured HTML / CSS / JS / preview bundles for 24 hours and exposes them via 4 public URLs you can paste into ChatGPT, Claude, Cursor, or Lovable.', 'pageport' ) . '</p>';
+
+        if ( ! $permalinks_ok ) {
+            echo '<div class="notice notice-error"><p><strong>' . esc_html__( 'Pretty permalinks are disabled.', 'pageport' ) . '</strong> ';
+            echo esc_html__( 'The REST API needs them. Go to Settings → Permalinks and pick anything other than “Plain”.', 'pageport' );
+            echo ' <a href="' . esc_url( admin_url( 'options-permalink.php' ) ) . '">' . esc_html__( 'Open Permalinks', 'pageport' ) . '</a></p></div>';
+        }
+
+        // ── Account ──────────────────────────────────────────────
+        echo '<h2>' . esc_html__( 'Your account', 'pageport' ) . '</h2>';
+        echo '<table class="widefat striped" style="max-width:780px"><tbody>';
+        echo '<tr><th style="width:180px">' . esc_html__( 'Signed in as', 'pageport' ) . '</th><td><strong>' . esc_html( $user->display_name ) . '</strong> <span class="description">(' . esc_html( $user->user_login ) . ')</span></td></tr>';
+        echo '<tr><th>' . esc_html__( 'Email', 'pageport' ) . '</th><td>' . esc_html( $user->user_email ) . '</td></tr>';
+        echo '<tr><th>' . esc_html__( 'WP user ID', 'pageport' ) . '</th><td><code>' . esc_html( (string) $uid ) . '</code></td></tr>';
+        echo '<tr><th>' . esc_html__( 'Sign out', 'pageport' ) . '</th><td><a class="button" href="' . esc_url( wp_logout_url( admin_url() ) ) . '">' . esc_html__( 'Sign out of WordPress', 'pageport' ) . '</a></td></tr>';
+        echo '</tbody></table>';
+
+        // ── Pair extension ──────────────────────────────────────
+        echo '<h2>' . esc_html__( 'Pair the Chrome extension', 'pageport' ) . '</h2>';
+        echo '<ol style="max-width:780px">';
+        echo '<li>' . esc_html__( 'Install the PagePort Chrome extension (pageport.zip).', 'pageport' ) . '</li>';
+        echo '<li>' . sprintf(
+            /* translators: %s = site URL */
+            esc_html__( 'In the extension Settings → Smart Share, the backend is hard-coded to %s.', 'pageport' ),
+            '<code>' . esc_html( $site_url ) . '</code>'
+        ) . '</li>';
+        echo '<li>' . esc_html__( 'Click “Sign in” in the extension. A WordPress login window will open and pair automatically.', 'pageport' ) . '</li>';
+        echo '</ol>';
+        echo '<p><a class="button button-primary" href="' . esc_url( $bridge_url ) . '" target="_blank" rel="noopener">' . esc_html__( 'Test pairing bridge', 'pageport' ) . '</a> ';
+        echo '<a class="button" href="' . esc_url( $rest_health ) . '" target="_blank" rel="noopener">' . esc_html__( 'Check REST endpoint', 'pageport' ) . '</a></p>';
+
+        // ── Quota ───────────────────────────────────────────────
+        echo '<h2>' . esc_html__( 'Your usage', 'pageport' ) . '</h2>';
+        echo '<table class="widefat striped" style="max-width:780px"><thead><tr>';
+        echo '<th>' . esc_html__( 'Metric', 'pageport' ) . '</th><th>' . esc_html__( 'Current', 'pageport' ) . '</th><th>' . esc_html__( 'Limit', 'pageport' ) . '</th>';
+        echo '</tr></thead><tbody>';
+        echo '<tr><td>' . esc_html__( 'Active share sessions', 'pageport' ) . '</td><td>' . (int) $active_count . '</td><td>' . (int) $max_active . '</td></tr>';
+        echo '<tr><td>' . esc_html__( 'Uploads in the last hour', 'pageport' ) . '</td><td>' . (int) $hour_count . '</td><td>' . (int) $max_hour . '</td></tr>';
+        echo '<tr><td>' . esc_html__( 'Share lifetime', 'pageport' ) . '</td><td>' . (int) $ttl_hours . 'h</td><td>' . (int) $ttl_hours . 'h</td></tr>';
+        echo '</tbody></table>';
+        echo '<p class="description">' . sprintf(
+            esc_html__( 'Limits are stored in wp_options keys %1$s and %2$s.', 'pageport' ),
+            '<code>pageport_max_active_per_user</code>',
+            '<code>pageport_max_per_hour_per_user</code>'
+        ) . '</p>';
+
+        // ── Recent sessions ─────────────────────────────────────
+        echo '<h2>' . esc_html__( 'Recent share sessions', 'pageport' ) . '</h2>';
+        if ( ! $recent ) {
+            echo '<p>' . esc_html__( 'No share sessions yet — capture a page from the PagePort Chrome extension to create one.', 'pageport' ) . '</p>';
+        } else {
+            echo '<table class="widefat striped"><thead><tr>';
+            echo '<th>' . esc_html__( 'Session', 'pageport' ) . '</th>';
+            echo '<th>' . esc_html__( 'Kind', 'pageport' ) . '</th>';
+            echo '<th>' . esc_html__( 'Status', 'pageport' ) . '</th>';
+            echo '<th>' . esc_html__( 'Expires (UTC)', 'pageport' ) . '</th>';
+            echo '<th>' . esc_html__( 'Public URLs', 'pageport' ) . '</th>';
+            echo '</tr></thead><tbody>';
+            foreach ( $recent as $r ) {
+                $base = rest_url( PAGEPORT_REST_NS . '/share/' . $r['session_id'] );
+                $links = [];
+                foreach ( [ 'html', 'css', 'js', 'image' ] as $k ) {
+                    $links[] = '<a href="' . esc_url( $base . '/' . $k ) . '" target="_blank" rel="noopener">' . esc_html( $k ) . '</a>';
+                }
+                echo '<tr>';
+                echo '<td><code>' . esc_html( substr( $r['session_id'], 0, 12 ) ) . '…</code></td>';
+                echo '<td>' . esc_html( $r['kind'] ) . '</td>';
+                echo '<td>' . esc_html( $r['status'] ) . '</td>';
+                echo '<td>' . esc_html( $r['expires_at'] ) . '</td>';
+                echo '<td>' . implode( ' · ', $links ) . '</td>';
+                echo '</tr>';
+            }
+            echo '</tbody></table>';
+            echo '<p><a href="' . esc_url( $sessions_url ) . '">' . esc_html__( 'Manage all sessions →', 'pageport' ) . '</a></p>';
+        }
+
+        // ── Sign-in providers ───────────────────────────────────
+        echo '<h2>' . esc_html__( 'Sign-in providers', 'pageport' ) . '</h2>';
         echo '<p>' . esc_html__( 'Email + password is built in. Add Google sign-in by installing Nextend Social Login.', 'pageport' ) . '</p>';
         if ( $nextend ) {
             echo '<p><strong style="color:#1a7f37;">✓ Nextend Social Login detected.</strong></p>';
@@ -174,13 +286,6 @@ final class PagePort_Admin {
             echo '<a href="' . esc_url( admin_url( 'plugin-install.php?s=nextend+social+login&tab=search&type=term' ) ) . '">' . esc_html__( 'Install it', 'pageport' ) . '</a>.</p>';
         }
 
-        echo '<h2>' . esc_html__( 'Quotas', 'pageport' ) . '</h2>';
-        echo '<p>' . sprintf(
-            esc_html__( 'Active sessions per user: %d. Sessions per user per hour: %d. Edit via wp_options keys %s and %s.', 'pageport' ),
-            $max_active, $max_hour,
-            '<code>pageport_max_active_per_user</code>',
-            '<code>pageport_max_per_hour_per_user</code>'
-        ) . '</p>';
         echo '</div>';
     }
 
