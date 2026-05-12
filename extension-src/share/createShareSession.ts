@@ -1,7 +1,6 @@
 /**
- * Pure helper extracted from background.ts so we can unit-test the
- * Share Links upload pipeline without spinning up a service worker.
- * Source: spec/21-app/25-share-links.md.
+ * Smart Share upload (v2.2). Cookie-credentialed POST to the WP plugin
+ * with X-WP-Nonce. Sends 4 files (html / css / js / image).
  */
 import { ErrorCode } from "@shared/enums";
 import { MessageError } from "@shared/messaging";
@@ -14,6 +13,7 @@ import type {
 
 export interface CreateShareSessionDeps {
   getShareSettings: () => Promise<ShareSettings>;
+  setShareSettings?: (patch: Partial<ShareSettings>) => Promise<ShareSettings>;
   fetchImpl?: typeof fetch;
 }
 
@@ -25,25 +25,31 @@ export async function createShareSession(
   if (!shareConfigured(cfg)) {
     throw new MessageError(
       ErrorCode.E_SHARE_AUTH,
-      "Share Links is not paired. Paste a pairing token in Settings → Share Links.",
+      "Sign in to your WordPress site in Settings → Smart Share.",
     );
   }
   const url = `${normalizeBaseUrl(cfg.siteUrl)}/wp-json/pageport/v1/sessions`;
-  const auth = "Bearer " + cfg.pairingToken;
 
   const fd = new FormData();
   fd.append("kind", p.kind);
   fd.append("source_url", p.sourceUrl);
+  if (p.prompt) fd.append("prompt", p.prompt);
   fd.append("html", new Blob([p.html], { type: "text/html" }), "index.html");
   fd.append("css",  new Blob([p.css],  { type: "text/css"  }), "style.css");
+  fd.append("js",   new Blob([p.js],   { type: "application/javascript" }), "script.js");
   const imgBytes = base64ToBytes(p.imageBase64);
   const ext = p.imageMime.includes("jpeg") ? "jpg" : "png";
-  fd.append("image", new Blob([imgBytes], { type: p.imageMime }), `screenshot.${ext}`);
+  fd.append("image", new Blob([imgBytes], { type: p.imageMime }), `preview.${ext}`);
 
   const fetchFn = deps.fetchImpl ?? fetch;
   let res: Response;
   try {
-    res = await fetchFn(url, { method: "POST", headers: { Authorization: auth }, body: fd });
+    res = await fetchFn(url, {
+      method: "POST",
+      headers: { "X-WP-Nonce": cfg.nonce },
+      credentials: "include",
+      body: fd,
+    });
   } catch (e) {
     throw new MessageError(
       ErrorCode.E_SHARE_NETWORK, "Could not reach WordPress site",
@@ -51,12 +57,21 @@ export async function createShareSession(
     );
   }
   if (res.status === 401 || res.status === 403) {
-    throw new MessageError(ErrorCode.E_SHARE_AUTH, "WordPress rejected the credentials");
+    // Stale nonce / signed out elsewhere — clear cached identity.
+    if (deps.setShareSettings) {
+      try {
+        await deps.setShareSettings({ nonce: "", userId: 0, displayName: "", email: "", signedInAtIso: "" });
+      } catch { /* ignore */ }
+    }
+    throw new MessageError(
+      ErrorCode.E_SHARE_AUTH,
+      "WordPress session expired — sign in again from Settings → Smart Share.",
+    );
   }
   if (res.status === 429) {
     throw new MessageError(
       ErrorCode.E_SHARE_QUOTA,
-      "Active share-link quota reached. Revoke old links in WordPress and try again.",
+      "Share quota reached. Revoke old links in WordPress and try again.",
     );
   }
   if (res.status >= 500) {
@@ -71,7 +86,7 @@ export async function createShareSession(
   }
   const json = (await res.json()) as {
     session_id: string; expires_at: string;
-    urls: { html: string; css: string; image: string };
+    urls: { html: string; css: string; js: string; image: string };
   };
   return {
     sessionId: json.session_id,
