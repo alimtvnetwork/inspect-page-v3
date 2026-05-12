@@ -68,7 +68,7 @@ All character counts respect Chrome Web Store limits as of 2025.
       script.js and preview.png — valid for 24 hours and revocable at
       any time from the panel.
 
-    What's NOT in v1 (documented limitations):
+    Known limitations:
 
     • Cross-origin iframes are kept verbatim (their pixels are still in
       the screenshot, but their DOM is not walked).
