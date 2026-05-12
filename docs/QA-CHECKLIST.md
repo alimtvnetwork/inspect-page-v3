@@ -7,7 +7,7 @@ box is checked or has a documented waiver.
 ## 0. Pre-flight (5 min)
 
 - [ ] `cd extension && bun run lint` exits 0 (AC-BD-1)
-- [ ] `cd extension && bun run test` reports 70/70 passing (AC-BD-1)
+- [ ] `cd extension && bun run test` reports 95/95 passing (AC-BD-1)
 - [ ] `cd extension && bun run build && bun run package` succeeds (AC-BD-2)
 - [ ] `public/pageport.zip` ≤ 1.5 MiB and `public/pageport.zip.sha256` exists (AC-BD-2)
 - [ ] Unzip the bundle locally; verify the 14 files: `manifest.json`,
@@ -226,11 +226,40 @@ pricing card with web fonts). Open the floating panel.
 - [ ] AC-SP-3 — Every `ErrorCode.E_*` / `ErrorCode.W_*` thrown is listed
       in `spec/21-app/09-error-handling.md`
 
+## 9. Smart Share — v2.2 (requires WP plugin install)
+
+Detailed live checklist: `docs/ACCEPTANCE-v2.2.md`. Run on a throwaway
+WordPress install with the `pageport` plugin v2.2.0 active.
+
+- [ ] AC-SH-AUTH-1 — Settings → Smart Share → enter site URL → "Sign in"
+      opens the hidden `pageport-bridge` admin page → on success the
+      panel shows the WP display name + email
+- [ ] AC-SH-AUTH-2 — Sign out from WP wp-admin → next Smart Share upload
+      surfaces `E_SHARE_AUTH` and clears the cached nonce
+- [ ] AC-SH-AUTH-3 — Stale nonce (wait 24h or invalidate) → upload
+      surfaces `E_SHARE_AUTH`, panel offers "Sign in again"
+- [ ] AC-EM-4 — Smart Share upload returns 4 URLs (`index.html`,
+      `style.css`, `script.js`, `preview.png`) — `curl -fsSI` each → 200
+- [ ] AC-EM-5 — Share dialog shows live 24h countdown that decrements
+      each second; flips to "Expired" at 0
+- [ ] AC-EM-6 — AI instruction block on clipboard references all 4 URLs
+- [ ] AC-EM-7 — "Revoke now" button → all 4 URLs return 404 within 2s
+- [ ] AC-SH-QUOTA-1 — Upload 31 sessions in a row as the same WP user →
+      31st surfaces `E_SHARE_QUOTA`
+- [ ] AC-SH-QUOTA-2 — Burst 61 uploads in <1h as the same WP user →
+      61st surfaces `E_SHARE_QUOTA`
+- [ ] AC-WP-1 — `wp-plugin/pageport/` v2.2.0 active; REST namespace
+      `pageport/v1` responds to `/auth-status` with cookie + nonce
+- [ ] AC-WP-2 — Uploaded assets land at the 4 expected paths under the
+      session id; EXIF stripped from `preview.png`
+- [ ] AC-WP-3 — Hourly WP cron purges expired sessions; UI shows
+      "Expired" once `expires_at` < now
+
 ## Sign-off
 
 - Tester: __________________
 - Date:   __________________
-- Build:  v1.1.0 (sha256 from `public/pageport.zip.sha256`)
+- Build:  v2.2.0 (sha256 from `public/pageport.zip.sha256`)
 - Result: [ ] PASS  [ ] FAIL — see notes
 
 Notes / failures / waivers:
