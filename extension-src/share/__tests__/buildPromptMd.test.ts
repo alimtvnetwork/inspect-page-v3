@@ -21,14 +21,16 @@ describe("buildPromptMd", () => {
     const md = buildPromptMd(fixture(), { mode: "single" });
     expect(md).toContain("(see §HTML below)");
     expect(md).toContain("(see §CSS below)");
+    expect(md).toContain("(see §JS below)");
     expect(md).toContain("(embedded inline)");
-    expect(md).toContain("--- USER INSTRUCTION ---");
+    expect(md).toContain("My request:");
   });
 
   it("mdFiles mode uses relative paths", () => {
     const md = buildPromptMd(fixture(), { mode: "mdFiles" });
     expect(md).toContain("./index.html");
     expect(md).toContain("./style.css");
+    expect(md).toContain("./script.js");
     expect(md).toContain("./images/screenshot.png");
   });
 
@@ -45,11 +47,13 @@ describe("buildPromptMd", () => {
       shareRefs: {
         htmlRef: "https://x.test/h",
         cssRef: "https://x.test/c",
+        jsRef: "https://x.test/j",
         imageRef: "https://x.test/i",
       },
     });
     expect(md).toContain("https://x.test/h");
     expect(md).toContain("https://x.test/c");
+    expect(md).toContain("https://x.test/j");
     expect(md).toContain("https://x.test/i");
   });
 
