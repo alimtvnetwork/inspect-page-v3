@@ -1,78 +1,91 @@
-# 25 — Share Links via WordPress plugin
+# 25 — Smart Share via WordPress plugin
 
-Status: LOCKED for v2. Backend = a self-hosted WordPress plugin shipped alongside the extension.
+Status: LOCKED for v2.2. Backend = a self-hosted WordPress plugin shipped alongside the extension.
 
-## A. Why WP + PagePort pairing tokens
+> **History.** v2.0 used PagePort pairing tokens (`PPT1.<payload>.<hmac>`)
+> with `Authorization: Bearer …`. v2.2 replaced that with the standard
+> WordPress login cookie + `X-WP-Nonce` (no shared secrets, no token
+> paste). All pairing-token machinery has been removed.
+
+## A. Why WP + cookie/nonce auth
 
 - Zero new infra; user already has a WP site (or installs one).
-- The plugin mints **PagePort pairing tokens** (`PPT1.<base64url(payload)>.<base64url(hmac_sha256(payload, server_secret))>`). The payload encodes `{ v:1, site, tid, uid, iat, exp }` so the user pastes one string and the extension decodes the WordPress site URL automatically — no separate URL field, no Application Passwords, no OAuth.
-- Every authenticated REST route uses `PagePort_Auth::require_bearer` which verifies the HMAC, looks up the `tid`, calls `wp_set_current_user( uid )`, and exposes the row to handlers via `PagePort_Auth::current_token()`.
+- Auth uses WordPress's built-in `is_user_logged_in()` + `wp_verify_nonce( … 'wp_rest' )`. No tokens, no Application Passwords, no OAuth.
+- The extension stores only the user-typed `siteUrl` plus a *cached* identity (display name, email, current `wp_rest` nonce). Nothing security-sensitive is ever persisted — the actual auth lives in the WP cookie inside Chrome's cookie jar.
 
 ## B. Plugin layout (`wp-content/plugins/pageport/`)
 
 ```
 pageport.php              # plugin header + bootstrap
 includes/
-  class-activator.php     # creates 5 tables + signing key on activation
-  class-pairing.php       # mint / verify / revoke / list pairing tokens
-  class-auth.php          # Bearer permission_callback for REST routes
-  class-rest.php          # registers REST routes
-  class-cleanup.php       # hourly wp-cron expiry sweep
+  class-activator.php     # creates 5 tables on activation
+  class-auth.php          # require_wp_user permission_callback + GET /me
+  class-rest.php          # registers REST routes + serves /share/{id}/...
+  class-cleanup.php       # hourly wp-cron expiry sweep + rate-event prune
   class-storage.php       # upload helpers (uses wp_upload_dir)
-  class-admin.php         # Tools → PagePort (pairing UI) + Tools → PagePort Sessions
+  class-admin.php         # Tools → PagePort Sessions + hidden pageport-bridge
   enums.php               # PHP const-class mirrors of code enums
 uninstall.php
 ```
 
-Tables (all prefixed `{$wpdb->prefix}pp_`): `share_sessions`, `share_assets`, `share_session_statuses`, `share_session_kinds`, `share_asset_types`, `pairing_tokens`. Status / Kind / AssetType seed rows on activation. `pageport_signing_key` (32 random bytes, hex) and `pageport_max_active_per_token` (default 30) live in `wp_options`.
+Tables (all prefixed `{$wpdb->prefix}pp_`): `share_sessions`, `share_assets`, `share_session_statuses`, `share_session_kinds`, `share_asset_types`, `rate_events`. Status / Kind / AssetType seed rows on activation. Quota knobs in `wp_options`: `pageport_max_active_per_user` (default **30**), `pageport_max_uploads_per_hour` (default **60**), `pageport_expire_hours` (default **24**).
 
 ## C. REST routes (namespace `pageport/v1`)
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
-| POST | `/sessions` | Bearer pairing token | Create session, multipart with `html`, `css`, `image`. Enforces per-token quota (default 30 active). Returns `{ session_id, expires_at, urls: { html, css, image } }`. |
-| GET | `/share/{id}/html` | public¹ | Returns `text/html`. |
-| GET | `/share/{id}/css` | public¹ | Returns `text/css`. |
-| GET | `/share/{id}/image` | public¹ | Returns original mime. |
-| GET | `/sessions` | Bearer pairing token | List own sessions. |
-| DELETE | `/sessions/{id}` | Bearer pairing token | Revoke a share. |
-| DELETE | `/pairing/self` | Bearer pairing token | Extension-side unpair (revokes the calling token). |
+| GET | `/auth-status` | cookie (optional) | `{ logged_in, user_id, display_name, email, nonce, quota }`. Used by extension to bootstrap + refresh the nonce. |
+| POST | `/sessions` | cookie + `X-WP-Nonce` | Create session, multipart with `html`, `css`, `js`, `image` (+ optional `prompt`, `kind`, `source_url`). Strips EXIF on image. Enforces per-user **active** quota and **uploads/hour** quota (records `pp_rate_events`). Returns `{ session_id, expires_at, urls: { html, css, js, image } }`. |
+| GET | `/sessions` | cookie + `X-WP-Nonce` | List own sessions (kind, status, expiry, asset URLs). |
+| DELETE | `/sessions/{id}` | cookie + `X-WP-Nonce` | Revoke a share. |
+| GET | `/share/{id}/index.html` | public¹ | Returns `text/html`. |
+| GET | `/share/{id}/style.css`  | public¹ | Returns `text/css`. |
+| GET | `/share/{id}/script.js`  | public¹ | Returns `application/javascript`. |
+| GET | `/share/{id}/preview.png` | public¹ | Returns original mime (`image/png` or `image/jpeg`). |
 
-¹ Public-by-link (the ID is a 32-char URL-safe random + HMAC). Required because the LLM consuming the prompt has no WP credentials. Expiry enforced server-side; hourly cron sets status `Expired` and deletes files. Reads after expiry → `404`.
+¹ Public-by-link (the ID is 32 random bytes, base64url, 43 chars). Required because the LLM consuming the prompt has no WP credentials. Expiry enforced server-side; hourly cron sets status `Expired` and deletes files. Reads after expiry / revoke → `404`. Responses include `Content-Type`, `Cache-Control: public, max-age=300, immutable`, and permissive CORS.
 
 ## D. Files on disk
 
-`wp-content/uploads/pageport/{user_id}/{session_id}/{html|css|image}.{ext}` — outside the plugin dir so updates don't wipe assets. `.htaccess` in `pageport/` allows only the three known basenames.
+`wp-content/uploads/pageport/{user_id}/{session_id}/{index.html | style.css | script.js | preview.{png|jpg}}` — outside the plugin dir so updates don't wipe assets. `.htaccess` in `pageport/` allows only the four known basenames.
+
+Size caps enforced server-side: HTML 256 KB, CSS 256 KB, JS 256 KB, image 5 MB, prompt 4000 chars.
 
 ## E. Cleanup
 
-WP-Cron `pageport_cleanup` every hour: select `Active` rows where `expires_at < NOW()`, delete files via `wp_delete_file`, mark `Expired`. Manual `wp pageport cleanup` WP-CLI command for ops.
+WP-Cron `pageport_cron_expire_sessions` every hour:
+1. Select `Active` rows where `expires_at < UTC_TIMESTAMP()`, `wp_delete_file` each asset, mark `Expired`.
+2. `DELETE FROM {$p}rate_events WHERE created_at < (UTC_TIMESTAMP() - INTERVAL 2 HOUR)`.
 
 ## F. Extension side
 
-- Settings group **Share Links** has a single field: paste a `PPT1.…` pairing token. The extension decodes `site` + `tid` from the payload (no signature check client-side; the WP server verifies on every request) and stores `{ pairingToken, siteUrl, tokenId, pairedAtIso }` in `chrome.storage.local` under `pageport.share`. An **Unpair** button clears the entry locally; the matching server-side token can be revoked from `Tools → PagePort` or via `DELETE /pairing/self`.
-- SW handler `CreateShareSession` POSTs multipart to `/wp-json/pageport/v1/sessions` with `Authorization: Bearer <pairingToken>`. Status mapping: 401/403 → `E_SHARE_AUTH`, 429 → `E_SHARE_QUOTA`, 5xx → `E_SHARE_UPSTREAM`, network → `E_SHARE_NETWORK`, other 4xx → `E_SHARE_BAD_INPUT`.
-- Panel renders countdown chip from `expires_at` until panel close.
+- Settings group **Smart Share (WordPress)** has a single text field: paste your WP site URL. Sign-in is a button: opens `…/wp-admin/admin.php?page=pageport-bridge` in a new tab. The hidden bridge page (`class-admin.php → render_bridge`) calls `wp_create_nonce('wp_rest')` and forwards `{ kind:'pageport-bridge', nonce, userId, displayName, email }` back to the extension via `window.opener.postMessage` (origin-locked). The SW persists `{ siteUrl, userId, displayName, email, nonce, signedInAtIso }` to `chrome.storage.local` under `pageport.share`. **Sign out** clears the cached identity locally; the WP cookie itself is unaffected.
+- SW handler `CreateShareSession` POSTs multipart to `/wp-json/pageport/v1/sessions` with `credentials: 'include'` + `X-WP-Nonce: <nonce>`. SW handler `RevokeShareSession` `DELETE`s `/wp-json/pageport/v1/sessions/{id}` with the same headers. Status mapping (both): 401/403 → `E_SHARE_AUTH` (also clears cached `nonce`/`userId`), 429 → `E_SHARE_QUOTA`, 5xx → `E_SHARE_UPSTREAM`, network → `E_SHARE_NETWORK`, other 4xx → `E_SHARE_BAD_INPUT`.
+- After a successful upload the panel opens the **Share dialog**: 4 URL rows with copy buttons, a live 24h countdown derived from `expires_at`, **Copy AI prompt + 4 URLs**, and **Revoke now**.
 
 ## G. Admin UI
 
-- `wp-admin → Tools → PagePort` — mint new pairing token (one-shot display), table of paired devices (label, created, last used, revoke).
 - `wp-admin → Tools → PagePort Sessions` — table of own sessions (status, kind, expires, revoke button). Site admins see all users.
+- `wp-admin → Tools → PagePort Settings` — read-only view of current quotas + active-session counters (`pageport_max_active_per_user`, `pageport_max_uploads_per_hour`, `pageport_expire_hours`).
+- Hidden `wp-admin → admin.php?page=pageport-bridge` — used only by the extension login popup; no menu entry.
 
 ## H. Security invariants
 
-1. Pairing token never leaves `chrome.storage.local`; never embedded in MD or clipboard payload.
-2. `user_id` ownership re-checked on every authenticated route.
-3. Session IDs are 32 bytes from `random_bytes`, base64url. Not enumerable.
+1. The WP login cookie never leaves Chrome's cookie jar; the extension never reads it. The cached `nonce` is short-lived (12-24h server side) and bound to the user via `wp_rest`.
+2. `user_id` ownership re-checked on every authenticated route (no horizontal escalation).
+3. Session IDs are 32 bytes from `random_bytes`, base64url (43 chars). Not enumerable.
 4. File reads stream from disk; plugin never executes uploaded content.
-5. `Content-Disposition: inline` + correct `Content-Type`; never `text/html` for image bytes.
-6. Pairing-token HMAC uses `pageport_signing_key` (32 random bytes generated on activation, never exposed). Tampering with the payload invalidates the signature → 401.
-7. Per-token quota (`pageport_max_active_per_token`, default 30) bounds disk usage and prevents one paired device from monopolising storage.
+5. `Content-Disposition: inline` + correct `Content-Type`; never `text/html` for image / JS bytes.
+6. Image uploads are passed through `wp_get_image_editor` to strip EXIF before save.
+7. The `pageport-bridge` page only `postMessage`s to `window.opener` and only when `is_user_logged_in()` — never iframable (`X-Frame-Options: DENY`).
+8. Per-user quotas (`max_active`, `max_uploads_per_hour`) bound disk usage and prevent abuse.
 
 ## I. Acceptance
 
-1. User installs plugin, mints a pairing token in `Tools → PagePort`, pastes it into PagePort.
-2. Share Links button enables, click → 3 URLs copied + AI block.
-3. URLs return content; after 24h return 404.
-4. Admin Sessions screen shows + revokes; admin Pairing screen revokes paired devices.
-5. Exceeding `pageport_max_active_per_token` returns `429 E_SHARE_QUOTA`.
+See [`docs/ACCEPTANCE-v2.2.md`](../../docs/ACCEPTANCE-v2.2.md) for the live-WP checklist. Summary:
+
+1. User installs the plugin, opens **Settings → Smart Share** in the extension, pastes site URL, clicks **Sign in**, signs in to WP — extension shows display name + active quota.
+2. Smart Share button uploads → Share dialog opens with 4 working URLs + countdown.
+3. URLs return content over `curl`; after 24h or after **Revoke now** they return 404.
+4. **Tools → PagePort Sessions** shows + revokes; signing out of WP causes the next upload to return `401 E_SHARE_AUTH` and clears the cached nonce.
+5. Exceeding `pageport_max_active_per_user` (default 30) or `pageport_max_uploads_per_hour` (default 60) returns `429 E_SHARE_QUOTA`.
