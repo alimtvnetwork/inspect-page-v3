@@ -10,9 +10,9 @@ box is checked or has a documented waiver.
 - [ ] `cd extension && bun run test` reports 95/95 passing (AC-BD-1)
 - [ ] `cd extension && bun run build && bun run package` succeeds (AC-BD-2)
 - [ ] `public/pageport.zip` ≤ 1.5 MiB and `public/pageport.zip.sha256` exists (AC-BD-2)
-- [ ] Unzip the bundle locally; verify the 14 files: `manifest.json`,
-      `background.js`, `content.js`, `messaging.js`, `offscreen.{html,js}`,
-      `index.css`, `popup/index.{html,js}`, `icons/{16,48,128}.png`
+- [ ] Unzip the bundle locally; verify the 9 files: `manifest.json`,
+      `background.js`, `content.js`, `offscreen.{html,js}`,
+      `icons/{16,48,128}.png`
 - [ ] `chrome://extensions` → enable Developer mode → **Load unpacked** →
       select unzipped folder → no warnings (AC-BD-3)
 - [ ] Visit landing page `/` → click **Download extension** → ZIP downloads
