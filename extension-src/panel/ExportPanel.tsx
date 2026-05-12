@@ -1004,3 +1004,131 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
 function hostnameOf(url: string): string {
   try { return new URL(url).hostname; } catch { return url; }
 }
+
+interface ShareDialogProps {
+  result: CreateShareSessionResponse;
+  onClose: () => void;
+}
+
+function ShareDialog({ result, onClose }: ShareDialogProps): JSX.Element {
+  const expiresAtMs = useMemo(() => {
+    const t = Date.parse(result.expiresAt);
+    return Number.isFinite(t) ? t : Date.now();
+  }, [result.expiresAt]);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const remainingMs = Math.max(0, expiresAtMs - now);
+  const expired = remainingMs === 0;
+
+  const [revoking, setRevoking] = useState(false);
+  const [revoked, setRevoked] = useState(false);
+  const [revokeErr, setRevokeErr] = useState("");
+  const [copiedKey, setCopiedKey] = useState<string>("");
+
+  const block = useMemo(() => interpolateAi({
+    htmlRef: result.urls.html, cssRef: result.urls.css,
+    jsRef: result.urls.js, imageRef: result.urls.image,
+  }), [result]);
+
+  const copy = useCallback(async (text: string, key: string) => {
+    try { await navigator.clipboard.writeText(text); setCopiedKey(key); }
+    catch { /* ignore */ }
+    window.setTimeout(() => setCopiedKey((k) => (k === key ? "" : k)), 1500);
+  }, []);
+
+  const onRevoke = useCallback(async () => {
+    setRevoking(true); setRevokeErr("");
+    try {
+      await sendToBackground<{ sessionId: string }, void>(
+        MK.RevokeShareSession, { sessionId: result.sessionId },
+      );
+      setRevoked(true);
+    } catch (e) {
+      setRevokeErr(e instanceof Error ? e.message : String(e));
+    } finally { setRevoking(false); }
+  }, [result.sessionId]);
+
+  const rows: Array<{ key: keyof CreateShareSessionResponse["urls"]; label: string }> = [
+    { key: "html",  label: COPY.shareLblHtml },
+    { key: "css",   label: COPY.shareLblCss },
+    { key: "js",    label: COPY.shareLblJs },
+    { key: "image", label: COPY.shareLblImage },
+  ];
+
+  return (
+    <div className="lpe-modal-overlay" role="dialog" aria-modal="true" aria-label={COPY.shareDialogHeader}>
+      <div className="lpe-modal">
+        <div className="lpe-modal-header">
+          <span className="lpe-debug-title">{COPY.shareDialogHeader}</span>
+          <button type="button" className="lpe-header-btn" onClick={onClose} aria-label={COPY.shareCloseBtn}>✕</button>
+        </div>
+        <div className="lpe-modal-body">
+          <div className="lpe-debug-note" style={{ background: "transparent" }}>
+            {COPY.shareDialogIntro}
+          </div>
+          <div className="lpe-share-countdown" data-expired={expired ? "true" : "false"}>
+            {expired
+              ? COPY.shareExpiredMsg
+              : `${COPY.shareExpiresInPrefix} ${formatRemaining(remainingMs)}`}
+          </div>
+          {revoked && <div className="lpe-debug-note" role="status">{COPY.shareRevokedMsg}</div>}
+          <ul className="lpe-share-urls">
+            {rows.map(({ key, label }) => (
+              <li key={key} className="lpe-share-url-row">
+                <span className="lpe-share-url-label">{label}</span>
+                <input
+                  className="lpe-input lpe-share-url-input"
+                  readOnly
+                  value={result.urls[key]}
+                  onFocus={(e) => e.currentTarget.select()}
+                />
+                <button
+                  type="button"
+                  className="lpe-btn"
+                  onClick={() => copy(result.urls[key], key)}
+                  disabled={revoked || expired}
+                >
+                  {copiedKey === key ? COPY.shareCopyOneDone : COPY.shareCopyOne}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="lpe-row" style={{ marginTop: 10 }}>
+            <button
+              type="button"
+              className="lpe-btn lpe-btn-primary"
+              onClick={() => copy(block, "all")}
+              disabled={revoked || expired}
+            >
+              {copiedKey === "all" ? COPY.shareCopyAllDone : COPY.shareCopyAll}
+            </button>
+            <button
+              type="button"
+              className="lpe-btn"
+              onClick={onRevoke}
+              disabled={revoking || revoked || expired}
+            >
+              {revoking ? COPY.shareRevokingMsg : COPY.shareRevokeBtn}
+            </button>
+            <button type="button" className="lpe-btn" onClick={onClose}>
+              {COPY.shareCloseBtn}
+            </button>
+          </div>
+          {revokeErr && <div className="lpe-debug-note" role="alert">{revokeErr}</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function formatRemaining(ms: number): string {
+  const total = Math.floor(ms / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = (n: number): string => n.toString().padStart(2, "0");
+  return h > 0 ? `${h}h ${pad(m)}m ${pad(s)}s` : `${m}m ${pad(s)}s`;
+}
