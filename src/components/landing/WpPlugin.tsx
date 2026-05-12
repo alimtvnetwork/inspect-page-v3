@@ -63,9 +63,9 @@ export const WpPlugin = (): JSX.Element => {
         </h2>
       </div>
       <p className="text-sm text-muted-foreground">
-        Self-host the Share Links backend on your own WordPress site. Generates three
-        public URLs (HTML, CSS, screenshot) that expire after 24 hours, so you can paste
-        them straight into ChatGPT, Claude, or Gemini.
+        Self-host the Smart Share backend on your own WordPress site. Generates four
+        public URLs (HTML, CSS, JS, screenshot) that expire after 24 hours, so you can
+        paste them straight into ChatGPT, Claude, or Gemini.
       </p>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <Button
@@ -89,8 +89,8 @@ export const WpPlugin = (): JSX.Element => {
       </div>
       <ol className="list-decimal pl-5 text-sm text-muted-foreground space-y-1">
         <li>Upload the unzipped <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">pageport</code> folder to <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">wp-content/plugins/</code> and activate it.</li>
-        <li>In wp-admin, go to <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">Tools → PagePort</code> and click <strong>Mint new pairing token</strong>.</li>
-        <li>Copy the <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">PPT1.…</code> token and paste it into the extension's <strong>Settings → Share Links</strong> panel. The site URL is decoded from the token automatically.</li>
+        <li>In the extension, open <strong>Settings → Smart Share (WordPress)</strong>, paste your site URL, and click <strong>Sign in</strong>. A WordPress login tab opens.</li>
+        <li>Sign in to WordPress as usual. The extension picks up the cookie + nonce automatically — no tokens or app passwords to copy.</li>
       </ol>
       {error ? (
         <p role="alert" className="text-sm text-destructive">
