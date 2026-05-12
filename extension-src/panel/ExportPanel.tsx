@@ -448,6 +448,12 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           />
         )}
       </div>
+      {shareResult && (
+        <ShareDialog
+          result={shareResult}
+          onClose={() => setShareResult(null)}
+        />
+      )}
     </div>
   );
 }
