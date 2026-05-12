@@ -4,6 +4,21 @@ All notable changes to **PagePort** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [WP plugin 2.2.1] — 2026-05-12
+
+### Changed
+
+- **Plugin row "Visit plugin site"** now opens the in-WP PagePort
+  dashboard (`admin.php?page=pageport`) instead of an external URL.
+- **PagePort dashboard rebuilt**: shows the signed-in WP user, extension
+  pairing instructions, REST + permalinks health checks, live quota
+  counters (active sessions vs limit, uploads in the last hour vs
+  limit), and the user's 10 most recent share sessions with links to
+  all 4 public URLs.
+- **Tools → PagePort Sessions**: added a `js` column, a 24h expiry
+  countdown next to `expires_at`, and a friendly empty state.
+- Plugin version bumped to `2.2.1`; `pageport-wp.zip` repackaged.
+
 ## [2.2.0] — 2026-05-12
 
 ### Changed — Smart Share v2.2 (no more pairing tokens)
