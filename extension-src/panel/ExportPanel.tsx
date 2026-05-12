@@ -108,6 +108,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [shareSettings, setShareSettingsState] = useState<ShareSettings | null>(null);
+  const [shareResult, setShareResult] = useState<CreateShareSessionResponse | null>(null);
   const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const disabled = isDisabledUrl(activeUrl);
