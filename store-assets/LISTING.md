@@ -60,6 +60,14 @@ All character counts respect Chrome Web Store limits as of 2025.
       with the host page's CSS.
     • Honors prefers-reduced-motion.
 
+    New in 2.2 — Smart Share (optional):
+
+    • Install the companion WordPress plugin, sign in once with your
+      normal WP login (no app passwords, no pasted tokens), and any
+      export becomes four short shareable URLs — index.html, style.css,
+      script.js and preview.png — valid for 24 hours and revocable at
+      any time from the panel.
+
     What's NOT in v1 (documented limitations):
 
     • Cross-origin iframes are kept verbatim (their pixels are still in

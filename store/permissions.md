@@ -27,8 +27,10 @@ not load `<script src="…">` from remote origins, does not `eval` strings
 fetched at runtime, and does not download additional code. The only
 remote fetches it makes are for stylesheets and scripts already
 referenced by the page being exported (so they can be inlined in the
-output) and, only if the user explicitly configures Share Links, a
-single multipart POST to the WordPress site URL the user entered.
+output) and, only if the user explicitly configures Smart Share, a
+single multipart POST to the WordPress site URL the user entered,
+authenticated by the user's existing WordPress login cookie plus a
+REST nonce.
 
 ## Data usage disclosures (Web Store form checkboxes)
 
@@ -36,9 +38,10 @@ single multipart POST to the WordPress site URL the user entered.
 - [x] We do **not** collect health information.
 - [x] We do **not** collect financial information.
 - [x] We do **not** collect authentication information beyond what the
-      user voluntarily enters into Settings (WordPress site URL,
-      username, and Application Password) and which is stored only in
-      `chrome.storage.local` on the user's machine.
+      user voluntarily enters into Settings (WordPress site URL) and
+      WordPress login cookies set by the user's own browser when they
+      sign in to their WordPress site through the standard WP login
+      page. No passwords are stored by PagePort.
 - [x] We do **not** collect personal communications.
 - [x] We do **not** collect location.
 - [x] We do **not** collect web history.

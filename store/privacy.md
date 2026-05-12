@@ -48,17 +48,20 @@ We do not attempt to detect other secret-shaped fields (autofill
 credit cards, OTPs, JWTs in localStorage, etc.). Always review your
 export before sharing it.
 
-## Share Links (optional WordPress backend)
+## Smart Share (optional WordPress backend)
 
-If you install the companion WordPress plugin and enter your site URL,
-username, and Application Password in PagePort's Settings, the Share
-Links export mode will:
+If you install the companion WordPress plugin and enter your site URL
+in PagePort's Settings, the Smart Share export mode will:
 
-1. POST the captured HTML, CSS, and screenshot over HTTPS to
-   `https://your-site/wp-json/pageport/v1/sessions`, authenticated
-   with HTTP Basic and your Application Password.
-2. Receive three short public URLs back, valid for 24 hours.
-3. Copy an instruction block containing those URLs to your clipboard.
+1. Sign you in by opening your WordPress site's standard login page in
+   a hidden tab; PagePort never sees or stores your password. Your
+   browser's existing WP login cookie is what authenticates the upload.
+2. POST the captured HTML, CSS, JavaScript, and screenshot over HTTPS
+   to `https://your-site/wp-json/pageport/v1/sessions`, authenticated
+   with that WP login cookie plus a short-lived `X-WP-Nonce`.
+3. Receive four short public URLs back (one each for `index.html`,
+   `style.css`, `script.js`, `preview.png`), valid for 24 hours.
+4. Copy an instruction block containing those URLs to your clipboard.
 
 After 24 hours an hourly cron job on your WordPress site deletes the
 files and marks the session expired. You can revoke any session
