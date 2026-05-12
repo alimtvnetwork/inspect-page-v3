@@ -304,6 +304,9 @@ export interface CheckShareAuthResponse {
 export interface OpenLoginPopupPayload { siteUrl: string }
 export type OpenLoginPopupResponse = void;
 
+export interface RevokeShareSessionPayload { sessionId: string }
+export type RevokeShareSessionResponse = void;
+
 export interface EnterPickerModePayload { tabId: number }
 export type EnterPickerModePayload_ = EnterPickerModePayload;
 export type EnterPickerModeResponse = void;
