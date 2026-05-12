@@ -26,10 +26,11 @@ final class PagePort_SessionKind {
 final class PagePort_AssetType {
     const HTML  = 'html';
     const CSS   = 'css';
+    const JS    = 'js';
     const IMAGE = 'image';
 
     public static function all() {
-        return [ self::HTML, self::CSS, self::IMAGE ];
+        return [ self::HTML, self::CSS, self::JS, self::IMAGE ];
     }
 }
 
