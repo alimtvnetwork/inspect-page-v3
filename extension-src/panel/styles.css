@@ -267,3 +267,42 @@
 }
 .lpe-export-modes .lpe-debug-title { margin-bottom: 6px; }
 
+
+/* ---- Smart Share dialog (v2.2) ---- */
+.lpe-modal-overlay {
+  position: absolute; inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 20px; z-index: 9999;
+  overflow: auto;
+}
+.lpe-modal {
+  background: white; border: 1px solid #d0d7de; border-radius: 8px;
+  width: 100%; max-width: 520px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+  display: flex; flex-direction: column;
+}
+.lpe-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 8px 10px;
+  border-bottom: 1px solid #eaeef2; background: #fbfcfd;
+  border-radius: 8px 8px 0 0;
+}
+.lpe-modal-body { padding: 10px 12px 12px; }
+.lpe-share-countdown {
+  margin: 6px 0; font-size: 12px; color: #1f2937;
+  font-variant-numeric: tabular-nums;
+}
+.lpe-share-countdown[data-expired="true"] { color: #b42318; font-weight: 600; }
+.lpe-share-urls { list-style: none; margin: 8px 0 0; padding: 0; }
+.lpe-share-url-row {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+}
+.lpe-share-url-label {
+  flex: 0 0 48px; font-size: 11px; color: #57606a; font-weight: 600;
+}
+.lpe-share-url-input {
+  flex: 1 1 auto; font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px;
+}
+.lpe-share-url-row .lpe-btn { width: auto; padding: 3px 10px; font-size: 12px; }
