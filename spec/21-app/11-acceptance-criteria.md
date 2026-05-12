@@ -44,25 +44,27 @@ Each item references a test ID in `22-test-plan.md`. An AC is satisfied iff the 
 - [ ] AC-EM-1 — Both flows expose all four modes: MD single, MD+files, ZIP, Share Links.
 - [ ] AC-EM-2 — MD single inlines images as base64; MD+files emits a zip with `index.md` and `assets/`.
 - [ ] AC-EM-3 — ZIP mode includes `prompt.md` with the AI instruction block.
-- [ ] AC-EM-4 — Share Links uploads HTML/CSS/image to WordPress and copies the AI instruction block with the three public URLs.
-- [ ] AC-EM-5 — Share Links button is disabled until a pairing token is saved in Settings.
-- [ ] AC-EM-6 — On success an "Expires in Xh Ym" countdown chip is rendered next to the mode.
+- [ ] AC-EM-4 — Smart Share uploads HTML/CSS/JS/image to WordPress and the resulting Share dialog can copy the AI instruction block with the four public URLs (`index.html`, `style.css`, `script.js`, `preview.png`).
+- [ ] AC-EM-5 — Share Links button is disabled until the user is signed in to WordPress (Settings → Smart Share).
+- [ ] AC-EM-6 — After Smart Share success the Share dialog renders a live `Expires in Xh Ym Zs` countdown derived from `expires_at`, switching to "Expired" at 0.
+- [ ] AC-EM-7 — Share dialog **Revoke now** calls `DELETE /sessions/{id}`; subsequent fetches of the four URLs return 404.
 
 ## H. WordPress backend
-- [ ] AC-WP-1 — Plugin activates on WordPress 6.4+/PHP 8.1+ and creates `wp_pp_share_sessions`, `wp_pp_share_assets`, and `wp_pp_pairing_tokens`; generates `pageport_signing_key` (32 random bytes hex).
-- [ ] AC-WP-2 — `POST /pageport/v1/sessions` requires `Authorization: Bearer <PPT1.…>` and returns `{session_id, expires_at, urls}`.
-- [ ] AC-WP-3 — `GET /pageport/v1/share/{id}/{html|css|image}` is publicly readable until expiry/revocation, then 404.
+- [ ] AC-WP-1 — Plugin activates on WordPress 5.6+/PHP 7.4+ and creates `wp_pp_share_sessions`, `wp_pp_share_assets`, the three enum tables, and `wp_pp_rate_events`.
+- [ ] AC-WP-2 — `POST /pageport/v1/sessions` requires the WP login cookie + `X-WP-Nonce` and returns `{session_id, expires_at, urls:{html,css,js,image}}`.
+- [ ] AC-WP-3 — `GET /pageport/v1/share/{id}/{index.html|style.css|script.js|preview.png}` is publicly readable until expiry/revocation, then 404.
 - [ ] AC-WP-4 — Hourly cron sweep deletes files for expired sessions and marks them `Expired` (also runnable via `wp pageport cleanup`).
 - [ ] AC-WP-5 — Tools → PagePort Sessions lists user's sessions (admins see all) and supports per-row + bulk Revoke.
-- [ ] AC-WP-6 — Errors map to `E_SHARE_AUTH` / `E_SHARE_NETWORK` / `E_SHARE_UPSTREAM` / `E_SHARE_BAD_INPUT` / `E_SHARE_QUOTA` / `E_SHARE_BAD_TOKEN` in the panel.
+- [ ] AC-WP-6 — Errors map to `E_SHARE_AUTH` / `E_SHARE_NETWORK` / `E_SHARE_UPSTREAM` / `E_SHARE_BAD_INPUT` / `E_SHARE_QUOTA` in the panel.
+- [ ] AC-WP-7 — `GET /pageport/v1/auth-status` returns `{ logged_in, user_id, display_name, email, nonce, quota }` for the cookie-bearing user.
 
-## I. Pairing tokens
-- [ ] AC-SH-PAIR-1 — `Tools → PagePort` mints a one-shot `PPT1.<payload>.<sig>` token and lists paired devices with revoke action.
-- [ ] AC-SH-PAIR-2 — Pasting a valid token in extension Settings stores `{ pairingToken, siteUrl, tokenId, pairedAtIso }`; `siteUrl` is decoded from the token, never typed.
-- [ ] AC-SH-PAIR-3 — Malformed or non-`PPT1.` input is rejected client-side with `E_SHARE_BAD_TOKEN` and never written to storage.
-- [ ] AC-SH-PAIR-4 — Tampering with payload bytes invalidates the HMAC → server returns `401 E_SHARE_AUTH`; revoking a token in wp-admin yields the same response on the next request.
-- [ ] AC-SH-PAIR-5 — Extension **Unpair** clears local storage; `DELETE /pairing/self` revokes the matching server-side row.
-- [ ] AC-SH-QUOTA-1 — POSTing beyond `pageport_max_active_per_token` (default 30) returns `429` with code `E_SHARE_QUOTA`; the panel surfaces a clear "quota reached" message and the user can revoke old sessions to recover.
+## I. Sign-in (cookie + nonce)
+- [ ] AC-SH-AUTH-1 — Settings → Smart Share has a single text field (site URL) and a **Sign in** button; pressing it opens `…/wp-admin/admin.php?page=pageport-bridge` in a new tab.
+- [ ] AC-SH-AUTH-2 — After WP login the bridge page `postMessage`s the fresh `wp_rest` nonce + identity back; the SW persists `{ siteUrl, userId, displayName, email, nonce, signedInAtIso }` and the panel shows "Signed in as …".
+- [ ] AC-SH-AUTH-3 — A bad/missing nonce, or a logged-out cookie, returns `401` from `/sessions` → panel maps to `E_SHARE_AUTH` AND clears the cached `nonce` / `userId` so the user is prompted to sign in again.
+- [ ] AC-SH-AUTH-4 — Extension **Sign out** clears the cached identity locally; the WP cookie itself is untouched.
+- [ ] AC-SH-QUOTA-1 — POSTing beyond `pageport_max_active_per_user` (default 30) returns `429` with code `E_SHARE_QUOTA`; the panel surfaces a clear "quota reached" message and revoking old sessions in wp-admin (or via the Share dialog) restores upload capacity.
+- [ ] AC-SH-QUOTA-2 — Exceeding `pageport_max_uploads_per_hour` (default 60) within a rolling hour returns the same `429 E_SHARE_QUOTA`; `pp_rate_events` rows older than 2h are pruned hourly.
 
 ## F. Spec completeness
 - [ ] AC-SP-1 — Every `MessageKind` in code has a matching entry in `15-message-contracts.md`.
