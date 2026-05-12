@@ -27,8 +27,10 @@ not load `<script src="…">` from remote origins, does not `eval` strings
 fetched at runtime, and does not download additional code. The only
 remote fetches it makes are for stylesheets and scripts already
 referenced by the page being exported (so they can be inlined in the
-output) and, only if the user explicitly configures Share Links, a
-single multipart POST to the WordPress site URL the user entered.
+output) and, only if the user explicitly configures Smart Share, a
+single multipart POST to the WordPress site URL the user entered,
+authenticated by the user's existing WordPress login cookie plus a
+REST nonce.
 
 ## Data usage disclosures (Web Store form checkboxes)
 
