@@ -12,7 +12,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COPY } from "@shared/copy";
-import { SUCCESS_AUTO_DISMISS_MS } from "@shared/constants";
+import { PAGEPORT_WP_SITE_URL, SUCCESS_AUTO_DISMISS_MS } from "@shared/constants";
 import { ErrorCode, MessageKind, PanelStatus } from "@shared/enums";
 import { MessageError, sendToBackground } from "@shared/messaging";
 import type {
@@ -30,7 +30,6 @@ import JSZip from "jszip";
 import { ExportFlow } from "@shared/enums";
 import { ExportModes } from "./ExportModes";
 import { interpolateAi } from "@shared/copy";
-import { parseSiteUrl } from "@shared/shareSettings";
 import { MessageKind as MK } from "@shared/enums";
 
 export type PanelSurface = "popup" | "floating";
