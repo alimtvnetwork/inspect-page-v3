@@ -307,11 +307,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       imageBase64: primary.base64,
       imageMime: primary.mime,
     });
-    const block = interpolateAi({
-      htmlRef: res.urls.html, cssRef: res.urls.css,
-      jsRef: res.urls.js, imageRef: res.urls.image,
-    });
-    try { await navigator.clipboard.writeText(block); } catch { /* clipboard may be blocked */ }
+    setShareResult(res);
     return;
   }, [activeUrl]);
 
