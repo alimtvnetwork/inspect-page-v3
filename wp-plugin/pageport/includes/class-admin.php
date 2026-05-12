@@ -41,11 +41,25 @@ final class PagePort_Sessions_Table extends WP_List_Table {
         if ( $col === 'urls' ) {
             $base = rest_url( PAGEPORT_REST_NS . '/share/' . $item['session_id'] );
             $out = [];
-            foreach ( [ 'html', 'css', 'image' ] as $k ) {
+            foreach ( [ 'html', 'css', 'js', 'image' ] as $k ) {
                 $u = esc_url( $base . '/' . $k );
                 $out[] = sprintf( '<a href="%s" target="_blank" rel="noopener">%s</a>', $u, esc_html( $k ) );
             }
             return implode( ' · ', $out );
+        }
+        if ( $col === 'expires_at' ) {
+            $exp = isset( $item['expires_at'] ) ? (string) $item['expires_at'] : '';
+            if ( ! $exp ) return '';
+            $ts  = strtotime( $exp . ' UTC' );
+            $now = time();
+            if ( $ts <= $now ) {
+                return esc_html( $exp ) . ' <span style="color:#a04100">(' . esc_html__( 'expired', 'pageport' ) . ')</span>';
+            }
+            $delta = $ts - $now;
+            $h = (int) floor( $delta / 3600 );
+            $m = (int) floor( ( $delta % 3600 ) / 60 );
+            $countdown = sprintf( '%dh %02dm', $h, $m );
+            return esc_html( $exp ) . ' <span class="description">(' . esc_html( $countdown ) . ')</span>';
         }
         return isset( $item[ $col ] ) ? esc_html( (string) $item[ $col ] ) : '';
     }
@@ -114,6 +128,10 @@ final class PagePort_Sessions_Table extends WP_List_Table {
             'per_page'    => $per_page,
             'total_pages' => (int) ceil( $total / $per_page ),
         ] );
+    }
+
+    public function no_items() {
+        esc_html_e( 'No share sessions yet — capture a page from the PagePort Chrome extension to create one.', 'pageport' );
     }
 }
 
