@@ -30,7 +30,8 @@ import JSZip from "jszip";
 import { ExportFlow } from "@shared/enums";
 import { ExportModes } from "./ExportModes";
 import { interpolateAi } from "@shared/copy";
-import { parsePairingToken } from "@shared/shareSettings";
+import { parseSiteUrl } from "@shared/shareSettings";
+import { MessageKind as MK } from "@shared/enums";
 
 export type PanelSurface = "popup" | "floating";
 
@@ -292,7 +293,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     const res = await sendToBackground<
       {
         kind: string; sourceUrl: string;
-        html: string; css: string;
+        html: string; css: string; js: string;
         imageBase64: string; imageMime: string;
       },
       CreateShareSessionResponse
@@ -301,11 +302,13 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       sourceUrl: activeUrl ?? artifacts.meta?.url ?? "",
       html: artifacts.html,
       css: artifacts.css,
+      js: artifacts.js,
       imageBase64: primary.base64,
       imageMime: primary.mime,
     });
     const block = interpolateAi({
-      htmlRef: res.urls.html, cssRef: res.urls.css, imageRef: res.urls.image,
+      htmlRef: res.urls.html, cssRef: res.urls.css,
+      jsRef: res.urls.js, imageRef: res.urls.image,
     });
     try { await navigator.clipboard.writeText(block); } catch { /* clipboard may be blocked */ }
     return;
@@ -417,7 +420,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             <FullPageActions
               artifacts={state.fullPageArtifacts}
               activeUrl={activeUrl}
-              shareEnabled={!!shareSettings && !!shareSettings.pairingToken && !!shareSettings.siteUrl}
+              shareEnabled={!!shareSettings && !!shareSettings.nonce && !!shareSettings.siteUrl}
               onShare={onShare}
             />
           )}
@@ -427,7 +430,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           <DebugPreview
             preview={state.debugPreview}
             activeUrl={activeUrl}
-            shareEnabled={!!shareSettings && !!shareSettings.pairingToken && !!shareSettings.siteUrl}
+            shareEnabled={!!shareSettings && !!shareSettings.nonce && !!shareSettings.siteUrl}
             onShare={onShare}
             onClear={() => setState((s) => ({ ...s, debugPreview: undefined }))}
           />
