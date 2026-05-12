@@ -154,6 +154,9 @@ final class PagePort_Admin {
 
     public static function render_settings() {
         if ( ! current_user_can( 'upload_files' ) ) { wp_die( 'forbidden' ); }
+        if ( ! function_exists( 'is_plugin_active' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
         $max_active = (int) get_option( 'pageport_max_active_per_user', 30 );
         $max_hour   = (int) get_option( 'pageport_max_per_hour_per_user', 30 );
         $nextend    = is_plugin_active( 'nextend-facebook-connect/nextend-facebook-connect.php' )
