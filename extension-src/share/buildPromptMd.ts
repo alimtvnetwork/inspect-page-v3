@@ -26,6 +26,7 @@ export function refsForMode(
       return {
         htmlRef: "(see §HTML below)",
         cssRef: "(see §CSS below)",
+        jsRef: "(see §JS below)",
         imageRef: "(embedded inline)",
       };
     case "mdFiles":
@@ -33,6 +34,7 @@ export function refsForMode(
       return {
         htmlRef: "./index.html",
         cssRef: "./style.css",
+        jsRef: "./script.js",
         imageRef: primaryImage ? `./images/${primaryImage.name}` : "(no image)",
       };
     case "share": {
