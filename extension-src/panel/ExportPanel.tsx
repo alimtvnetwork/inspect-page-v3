@@ -37,6 +37,9 @@ import { interpolateAi } from "@shared/copy";
 import { MessageKind as MK } from "@shared/enums";
 import { getOnboardingState, dismissOnboarding } from "@shared/onboarding";
 import { shareConfigured } from "@shared/shareSettings";
+import { getShareSettings, setShareSettings } from "@shared/shareSettings";
+import { listShareSessions, type ShareSessionSummary } from "../share/listShareSessions";
+import { revokeShareSession } from "../share/revokeShareSession";
 
 export type PanelSurface = "popup" | "floating";
 
@@ -1078,8 +1081,85 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
         {hint && <div className="lpe-debug-note">{hint}</div>}
         {err && <div className="lpe-debug-note" role="alert">{err}</div>}
         <div className="lpe-debug-note">{COPY.shareHelp}</div>
+        {signedIn && <RecentSharesList />}
       </div>
     </details>
+  );
+}
+
+function RecentSharesList(): JSX.Element {
+  const [items, setItems] = useState<ShareSessionSummary[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [revoking, setRevoking] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    setBusy(true); setErr("");
+    try {
+      const rows = await listShareSessions({ getShareSettings });
+      setItems(rows);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally { setBusy(false); }
+  }, []);
+
+  useEffect(() => { void refresh(); }, [refresh]);
+
+  const onRevoke = async (sid: string): Promise<void> => {
+    setRevoking(sid); setErr("");
+    try {
+      await revokeShareSession(sid, { getShareSettings, setShareSettings });
+      setItems((prev) => prev?.filter((r) => r.sessionId !== sid) ?? null);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally { setRevoking(null); }
+  };
+
+  return (
+    <div className="lpe-recent-shares">
+      <div className="lpe-recent-header">
+        <strong>Recent shares</strong>
+        <button type="button" className="lpe-btn" onClick={refresh} disabled={busy}>
+          {busy ? "…" : "Refresh"}
+        </button>
+      </div>
+      {err && <div className="lpe-debug-note" role="alert">{err}</div>}
+      {items && items.length === 0 && (
+        <div className="lpe-debug-note">No shares yet.</div>
+      )}
+      {items && items.length > 0 && (
+        <ul className="lpe-recent-list">
+          {items.slice(0, 8).map((r) => {
+            const isActive = r.status.toLowerCase() === "active";
+            const expiresMs = Date.parse(r.expiresAtIso);
+            const expired = Number.isFinite(expiresMs) && expiresMs <= Date.now();
+            let host = r.sourceUrl;
+            try { host = new URL(r.sourceUrl).hostname.replace(/^www\./, ""); } catch { /* keep */ }
+            return (
+              <li key={r.sessionId} className="lpe-recent-row">
+                <div className="lpe-recent-meta">
+                  <span className="lpe-recent-host" title={r.sourceUrl}>{host}</span>
+                  <span className="lpe-recent-kind">{r.kind}</span>
+                  <span className="lpe-recent-status" data-expired={expired || !isActive}>
+                    {expired ? "Expired" : r.status}
+                  </span>
+                </div>
+                {isActive && !expired && (
+                  <button
+                    type="button"
+                    className="lpe-btn"
+                    onClick={() => onRevoke(r.sessionId)}
+                    disabled={revoking === r.sessionId}
+                  >
+                    {revoking === r.sessionId ? "…" : "Revoke"}
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
 
