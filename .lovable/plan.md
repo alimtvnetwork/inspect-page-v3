@@ -1,98 +1,89 @@
-# Inspect Mode — CSS-Peeper-class inspector for Inspect Page
+# Inspect Mode — CSS-Peeper-class inspector for Inspect Page (v2)
 
 A new third mode in the floating panel, alongside **Export Page** and **Pick Element**. All free, no sign-in required. Light theme mirrors CSS Peeper; dark theme keeps Inspect Page brand. Driven by `next` — one phase per turn.
 
-## Ground rules
+## What the screenshots add (folded into phases below)
 
-- **Brand**: "Inspect Mode" (lowercase verbs in UI). Never use PagePort/CSS Peeper in copy.
-- **Storage prefix**: `inspect-page.inspect.*`
-- **No backend / no auth / no Premium gate** — Contrast Scanner and element drill-down ship free.
-- **Bugs we MUST avoid**: panel body always scrollable; draggable everywhere we can reach (browser chrome can't be overlaid by content scripts — covered in Phase 12 with a detached-window fallback); footer text uses semantic tokens for AA contrast in both themes; every "Export All" enumerates the full dataset, not just the visible slice.
+- **Contrast detail card** (img 11, 13): per-pair card shows ratio + verdict badge, "N instances" counter, Text and Background swatches with hex, then Normal-text / Large-text columns each with AA & AAA badges + threshold (4.5:1 / 7:1 / 3:1 / 4.5:1), Hide/Show details accordion. → **Phase A6**.
+- **Contrast list** (img 12): "← Contrast Scanner" header back-button, **Failing / Passing** segmented tabs with counts, list of pair cards with ratio + verdict + instances + Show details. → **Phase A6**.
+- **Colors → Categories tab** (img 15): tabs **Palette / Categories**, group headers ("Background colors 17", "Text colors", "Border colors", "Gradients"), each color row with hex + instance count + Locate (crosshair) + Copy icons; checkerboard fill = transparent. → **Phase A5 + new sub-phase A5b**.
+- **Color count + Export All** (img 14): "Colors 23" header chip + **Export All** button top-right. → **Phase A5 / A11**.
+- **Gradient Details drawer** (img 16): back-arrow, "Gradient Details" title, Show code button, swatch + "Linear Gradient" + "N instances", **Properties** with stop track (0% / 50% / 100%) + per-stop hex + per-stop copy, **Instances** list with chevron-expand selectors. → **Phase A10**.
+- **Color instance detail** (img 17): expanded selector row showing Category, Token / Class, Value (with mini swatch), Contrast badge. → **Phase A10**.
+- **Color usage drill-in** (img 18): for a flat color, expanded `div` shows Category=Text color, Value=#FFFFFF + swatch, Contrast=16.47 Excellent. → **Phase A10**.
+- **Element picker label chip** (img 19): floating tag "button.relative" under cursor + tooltip ("Bookmark in history") + small icon-action button bracketed by the picker. → **Phase A8**.
+- **Distance guides** (img 20): when an element is selected and the user hovers another, dashed guide lines + px badges (61px / 45px / 13px / 418px) between the two boxes — Figma-style spacing measure. → **new Phase A8b**.
 
-## Phases (atomic, one per `next`)
+## Updated phase list (atomic, one per `next`)
 
-### Phase A1 — Mode scaffolding & theme toggle
-- Add `PanelMode = Export | Pick | Inspect` enum + tab switcher in panel header.
-- Inspect tab renders an empty `<InspectShell>` with section placeholders (Overview, Typography, Colors, Contrast, CSS Info).
-- Light/Dark theme toggle in header → writes `inspect-page.inspect.theme` to `chrome.storage.local`; CSS via `[data-lpe-theme="light|dark"]` semantic tokens (no hardcoded colors).
-- Fix scroll: shell uses `overflow-y:auto; min-height:0` so body always scrolls.
+### Phase A1 — Mode scaffolding & theme toggle *(unchanged)*
+Three-tab header (Export · Pick · Inspect), `<InspectShell>` placeholders, light/dark toggle via `[data-lpe-theme]` tokens, scrollable body fix.
 
-### Phase A2 — Page snapshot collector (CS → SW → panel)
-- New CS module `inspect/collectSnapshot.ts`: walks `document` once and returns `{ pageInfo, fonts[], colors[], cssStats, computedSamples[] }`.
-- Pure, no mutation, runs on Inspect tab open + on `chrome.tabs.onUpdated` complete.
-- Cached per-tab in SW.
+### Phase A2 — Page snapshot collector *(unchanged)*
+`inspect/collectSnapshot.ts` returning `{ pageInfo, fonts[], colors[], cssStats, computedSamples[], textNodes[] }`, cached per-tab.
 
 ### Phase A3 — Overview section
-- Hero card: page screenshot thumb (reuse `chrome.tabs.captureVisibleTab` once), title, URL.
-- "Upgrade" CTA replaced with our brand action (link to docs).
+Hero thumbnail (single `captureVisibleTab`), title, URL. CTA = "Open docs" (no Upgrade).
 
 ### Phase A4 — Typography section
-- Group `computedSamples` by `font-family`; show heading (≥h3 or ≥24px) vs body grouping.
-- Per family: family name, generic fallback chip (sans-serif/serif/mono), weight count, total text-style count.
-- "Show all" → modal listing every (family, weight, size, line-height, letter-spacing) tuple with copy buttons.
+Heading vs Body grouping, family chip + generic-fallback chip ("sans-serif"), "N weights · N text styles", Show all → modal of every (family, weight, size, lh, ls).
 
-### Phase A5 — Color Palette section
-- Dedupe colors across `color`, `background-color`, `border-color`, `fill`, `stroke`, gradients.
-- Strip first 9 swatches inline + "Show all (N)".
-- Detail view: count, "Export all" (CSV + JSON, full dataset — explicit assertion that exported length === detected length), per-swatch Copy + Locate (scrolls to & flashes outline on first node using that color).
+### Phase A5 — Colors · Palette tab
+"Colors {count}" header + **Export All** button. Default tab **Palette**: dedup'd swatch grid; transparent uses checkerboard; each row has Locate + Copy icons.
+
+### Phase A5b — Colors · Categories tab *(new from img 15, 17)*
+Second tab **Categories**, sections in order: Background colors, Text colors, Border colors, Fills/strokes, Gradients. Each section header has a count chip. Same row controls (Locate, Copy).
 
 ### Phase A6 — Contrast Scanner
-- For every text node, compute WCAG 2.1 contrast vs effective background (walk ancestors for non-transparent bg).
-- Group by (fg, bg) pair; rate Excellent / Good / Poor / Very Poor.
-- Tabs: Failing | Passing. Per row: ratio, AA/AAA ✓/✗ for normal & large text, "Show details" expander.
-- No paywall. No "Premium" CTA.
+- Top-level row in Inspect home: "Contrast Scanner {N}" with first 2–3 worst pairs + Show all.
+- Detail screen: back-arrow → "Contrast Scanner" title, **Failing / Passing** segmented tabs with counts.
+- Pair card: Aa swatch + ratio + verdict badge ("Excellent / Good / Poor / Very Poor"), "N instances", Show details accordion → Text hex + swatch / Background hex + swatch / Normal text [AA 4.5:1 ✓✗, AAA 7:1 ✓✗] / Large text [AA 3:1 ✓✗, AAA 4.5:1 ✓✗].
+- All free; no Premium gate.
 
-### Phase A7 — CSS Information section
-- Style-rule count (sum across `document.styleSheets` we can read), declared CSS file size (sum of fetched stylesheet bytes), inline `<style>` count, unreachable sheet count.
+### Phase A7 — CSS Information *(unchanged)*
+Style-rule count, total CSS bytes, inline `<style>` count, unreachable sheet count.
 
 ### Phase A8 — Element Inspector (click-to-inspect)
-- Toggle inside Inspect Mode: hover highlights, click selects (no contextmenu — left-click picks; Esc cancels).
-- Right pane shows: selector path, box model (margin/border/padding/content with px), text properties (family, size, line-height, weight, letter-spacing, color + contrast badge), section colors (text/bg/border with copy + contrast), and "Show Code" button.
+Toggle inside Inspect Mode. Hover highlight + floating selector chip ("button.relative" style), click selects, Esc cancels. Right pane: selector path, box model, text properties (with contrast badge), section colors (text/bg/border copy + contrast), Show Code button.
+
+### Phase A8b — Distance guides *(new from img 20)*
+With one element selected, hovering a second draws dashed measurement guides + px badges between the two bounding boxes (top/right/bottom/left gaps + corner offsets). Pure DOM overlay, no DevTools needed.
 
 ### Phase A9 — Show Code drawer
-- Tabs: Layout | Text | Computed | Pseudo (`:hover`, `:focus`, `:active`).
-- Each pane shows the matched CSS rules (reuse existing `matchedCss.ts`) with copy-rule + copy-property buttons.
+Tabs: Layout · Text · Computed · Pseudo (`:hover`/`:focus`/`:active`). Reuses `matchedCss.ts`. Copy-rule + copy-property buttons.
 
-### Phase A10 — Color "Locate" + gradient detail
-- Locate button on any swatch scrolls into view + 1.5s outline pulse.
-- For gradient swatches, detail card shows stops, angle, "Show Code" with the full `background` declaration and every selector that uses it.
+### Phase A10 — Color detail drawer (Locate + Gradient + Instance drill-in)
+Back-arrow header + Show code button. For solid color: swatch + hex + "N instances" + Properties + Instances list (each row expandable to Category / Token-Class / Value / Contrast). For gradient: stop track with markers at 0/50/100%, per-stop hex + copy, Properties block, Instances list with same drill-in.
 
 ### Phase A11 — Export All hardening
-- Single `exportAll(dataset, format)` helper used by Colors, Typography, Contrast.
-- Vitest assertion: exported row count === dataset.length for ≥3 fixture pages (catches the CSS Peeper bug).
+Single `exportAll(dataset, format)` for Colors, Typography, Contrast (CSV + JSON). Vitest assertion: exported rows === dataset.length on ≥3 fixtures.
 
-### Phase A12 — Draggable panel + detached window fallback
-- Panel header is grab handle; drag clamped to viewport.
-- "Pop out" button opens a `chrome.windows.create({ type:'popup' })` detached window so the user CAN move it over the Chrome toolbar (the only way an extension can escape the tab viewport).
+### Phase A12 — Draggable panel + detached-window pop-out *(unchanged)*
+Header is grab handle, drag clamped; Pop-out → `chrome.windows.create({type:'popup'})` so it can sit over Chrome's chrome (only escape route for an extension).
 
-### Phase A13 — Footer & a11y polish
-- Footer uses `text-foreground/`muted-foreground` tokens; verify ≥4.5:1 in both themes.
-- Tab order, aria-labels on all icon buttons, `role="tablist"` for section tabs.
+### Phase A13 — Footer & a11y polish *(unchanged)*
+Semantic-token text ≥4.5:1 both themes, aria-labels on icon buttons, `role="tablist"` everywhere with tabs.
 
-### Phase A14 — Tests, docs, packaging
-- Vitest: snapshot collector, contrast math, color dedupe, exportAll completeness.
-- Update `docs/QA-CHECKLIST.md` with Inspect Mode flow.
-- Rebuild `public/inspect-page.zip` + sha256.
+### Phase A14 — Tests, docs, packaging *(unchanged)*
+Vitest for snapshot collector, contrast math, color dedupe, exportAll completeness, distance-guide math. Update QA checklist. Rebuild `public/inspect-page.zip` + sha256.
 
 ## Technical notes
 
-- All new code under `extension-src/inspect/` and `extension-src/panel/inspect/`.
-- Reuse: `matchedCss.ts`, `computedDiff.ts`, `selectorPath.ts`, `picker.ts` (overlay).
-- New shared types in `extension-src/shared/types.ts`: `InspectSnapshot`, `ColorUsage`, `FontUsage`, `ContrastPair`, `CssStats`.
-- CSS tokens added to `extension-src/panel/styles.css` under `[data-lpe-theme="light"]` / `[data-lpe-theme="dark"]`.
-- No new permissions needed (we already have `activeTab`, `scripting`, `tabs`, `windows`).
+- All new code under `extension-src/inspect/` (logic) and `extension-src/panel/inspect/` (UI).
+- Reuse: `matchedCss.ts`, `computedDiff.ts`, `selectorPath.ts`, picker overlay.
+- New shared types: `InspectSnapshot`, `ColorUsage` (with `category: 'text'|'bg'|'border'|'fill'|'stroke'|'gradient'`, `instances: SelectorRef[]`), `FontUsage`, `ContrastPair` (with `instances`, `normalAA/AAA`, `largeAA/AAA`), `GradientStop`, `DistanceGuide`.
+- Tokens added to `extension-src/panel/styles.css` under `[data-lpe-theme="light|dark"]`. Verdict colors map to existing destructive/warning/success tokens.
+- No new permissions.
 
 ## Out of scope (explicit)
 
-- Sign-in, Stripe, Premium gating.
-- Cloud sync of palettes.
-- Figma export.
-- Touching Smart Share / Export ZIP flows beyond keeping their tabs working.
+Sign-in · Stripe · Premium gating · cloud sync · Figma export · changes to Smart Share / Export ZIP beyond keeping their tabs working.
 
 ---
 
-**Remaining tasks (carried over from prior loops, still open):**
-- Phase 6 manual: pen-test 4 cases, run `docs/ACCEPTANCE-v2.2.md` on prod WP, run `bash scripts/release.sh`, upload `public/inspect-page.zip` to Chrome Web Store, set `INSPECT_PAGE_WP_SITE_URL` to prod HTTPS URL.
-- Deferred: Stripe Checkout → auto-flip `inspect_page_license`.
+**Remaining tasks**
+- Inspect Mode phases A1 → A14 (queued; A1 next)
+- Carryover Phase 6 manual: pen-test 4 cases, prod acceptance, `bash scripts/release.sh`, Web Store upload, set `INSPECT_PAGE_WP_SITE_URL`
+- Deferred: Stripe Checkout → auto-flip `inspect_page_license`
 
-Send `next` to start **Phase A1 — Mode scaffolding & theme toggle**. Send more screenshots any time and I'll fold them into the relevant phase.
+Send `next` to start **Phase A1**.
