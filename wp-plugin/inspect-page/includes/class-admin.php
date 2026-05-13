@@ -412,6 +412,151 @@ final class InspectPage_Admin {
         }
         return true;
     }
+
+    /**
+     * Renders the Billing (Stripe) section on the main settings dashboard.
+     * Admins set Stripe credentials here; users see their license status.
+     */
+    public static function render_billing_section() {
+        $is_admin   = current_user_can( 'manage_options' );
+        $configured = InspectPage_Billing::is_configured();
+        $secret_set   = (bool) get_option( InspectPage_Billing::OPT_SECRET, '' );
+        $price        = (string) get_option( InspectPage_Billing::OPT_PRICE, '' );
+        $webhook_set  = (bool) get_option( InspectPage_Billing::OPT_WEBHOOK, '' );
+        $mode         = (string) get_option( InspectPage_Billing::OPT_MODE, 'sandbox' );
+        $webhook_url  = rest_url( INSPECT_PAGE_REST_NS . '/billing/webhook' );
+
+        echo '<h2>' . esc_html__( 'Billing (Stripe)', 'inspect-page' ) . '</h2>';
+
+        if ( ! empty( $_GET['billing'] ) ) {
+            $b = sanitize_text_field( wp_unslash( $_GET['billing'] ) );
+            if ( $b === 'ok' )      echo '<div class="notice notice-success"><p>' . esc_html__( 'Subscription confirmed. License unlocked.', 'inspect-page' ) . '</p></div>';
+            if ( $b === 'cancel' )  echo '<div class="notice notice-warning"><p>' . esc_html__( 'Checkout cancelled — no charge was made.', 'inspect-page' ) . '</p></div>';
+            if ( $b === 'saved' )   echo '<div class="notice notice-success"><p>' . esc_html__( 'Stripe credentials saved.', 'inspect-page' ) . '</p></div>';
+        }
+
+        if ( $configured ) {
+            echo '<p><strong style="color:#1a7f37;">✓ ' . esc_html__( 'Stripe connected', 'inspect-page' ) . '</strong> ';
+            echo '<span class="description">(' . esc_html( $mode === 'live' ? 'live mode' : 'test mode' ) . ')</span></p>';
+        } else {
+            echo '<p><strong style="color:#a04100;">' . esc_html__( 'Stripe not configured.', 'inspect-page' ) . '</strong> ';
+            echo esc_html__( 'Paste your Stripe credentials below to enable Pro upgrades.', 'inspect-page' ) . '</p>';
+        }
+
+        // Admins-only configuration form.
+        if ( $is_admin ) {
+            echo '<form method="post" style="max-width:780px;background:#fff;border:1px solid #c3c4c7;padding:16px;margin-bottom:16px">';
+            wp_nonce_field( 'inspect_page_billing_save' );
+            echo '<input type="hidden" name="inspect_page_billing_form" value="1" />';
+
+            echo '<table class="form-table"><tbody>';
+
+            echo '<tr><th><label for="ip-stripe-mode">' . esc_html__( 'Mode', 'inspect-page' ) . '</label></th><td>';
+            echo '<select id="ip-stripe-mode" name="mode">';
+            echo '<option value="sandbox"' . selected( $mode, 'sandbox', false ) . '>' . esc_html__( 'Test (sandbox)', 'inspect-page' ) . '</option>';
+            echo '<option value="live"'    . selected( $mode, 'live',    false ) . '>' . esc_html__( 'Live',           'inspect-page' ) . '</option>';
+            echo '</select>';
+            echo '<p class="description">' . esc_html__( 'Pick the mode that matches the keys you\'re pasting below.', 'inspect-page' ) . '</p>';
+            echo '</td></tr>';
+
+            echo '<tr><th><label for="ip-stripe-secret">' . esc_html__( 'Secret key', 'inspect-page' ) . '</label></th><td>';
+            echo '<input id="ip-stripe-secret" name="secret" type="password" class="regular-text" autocomplete="off" placeholder="' . ( $secret_set ? '••••••••••••••••' : 'sk_test_…' ) . '" />';
+            echo '<p class="description">' . wp_kses_post( __( 'Stripe Dashboard → Developers → API keys → <code>sk_test_…</code> or <code>sk_live_…</code>. Stored encrypted-at-rest by your DB; never sent to the browser.', 'inspect-page' ) ) . '</p>';
+            if ( $secret_set ) echo '<p><label><input type="checkbox" name="clear_secret" value="1" /> ' . esc_html__( 'Clear stored secret key', 'inspect-page' ) . '</label></p>';
+            echo '</td></tr>';
+
+            echo '<tr><th><label for="ip-stripe-price">' . esc_html__( 'Price ID', 'inspect-page' ) . '</label></th><td>';
+            echo '<input id="ip-stripe-price" name="price_id" type="text" class="regular-text" value="' . esc_attr( $price ) . '" placeholder="price_…" />';
+            echo '<p class="description">' . wp_kses_post( __( 'Stripe Dashboard → Products → create a recurring $5/mo product → copy its <code>price_…</code> ID.', 'inspect-page' ) ) . '</p>';
+            echo '</td></tr>';
+
+            echo '<tr><th><label for="ip-stripe-webhook">' . esc_html__( 'Webhook secret', 'inspect-page' ) . '</label></th><td>';
+            echo '<input id="ip-stripe-webhook" name="webhook_secret" type="password" class="regular-text" autocomplete="off" placeholder="' . ( $webhook_set ? '••••••••••••••••' : 'whsec_…' ) . '" />';
+            echo '<p class="description">';
+            echo wp_kses_post( __( 'Stripe Dashboard → Developers → Webhooks → Add endpoint. Endpoint URL: ', 'inspect-page' ) );
+            echo '<code>' . esc_html( $webhook_url ) . '</code>. ';
+            echo esc_html__( 'Subscribe to: checkout.session.completed, invoice.paid, invoice.payment_failed, customer.subscription.updated, customer.subscription.deleted.', 'inspect-page' );
+            echo '</p>';
+            if ( $webhook_set ) echo '<p><label><input type="checkbox" name="clear_webhook" value="1" /> ' . esc_html__( 'Clear stored webhook secret', 'inspect-page' ) . '</label></p>';
+            echo '</td></tr>';
+
+            echo '</tbody></table>';
+            submit_button( __( 'Save Stripe credentials', 'inspect-page' ) );
+            echo '</form>';
+        } else {
+            echo '<p class="description">' . esc_html__( 'Only site administrators can configure Stripe credentials.', 'inspect-page' ) . '</p>';
+        }
+
+        // Per-user license status + checkout button (visible to everyone).
+        $uid         = get_current_user_id();
+        $has_license = InspectPage_License::has_license( $uid );
+        $has_customer = (bool) get_user_meta( $uid, InspectPage_Billing::META_CUSTOMER, true );
+
+        echo '<h3>' . esc_html__( 'Your subscription', 'inspect-page' ) . '</h3>';
+        echo '<table class="widefat striped" style="max-width:780px"><tbody>';
+        echo '<tr><th style="width:200px">' . esc_html__( 'Plan', 'inspect-page' ) . '</th><td>';
+        echo $has_license
+            ? '<strong style="color:#1a7f37;">' . esc_html__( 'Pro — unlimited shares', 'inspect-page' ) . '</strong>'
+            : esc_html__( 'Free — 5 lifetime shares', 'inspect-page' );
+        echo '</td></tr></tbody></table>';
+
+        if ( $configured && ! $has_license ) {
+            $checkout_endpoint = esc_url( admin_url( 'admin-post.php?action=inspect_page_checkout' ) );
+            echo '<p style="margin-top:12px"><a class="button button-primary" href="' . $checkout_endpoint . '">' . esc_html__( 'Upgrade to Pro — $5/month', 'inspect-page' ) . '</a></p>';
+        } elseif ( $configured && $has_license && $has_customer ) {
+            $portal_endpoint = esc_url( admin_url( 'admin-post.php?action=inspect_page_portal' ) );
+            echo '<p style="margin-top:12px"><a class="button" href="' . $portal_endpoint . '">' . esc_html__( 'Manage subscription', 'inspect-page' ) . '</a></p>';
+        }
+    }
+
+    /** Saves Stripe credentials posted from the Billing section. */
+    public static function handle_billing_form() {
+        if ( empty( $_POST['inspect_page_billing_form'] ) ) return;
+        if ( ! current_user_can( 'manage_options' ) ) wp_die( 'forbidden' );
+        check_admin_referer( 'inspect_page_billing_save' );
+
+        $mode = isset( $_POST['mode'] ) && $_POST['mode'] === 'live' ? 'live' : 'sandbox';
+        update_option( InspectPage_Billing::OPT_MODE, $mode, false );
+
+        if ( ! empty( $_POST['clear_secret'] ) ) {
+            delete_option( InspectPage_Billing::OPT_SECRET );
+        } elseif ( ! empty( $_POST['secret'] ) ) {
+            update_option( InspectPage_Billing::OPT_SECRET, sanitize_text_field( wp_unslash( $_POST['secret'] ) ), false );
+        }
+
+        $price_id = isset( $_POST['price_id'] ) ? sanitize_text_field( wp_unslash( $_POST['price_id'] ) ) : '';
+        update_option( InspectPage_Billing::OPT_PRICE, $price_id, false );
+
+        if ( ! empty( $_POST['clear_webhook'] ) ) {
+            delete_option( InspectPage_Billing::OPT_WEBHOOK );
+        } elseif ( ! empty( $_POST['webhook_secret'] ) ) {
+            update_option( InspectPage_Billing::OPT_WEBHOOK, sanitize_text_field( wp_unslash( $_POST['webhook_secret'] ) ), false );
+        }
+
+        wp_safe_redirect( add_query_arg( [ 'page' => 'inspect-page', 'billing' => 'saved' ], admin_url( 'admin.php' ) ) );
+        exit;
+    }
+
+    /**
+     * admin-post handlers: open Stripe Checkout / Billing Portal from the
+     * dashboard. Both reuse InspectPage_Billing internals.
+     */
+    public static function handle_admin_post_checkout() {
+        if ( ! is_user_logged_in() ) wp_die( 'login required' );
+        $req = new WP_REST_Request( 'POST', '/' . INSPECT_PAGE_REST_NS . '/billing/checkout' );
+        $res = InspectPage_Billing::rest_checkout( $req );
+        if ( is_wp_error( $res ) ) wp_die( esc_html( $res->get_error_message() ) );
+        wp_redirect( $res['url'] ); exit;
+    }
+    public static function handle_admin_post_portal() {
+        if ( ! is_user_logged_in() ) wp_die( 'login required' );
+        $req = new WP_REST_Request( 'POST', '/' . INSPECT_PAGE_REST_NS . '/billing/portal' );
+        $res = InspectPage_Billing::rest_portal( $req );
+        if ( is_wp_error( $res ) ) wp_die( esc_html( $res->get_error_message() ) );
+        wp_redirect( $res['url'] ); exit;
+    }
 }
 
 InspectPage_Admin::init();
+add_action( 'admin_post_inspect_page_checkout', [ 'InspectPage_Admin', 'handle_admin_post_checkout' ] );
+add_action( 'admin_post_inspect_page_portal',   [ 'InspectPage_Admin', 'handle_admin_post_portal' ] );
