@@ -14,6 +14,7 @@ import { COPY } from "@shared/copy";
 import { format } from "../format";
 import type { ComputedSample, InspectSnapshot } from "../../inspect/types";
 import { distanceBetween } from "../../inspect/distance";
+import { ShowCodeDrawer } from "./ShowCodeDrawer";
 
 const INITIAL_VISIBLE = 8;
 const STYLE_ORDER: Array<keyof ComputedSample["styles"]> = [
@@ -31,9 +32,11 @@ export function InspectInspector({ snapshot }: InspectInspectorProps): JSX.Eleme
   const [showAll, setShowAll] = useState(false);
   const [copied, setCopied] = useState<number | null>(null);
   const [anchorIdx, setAnchorIdx] = useState<number | null>(null);
+  const [codeIdx, setCodeIdx] = useState<number | null>(null);
 
   const visible = showAll ? samples : samples.slice(0, INITIAL_VISIBLE);
   const anchor = anchorIdx !== null ? samples[anchorIdx] ?? null : null;
+  const codeSample = codeIdx !== null ? samples[codeIdx] ?? null : null;
 
   const toggle = (i: number): void => {
     setExpanded((prev) => {
@@ -122,6 +125,13 @@ export function InspectInspector({ snapshot }: InspectInspectorProps): JSX.Eleme
                       >
                         {isAnchor ? COPY.inspectInspectorClearAnchor : COPY.inspectInspectorAnchor}
                       </button>
+                      <button
+                        type="button"
+                        className="lpe-link"
+                        onClick={() => setCodeIdx(i)}
+                      >
+                        {COPY.inspectInspectorShowCode}
+                      </button>
                     </div>
                   )}
                 </li>
@@ -138,6 +148,9 @@ export function InspectInspector({ snapshot }: InspectInspectorProps): JSX.Eleme
             </button>
           )}
         </>
+      )}
+      {codeSample && (
+        <ShowCodeDrawer sample={codeSample} onClose={() => setCodeIdx(null)} />
       )}
     </section>
   );
