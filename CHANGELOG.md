@@ -25,6 +25,13 @@ project adheres to [Semantic Versioning](https://semver.org/).
   comparison + one-click Stripe Checkout (or Customer Portal for Pro
   users) directly on the marketing site.
 
+### Deferred to v2.4
+
+- Picker-chip action icon — there is no on-page picker chip UI today,
+  so the "action icon" UX call from the original spec is parked until a
+  picker overlay actually ships. Will revisit alongside the picker
+  overlay redesign.
+
 ### Added — Inspect Mode (A1–A14)
 
 - New third panel tab **Inspect** alongside Export and Pick. CSS-Peeper-
