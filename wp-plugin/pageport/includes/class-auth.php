@@ -89,6 +89,7 @@ final class PagePort_Auth {
             $user_id
         ) );
 
+        $lic = PagePort_License::summary( $user_id );
         return new WP_REST_Response( [
             'logged_in'    => (bool) $logged_in,
             'user_id'      => $user_id,
@@ -100,6 +101,9 @@ final class PagePort_Auth {
                 'max_active'  => $max_active,
                 'hourly_used' => $hourly,
                 'max_hourly'  => $max_hour,
+                'lifetime_used' => $lic['lifetime_used'],
+                'free_limit'    => $lic['free_limit'],
+                'has_license'   => $lic['has_license'],
             ],
         ], 200 );
     }
