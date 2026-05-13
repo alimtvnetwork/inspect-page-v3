@@ -805,3 +805,41 @@
 .lpe-modal-code-note {
   flex: 1; font-size: 11px; color: var(--lpe-muted);
 }
+
+/* ---------- Detail drawer (Phase A10) ---------- */
+.lpe-modal-detail { width: min(440px, 92vw); }
+.lpe-detail-body { gap: 10px; }
+.lpe-detail-swatch {
+  width: 100%; height: 80px; border-radius: 6px;
+  border: 1px solid var(--lpe-border);
+}
+.lpe-detail-swatch.is-transparent {
+  background-image:
+    linear-gradient(45deg, #ccc 25%, transparent 25%),
+    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ccc 75%),
+    linear-gradient(-45deg, transparent 75%, #ccc 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-color: #fff;
+}
+.lpe-detail-grid { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.lpe-detail-row {
+  display: grid; grid-template-columns: 80px 1fr auto; gap: 8px;
+  align-items: center;
+  padding: 4px 0; border-bottom: 1px solid var(--lpe-border);
+  font-size: 12px;
+}
+.lpe-detail-row:last-child { border-bottom: none; }
+.lpe-detail-row dt { margin: 0; color: var(--lpe-muted); }
+.lpe-detail-row dd {
+  margin: 0; color: var(--lpe-fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.lpe-color-hex-btn {
+  border: none; background: transparent; padding: 0; cursor: pointer;
+  font: inherit; text-align: left; color: var(--lpe-fg);
+}
+.lpe-color-hex-btn:hover { text-decoration: underline; }
+.lpe-color-swatch[role="button"], button.lpe-color-swatch { cursor: pointer; padding: 0; }
