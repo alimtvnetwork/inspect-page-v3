@@ -10,7 +10,7 @@
  *     handlers for RunFullPageExport / EnterPickerMode arrive in later stages.
  *     For now, clicking them shows an Error if the handler is missing — by design.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { COPY } from "@shared/copy";
 import {
   INSPECT_PAGE_WP_SITE_URL,
@@ -170,6 +170,9 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         ...(p.debugPreview ? { debugPreview: p.debugPreview } : {}),
         ...(p.status === PanelStatus.Success && p.telemetry
           ? { successTelemetry: p.telemetry }
+          : {}),
+        ...(p.status === PanelStatus.Success && p.fullPageArtifacts
+          ? { fullPageArtifacts: p.fullPageArtifacts }
           : {}),
         ...(p.status === PanelStatus.Success && p.message
           ? { successFilename: p.message }
