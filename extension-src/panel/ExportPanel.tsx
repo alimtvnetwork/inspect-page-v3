@@ -56,6 +56,8 @@ export interface ExportPanelProps {
   /** Floating-panel only: drag handle / minimize / close hooks. */
   onMinimize?: () => void;
   onClose?: () => void;
+  /** Floating-panel only (Phase A12): open detached pop-out window. */
+  onPopOut?: () => void;
 }
 
 interface PanelState {
@@ -115,7 +117,7 @@ const BUSY_STATUSES: ReadonlySet<PanelStatus> = new Set([
 ]);
 
 export function ExportPanel(props: ExportPanelProps): JSX.Element {
-  const { surface, activeUrl, activeTabId, onMinimize, onClose } = props;
+  const { surface, activeUrl, activeTabId, onMinimize, onClose, onPopOut } = props;
   const [state, setState] = useState<PanelState>({ status: PanelStatus.Idle });
   const [settings, setSettings] = useState<Settings | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
@@ -380,6 +382,10 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         </button>
         {surface === "floating" && (
           <>
+            <button
+              type="button" className="lpe-header-btn"
+              onClick={onPopOut} aria-label={COPY.btnPopOut} title={COPY.btnPopOut}
+            >⧉</button>
             <button type="button" className="lpe-header-btn" onClick={onMinimize} aria-label={COPY.btnMinimize}>─</button>
             <button type="button" className="lpe-header-btn" onClick={onClose} aria-label={COPY.btnClose}>✕</button>
           </>
@@ -532,6 +538,15 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         <ShareDialog
           result={shareResult}
           onClose={() => setShareResult(null)}
+        />
+      )}
+      {surface === "floating" && (
+        <div
+          className="lpe-resize-handle"
+          data-resize-handle="true"
+          aria-label={COPY.lblResizePanel}
+          title={COPY.lblResizePanel}
+          role="separator"
         />
       )}
     </div>

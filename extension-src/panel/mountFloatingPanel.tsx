@@ -20,6 +20,10 @@ import { clamp } from "./clamp";
 export { clamp } from "./clamp";
 
 const HOST_ID = "inspect-page-panel-host";
+const MIN_PANEL_W = 320;
+const MIN_PANEL_H = 240;
+const MAX_PANEL_W = 720;
+const MAX_PANEL_H = 900;
 
 interface MountedPanel {
   host: HTMLElement;
@@ -61,6 +65,7 @@ export function mountFloatingPanel(): void {
 
   const root = createRoot(wrapper);
   const cleanup = installDrag(wrapper);
+  const cleanupResize = installResize(wrapper);
 
   // Restore persisted position (best-effort, async).
   void sendToBackground<Record<string, never>, GetPanelPositionResponse>(
@@ -71,6 +76,12 @@ export function mountFloatingPanel(): void {
       host.style.display = "none";
       return;
     }
+    if (typeof pos.wPx === "number") {
+      wrapper.style.width = `${clamp(pos.wPx, MIN_PANEL_W, MAX_PANEL_W)}px`;
+    }
+    if (typeof pos.hPx === "number") {
+      wrapper.style.height = `${clamp(pos.hPx, MIN_PANEL_H, MAX_PANEL_H)}px`;
+    }
     const w = wrapper.getBoundingClientRect().width || 320;
     const h = wrapper.getBoundingClientRect().height || 240;
     wrapper.style.left = `${clamp(pos.xPx, 0, window.innerWidth - w)}px`;
@@ -80,6 +91,7 @@ export function mountFloatingPanel(): void {
   const close = (): void => {
     try { root.unmount(); } catch { /* ignore */ }
     cleanup();
+    cleanupResize();
     host.remove();
     mounted = null;
     void persistPosition({ minimized: false }).catch(() => undefined);
@@ -90,6 +102,18 @@ export function mountFloatingPanel(): void {
     void persistPosition({ minimized: true }).catch(() => undefined);
   };
 
+  const popOut = (): void => {
+    // Open the extension's popup as a detached browser window so the panel
+    // survives page navigations. Falls back silently if the API is missing.
+    try {
+      const url = chrome.runtime?.getURL?.("popup/index.html");
+      if (!url) return;
+      void chrome.windows?.create?.({
+        url, type: "popup", width: 420, height: 720, focused: true,
+      });
+    } catch { /* ignore */ }
+  };
+
   root.render(
     <StrictMode>
       <ExportPanel
@@ -97,11 +121,12 @@ export function mountFloatingPanel(): void {
         activeUrl={location.href}
         onMinimize={minimize}
         onClose={close}
+        onPopOut={popOut}
       />
     </StrictMode>,
   );
 
-  mounted = { host, root, cleanup, };
+  mounted = { host, root, cleanup: () => { cleanup(); cleanupResize(); } };
   logger.info(LogCategory.Lifecycle, "Floating panel mounted");
 }
 
@@ -194,8 +219,8 @@ function installDrag(wrapper: HTMLElement): () => void {
 }
 
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
-let persistQueued: Partial<{ xPx: number; yPx: number; minimized: boolean }> = {};
-function schedulePersist(patch: Partial<{ xPx: number; yPx: number; minimized: boolean }>): void {
+let persistQueued: Partial<{ xPx: number; yPx: number; wPx: number; hPx: number; minimized: boolean }> = {};
+function schedulePersist(patch: Partial<{ xPx: number; yPx: number; wPx: number; hPx: number; minimized: boolean }>): void {
   persistQueued = { ...persistQueued, ...patch };
   if (persistTimer) clearTimeout(persistTimer);
   persistTimer = setTimeout(() => {
@@ -207,10 +232,67 @@ function schedulePersist(patch: Partial<{ xPx: number; yPx: number; minimized: b
 }
 
 async function persistPosition(
-  patch: Partial<{ xPx: number; yPx: number; minimized: boolean }>,
+  patch: Partial<{ xPx: number; yPx: number; wPx: number; hPx: number; minimized: boolean }>,
 ): Promise<void> {
   await sendToBackground<SetPanelPositionPayload, SetPanelPositionResponse>(
     MessageKind.SetPanelPosition, patch,
   );
 }
 
+
+/**
+ * Phase A12 — South-east resize handle.
+ *
+ * Listens for pointerdown on `[data-resize-handle="true"]` inside the
+ * wrapper and resizes within [MIN_PANEL_W, MAX_PANEL_W] × [MIN_PANEL_H, MAX_PANEL_H],
+ * clamped to the viewport. Persists wPx/hPx via the same debounced channel
+ * as the drag.
+ */
+function installResize(wrapper: HTMLElement): () => void {
+  let resizing = false;
+  let startW = 0, startH = 0, startX = 0, startY = 0;
+  let pointerId = -1;
+
+  const onDown = (e: PointerEvent): void => {
+    const target = e.target as HTMLElement | null;
+    const handle = target?.closest("[data-resize-handle='true']") as HTMLElement | null;
+    if (!handle) return;
+    resizing = true;
+    pointerId = e.pointerId;
+    const rect = wrapper.getBoundingClientRect();
+    startW = rect.width;
+    startH = rect.height;
+    startX = e.clientX;
+    startY = e.clientY;
+    handle.setPointerCapture?.(pointerId);
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  const onMove = (e: PointerEvent): void => {
+    if (!resizing) return;
+    const left = parseFloat(wrapper.style.left || "0");
+    const top = parseFloat(wrapper.style.top || "0");
+    const maxW = Math.min(MAX_PANEL_W, window.innerWidth - left);
+    const maxH = Math.min(MAX_PANEL_H, window.innerHeight - top);
+    const w = clamp(startW + (e.clientX - startX), MIN_PANEL_W, Math.max(MIN_PANEL_W, maxW));
+    const h = clamp(startH + (e.clientY - startY), MIN_PANEL_H, Math.max(MIN_PANEL_H, maxH));
+    wrapper.style.width = `${w}px`;
+    wrapper.style.height = `${h}px`;
+  };
+  const onUp = (): void => {
+    if (!resizing) return;
+    resizing = false;
+    pointerId = -1;
+    const rect = wrapper.getBoundingClientRect();
+    schedulePersist({ wPx: Math.round(rect.width), hPx: Math.round(rect.height) });
+  };
+
+  wrapper.addEventListener("pointerdown", onDown);
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", onUp);
+  return () => {
+    wrapper.removeEventListener("pointerdown", onDown);
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+  };
+}

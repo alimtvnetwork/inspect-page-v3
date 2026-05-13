@@ -14,6 +14,8 @@ export const COPY = {
   btnOpenPanel: "Open panel on page",
   btnMinimize: "Minimize",
   btnClose: "Close",
+  btnPopOut: "Open in new window",
+  lblResizePanel: "Resize panel",
   btnThemeLight: "Switch to light theme",
   btnThemeDark: "Switch to dark theme",
   tabExport: "Export",
