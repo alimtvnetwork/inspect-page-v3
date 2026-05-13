@@ -206,8 +206,8 @@ function installDrag(wrapper: HTMLElement): () => void {
 }
 
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
-let persistQueued: Partial<{ xPx: number; yPx: number; minimized: boolean }> = {};
-function schedulePersist(patch: Partial<{ xPx: number; yPx: number; minimized: boolean }>): void {
+let persistQueued: Partial<{ xPx: number; yPx: number; wPx: number; hPx: number; minimized: boolean }> = {};
+function schedulePersist(patch: Partial<{ xPx: number; yPx: number; wPx: number; hPx: number; minimized: boolean }>): void {
   persistQueued = { ...persistQueued, ...patch };
   if (persistTimer) clearTimeout(persistTimer);
   persistTimer = setTimeout(() => {
@@ -219,7 +219,7 @@ function schedulePersist(patch: Partial<{ xPx: number; yPx: number; minimized: b
 }
 
 async function persistPosition(
-  patch: Partial<{ xPx: number; yPx: number; minimized: boolean }>,
+  patch: Partial<{ xPx: number; yPx: number; wPx: number; hPx: number; minimized: boolean }>,
 ): Promise<void> {
   await sendToBackground<SetPanelPositionPayload, SetPanelPositionResponse>(
     MessageKind.SetPanelPosition, patch,
