@@ -843,3 +843,26 @@
 }
 .lpe-color-hex-btn:hover { text-decoration: underline; }
 .lpe-color-swatch[role="button"], button.lpe-color-swatch { cursor: pointer; padding: 0; }
+
+/* ---------- Export menu (Phase A11) ---------- */
+.lpe-inspect-shell-header {
+  display: flex; justify-content: flex-end; align-items: center;
+}
+.lpe-export-menu { position: relative; }
+.lpe-export-menu-pop {
+  position: absolute; top: 100%; right: 0; z-index: 10;
+  margin: 4px 0 0; padding: 4px;
+  list-style: none;
+  min-width: 180px;
+  background: var(--lpe-bg);
+  border: 1px solid var(--lpe-border); border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.lpe-export-menu-item {
+  width: 100%; text-align: left;
+  border: none; background: transparent; cursor: pointer;
+  padding: 6px 10px; border-radius: 4px;
+  font: inherit; font-size: 12px; color: var(--lpe-fg);
+}
+.lpe-export-menu-item:hover { background: var(--lpe-surface-2); }
