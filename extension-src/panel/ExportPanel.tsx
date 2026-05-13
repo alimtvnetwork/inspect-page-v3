@@ -31,6 +31,8 @@ import { ExportFlow } from "@shared/enums";
 import { ExportModes } from "./ExportModes";
 import { interpolateAi } from "@shared/copy";
 import { MessageKind as MK } from "@shared/enums";
+import { getOnboardingState, dismissOnboarding } from "@shared/onboarding";
+import { shareConfigured } from "@shared/shareSettings";
 
 export type PanelSurface = "popup" | "floating";
 
