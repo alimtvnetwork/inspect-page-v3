@@ -1145,6 +1145,32 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
                 {quota.hasLicense
                   ? COPY.shareQuotaUnlimited
                   : `${COPY.shareQuotaPrefix} ${quota.lifetimeUsed} / ${quota.freeLimit}`}
+                {!quota.hasLicense && quota.freeLimit > 0 && (
+                  <div
+                    className="lpe-quota-bar"
+                    role="progressbar"
+                    aria-label={COPY.shareQuotaPrefix}
+                    aria-valuemin={0}
+                    aria-valuemax={quota.freeLimit}
+                    aria-valuenow={Math.min(quota.lifetimeUsed, quota.freeLimit)}
+                  >
+                    <div
+                      className="lpe-quota-bar-fill"
+                      data-state={
+                        quota.lifetimeUsed >= quota.freeLimit
+                          ? "exhausted"
+                          : quota.lifetimeUsed >= quota.freeLimit - 1
+                          ? "warning"
+                          : "ok"
+                      }
+                      style={{
+                        width: `${Math.min(100, Math.round(
+                          (quota.lifetimeUsed / quota.freeLimit) * 100,
+                        ))}%`,
+                      }}
+                    />
+                  </div>
+                )}
                 {quota.hasLicense && (
                   <div style={{ marginTop: 4 }}>
                     <button
