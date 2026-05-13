@@ -13,6 +13,17 @@ project adheres to [Semantic Versioning](https://semver.org/).
   plugin REST endpoints (`/billing/checkout`, `/billing/portal`) over
   cookie + `X-WP-Nonce` and open Stripe-hosted pages in a new tab.
   Falls back to the static pricing URL when billing is not configured.
+- Inline **Upgrade to Pro** CTA inside the Smart Share error row when
+  `E_SHARE_QUOTA_FREE` fires, so users can upgrade without hunting in
+  Settings.
+- Free quota progress bar (blue → amber at 1 left → red at exhausted)
+  with proper `role="progressbar"` ARIA.
+- Quota auto-refresh on window focus / tab visibility — license
+  flips from Stripe Checkout / Customer Portal are reflected without a
+  manual sign-out cycle.
+- New WP shortcode `[inspect_page_pricing]` renders a Free vs Pro
+  comparison + one-click Stripe Checkout (or Customer Portal for Pro
+  users) directly on the marketing site.
 
 ### Added — Inspect Mode (A1–A14)
 
