@@ -226,3 +226,60 @@ async function persistPosition(
   );
 }
 
+
+/**
+ * Phase A12 — South-east resize handle.
+ *
+ * Listens for pointerdown on `[data-resize-handle="true"]` inside the
+ * wrapper and resizes within [MIN_PANEL_W, MAX_PANEL_W] × [MIN_PANEL_H, MAX_PANEL_H],
+ * clamped to the viewport. Persists wPx/hPx via the same debounced channel
+ * as the drag.
+ */
+function installResize(wrapper: HTMLElement): () => void {
+  let resizing = false;
+  let startW = 0, startH = 0, startX = 0, startY = 0;
+  let pointerId = -1;
+
+  const onDown = (e: PointerEvent): void => {
+    const target = e.target as HTMLElement | null;
+    const handle = target?.closest("[data-resize-handle='true']") as HTMLElement | null;
+    if (!handle) return;
+    resizing = true;
+    pointerId = e.pointerId;
+    const rect = wrapper.getBoundingClientRect();
+    startW = rect.width;
+    startH = rect.height;
+    startX = e.clientX;
+    startY = e.clientY;
+    handle.setPointerCapture?.(pointerId);
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  const onMove = (e: PointerEvent): void => {
+    if (!resizing) return;
+    const left = parseFloat(wrapper.style.left || "0");
+    const top = parseFloat(wrapper.style.top || "0");
+    const maxW = Math.min(MAX_PANEL_W, window.innerWidth - left);
+    const maxH = Math.min(MAX_PANEL_H, window.innerHeight - top);
+    const w = clamp(startW + (e.clientX - startX), MIN_PANEL_W, Math.max(MIN_PANEL_W, maxW));
+    const h = clamp(startH + (e.clientY - startY), MIN_PANEL_H, Math.max(MIN_PANEL_H, maxH));
+    wrapper.style.width = `${w}px`;
+    wrapper.style.height = `${h}px`;
+  };
+  const onUp = (): void => {
+    if (!resizing) return;
+    resizing = false;
+    pointerId = -1;
+    const rect = wrapper.getBoundingClientRect();
+    schedulePersist({ wPx: Math.round(rect.width), hPx: Math.round(rect.height) });
+  };
+
+  wrapper.addEventListener("pointerdown", onDown);
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", onUp);
+  return () => {
+    wrapper.removeEventListener("pointerdown", onDown);
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+  };
+}
