@@ -110,9 +110,24 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [shareSettings, setShareSettingsState] = useState<ShareSettings | null>(null);
   const [shareResult, setShareResult] = useState<CreateShareSessionResponse | null>(null);
+  const [onboardingDismissed, setOnboardingDismissed] = useState<boolean>(true);
   const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const disabled = isDisabledUrl(activeUrl);
+
+  // ---- Load onboarding state ----
+  useEffect(() => {
+    let alive = true;
+    getOnboardingState()
+      .then((s) => { if (alive) setOnboardingDismissed(s.dismissed); })
+      .catch(() => { /* ignore */ });
+    return () => { alive = false; };
+  }, []);
+
+  const onDismissOnboarding = useCallback(async () => {
+    setOnboardingDismissed(true);
+    try { await dismissOnboarding(); } catch { /* ignore */ }
+  }, []);
 
   // ---- Load settings on mount ----
   useEffect(() => {
