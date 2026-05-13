@@ -657,3 +657,29 @@
 .lpe-recent-status { color: #2563eb; font-size: 10px; font-weight: 600; }
 .lpe-recent-status[data-expired="true"] { color: #b42318; }
 .lpe-recent-row .lpe-btn { width: auto; padding: 2px 8px; font-size: 11px; }
+
+/* ---------- CSS Information (Phase A7) ---------- */
+.lpe-cssinfo { display: flex; flex-direction: column; gap: 8px; }
+.lpe-cssinfo-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.lpe-cssinfo-stat {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 10px; border: 1px solid var(--lpe-border); border-radius: 6px;
+  background: var(--lpe-surface); min-width: 0;
+}
+.lpe-cssinfo-stat-value {
+  font-size: 18px; font-weight: 600; color: var(--lpe-fg);
+  font-variant-numeric: tabular-nums;
+}
+.lpe-cssinfo-stat-label {
+  font-size: 11px; color: var(--lpe-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lpe-cssinfo-warn {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 8px 10px; border: 1px solid var(--lpe-border); border-radius: 6px;
+  background: var(--lpe-surface-2);
+  font-size: 11px; color: var(--lpe-muted);
+}
+.lpe-cssinfo-warn strong { color: var(--lpe-fg); font-size: 12px; }
