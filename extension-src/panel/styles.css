@@ -905,3 +905,12 @@
 /* When the wrapper has explicit width/height (drag/resize set), let
    .lpe-root fill it instead of falling back to its 360px default. */
 .lpe-root { position: relative; max-width: 100%; max-height: 100%; }
+
+/* ---------- Footer (Phase A13) ---------- */
+.lpe-inspect-footer {
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px 10px;
+  font-size: 11px; color: var(--lpe-muted);
+  border-top: 1px solid var(--lpe-border);
+  margin-top: 2px;
+}
