@@ -20,6 +20,10 @@ import { clamp } from "./clamp";
 export { clamp } from "./clamp";
 
 const HOST_ID = "inspect-page-panel-host";
+const MIN_PANEL_W = 320;
+const MIN_PANEL_H = 240;
+const MAX_PANEL_W = 720;
+const MAX_PANEL_H = 900;
 
 interface MountedPanel {
   host: HTMLElement;
@@ -61,6 +65,7 @@ export function mountFloatingPanel(): void {
 
   const root = createRoot(wrapper);
   const cleanup = installDrag(wrapper);
+  const cleanupResize = installResize(wrapper);
 
   // Restore persisted position (best-effort, async).
   void sendToBackground<Record<string, never>, GetPanelPositionResponse>(
@@ -71,6 +76,12 @@ export function mountFloatingPanel(): void {
       host.style.display = "none";
       return;
     }
+    if (typeof pos.wPx === "number") {
+      wrapper.style.width = `${clamp(pos.wPx, MIN_PANEL_W, MAX_PANEL_W)}px`;
+    }
+    if (typeof pos.hPx === "number") {
+      wrapper.style.height = `${clamp(pos.hPx, MIN_PANEL_H, MAX_PANEL_H)}px`;
+    }
     const w = wrapper.getBoundingClientRect().width || 320;
     const h = wrapper.getBoundingClientRect().height || 240;
     wrapper.style.left = `${clamp(pos.xPx, 0, window.innerWidth - w)}px`;
@@ -80,6 +91,7 @@ export function mountFloatingPanel(): void {
   const close = (): void => {
     try { root.unmount(); } catch { /* ignore */ }
     cleanup();
+    cleanupResize();
     host.remove();
     mounted = null;
     void persistPosition({ minimized: false }).catch(() => undefined);
@@ -101,7 +113,7 @@ export function mountFloatingPanel(): void {
     </StrictMode>,
   );
 
-  mounted = { host, root, cleanup, };
+  mounted = { host, root, cleanup: () => { cleanup(); cleanupResize(); } };
   logger.info(LogCategory.Lifecycle, "Floating panel mounted");
 }
 
