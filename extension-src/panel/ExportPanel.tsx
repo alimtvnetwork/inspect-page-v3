@@ -56,6 +56,8 @@ export interface ExportPanelProps {
   /** Floating-panel only: drag handle / minimize / close hooks. */
   onMinimize?: () => void;
   onClose?: () => void;
+  /** Floating-panel only (Phase A12): open detached pop-out window. */
+  onPopOut?: () => void;
 }
 
 interface PanelState {
