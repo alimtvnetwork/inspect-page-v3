@@ -9,24 +9,81 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   font-size: 13px;
   line-height: 1.45;
-  color: #1f2328;
+  color: var(--lpe-fg, #1f2328);
 }
 .lpe-root * { box-sizing: border-box; }
 .lpe-root {
   width: 360px;
-  background: #ffffff;
-  border: 1px solid #d0d7de;
+  background: var(--lpe-bg, #ffffff);
+  border: 1px solid var(--lpe-border, #d0d7de);
   border-radius: 8px;
   box-shadow: 0 6px 24px rgba(0,0,0,0.12);
   overflow: hidden;
 }
+
+/* ---------- Theme tokens (Phase A1) ---------- */
+.lpe-root[data-lpe-theme="light"] {
+  --lpe-bg: #ffffff;
+  --lpe-fg: #1f2328;
+  --lpe-muted: #57606a;
+  --lpe-surface: #f6f8fa;
+  --lpe-surface-2: #eaeef2;
+  --lpe-border: #d0d7de;
+  --lpe-accent: #0969da;
+  --lpe-accent-fg: #ffffff;
+}
+.lpe-root[data-lpe-theme="dark"] {
+  --lpe-bg: #0d1117;
+  --lpe-fg: #e6edf3;
+  --lpe-muted: #8b949e;
+  --lpe-surface: #161b22;
+  --lpe-surface-2: #1f242c;
+  --lpe-border: #30363d;
+  --lpe-accent: #2f81f7;
+  --lpe-accent-fg: #ffffff;
+}
+
+/* ---------- Tabs (Phase A1) ---------- */
+.lpe-tabs {
+  display: flex;
+  background: var(--lpe-surface);
+  border-bottom: 1px solid var(--lpe-border);
+}
+.lpe-tab {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: var(--lpe-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.lpe-tab:hover { color: var(--lpe-fg); }
+.lpe-tab[data-active="true"] {
+  color: var(--lpe-fg);
+  font-weight: 600;
+  border-bottom-color: var(--lpe-accent);
+}
+
+/* ---------- Inspect Mode placeholder (Phase A1) ---------- */
+.lpe-inspect-shell { display: flex; flex-direction: column; gap: 10px; }
+.lpe-inspect-empty {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 14px; border-radius: 6px;
+  background: var(--lpe-surface);
+  border: 1px dashed var(--lpe-border);
+  color: var(--lpe-muted);
+}
+.lpe-inspect-empty strong { color: var(--lpe-fg); font-size: 14px; }
+
 .lpe-header {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
+  background: var(--lpe-surface);
+  border-bottom: 1px solid var(--lpe-border);
   cursor: default;
   user-select: none;
 }
@@ -35,9 +92,17 @@
 .lpe-header-btn {
   border: none; background: transparent; cursor: pointer;
   padding: 2px 6px; border-radius: 4px; font-size: 14px;
+  color: var(--lpe-fg);
 }
-.lpe-header-btn:hover { background: #eaeef2; }
-.lpe-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.lpe-header-btn:hover { background: var(--lpe-surface-2); }
+.lpe-body {
+  padding: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+  /* Phase A1: scrollable body fix — keep the panel from overflowing the page */
+  max-height: 70vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 .lpe-btn {
   display: block; width: 100%;
   padding: 8px 12px;
