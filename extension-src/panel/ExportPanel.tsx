@@ -380,6 +380,10 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         </button>
         {surface === "floating" && (
           <>
+            <button
+              type="button" className="lpe-header-btn"
+              onClick={onPopOut} aria-label={COPY.btnPopOut} title={COPY.btnPopOut}
+            >⧉</button>
             <button type="button" className="lpe-header-btn" onClick={onMinimize} aria-label={COPY.btnMinimize}>─</button>
             <button type="button" className="lpe-header-btn" onClick={onClose} aria-label={COPY.btnClose}>✕</button>
           </>
@@ -532,6 +536,15 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         <ShareDialog
           result={shareResult}
           onClose={() => setShareResult(null)}
+        />
+      )}
+      {surface === "floating" && (
+        <div
+          className="lpe-resize-handle"
+          data-resize-handle="true"
+          aria-label={COPY.lblResizePanel}
+          title={COPY.lblResizePanel}
+          role="separator"
         />
       )}
     </div>
