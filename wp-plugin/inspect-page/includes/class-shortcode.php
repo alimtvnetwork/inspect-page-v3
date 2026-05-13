@@ -18,7 +18,109 @@ final class InspectPage_Shortcode {
 
     public static function register() {
         add_shortcode( 'inspect_page_account', [ __CLASS__, 'render' ] );
+        add_shortcode( 'inspect_page_pricing', [ __CLASS__, 'render_pricing' ] );
         add_action( 'init', [ __CLASS__, 'maybe_handle_revoke' ] );
+    }
+
+    /**
+     * `[inspect_page_pricing]` — Free vs Pro comparison + Stripe Checkout CTA.
+     *
+     * Logged-in users get a one-click "Upgrade to Pro" button that POSTs to
+     * the WP REST `/billing/checkout` endpoint via fetch (cookie + nonce) and
+     * redirects to the Stripe-hosted Checkout URL. Pro users see "Manage
+     * subscription" → Customer Portal. Logged-out visitors see a Log in link.
+     */
+    public static function render_pricing() {
+        $configured = class_exists( 'InspectPage_Billing' ) && InspectPage_Billing::is_configured();
+        $free_limit = (int) get_option( 'inspect_page_free_lifetime_limit', 5 );
+        ob_start();
+        ?>
+        <div class="inspect-page-pricing" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:780px;margin:24px 0;">
+            <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;background:#fff;">
+                <h3 style="margin-top:0;"><?php esc_html_e( 'Free', 'inspect-page' ); ?></h3>
+                <p style="font-size:28px;margin:4px 0 12px;font-weight:600;">$0<span style="font-size:14px;color:#6b7280;font-weight:400;">/forever</span></p>
+                <ul style="line-height:1.8;padding-left:18px;">
+                    <li><?php echo esc_html( sprintf( __( '%d lifetime Smart Shares', 'inspect-page' ), $free_limit ) ); ?></li>
+                    <li><?php esc_html_e( '24-hour share-link expiry', 'inspect-page' ); ?></li>
+                    <li><?php esc_html_e( 'All export modes (MD / ZIP / Smart Share)', 'inspect-page' ); ?></li>
+                    <li><?php esc_html_e( 'Inspect Mode (read-only DOM/CSS inspector)', 'inspect-page' ); ?></li>
+                </ul>
+            </div>
+            <div style="border:2px solid #2563eb;border-radius:8px;padding:16px;background:#fff;position:relative;">
+                <span style="position:absolute;top:-10px;right:12px;background:#2563eb;color:#fff;font-size:11px;padding:2px 8px;border-radius:999px;"><?php esc_html_e( 'Recommended', 'inspect-page' ); ?></span>
+                <h3 style="margin-top:0;"><?php esc_html_e( 'Pro', 'inspect-page' ); ?></h3>
+                <p style="font-size:28px;margin:4px 0 12px;font-weight:600;">$5<span style="font-size:14px;color:#6b7280;font-weight:400;">/month</span></p>
+                <ul style="line-height:1.8;padding-left:18px;">
+                    <li><strong><?php esc_html_e( 'Unlimited Smart Shares', 'inspect-page' ); ?></strong></li>
+                    <li><?php esc_html_e( 'Everything in Free', 'inspect-page' ); ?></li>
+                    <li><?php esc_html_e( 'Cancel anytime via Stripe portal', 'inspect-page' ); ?></li>
+                </ul>
+                <?php self::render_pricing_cta( $configured ); ?>
+            </div>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    private static function render_pricing_cta( $configured ) {
+        if ( ! is_user_logged_in() ) {
+            $login = wp_login_url( ( is_ssl() ? 'https://' : 'http://' )
+                . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
+            echo '<p><a class="button button-primary" href="' . esc_url( $login ) . '">'
+                . esc_html__( 'Log in to upgrade', 'inspect-page' ) . '</a></p>';
+            return;
+        }
+        if ( ! $configured ) {
+            echo '<p style="color:#a04100;">' . esc_html__( 'Stripe is not configured on this site yet.', 'inspect-page' ) . '</p>';
+            return;
+        }
+        $uid     = get_current_user_id();
+        $is_pro  = InspectPage_License::has_license( $uid );
+        $nonce   = wp_create_nonce( 'wp_rest' );
+        $checkout = esc_url_raw( rest_url( INSPECT_PAGE_REST_NS . '/billing/checkout' ) );
+        $portal   = esc_url_raw( rest_url( INSPECT_PAGE_REST_NS . '/billing/portal' ) );
+        $label   = $is_pro
+            ? __( 'Manage subscription', 'inspect-page' )
+            : __( 'Upgrade to Pro', 'inspect-page' );
+        $endpoint = $is_pro ? $portal : $checkout;
+        ?>
+        <button class="button button-primary inspect-page-billing-cta"
+                data-endpoint="<?php echo esc_attr( $endpoint ); ?>"
+                data-nonce="<?php echo esc_attr( $nonce ); ?>"
+                style="margin-top:12px;">
+            <?php echo esc_html( $label ); ?>
+        </button>
+        <span class="inspect-page-billing-status" style="margin-left:8px;color:#6b7280;font-size:13px;"></span>
+        <script>
+        (function(){
+          var btns = document.querySelectorAll('.inspect-page-billing-cta');
+          btns.forEach(function(btn){
+            if (btn.dataset.bound === '1') return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function(){
+              var status = btn.parentNode.querySelector('.inspect-page-billing-status');
+              btn.disabled = true;
+              if (status) status.textContent = 'Opening Stripe…';
+              fetch(btn.dataset.endpoint, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-WP-Nonce': btn.dataset.nonce },
+                body: JSON.stringify({ success_url: window.location.href, cancel_url: window.location.href, return_url: window.location.href })
+              }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
+              .then(function(o){
+                if (o.ok && o.j && o.j.url) { window.location.href = o.j.url; return; }
+                if (status) status.textContent = (o.j && o.j.message) ? o.j.message : 'Could not open Stripe';
+                btn.disabled = false;
+              })
+              .catch(function(e){
+                if (status) status.textContent = String(e && e.message || e);
+                btn.disabled = false;
+              });
+            });
+          });
+        })();
+        </script>
+        <?php
     }
 
     public static function render() {
