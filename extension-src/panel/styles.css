@@ -477,6 +477,7 @@
 .lpe-field input[type="range"] {
   width: 100%; accent-color: #0969da;
 }
+.lpe-root[data-lpe-theme="dark"] .lpe-field input[type="range"] { accent-color: var(--lpe-accent); }
 .lpe-not-available {
   padding: 8px 10px; background: #fff8c5; border: 1px solid #d4a72c;
   border-radius: 6px;
