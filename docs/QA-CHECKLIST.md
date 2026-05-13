@@ -255,6 +255,36 @@ WordPress install with the `inspect-page` plugin v2.2.0 active.
 - [ ] AC-WP-3 — Hourly WP cron purges expired sessions; UI shows
       "Expired" once `expires_at` < now
 
+## 10. Inspect Mode (A1–A14)
+
+Open the floating panel → **Inspect** tab on **S1**, **S5**.
+
+- [ ] AC-INS-1 — Three tabs render: Export · Pick · Inspect; ☾/☀ toggle
+      flips light/dark; both themes keep ≥4.5:1 text contrast
+- [ ] AC-INS-2 — Overview shows page thumbnail, title, URL, "Open docs"
+- [ ] AC-INS-3 — Typography cards (Headings / Body) + "Show all" modal;
+      modal closes via ✕ or Esc
+- [ ] AC-INS-4 — Colors · Palette tab dedupes hex values; "Export All"
+      downloads `<slug>-colors.csv` (RFC-4180 escaped)
+- [ ] AC-INS-5 — Colors · Categories tab groups by background/text/
+      border/fill/stroke/gradient/shadow with per-category counts
+- [ ] AC-INS-6 — Click any swatch or hex → Detail drawer shows hex /
+      rgb / hsl / alpha + per-format Copy buttons; Esc closes
+- [ ] AC-INS-7 — Contrast Scanner shows pass/fail badges; "Show all" →
+      Failing/Passing tabs, pair card AA/AAA grid renders
+- [ ] AC-INS-8 — CSS Information shows rules count, inlined CSS bytes,
+      external sheet count, &lt;style&gt; tag count, unreachable hint
+- [ ] AC-INS-9 — Element Inspector list ranks by visible area; click row
+      to expand computed styles; "Set as anchor" + distance panel works
+- [ ] AC-INS-10 — Show Code drawer renders synthesized HTML/CSS with
+      Copy + tab switch; Esc closes
+- [ ] AC-INS-11 — "Export report ▾" header menu offers JSON / Markdown /
+      Colors CSV / Fonts CSV; each downloads with the dated slug
+- [ ] AC-INS-12 — Floating panel: drag header to move, SE-corner
+      resize handle clamps 320×240–720×900; ⧉ pop-out opens detached
+      window; reload → position + size restored
+- [ ] AC-INS-13 — Footer reads "Inspect Page v2.3.0"
+
 ## Sign-off
 
 - Tester: __________________
