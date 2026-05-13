@@ -452,7 +452,9 @@
 .lpe-not-available {
   padding: 8px 10px; background: #fff8c5; border: 1px solid #d4a72c;
   border-radius: 6px;
+  color: #1f2328;
 }
+.lpe-root[data-lpe-theme="dark"] .lpe-not-available { background: #422006; border-color: #a16207; color: #fef08a; }
 .lpe-error-detail { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; }
 
 /* v1.1 — "Captured in this export" telemetry block. */
@@ -478,6 +480,10 @@
 .lpe-telemetry-value {
   font-variant-numeric: tabular-nums; font-weight: 500; color: #1f2328;
 }
+.lpe-root[data-lpe-theme="dark"] .lpe-telemetry { background: #052e16; border-color: #166534; }
+.lpe-root[data-lpe-theme="dark"] .lpe-telemetry-header { color: #4ade80; }
+.lpe-root[data-lpe-theme="dark"] .lpe-telemetry-label { color: #8b949e; }
+.lpe-root[data-lpe-theme="dark"] .lpe-telemetry-value { color: #e6edf3; }
 
 /* v1.2 — picked-element debug preview (HTML / CSS / JS tabs). */
 .lpe-debug {
@@ -518,6 +524,9 @@
 }
 .lpe-debug-tab.is-active {
   background: #0969da; color: white; border-color: #0969da;
+}
+.lpe-root[data-lpe-theme="dark"] .lpe-debug-tab.is-active {
+  background: var(--lpe-accent); color: var(--lpe-accent-fg); border-color: var(--lpe-accent);
 }
 .lpe-debug-count {
   font-size: 10px; opacity: 0.7;
@@ -597,6 +606,9 @@
   padding: 6px 10px;
   font-size: 12px;
 }
+.lpe-root[data-lpe-theme="dark"] .lpe-onboarding { background: #172554; border-color: #3b82f6; }
+.lpe-root[data-lpe-theme="dark"] .lpe-onboarding strong { color: #bfdbfe; }
+.lpe-root[data-lpe-theme="dark"] .lpe-onboarding span { color: #93c5fd; }
 
 .lpe-export-modes {
   margin-top: 10px;
