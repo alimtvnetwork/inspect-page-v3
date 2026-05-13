@@ -22,6 +22,9 @@ export interface PanelPosition {
   xPx: number;
   yPx: number;
   minimized: boolean;
+  /** Persisted floating-panel size (Phase A12). Optional for backward compat. */
+  wPx?: number;
+  hPx?: number;
 }
 
 export interface LastExportRecord {
