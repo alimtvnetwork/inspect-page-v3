@@ -211,6 +211,7 @@ export const COPY = {
   shareQuotaUnlimited: "Pro plan — unlimited shares",
   shareUpgradeHint: "Upgrade to Pro for unlimited shares",
   shareUpgradeBtn: "Upgrade to Pro",
+  shareManageSubscriptionBtn: "Manage subscription",
   shareQuotaFreeReachedMsg: "Free quota reached. Upgrade to Inspect Page Pro to keep sharing.",
 } as const;
 

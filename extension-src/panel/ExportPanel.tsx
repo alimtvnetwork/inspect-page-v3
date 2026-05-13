@@ -39,6 +39,7 @@ import { shareConfigured } from "@shared/shareSettings";
 import { getShareSettings, setShareSettings } from "@shared/shareSettings";
 import { listShareSessions, type ShareSessionSummary } from "../share/listShareSessions";
 import { startBillingCheckout } from "../share/startBillingCheckout";
+import { startBillingPortal } from "../share/startBillingPortal";
 import { revokeShareSession } from "../share/revokeShareSession";
 import { InspectShell } from "./inspect/InspectShell";
 
@@ -1105,6 +1106,32 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
                 {quota.hasLicense
                   ? COPY.shareQuotaUnlimited
                   : `${COPY.shareQuotaPrefix} ${quota.lifetimeUsed} / ${quota.freeLimit}`}
+                {quota.hasLicense && (
+                  <div style={{ marginTop: 4 }}>
+                    <button
+                      type="button"
+                      className="lpe-btn"
+                      onClick={async () => {
+                        try {
+                          const { url } = await startBillingPortal({ getShareSettings });
+                          if (typeof window !== "undefined" && url) {
+                            window.open(url, "_blank", "noopener,noreferrer");
+                          }
+                        } catch {
+                          if (typeof window !== "undefined") {
+                            window.open(
+                              INSPECT_PAGE_PRICING_URL,
+                              "_blank",
+                              "noopener,noreferrer",
+                            );
+                          }
+                        }
+                      }}
+                    >
+                      {COPY.shareManageSubscriptionBtn}
+                    </button>
+                  </div>
+                )}
                 {!quota.hasLicense && quota.lifetimeUsed >= quota.freeLimit && (
                   <div style={{ marginTop: 4 }}>
                     <em>{COPY.shareUpgradeHint}</em>{" "}
