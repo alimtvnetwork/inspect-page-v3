@@ -866,3 +866,18 @@
   font: inherit; font-size: 12px; color: var(--lpe-fg);
 }
 .lpe-export-menu-item:hover { background: var(--lpe-surface-2); }
+
+/* ---------- Resize handle (Phase A12) ---------- */
+.lpe-resize-handle {
+  position: absolute;
+  right: 0; bottom: 0;
+  width: 14px; height: 14px;
+  cursor: nwse-resize;
+  background:
+    linear-gradient(135deg, transparent 0 50%, var(--lpe-muted) 50% 60%, transparent 60% 70%, var(--lpe-muted) 70% 80%, transparent 80% 100%);
+  opacity: 0.6;
+}
+.lpe-resize-handle:hover { opacity: 1; }
+/* When the wrapper has explicit width/height (drag/resize set), let
+   .lpe-root fill it instead of falling back to its 360px default. */
+.lpe-root { position: relative; max-width: 100%; max-height: 100%; }
