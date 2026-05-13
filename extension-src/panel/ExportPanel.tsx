@@ -496,6 +496,26 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             <div className="lpe-row" style={{ marginTop: 8 }}>
               <button type="button" className="lpe-btn" onClick={onCopyDetails}>{COPY.btnCopyDetails}</button>
               <button type="button" className="lpe-btn lpe-btn-primary" onClick={onRetry}>{COPY.btnRetry}</button>
+              {state.errorCode === ErrorCode.E_SHARE_QUOTA_FREE && (
+                <button
+                  type="button"
+                  className="lpe-btn lpe-btn-primary"
+                  onClick={async () => {
+                    try {
+                      const { url } = await startBillingCheckout({ getShareSettings });
+                      if (typeof window !== "undefined" && url) {
+                        window.open(url, "_blank", "noopener,noreferrer");
+                      }
+                    } catch {
+                      if (typeof window !== "undefined") {
+                        window.open(INSPECT_PAGE_PRICING_URL, "_blank", "noopener,noreferrer");
+                      }
+                    }
+                  }}
+                >
+                  {COPY.shareUpgradeBtn}
+                </button>
+              )}
             </div>
           )}
           {state.status === PanelStatus.Success && state.successTelemetry && (
