@@ -39,6 +39,11 @@ import { shareConfigured } from "@shared/shareSettings";
 import { getShareSettings, setShareSettings } from "@shared/shareSettings";
 import { listShareSessions, type ShareSessionSummary } from "../share/listShareSessions";
 import { revokeShareSession } from "../share/revokeShareSession";
+import { InspectShell } from "./inspect/InspectShell";
+
+type PanelMode = "export" | "pick" | "inspect";
+type PanelTheme = "light" | "dark";
+const THEME_STORAGE_KEY = "inspect-page:theme";
 
 export type PanelSurface = "popup" | "floating";
 
@@ -117,6 +122,21 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const [shareSettings, setShareSettingsState] = useState<ShareSettings | null>(null);
   const [shareResult, setShareResult] = useState<CreateShareSessionResponse | null>(null);
   const [onboardingDismissed, setOnboardingDismissed] = useState<boolean>(true);
+  const [mode, setMode] = useState<PanelMode>("export");
+  const [theme, setTheme] = useState<PanelTheme>(() => {
+    try {
+      const v = globalThis.localStorage?.getItem(THEME_STORAGE_KEY);
+      return v === "dark" ? "dark" : "light";
+    } catch { return "light"; }
+  });
+
+  const onToggleTheme = useCallback(() => {
+    setTheme((t) => {
+      const next: PanelTheme = t === "light" ? "dark" : "light";
+      try { globalThis.localStorage?.setItem(THEME_STORAGE_KEY, next); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
 
   const disabled = isDisabledUrl(activeUrl);
 
@@ -341,7 +361,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const busy = useMemo(() => BUSY_STATUSES.has(state.status), [state.status]);
 
   return (
-    <div className="lpe-root" role="region" aria-label={COPY.appName}>
+    <div className="lpe-root" data-lpe-theme={theme} role="region" aria-label={COPY.appName}>
       <header
         className="lpe-header"
         data-draggable={surface === "floating" ? "true" : "false"}
@@ -349,6 +369,15 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       >
         <span aria-hidden="true">≡</span>
         <span className="lpe-header-title">{COPY.appName}</span>
+        <button
+          type="button"
+          className="lpe-header-btn"
+          onClick={onToggleTheme}
+          aria-label={theme === "light" ? COPY.btnThemeDark : COPY.btnThemeLight}
+          title={theme === "light" ? COPY.btnThemeDark : COPY.btnThemeLight}
+        >
+          {theme === "light" ? "☾" : "☀"}
+        </button>
         {surface === "floating" && (
           <>
             <button type="button" className="lpe-header-btn" onClick={onMinimize} aria-label={COPY.btnMinimize}>─</button>
@@ -356,6 +385,22 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           </>
         )}
       </header>
+
+      <div className="lpe-tabs" role="tablist" aria-label={COPY.appName}>
+        {(["export", "pick", "inspect"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            role="tab"
+            aria-selected={mode === m}
+            className="lpe-tab"
+            data-active={mode === m ? "true" : "false"}
+            onClick={() => setMode(m)}
+          >
+            {m === "export" ? COPY.tabExport : m === "pick" ? COPY.tabPick : COPY.tabInspect}
+          </button>
+        ))}
+      </div>
 
       {surface === "popup" && !onboardingDismissed && !shareConfigured(shareSettings ?? { siteUrl: "", userId: 0, displayName: "", email: "", nonce: "", signedInAtIso: "" }) && (
         <div className="lpe-onboarding" role="status">
@@ -374,27 +419,33 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         </div>
       )}
 
-      <div className="lpe-body">
-        {disabled ? (
+      <div className="lpe-body" data-mode={mode}>
+        {mode === "inspect" ? (
+          <InspectShell />
+        ) : disabled ? (
           <div className="lpe-not-available" role="alert">{COPY.notAvailable}</div>
         ) : (
           <>
-            <button
-              type="button"
-              className="lpe-btn lpe-btn-primary"
-              onClick={onFullPage}
-              disabled={busy || settings === null}
-            >
-              {COPY.btnFullPage}
-            </button>
-            <button
-              type="button"
-              className="lpe-btn"
-              onClick={onPick}
-              disabled={busy || settings === null}
-            >
-              {COPY.btnPick}
-            </button>
+            {mode === "export" && (
+              <button
+                type="button"
+                className="lpe-btn lpe-btn-primary"
+                onClick={onFullPage}
+                disabled={busy || settings === null}
+              >
+                {COPY.btnFullPage}
+              </button>
+            )}
+            {mode === "pick" && (
+              <button
+                type="button"
+                className="lpe-btn lpe-btn-primary"
+                onClick={onPick}
+                disabled={busy || settings === null}
+              >
+                {COPY.btnPick}
+              </button>
+            )}
             {surface === "popup" && (
               <button
                 type="button"
