@@ -14,6 +14,8 @@ import { format } from "../format";
 import type { ColorUsage, InspectSnapshot } from "../../inspect/types";
 import type { ColorCategory } from "../../inspect/types";
 import { DetailDrawer } from "./DetailDrawer";
+import { colorsToCsv, safeBaseName, mimeFor } from "../../inspect/exportSnapshot";
+import { downloadText } from "./downloadBlob";
 
 export interface InspectColorsProps { snapshot: InspectSnapshot }
 
@@ -45,18 +47,9 @@ export function InspectColors({ snapshot }: InspectColorsProps): JSX.Element {
   };
 
   const onExportAll = (): void => {
-    // Hardened CSV/JSON export lands in Phase A11; quick CSV download for now.
-    const csv = ["value,category,instances,transparent"]
-      .concat(snapshot.colors.map((c) =>
-        `${c.value},${c.category},${c.instances},${c.transparent}`,
-      ))
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "inspect-page-colors.csv";
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const csv = colorsToCsv(snapshot.colors);
+    const { mime, ext } = mimeFor("csv");
+    downloadText(csv, `${safeBaseName(snapshot)}-colors.${ext}`, mime);
   };
 
   return (
