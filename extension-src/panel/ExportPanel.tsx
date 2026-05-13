@@ -909,6 +909,9 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [hint, setHint] = useState("");
+  const [quota, setQuota] = useState<{
+    lifetimeUsed: number; freeLimit: number; hasLicense: boolean;
+  } | null>(null);
   const siteUrl = PAGEPORT_WP_SITE_URL;
   const configured = !!siteUrl;
   const signedIn = configured && !!settings.nonce && !!settings.userId;
@@ -930,15 +933,25 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
     try {
       const r = await sendToBackground<Record<string, never>, {
         loggedIn: boolean; userId: number; displayName: string; email: string; nonce: string;
+        quota?: {
+          active: number; maxActive: number; hourlyUsed: number; maxHourly: number;
+          lifetimeUsed: number; freeLimit: number; hasLicense: boolean;
+        };
       }>(MK.CheckShareAuth, {});
       if (!r.loggedIn) {
         setErr(COPY.shareSignedOutMsg);
+        setQuota(null);
       } else {
         // Patch already persisted by SW — refresh local view via parent.
         onPatch({
           userId: r.userId, displayName: r.displayName,
           email: r.email, nonce: r.nonce,
           signedInAtIso: new Date().toISOString(),
+        });
+        if (r.quota) setQuota({
+          lifetimeUsed: r.quota.lifetimeUsed,
+          freeLimit: r.quota.freeLimit,
+          hasLicense: r.quota.hasLicense,
         });
       }
     } catch (e) {
@@ -948,7 +961,33 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
 
   const onSignOut = (): void => {
     onPatch({ userId: 0, displayName: "", email: "", nonce: "", signedInAtIso: "" });
+    setQuota(null);
   };
+
+  // Auto-fetch quota when signed in and not yet loaded.
+  useEffect(() => {
+    if (!signedIn || quota) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await sendToBackground<Record<string, never>, {
+          loggedIn: boolean;
+          quota?: {
+            active: number; maxActive: number; hourlyUsed: number; maxHourly: number;
+            lifetimeUsed: number; freeLimit: number; hasLicense: boolean;
+          };
+        }>(MK.CheckShareAuth, {});
+        if (!cancelled && r.loggedIn && r.quota) {
+          setQuota({
+            lifetimeUsed: r.quota.lifetimeUsed,
+            freeLimit: r.quota.freeLimit,
+            hasLicense: r.quota.hasLicense,
+          });
+        }
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [signedIn, quota]);
 
   return (
     <details className="lpe-settings">
@@ -964,6 +1003,16 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
               {COPY.shareSignedInAsPrefix}{" "}
               <strong>{settings.displayName || settings.email}</strong>
             </div>
+            {quota && (
+              <div className="lpe-debug-note" role="status">
+                {quota.hasLicense
+                  ? COPY.shareQuotaUnlimited
+                  : `${COPY.shareQuotaPrefix} ${quota.lifetimeUsed} / ${quota.freeLimit}`}
+                {!quota.hasLicense && quota.lifetimeUsed >= quota.freeLimit && (
+                  <div style={{ marginTop: 4 }}><em>{COPY.shareUpgradeHint}</em></div>
+                )}
+              </div>
+            )}
             <button type="button" className="lpe-btn" onClick={onSignOut}>
               {COPY.shareSignOutBtn}
             </button>
