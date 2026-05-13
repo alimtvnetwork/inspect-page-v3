@@ -21,6 +21,7 @@ export default defineConfig({
     environmentMatchGlobs: [
       [path.resolve(srcRoot, "capture/**"), "happy-dom"],
       [path.resolve(srcRoot, "element/**"), "happy-dom"],
+      [path.resolve(srcRoot, "inspect/**"), "happy-dom"],
     ],
   },
   resolve: {
