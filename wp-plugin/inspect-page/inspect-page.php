@@ -25,6 +25,7 @@ require_once INSPECT_PAGE_DIR . 'includes/class-activator.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-storage.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-auth.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-license.php';
+require_once INSPECT_PAGE_DIR . 'includes/class-billing.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-rest.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-cleanup.php';
 if ( is_admin() ) {
@@ -39,6 +40,7 @@ register_deactivation_hook( __FILE__, [ 'InspectPage_Cleanup', 'deactivate' ] );
 
 add_action( 'rest_api_init', [ 'InspectPage_REST', 'register_routes' ] );
 add_action( 'rest_api_init', [ 'InspectPage_Auth', 'register_routes' ] );
+add_action( 'rest_api_init', [ 'InspectPage_Billing', 'register_routes' ] );
 add_filter( 'rest_pre_serve_request', [ 'InspectPage_Auth', 'send_cors_headers' ], 10, 3 );
 add_action( 'inspect_page_cleanup', [ 'InspectPage_Cleanup', 'run' ] );
 
