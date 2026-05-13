@@ -13,6 +13,7 @@ import { COPY } from "@shared/copy";
 import { format } from "../format";
 import type { ColorUsage, InspectSnapshot } from "../../inspect/types";
 import type { ColorCategory } from "../../inspect/types";
+import { DetailDrawer } from "./DetailDrawer";
 
 export interface InspectColorsProps { snapshot: InspectSnapshot }
 
@@ -21,6 +22,7 @@ type Tab = "palette" | "categories";
 export function InspectColors({ snapshot }: InspectColorsProps): JSX.Element {
   const [tab, setTab] = useState<Tab>("palette");
   const [copied, setCopied] = useState<string | null>(null);
+  const [detail, setDetail] = useState<ColorUsage | null>(null);
 
   const palette = useMemo(() => dedupePalette(snapshot.colors), [snapshot.colors]);
 
@@ -35,6 +37,11 @@ export function InspectColors({ snapshot }: InspectColorsProps): JSX.Element {
   const onLocate = (_value: string): void => {
     // Locate (highlight matching elements on the page) lands in Phase A8b.
     // Stub no-op for now — the button keeps its place in the row.
+  };
+
+  const onOpenDetail = (color: ColorUsage): void => {
+    if (color.category === "gradient") return; // gradients have no hex math
+    setDetail(color);
   };
 
   const onExportAll = (): void => {
@@ -87,7 +94,7 @@ export function InspectColors({ snapshot }: InspectColorsProps): JSX.Element {
       {tab === "palette" && (
         palette.length === 0
           ? <div className="lpe-inspect-empty"><span>{COPY.inspectColorsNone}</span></div>
-          : <PaletteGrid items={palette} copied={copied} onCopy={onCopy} onLocate={onLocate} />
+          : <PaletteGrid items={palette} copied={copied} onCopy={onCopy} onLocate={onLocate} onOpenDetail={onOpenDetail} />
       )}
       {tab === "categories" && (
         <CategoriesView
@@ -95,8 +102,10 @@ export function InspectColors({ snapshot }: InspectColorsProps): JSX.Element {
           copied={copied}
           onCopy={onCopy}
           onLocate={onLocate}
+          onOpenDetail={onOpenDetail}
         />
       )}
+      {detail && <DetailDrawer color={detail} onClose={() => setDetail(null)} />}
     </section>
   );
 }
@@ -125,10 +134,11 @@ interface CategoriesViewProps {
   copied: string | null;
   onCopy: (v: string) => void;
   onLocate: (v: string) => void;
+  onOpenDetail: (c: ColorUsage) => void;
 }
 
 function CategoriesView(props: CategoriesViewProps): JSX.Element {
-  const { colors, copied, onCopy, onLocate } = props;
+  const { colors, copied, onCopy, onLocate, onOpenDetail } = props;
   const groups = useMemo(() => groupByCategory(colors), [colors]);
 
   if (colors.length === 0) {
@@ -154,6 +164,7 @@ function CategoriesView(props: CategoriesViewProps): JSX.Element {
                   copied={copied === c.value}
                   onCopy={onCopy}
                   onLocate={onLocate}
+                  onOpenDetail={onOpenDetail}
                 />
               ))}
             </div>
@@ -192,13 +203,14 @@ interface PaletteGridProps {
   copied: string | null;
   onCopy: (v: string) => void;
   onLocate: (v: string) => void;
+  onOpenDetail: (c: ColorUsage) => void;
 }
 
-function PaletteGrid({ items, copied, onCopy, onLocate }: PaletteGridProps): JSX.Element {
+function PaletteGrid({ items, copied, onCopy, onLocate, onOpenDetail }: PaletteGridProps): JSX.Element {
   return (
     <div className="lpe-color-grid">
       {items.map((c) => (
-        <ColorRow key={c.value} color={c} copied={copied === c.value} onCopy={onCopy} onLocate={onLocate} />
+        <ColorRow key={c.value} color={c} copied={copied === c.value} onCopy={onCopy} onLocate={onLocate} onOpenDetail={onOpenDetail} />
       ))}
     </div>
   );
@@ -209,17 +221,39 @@ interface ColorRowProps {
   copied: boolean;
   onCopy: (v: string) => void;
   onLocate: (v: string) => void;
+  onOpenDetail?: (c: ColorUsage) => void;
 }
 
-export function ColorRow({ color, copied, onCopy, onLocate }: ColorRowProps): JSX.Element {
+export function ColorRow({ color, copied, onCopy, onLocate, onOpenDetail }: ColorRowProps): JSX.Element {
+  const clickable = !!onOpenDetail && color.category !== "gradient";
   return (
     <div className="lpe-color-row">
-      <span
-        className={`lpe-color-swatch ${color.transparent ? "is-transparent" : ""}`}
-        style={color.transparent ? undefined : { background: color.value }}
-        aria-hidden="true"
-      />
-      <span className="lpe-color-hex" title={color.value}>{color.value}</span>
+      {clickable ? (
+        <button
+          type="button"
+          className={`lpe-color-swatch ${color.transparent ? "is-transparent" : ""}`}
+          style={color.transparent ? undefined : { background: color.value }}
+          onClick={() => onOpenDetail!(color)}
+          aria-label={`Details for ${color.value}`}
+          title={`Details for ${color.value}`}
+        />
+      ) : (
+        <span
+          className={`lpe-color-swatch ${color.transparent ? "is-transparent" : ""}`}
+          style={color.transparent ? undefined : { background: color.value }}
+          aria-hidden="true"
+        />
+      )}
+      {clickable ? (
+        <button
+          type="button"
+          className="lpe-color-hex lpe-color-hex-btn"
+          onClick={() => onOpenDetail!(color)}
+          title={color.value}
+        >{color.value}</button>
+      ) : (
+        <span className="lpe-color-hex" title={color.value}>{color.value}</span>
+      )}
       <span className="lpe-color-instances">{color.instances}×</span>
       <button
         type="button" className="lpe-color-btn"
