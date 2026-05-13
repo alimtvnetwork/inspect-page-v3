@@ -11,6 +11,8 @@ import { WhatsNew } from "@/components/landing/WhatsNew";
 import { Privacy } from "@/components/landing/Privacy";
 import { WpPlugin } from "@/components/landing/WpPlugin";
 import { Footer } from "@/components/landing/Footer";
+import { Pricing } from "@/components/landing/Pricing";
+import { Faq } from "@/components/landing/Faq";
 
 const ZIP_URL = "/inspect-page.zip";
 
