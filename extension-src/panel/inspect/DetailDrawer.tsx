@@ -39,7 +39,7 @@ export function DetailDrawer({ color, onClose }: DetailDrawerProps): JSX.Element
       <div className="lpe-modal lpe-modal-detail" onClick={(e) => e.stopPropagation()}>
         <div className="lpe-modal-header">
           <h3>{COPY.inspectDetailTitle}</h3>
-          <button type="button" className="lpe-btn" onClick={onClose}>{COPY.inspectClose}</button>
+          <button type="button" className="lpe-btn" onClick={onClose} aria-label={COPY.inspectClose}>{COPY.inspectClose}</button>
         </div>
         <div className="lpe-modal-body lpe-detail-body">
           <div
@@ -79,7 +79,7 @@ function Row({ label, value, copyLabel, copied, onCopy }: {
     <div className="lpe-detail-row">
       <dt>{label}</dt>
       <dd className="lpe-detail-value" title={value}>{value}</dd>
-      <button type="button" className="lpe-link" onClick={onCopy}>
+      <button type="button" className="lpe-link" onClick={onCopy} aria-label={copyLabel}>
         {copied ? COPY.inspectDetailCopied : copyLabel}
       </button>
     </div>

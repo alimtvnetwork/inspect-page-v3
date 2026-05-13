@@ -261,6 +261,8 @@
 }
 .lpe-contrast-badge-fail { background: rgba(239, 68, 68, 0.12); color: #b91c1c; border-color: rgba(239,68,68,0.4); }
 .lpe-contrast-badge-pass { background: rgba(34, 197, 94, 0.12); color: #15803d; border-color: rgba(34,197,94,0.4); }
+.lpe-root[data-lpe-theme="dark"] .lpe-contrast-badge-fail { background: rgba(239, 68, 68, 0.18); color: #f87171; border-color: rgba(239,68,68,0.35); }
+.lpe-root[data-lpe-theme="dark"] .lpe-contrast-badge-pass { background: rgba(34, 197, 94, 0.18); color: #4ade80; border-color: rgba(34,197,94,0.35); }
 
 .lpe-modal-wide { width: min(520px, 95vw); }
 
@@ -282,6 +284,10 @@
 .lpe-pair-verdict-poor { color: #b45309; }
 .lpe-pair-verdict-good { color: #15803d; }
 .lpe-pair-verdict-excellent { color: #047857; }
+.lpe-root[data-lpe-theme="dark"] .lpe-pair-verdict-fail { color: #f87171; }
+.lpe-root[data-lpe-theme="dark"] .lpe-pair-verdict-poor { color: #fbbf24; }
+.lpe-root[data-lpe-theme="dark"] .lpe-pair-verdict-good { color: #4ade80; }
+.lpe-root[data-lpe-theme="dark"] .lpe-pair-verdict-excellent { color: #34d399; }
 .lpe-pair-instances { font-size: 11px; color: var(--lpe-muted); }
 
 .lpe-pair-details { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; border-top: 1px solid var(--lpe-border); }
@@ -305,6 +311,8 @@
 }
 .lpe-aa-pill.is-pass { background: rgba(34,197,94,0.15); color: #15803d; }
 .lpe-aa-pill.is-fail { background: rgba(239,68,68,0.15); color: #b91c1c; }
+.lpe-root[data-lpe-theme="dark"] .lpe-aa-pill.is-pass { background: rgba(34,197,94,0.22); color: #4ade80; }
+.lpe-root[data-lpe-theme="dark"] .lpe-aa-pill.is-fail { background: rgba(239,68,68,0.22); color: #f87171; }
 
 .lpe-header {
   display: flex;
@@ -340,25 +348,36 @@
   background: #f6f8fa;
   font: inherit;
   cursor: pointer;
+  color: #1f2328;
 }
 .lpe-btn:hover:not([disabled]) { background: #eaeef2; }
 .lpe-btn-primary { background: #0969da; color: white; border-color: #0969da; }
 .lpe-btn-primary:hover:not([disabled]) { background: #0860c2; }
 .lpe-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+.lpe-root[data-lpe-theme="dark"] .lpe-btn { background: #161b22; border-color: #30363d; color: #e6edf3; }
+.lpe-root[data-lpe-theme="dark"] .lpe-btn:hover:not([disabled]) { background: #1f242c; }
+.lpe-root[data-lpe-theme="dark"] .lpe-btn-primary { background: var(--lpe-accent); color: var(--lpe-accent-fg); border-color: var(--lpe-accent); }
+.lpe-root[data-lpe-theme="dark"] .lpe-btn-primary:hover:not([disabled]) { background: #1f6feb; }
 .lpe-status {
   padding: 8px 10px;
   border: 1px solid #d0d7de;
   border-radius: 6px;
   background: #f6f8fa;
   min-height: 36px;
+  color: #1f2328;
 }
-.lpe-status[data-status="Error"] { background: #ffebe9; border-color: #ff8182; }
-.lpe-status[data-status="Success"] { background: #dafbe1; border-color: #2da44e; }
+.lpe-status[data-status="Error"] { background: #ffebe9; border-color: #ff8182; color: #1f2328; }
+.lpe-status[data-status="Success"] { background: #dafbe1; border-color: #2da44e; color: #1f2328; }
+.lpe-root[data-lpe-theme="dark"] .lpe-status { background: #161b22; border-color: #30363d; color: #e6edf3; }
+.lpe-root[data-lpe-theme="dark"] .lpe-status[data-status="Error"] { background: #450a0a; border-color: #ef4444; color: #fecaca; }
+.lpe-root[data-lpe-theme="dark"] .lpe-status[data-status="Success"] { background: #052e16; border-color: #22c55e; color: #bbf7d0; }
 .lpe-progress {
   height: 6px; width: 100%; background: #eaeef2; border-radius: 3px; overflow: hidden;
   margin-top: 6px;
 }
 .lpe-progress-bar { height: 100%; background: #0969da; transition: width 120ms ease; }
+.lpe-root[data-lpe-theme="dark"] .lpe-progress { background: #30363d; }
+.lpe-root[data-lpe-theme="dark"] .lpe-progress-bar { background: var(--lpe-accent); }
 .lpe-row { display: flex; align-items: center; gap: 8px; }
 .lpe-settings {
   margin-top: 4px;
@@ -380,6 +399,10 @@
   margin-left: 4px;
 }
 .lpe-settings[open] summary::before { transform: rotate(45deg); }
+.lpe-root[data-lpe-theme="dark"] .lpe-settings { border-top-color: #30363d; }
+.lpe-root[data-lpe-theme="dark"] .lpe-settings summary { color: #e6edf3; }
+.lpe-root[data-lpe-theme="dark"] .lpe-settings summary:hover { background: #161b22; }
+.lpe-root[data-lpe-theme="dark"] .lpe-settings summary::before { border-color: #8b949e; }
 .lpe-settings-body {
   display: flex; flex-direction: column; gap: 12px;
   padding: 10px 2px 4px;
@@ -416,6 +439,13 @@
   border-left: 2px solid white; border-bottom: 2px solid white;
   transform: rotate(-45deg) translate(1px, -1px);
 }
+.lpe-root[data-lpe-theme="dark"] .lpe-field > label { color: #8b949e; }
+.lpe-root[data-lpe-theme="dark"] .lpe-field-row { background: #0d1117; border-color: #30363d; }
+.lpe-root[data-lpe-theme="dark"] .lpe-field-row:hover { background: #161b22; border-color: #30363d; }
+.lpe-root[data-lpe-theme="dark"] .lpe-field-row > span { color: #e6edf3; }
+.lpe-root[data-lpe-theme="dark"] .lpe-field-row input[type="checkbox"] { background: #0d1117; border-color: #30363d; }
+.lpe-root[data-lpe-theme="dark"] .lpe-field-row input[type="checkbox"]:hover { border-color: var(--lpe-accent); }
+.lpe-root[data-lpe-theme="dark"] .lpe-field-row input[type="checkbox"]:checked { background: var(--lpe-accent); border-color: var(--lpe-accent); }
 .lpe-input, .lpe-select {
   width: 100%; padding: 7px 10px;
   border: 1px solid #d0d7de; border-radius: 6px;
@@ -434,13 +464,26 @@
   background-position: right 10px center;
   padding-right: 28px;
 }
+.lpe-root[data-lpe-theme="dark"] .lpe-input, .lpe-root[data-lpe-theme="dark"] .lpe-select {
+  background: #0d1117; border-color: #30363d; color: #e6edf3;
+}
+.lpe-root[data-lpe-theme="dark"] .lpe-input:focus, .lpe-root[data-lpe-theme="dark"] .lpe-select:focus {
+  border-color: var(--lpe-accent);
+  box-shadow: 0 0 0 3px rgba(47,129,247,0.25);
+}
+.lpe-root[data-lpe-theme="dark"] .lpe-select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='none' stroke='%238b949e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M1 1l4 4 4-4'/></svg>");
+}
 .lpe-field input[type="range"] {
   width: 100%; accent-color: #0969da;
 }
+.lpe-root[data-lpe-theme="dark"] .lpe-field input[type="range"] { accent-color: var(--lpe-accent); }
 .lpe-not-available {
   padding: 8px 10px; background: #fff8c5; border: 1px solid #d4a72c;
   border-radius: 6px;
+  color: #1f2328;
 }
+.lpe-root[data-lpe-theme="dark"] .lpe-not-available { background: #422006; border-color: #a16207; color: #fef08a; }
 .lpe-error-detail { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; }
 
 /* v1.1 — "Captured in this export" telemetry block. */
@@ -466,6 +509,10 @@
 .lpe-telemetry-value {
   font-variant-numeric: tabular-nums; font-weight: 500; color: #1f2328;
 }
+.lpe-root[data-lpe-theme="dark"] .lpe-telemetry { background: #052e16; border-color: #166534; }
+.lpe-root[data-lpe-theme="dark"] .lpe-telemetry-header { color: #4ade80; }
+.lpe-root[data-lpe-theme="dark"] .lpe-telemetry-label { color: #8b949e; }
+.lpe-root[data-lpe-theme="dark"] .lpe-telemetry-value { color: #e6edf3; }
 
 /* v1.2 — picked-element debug preview (HTML / CSS / JS tabs). */
 .lpe-debug {
@@ -506,6 +553,9 @@
 }
 .lpe-debug-tab.is-active {
   background: #0969da; color: white; border-color: #0969da;
+}
+.lpe-root[data-lpe-theme="dark"] .lpe-debug-tab.is-active {
+  background: var(--lpe-accent); color: var(--lpe-accent-fg); border-color: var(--lpe-accent);
 }
 .lpe-debug-count {
   font-size: 10px; opacity: 0.7;
@@ -585,6 +635,9 @@
   padding: 6px 10px;
   font-size: 12px;
 }
+.lpe-root[data-lpe-theme="dark"] .lpe-onboarding { background: #172554; border-color: #3b82f6; }
+.lpe-root[data-lpe-theme="dark"] .lpe-onboarding strong { color: #bfdbfe; }
+.lpe-root[data-lpe-theme="dark"] .lpe-onboarding span { color: #93c5fd; }
 
 .lpe-export-modes {
   margin-top: 10px;
@@ -881,3 +934,12 @@
 /* When the wrapper has explicit width/height (drag/resize set), let
    .lpe-root fill it instead of falling back to its 360px default. */
 .lpe-root { position: relative; max-width: 100%; max-height: 100%; }
+
+/* ---------- Footer (Phase A13) ---------- */
+.lpe-inspect-footer {
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px 10px;
+  font-size: 11px; color: var(--lpe-muted);
+  border-top: 1px solid var(--lpe-border);
+  margin-top: 2px;
+}

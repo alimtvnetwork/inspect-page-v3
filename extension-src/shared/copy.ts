@@ -118,6 +118,7 @@ export const COPY = {
   inspectExportMarkdown: "Markdown",
   inspectExportColorsCsv: "Colors (CSV)",
   inspectExportFontsCsv: "Fonts (CSV)",
+  inspectFooterLabel: "Inspect Page v{version}",
   statusIdle: "Idle",
   statusCollecting: "Collecting page assets…",
   statusCapturing: "Capturing screenshot {done}/{total}",

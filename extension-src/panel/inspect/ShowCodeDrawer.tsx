@@ -37,17 +37,21 @@ export function ShowCodeDrawer({ sample, onClose }: ShowCodeDrawerProps): JSX.El
       <div className="lpe-modal lpe-modal-code" onClick={(e) => e.stopPropagation()}>
         <div className="lpe-modal-header">
           <h3>{COPY.inspectShowCodeTitle} — <span className="lpe-modal-code-selector">{sample.selector}</span></h3>
-          <button type="button" className="lpe-btn" onClick={onClose}>{COPY.inspectClose}</button>
+          <button type="button" className="lpe-btn" onClick={onClose} aria-label={COPY.inspectClose}>{COPY.inspectClose}</button>
         </div>
         <div className="lpe-modal-body">
-          <div className="lpe-subtabs" role="tablist">
+          <div className="lpe-subtabs" role="tablist" aria-label="Code view">
             <button
               type="button" role="tab" className="lpe-subtab"
-              data-active={tab === "html"} onClick={() => setTab("html")}
+              aria-selected={tab === "html"}
+              data-active={tab === "html" ? "true" : "false"}
+              onClick={() => setTab("html")}
             >{COPY.inspectShowCodeTabHtml}</button>
             <button
               type="button" role="tab" className="lpe-subtab"
-              data-active={tab === "css"} onClick={() => setTab("css")}
+              aria-selected={tab === "css"}
+              data-active={tab === "css" ? "true" : "false"}
+              onClick={() => setTab("css")}
             >{COPY.inspectShowCodeTabCss}</button>
           </div>
           <pre className="lpe-modal-code-pre"><code>{tab === "html" ? code.html : code.css}</code></pre>
