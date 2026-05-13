@@ -16,6 +16,7 @@ import { InspectColors } from "./InspectColors";
 import { InspectContrast } from "./InspectContrast";
 import { InspectCssInfo } from "./InspectCssInfo";
 import { InspectInspector } from "./InspectInspector";
+import { ExportMenu } from "./ExportMenu";
 
 interface SnapshotState {
   status: "idle" | "loading" | "ready" | "error";
@@ -51,6 +52,11 @@ export function InspectShell(): JSX.Element {
 
   return (
     <div className="lpe-inspect-shell" role="region" aria-label={COPY.inspectModeTitle}>
+      {state.status === "ready" && state.snapshot && (
+        <header className="lpe-inspect-shell-header">
+          <ExportMenu snapshot={state.snapshot} />
+        </header>
+      )}
       {state.status === "loading" && (
         <div className="lpe-inspect-empty"><span>{COPY.inspectLoading}</span></div>
       )}
