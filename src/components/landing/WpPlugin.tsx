@@ -92,6 +92,10 @@ export const WpPlugin = (): JSX.Element => {
         <li>In the extension, open <strong>Settings → Smart Share</strong>. The backend URL is baked in — just click <strong>Sign in</strong>. A WordPress login tab opens.</li>
         <li>Sign in to WordPress as usual. The extension picks up the cookie + nonce automatically — no tokens or app passwords to copy.</li>
       </ol>
+      <p className="text-sm text-muted-foreground">
+        Optional: copy <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">mu-plugin/inspect-page-branding.php</code> to{" "}
+        <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">wp-content/mu-plugins/</code> to theme the login page with Inspect Page branding.
+      </p>
       {error ? (
         <p role="alert" className="text-sm text-destructive">
           {error}
