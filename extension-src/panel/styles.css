@@ -683,3 +683,61 @@
   font-size: 11px; color: var(--lpe-muted);
 }
 .lpe-cssinfo-warn strong { color: var(--lpe-fg); font-size: 12px; }
+
+/* ---------- Element Inspector (Phase A8) ---------- */
+.lpe-inspector { display: flex; flex-direction: column; gap: 8px; }
+.lpe-inspector-hint { margin: 0; font-size: 11px; color: var(--lpe-muted); }
+.lpe-inspector-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column;
+  border: 1px solid var(--lpe-border); border-radius: 6px;
+  background: var(--lpe-surface);
+  overflow: hidden;
+}
+.lpe-inspector-item { border-bottom: 1px solid var(--lpe-border); }
+.lpe-inspector-item:last-child { border-bottom: none; }
+.lpe-inspector-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto 14px;
+  align-items: center; gap: 8px;
+  width: 100%; padding: 6px 10px;
+  border: none; background: transparent; cursor: pointer;
+  font: inherit; text-align: left; color: var(--lpe-fg);
+}
+.lpe-inspector-row:hover { background: var(--lpe-surface-2); }
+.lpe-inspector-tag {
+  display: inline-flex; align-items: center;
+  padding: 1px 6px; border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px; text-transform: uppercase;
+  background: var(--lpe-surface-2); color: var(--lpe-muted);
+  border: 1px solid var(--lpe-border);
+}
+.lpe-inspector-selector {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px; color: var(--lpe-fg);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.lpe-inspector-dims {
+  font-size: 11px; color: var(--lpe-muted);
+  font-variant-numeric: tabular-nums;
+}
+.lpe-inspector-caret { font-size: 10px; color: var(--lpe-muted); }
+.lpe-inspector-detail {
+  padding: 8px 10px 10px; background: var(--lpe-surface-2);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.lpe-inspector-styles { margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.lpe-inspector-style-row {
+  display: grid; grid-template-columns: 110px 1fr; gap: 8px;
+  font-size: 11px; min-width: 0;
+}
+.lpe-inspector-style-row dt {
+  margin: 0; color: var(--lpe-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.lpe-inspector-style-row dd {
+  margin: 0; color: var(--lpe-fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
