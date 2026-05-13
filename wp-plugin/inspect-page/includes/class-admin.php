@@ -305,6 +305,9 @@ final class InspectPage_Admin {
             echo '<a href="' . esc_url( admin_url( 'plugin-install.php?s=nextend+social+login&tab=search&type=term' ) ) . '">' . esc_html__( 'Install it', 'inspect-page' ) . '</a>.</p>';
         }
 
+        // ── Billing (Stripe) ────────────────────────────────────
+        self::render_billing_section();
+
         echo '</div>';
     }
 
