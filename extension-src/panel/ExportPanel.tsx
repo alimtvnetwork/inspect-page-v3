@@ -12,7 +12,11 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COPY } from "@shared/copy";
-import { INSPECT_PAGE_WP_SITE_URL, SUCCESS_AUTO_DISMISS_MS } from "@shared/constants";
+import {
+  INSPECT_PAGE_WP_SITE_URL,
+  INSPECT_PAGE_PRICING_URL,
+  SUCCESS_AUTO_DISMISS_MS,
+} from "@shared/constants";
 import { ErrorCode, MessageKind, PanelStatus } from "@shared/enums";
 import { MessageError, sendToBackground } from "@shared/messaging";
 import type {
@@ -1043,7 +1047,17 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
                   ? COPY.shareQuotaUnlimited
                   : `${COPY.shareQuotaPrefix} ${quota.lifetimeUsed} / ${quota.freeLimit}`}
                 {!quota.hasLicense && quota.lifetimeUsed >= quota.freeLimit && (
-                  <div style={{ marginTop: 4 }}><em>{COPY.shareUpgradeHint}</em></div>
+                  <div style={{ marginTop: 4 }}>
+                    <em>{COPY.shareUpgradeHint}</em>{" "}
+                    <a
+                      href={INSPECT_PAGE_PRICING_URL}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="lpe-link"
+                    >
+                      {COPY.shareUpgradeBtn}
+                    </a>
+                  </div>
                 )}
               </div>
             )}

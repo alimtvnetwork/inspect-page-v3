@@ -1,4 +1,4 @@
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const FREE_FEATURES = [
@@ -16,7 +16,7 @@ const PRO_FEATURES = [
 ];
 
 export const Pricing = (): JSX.Element => (
-  <section aria-labelledby="pricing" className="space-y-6">
+  <section id="pricing" aria-labelledby="pricing" className="space-y-6 scroll-mt-20">
     <h2 id="pricing" className="text-2xl font-semibold tracking-tight">
       Pricing
     </h2>
@@ -44,7 +44,7 @@ export const Pricing = (): JSX.Element => (
       <div className="relative rounded-lg border border-primary/30 bg-primary/5 p-6 space-y-4">
         <div className="absolute -top-3 right-4 inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
           <Sparkles className="h-3 w-3" aria-hidden />
-          Coming soon
+          Best value
         </div>
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">Pro</h3>
@@ -64,11 +64,14 @@ export const Pricing = (): JSX.Element => (
             </li>
           ))}
         </ul>
-        <Button disabled className="w-full" variant="default">
-          Upgrade to Pro
+        <Button asChild className="w-full" variant="default">
+          <a href="#install" aria-label="Get Inspect Page Pro">
+            Upgrade to Pro
+            <ExternalLink className="ml-2 h-4 w-4" aria-hidden />
+          </a>
         </Button>
         <p className="text-xs text-muted-foreground text-center">
-          Billing & checkout landing in a future update.
+          After install, sign in from the extension to enable Pro.
         </p>
       </div>
     </div>
