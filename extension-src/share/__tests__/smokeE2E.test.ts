@@ -66,10 +66,11 @@ function makeServer() {
       const js    = Buffer.from(await (fd.get("js")    as Blob).arrayBuffer());
       const image = Buffer.from(await (fd.get("image") as Blob).arrayBuffer());
       const id = b64url(randomBytes(32)).slice(0, 43);
+      const sig = b64url(randomBytes(16)).slice(0, 22);
       const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
       sessions.set(id, { id, uid: auth.uid, status: "Active", expiresAt,
         assets: { html, css, js, image } });
-      const base = `${SITE_URL}/wp-json/inspect-page/v1/share/${id}`;
+      const base = `${SITE_URL}/wp-json/inspect-page/v1/share/${id}.${sig}`;
       return new Response(JSON.stringify({
         session_id: id,
         expires_at: new Date(expiresAt).toISOString(),
@@ -82,7 +83,7 @@ function makeServer() {
       }), { status: 201, headers: { "content-type": "application/json" } });
     }
 
-    const m = url.match(/\/share\/([A-Za-z0-9_-]{43})\/(index\.html|style\.css|script\.js|preview\.png)$/);
+    const m = url.match(/\/share\/([A-Za-z0-9_-]{43})(?:\.[A-Za-z0-9_-]{16,43})?\/(index\.html|style\.css|script\.js|preview\.png)$/);
     if (m && method === "GET") {
       const s = sessions.get(m[1]);
       if (!s || s.status !== "Active") return new Response("not found", { status: 404 });
@@ -121,18 +122,20 @@ describe("end-to-end smoke (mock WP REST, cookie+nonce)", () => {
     const deps = { getShareSettings: async () => cfg, fetchImpl };
 
     const created: string[] = [];
+    const createdUrls: string[] = [];
     for (let i = 0; i < MAX_ACTIVE; i += 1) {
       const r = await createShareSession(payload, deps);
       created.push(r.sessionId);
-      expect(r.urls.html).toMatch(/\/share\/.{43}\/index\.html$/);
-      expect(r.urls.js).toMatch(/\/share\/.{43}\/script\.js$/);
+      createdUrls.push(r.urls.html);
+      // URLs are HMAC-signed: /share/{43-char id}.{22-char sig}/{slug}
+      expect(r.urls.html).toMatch(/\/share\/[A-Za-z0-9_-]{43}\.[A-Za-z0-9_-]{22}\/index\.html$/);
+      expect(r.urls.js).toMatch(/\/share\/[A-Za-z0-9_-]{43}\.[A-Za-z0-9_-]{22}\/script\.js$/);
     }
     expect(new Set(created).size).toBe(MAX_ACTIVE);
 
-    const probe = await fetchImpl(
-      `${SITE_URL}/wp-json/inspect-page/v1/share/${created[0]}/index.html`,
-      { headers: { "X-WP-Nonce": NONCE } },
-    );
+    // Consume the signed URL exactly as returned by the server, instead of
+    // hand-building it from the session id.
+    const probe = await fetchImpl(createdUrls[0], { headers: { "X-WP-Nonce": NONCE } });
     expect(probe.status).toBe(200);
     expect(await probe.text()).toBe(payload.html);
 
