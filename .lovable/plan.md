@@ -1,172 +1,124 @@
 
-## PagePort v2.2 — Smart Share (WP-only backend, user login)
+# Roadmap — Inspect Page (WordPress backend)
 
-Replaces the pairing-token Share Links mode with an auth-gated Smart Share flow. Backend stays 100% in the WordPress plugin — no Lovable Cloud, no extension accounts. Identity is a real WP user (email + Google via Nextend Social Login). The extension talks to WP through a short-lived session cookie set inside an iframe login modal, then issues uploads with that cookie + a nonce.
+You decided: keep WordPress, rename everything from **PagePort → Inspect Page**, plan in phases, execute one phase per `next`.
 
-### Conflicts resolved (from your answers)
-
-- Backend: WP plugin only. WP handles auth, storage, rate limiting, expiry.
-- Files: 4 per session — `index.html`, `style.css`, `script.js`, `preview.png`.
-- Trigger: replaces the current "Share Links" export mode in the extension panel. Pairing-token UI in Settings is removed.
-- Rate limiting: implemented inside the plugin (count-based, no external infra).
-
-### What changes vs. current code
-
-Removed
-- `extension-src/shared/shareSettings.ts` (pairing token storage)
-- `extension-src/shared/__tests__/parsePairingToken.test.ts`
-- "Share Links" Settings panel (pairing token paste/unpair)
-- WP `class-pairing.php`, `pp_pairing_tokens` table, `Tools → PagePort` pairing screen
-- Bearer-token middleware in `class-auth.php`
-
-Added / reworked
-- WP plugin: WP-user auth + Google sign-in, JS capture, `script.js` asset, `/api/share/...` public read routes, per-user hourly + active quota, rate-limit table.
-- Extension: Smart Share button, login modal (iframe to `/wp-login.php` + `/wp-admin/admin-ajax.php?action=pageport_session`), JS collector, new copy-package payload.
-- Landing page: "Smart Share" section replaces pairing-token copy.
+Each phase ends in a working state you can install and test. Nothing below is built yet — say **next** when you want me to start Phase 1.
 
 ---
 
-## A. WordPress plugin changes
+## Phase 1 — Full rebrand: PagePort → Inspect Page
 
-### A1. Auth model
+**Goal:** Every visible and internal reference to "PagePort" becomes "Inspect Page" (or the appropriate slug variant). Functionality unchanged.
 
-- Drop pairing tokens entirely.
-- Authenticated REST routes use a new permission callback `PagePort_Auth::require_wp_user`:
-  - Accepts a logged-in WP cookie session (`wp_validate_auth_cookie`) **plus** a `X-WP-Nonce` header (`wp_rest` nonce).
-  - Returns 401 `E_SHARE_AUTH` otherwise.
-- New endpoint `GET /wp-json/pageport/v1/me` returns `{ user_id, display_name, email, nonce, quota: { active, max_active, hourly_used, max_hourly } }`. Used by the extension to detect login state.
-- Google sign-in: plugin checks for **Nextend Social Login** at activation; if missing, the admin screen shows a one-click "Install Nextend" notice (uses `Plugin_Upgrader`). Email/password works out of the box via core WP.
+What I'll change:
+- **User-visible copy** (extension UI, popup title, panel headings, toasts, landing page hero, docs, dashboard headings) → "Inspect Page".
+- **File names**: `pageport.zip` → `inspect-page.zip`, `pageport-wp.zip` → `inspect-page-wp.zip`, plus `pageport-fullpage-…` / `pageport-element-…` download names.
+- **Code identifiers** (lowercase slug `inspect-page`):
+  - chrome storage key `pageport` → `inspect-page` (with one-time migration so existing users don't lose their session)
+  - log prefix `[pageport]` → `[inspect-page]`
+  - constant `PAGEPORT_WP_SITE_URL` → `INSPECT_PAGE_WP_SITE_URL`
+  - WP plugin folder `wp-plugin/pageport/` → `wp-plugin/inspect-page/`
+  - REST namespace `pageport/v1` → `inspect-page/v1`
+  - WP option/meta keys (`pageport_license` → `inspect_page_license`, etc.) with a one-time migration on plugin activation so existing data is preserved.
+- **Repackage** both zips, refresh SHA-256.
+- **Manifest**: extension `name`, `short_name`, `description` updated.
+- **Memory + docs** already updated.
 
-### A2. Tables (replaces pairing_tokens)
-
-```text
-{prefix}pp_share_sessions   (existing — add `prompt` text column)
-{prefix}pp_share_assets     (existing — extend asset_type enum with 'js')
-{prefix}pp_share_asset_types(seed row 'js')
-{prefix}pp_rate_events      NEW: id, user_id, created_at  (for hourly count)
-```
-
-Migration in `class-activator.php` runs on plugin upgrade (version bump → 2.2.0).
-
-### A3. REST routes (namespace `pageport/v1`)
-
-| Method | Path | Auth | Notes |
-|---|---|---|---|
-| GET  | `/me` | WP cookie + nonce | login probe + quota |
-| POST | `/sessions` | WP cookie + nonce | multipart: `html`, `css`, `js`, `image`, optional `prompt`, `source_url` |
-| GET  | `/sessions` | WP cookie + nonce | list own |
-| DELETE | `/sessions/{id}` | WP cookie + nonce | revoke |
-| GET  | `/share/{id}/index.html` | public | `text/html` |
-| GET  | `/share/{id}/style.css`  | public | `text/css` |
-| GET  | `/share/{id}/script.js`  | public | `text/javascript` (empty file if no JS captured) |
-| GET  | `/share/{id}/preview.png`| public | original mime, header always `image/png` or `image/jpeg` |
-
-Public reads add headers: `Cache-Control: public, max-age=300`, `X-Content-Type-Options: nosniff`, `Access-Control-Allow-Origin: *`. `share_id` validated against `^[A-Za-z0-9_-]{16,}$` (we keep the existing 43-char base64url IDs — already satisfies the regex).
-
-### A4. Limits (in plugin)
-
-- `pageport_max_active_per_user` (default 30) — active non-expired sessions.
-- `pageport_max_per_hour_per_user` (default 30) — count of `pp_rate_events` rows in last 60 min.
-- File size caps: HTML/CSS/JS 256 KB, image 5 MB.
-- Image EXIF strip via `wp_get_image_editor()->save()` re-encode pass.
-- Cron `pageport_cleanup` already handles 24h expiry; extended to also prune `pp_rate_events` older than 2h.
-
-### A5. Admin screen
-
-`Tools → PagePort` becomes:
-- Quota settings (active/hour caps).
-- Sessions table (own / all-for-admins) with revoke.
-- "Google sign-in status" row pointing at Nextend.
-
-No more pairing UI.
+End state: you re-download both zips, re-install the plugin (it auto-migrates old options), re-load the extension. Nothing breaks.
 
 ---
 
-## B. Extension changes
+## Phase 2 — End-to-end smoke test of the existing flow
 
-### B1. Settings panel
+**Goal:** Prove the whole pipeline works on your live Hostinger WP before adding anything new.
 
-Delete the "Share Links (WordPress)" group entirely. Replace with a single field **WordPress site URL** (`https://example.com`) saved under `pageport.share = { siteUrl }`. No tokens stored anywhere.
+Walkthrough I'll guide you through (and verify with logs/network inspection):
+1. Sign in from extension → confirm cookie + nonce flow lands.
+2. Export Page → 4 export modes all produce correct files.
+3. Pick Element → same 4 modes work on a single element.
+4. Smart Share × 5 → confirm 4 URLs returned, clipboard copy works, links open in fresh browser, expire countdown ticks.
+5. 6th Smart Share → confirm `402 E_SHARE_QUOTA_FREE` toast: "You've used your 5 free shares. Upgrade coming soon."
+6. From WP admin → set your user meta `inspect_page_license = active` → 6th share now succeeds.
+7. Wait/force the hourly cron → confirm expired session files are deleted from `wp-content/uploads/inspect-page/<user>/<session>/`.
 
-### B2. Smart Share flow (in `ExportModes.tsx`)
-
-1. User clicks **Smart Share**.
-2. Extension calls `GET {siteUrl}/wp-json/pageport/v1/me` with `credentials: 'include'`.
-3. If 401 → open **Login Modal** (chrome `windows.create` popup pointed at `{siteUrl}/wp-login.php?redirect_to=/wp-admin/admin.php?page=pageport-bridge`). The bridge page is served by the plugin and posts `window.opener.postMessage({ type: 'pageport:auth-ok', nonce })` then closes. The extension listens via `chrome.runtime.onMessage` from a content script injected on the bridge URL.
-4. After auth, extension re-runs the export pipeline (HTML + CSS + JS + screenshot) and POSTs multipart to `/sessions` with `X-WP-Nonce`.
-5. On 201, opens **Share Dialog** with the 4 URLs, countdown, revoke, and Copy Share Package button.
-
-### B3. JS capture
-
-New `extension-src/capture/collectJs.ts`:
-- Walks all `<script>` tags in main document (skipping cross-origin without CORS).
-- Inline scripts → concatenated as-is with `// === inline #N ===` separators.
-- External same-origin scripts → fetched and inlined.
-- External cross-origin → emitted as `// external (not inlined): <url>` comment.
-- Hard cap 256 KB; truncate with `// [truncated]` footer.
-- If nothing collected → empty string (still uploaded so URL count stays 4).
-
-Wired into `collectArtifacts.ts`.
-
-### B4. Share Dialog (new component `extension-src/share/ShareDialog.tsx`)
-
-- 4 labeled URL rows with mini copy icons.
-- Primary "Copy Share Package" button — clipboard payload exactly:
-
-```text
-I'm sharing a UI component with you. Please read all four files first, then apply the change I describe at the end.
-
-HTML:    {html_url}
-CSS:     {css_url}
-JS:      {js_url}
-Image:   {img_url}
-
-Instructions:
-1. Fetch and read the HTML to understand the current markup and structure.
-2. Fetch and read the CSS to understand the current styling, tokens, and breakpoints.
-3. Fetch and read the JS to understand any current behavior.
-4. Open the image to see how the component currently renders.
-5. Then make the change requested below — modify HTML/CSS/JS only. Do not break the existing structure, semantics, or responsiveness unless I ask for it. You may add animations, restyle, or adjust layout.
-
-My request:
-<write your change request here>
-```
-
-- Live `expires in HHh MMm` countdown (ticks every 30s while panel open).
-- Revoke button → `DELETE /sessions/{id}` → toast + dialog close.
-- Toast on copy success via existing `sonner`.
-
-### B5. Error mapping
-
-`E_SHARE_AUTH` (401/403), `E_SHARE_QUOTA` (429), `E_SHARE_UPSTREAM` (5xx), `E_SHARE_NETWORK` (fetch fail), `E_SHARE_BAD_INPUT` (other 4xx). Surfaced inline in the dialog.
+End state: documented "known good" baseline. Any bugs found here get patched before Phase 3.
 
 ---
 
-## C. Landing page (src/)
+## Phase 3 — Public landing page + signup story
 
-- `WpPlugin.tsx`: rewrite copy — install plugin → log in (or sign up with Google) → click Smart Share. Drop pairing-token language.
-- `WhatsNew.tsx`: add v2.2 entry "Smart Share — login + 4 URLs + AI prompt".
-- `Hero.tsx` badge stays "v2.0" or bumps to "v2.2".
+**Goal:** A real person who has never heard of WordPress can install the extension and start using it in under 2 minutes.
 
----
+What I'll build:
+- **Landing page** (the existing `/` route in this Lovable app): hero, 3-step "how it works", feature grid, pricing section (Free 5 shares vs Pro $5/mo coming soon), download buttons for the extension zip + Chrome Web Store CTA (placeholder until published), FAQ, footer.
+- **Signup walkthrough**: when extension's "Sign in" opens the WP login page, that page is themed lightly (custom logo + colors via a tiny mu-plugin) so it doesn't scream "WordPress". A "Create account" link is visible.
+- **Optional Google sign-in**: I'll write instructions for you to install the free `Nextend Social Login` plugin on your WP, plus a 2-line code change so the extension's bridge accepts Google-auth'd users too. (Decision deferred — only do this if you say so.)
+- **Onboarding tooltip** in the extension popup the first time it's launched: "Sign in to enable Smart Share."
 
-## D. Stage order (replaces V4'–V8' in `.lovable/plan.md`)
-
-1. **S1** WP migration: drop pairing tables, add `prompt` column, `js` asset type, `pp_rate_events` table, version bump 2.2.0.
-2. **S2** WP auth: `class-auth.php` cookie+nonce middleware, `/me` route, bridge admin page for popup hand-off, Nextend status check.
-3. **S3** WP routes: `/sessions` POST/LIST/DELETE rebuilt against WP user; quota + EXIF strip; public `/share/{id}/{file}` paths renamed to spec.
-4. **S4** Extension: remove pairing UI, add `siteUrl`-only setting, JS collector, Smart Share button, login popup + postMessage bridge.
-5. **S5** Extension: Share Dialog with countdown, revoke, copy-package payload.
-6. **S6** Landing + docs + repackage `pageport.zip` and `pageport-wp.zip`, update `spec/21-app/24,25,26.md` and memory index.
-7. **S7** Acceptance pass: curl all 4 URLs, expire, revoke, quota, login modal, logout.
+End state: shareable landing URL, friendly first-run experience.
 
 ---
 
-## E. Open items I will assume unless you object
+## Phase 4 — Payments: Stripe Checkout subscription ($5/mo unlimited)
 
-- Google sign-in via **Nextend Social Login** (free plugin). If you want a different provider plugin, say so.
-- Login uses a popup window, not an embedded iframe (Google blocks OAuth inside iframes — popup is the only reliable option for a Chrome extension).
-- We keep storing files on the WP filesystem under `wp-content/uploads/pageport/{user_id}/{share_id}/`. Public reads stream through PHP so we can enforce expiry/revoke (no direct hotlinking).
-- Existing public URL shape changes from `/share/{id}/html` to `/share/{id}/index.html` etc. as your spec requires — old links break (acceptable, none in production).
+**Goal:** Users can self-serve upgrade from Free → Pro, with no manual admin step.
 
-Reply **go** to start with S1, or call out anything to change.
+Two sub-options for *how* — I'll ask you to pick at the start of this phase:
+
+- **4a. Direct Stripe Checkout via the WP plugin** (recommended for one $5/mo plan)
+  - Add `STRIPE_SECRET_KEY` + webhook secret to plugin settings page.
+  - New REST routes: `POST /billing/checkout` (creates Stripe session, returns URL) and `POST /billing/webhook` (Stripe → flips `inspect_page_license` to `active` on success, removes it on cancellation/failure).
+  - Extension shows "Upgrade to Pro" button in the quota banner; it opens the Stripe-hosted checkout in a new tab.
+  - After payment, extension polls `/auth-status` and the badge flips to "Pro — unlimited".
+  - ~200 lines of PHP + ~30 lines of TS. Lightweight.
+
+- **4b. WooCommerce + WooCommerce Subscriptions**
+  - Heavier (30+ DB tables, $199/yr for the Subscriptions add-on), but you get a full storefront, dunning, customer portal, coupons, tax rules, etc.
+  - Recommended only if you plan to also sell other things later.
+
+End state: end-to-end paid upgrade works in test mode; flip Stripe to live keys when ready.
+
+---
+
+## Phase 5 — Quota UX polish & user-facing dashboard
+
+**Goal:** Users can see what they're using and manage it themselves.
+
+What I'll add:
+- **Mini dashboard** inside the extension popup: signed-in identity, free shares remaining, recent shares (last 10) with copy/revoke buttons, link to billing portal if Pro.
+- **WP-side "My Inspect Page" page** (front-end shortcode on a published WP page, not wp-admin): same info plus account email management, cancel subscription button (Stripe billing portal link).
+- **Email notifications** (via the WP plugin) on: 1st share created (welcome), 4th share (one share left), 5th share (free quota hit, upgrade CTA), Pro activation, Pro cancellation. Uses WP's built-in `wp_mail` so no extra service needed.
+- **"Revoke now" button** in the extension's share dialog — already partially built; finish + wire it to delete files immediately.
+
+End state: feature-complete v1 of Inspect Page that you can show off without footnotes.
+
+---
+
+## Phase 6 — Hardening & launch prep
+
+**Goal:** Ready for Chrome Web Store submission and public traffic.
+
+Checklist:
+- Security pass: rate-limit headers, CORS lockdown, file-type sniffing on uploads, max upload size, signed-URL alternative for share files (so even the 43-char ID isn't enough — the URL itself includes a short-lived HMAC).
+- Privacy: Privacy Policy + Terms pages on landing site (templates I'll generate, you review).
+- Chrome Web Store assets: 128px icon (already have), 440×280 promo, 1280×800 screenshots, store description text.
+- WP plugin hardening: nonces on every write, capability checks, escape all output, prepare all SQL.
+- Backup + restore docs for your Hostinger WP.
+- Analytics opt-in (Plausible or umami — privacy-friendly, no cookie banner needed).
+
+End state: submit to Chrome Web Store, switch Stripe to live, open the floodgates.
+
+---
+
+## Open questions for later phases (no answer needed yet)
+
+- Phase 3: do you want Google sign-in via Nextend, or just email/password?
+- Phase 4: 4a (direct Stripe) or 4b (WooCommerce)?
+- Phase 4: trial period? coupon codes? annual plan with discount?
+- Phase 5: should "Pick Element" share mode include the parent page screenshot or only the element crop?
+- Phase 6: which analytics tool (or none)?
+
+---
+
+Say **next** to start **Phase 1 — Full rebrand**.
