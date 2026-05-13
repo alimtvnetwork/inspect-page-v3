@@ -347,3 +347,12 @@ export interface ExportArtifacts {
   images: ExportImage[];
   meta: ExportMeta;
 }
+
+/* ---------- Inspect Mode (Phase A3+) ---------- */
+export interface CollectInspectSnapshotPayload { tabId: number }
+export interface CollectInspectSnapshotResponse {
+  /** {@link import("../inspect/types").InspectSnapshot} — kept loose to avoid a cross-package cycle. */
+  snapshot: unknown;
+  /** PNG data URL of the visible viewport. */
+  thumbnailDataUrl: string;
+}
