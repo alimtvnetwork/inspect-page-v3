@@ -943,3 +943,23 @@
   border-top: 1px solid var(--lpe-border);
   margin-top: 2px;
 }
+
+/* ---------- Free quota progress bar ---------- */
+.lpe-quota-bar {
+  margin-top: 6px;
+  width: 100%;
+  height: 6px;
+  background: var(--lpe-surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.lpe-quota-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 200ms ease;
+  background: var(--lpe-accent, #3b82f6);
+}
+.lpe-quota-bar-fill[data-state="warning"] { background: #d97706; }
+.lpe-quota-bar-fill[data-state="exhausted"] { background: #dc2626; }
+.lpe-root[data-lpe-theme="dark"] .lpe-quota-bar-fill[data-state="warning"] { background: #f59e0b; }
+.lpe-root[data-lpe-theme="dark"] .lpe-quota-bar-fill[data-state="exhausted"] { background: #ef4444; }
