@@ -6,6 +6,14 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Extension 2.3.0] — 2026-05-13
 
+### Added — Stripe billing (in-extension)
+
+- Settings → Smart Share now offers **Upgrade to Pro** for free users at
+  quota and **Manage subscription** for Pro users. Both call the WP
+  plugin REST endpoints (`/billing/checkout`, `/billing/portal`) over
+  cookie + `X-WP-Nonce` and open Stripe-hosted pages in a new tab.
+  Falls back to the static pricing URL when billing is not configured.
+
 ### Added — Inspect Mode (A1–A14)
 
 - New third panel tab **Inspect** alongside Export and Pick. CSS-Peeper-

@@ -285,6 +285,23 @@ Open the floating panel → **Inspect** tab on **S1**, **S5**.
       window; reload → position + size restored
 - [ ] AC-INS-13 — Footer reads "Inspect Page v2.3.0"
 
+## 11. Stripe billing (in-extension)
+
+- [ ] AC-BILL-1 — Free user at quota: Settings → Smart Share shows
+      "Upgrade to Pro" button; click opens Stripe Checkout in a new tab
+      with `customer_email` pre-filled.
+- [ ] AC-BILL-2 — After successful Checkout (test mode), webhook flips
+      `inspect_page_license` to `active`; reopening the panel shows
+      "Pro plan — unlimited shares" and the **Manage subscription**
+      button.
+- [ ] AC-BILL-3 — Manage subscription opens Stripe Customer Portal in a
+      new tab; cancelling the sub triggers `customer.subscription.deleted`
+      webhook → license cleared on next panel refresh.
+- [ ] AC-BILL-4 — When Stripe is not configured in WP admin, Upgrade
+      button gracefully falls back to opening the static pricing URL.
+- [ ] AC-BILL-5 — Webhook signature verification: replaying an event
+      with a stale `t=` (>5 min) or wrong `v1=` HMAC returns HTTP 400.
+
 ## Sign-off
 
 - Tester: __________________
