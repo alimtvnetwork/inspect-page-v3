@@ -140,6 +140,7 @@ final class InspectPage_Admin {
     public static function init() {
         add_action( 'admin_menu',  [ __CLASS__, 'menu' ] );
         add_action( 'admin_init',  [ __CLASS__, 'handle_actions' ] );
+        add_action( 'admin_init',  [ __CLASS__, 'handle_billing_form' ] );
     }
 
     public static function menu() {
