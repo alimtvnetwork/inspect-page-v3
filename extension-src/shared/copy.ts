@@ -104,8 +104,9 @@ export const COPY = {
   shareExpiredMsg: "Expired",
   shareQuotaPrefix: "Free shares used:",
   shareQuotaUnlimited: "Pro plan — unlimited shares",
-  shareUpgradeHint: "Upgrade to Pro — coming soon",
-  shareQuotaFreeReachedMsg: "Free quota reached. Upgrade to Inspect Page Pro to keep sharing (coming soon).",
+  shareUpgradeHint: "Upgrade to Pro for unlimited shares",
+  shareUpgradeBtn: "Upgrade to Pro",
+  shareQuotaFreeReachedMsg: "Free quota reached. Upgrade to Inspect Page Pro to keep sharing.",
 } as const;
 
 export type CopyKey = keyof typeof COPY;
