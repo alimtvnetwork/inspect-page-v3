@@ -298,6 +298,9 @@ export interface CheckShareAuthResponse {
   quota?: {
     active: number; maxActive: number;
     hourlyUsed: number; maxHourly: number;
+    lifetimeUsed: number;
+    freeLimit: number;
+    hasLicense: boolean;
   };
 }
 
