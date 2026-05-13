@@ -338,3 +338,7 @@
   font-size: 11px;
 }
 .lpe-share-url-row .lpe-btn { width: auto; padding: 3px 10px; font-size: 12px; }
+.lpe-link {
+  color: #2563eb; text-decoration: underline; font-weight: 500;
+}
+.lpe-link:hover { color: #1d4ed8; }
