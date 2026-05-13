@@ -1062,11 +1062,14 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
     setQuota(null);
   };
 
-  // Auto-fetch quota when signed in and not yet loaded.
+  // Re-fetch quota whenever signed-in state changes, the panel becomes
+  // visible again, or the window regains focus — so a license flip from
+  // Stripe Checkout / Customer Portal is reflected without a manual
+  // sign-out + sign-in cycle.
   useEffect(() => {
-    if (!signedIn || quota) return;
+    if (!signedIn) return;
     let cancelled = false;
-    (async () => {
+    const refresh = async () => {
       try {
         const r = await sendToBackground<Record<string, never>, {
           loggedIn: boolean;
@@ -1083,9 +1086,25 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
           });
         }
       } catch { /* ignore */ }
-    })();
-    return () => { cancelled = true; };
-  }, [signedIn, quota]);
+    };
+    refresh();
+    if (typeof window === "undefined") return () => { cancelled = true; };
+    const onFocus = () => { void refresh(); };
+    const onVisibility = () => {
+      if (typeof document !== "undefined" && !document.hidden) void refresh();
+    };
+    window.addEventListener("focus", onFocus);
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibility);
+    }
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", onFocus);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibility);
+      }
+    };
+  }, [signedIn]);
 
   return (
     <details className="lpe-settings">
