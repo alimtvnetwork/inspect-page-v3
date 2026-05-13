@@ -12,10 +12,17 @@ Backend for the Inspect Page Chrome extension. Hosts captured HTML / CSS / JS / 
 == Description ==
 Install and activate the plugin, then in the Inspect Page extension open Settings → Smart Share (WordPress), enter your site URL and click **Sign in**. A WordPress login tab opens; sign in as usual and the extension picks up your cookie + REST nonce automatically — no tokens, no application passwords. The "Smart Share" export mode then uploads your captured HTML / CSS / JS / screenshot to your own site and returns four public URLs (plus an AI instruction block you can paste into ChatGPT, Claude, or Gemini). Each WordPress user is capped at 30 active sessions and 60 uploads per hour; individual share links expire after 24 hours.
 
+== Shortcodes ==
+* `[inspect_page_account]` — front-end "My Inspect Page" panel: display name, license status, lifetime quota, and the user's last 20 Smart Share sessions with revoke buttons. Logged-out visitors see a Log in link.
+* `[inspect_page_pricing]` — Free vs Pro comparison card. Logged-in users get a one-click **Upgrade to Pro** button (or **Manage subscription** for Pro users) that opens Stripe-hosted Checkout / Customer Portal via the plugin's `/billing/checkout` and `/billing/portal` REST endpoints. Requires Stripe to be configured in WP Admin → Inspect Page → Billing.
+
 == Changelog ==
 = 2.3.0 =
+* Stripe Checkout + Customer Portal wired end-to-end. New REST routes `/billing/checkout`, `/billing/portal`, `/billing/webhook`, `/billing/status`. Webhook is signature-verified (manual `v1=` HMAC, no Stripe SDK required) and flips `inspect_page_license` to `active` automatically on `checkout.session.completed` / `invoice.paid` and clears it on `customer.subscription.deleted` / `invoice.payment_failed`.
+* WP Admin → Inspect Page → Billing section: paste Stripe secret / price ID / webhook secret, see configured status, and copy the webhook endpoint URL.
+* New `[inspect_page_pricing]` shortcode for marketing pages.
 * Lifetime free-share quota: each WordPress user gets 5 Smart Share uploads for free (option `inspect_page_free_lifetime_limit`). Beyond that, `POST /sessions` returns `402 E_SHARE_QUOTA_FREE` until the user holds an active Inspect Page license.
-* License flag is the user meta `inspect_page_license` (set to `active` to grant Pro). Stripe / Paddle billing hookup is planned for a follow-up release.
+* License flag is the user meta `inspect_page_license` (set to `active` to grant Pro). Admins can also flip this manually for comp accounts.
 * `GET /auth-status` now also returns `lifetime_used`, `free_limit`, `has_license` so the extension can show "Free shares used: X / 5" or "Pro — unlimited".
 
 = 2.2.1 =
