@@ -200,8 +200,12 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   }, []);
 
   // ---- Auto-dismiss Success ----
+  // Only auto-dismiss when there is no rich post-export panel (artifacts/telemetry)
+  // to keep the re-download + Export-for-AI section visible until the user starts
+  // another action or closes the panel.
   useEffect(() => {
     if (state.status !== PanelStatus.Success) return;
+    if (state.fullPageArtifacts || state.successTelemetry) return;
     if (successTimer.current) clearTimeout(successTimer.current);
     successTimer.current = setTimeout(() => {
       setState({ status: PanelStatus.Idle });
@@ -209,7 +213,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     return () => {
       if (successTimer.current) clearTimeout(successTimer.current);
     };
-  }, [state.status]);
+  }, [state.status, state.fullPageArtifacts, state.successTelemetry]);
 
   // ---- Action handlers ----
   const runAction = useCallback(async (kind: "fullPage" | "pick") => {
