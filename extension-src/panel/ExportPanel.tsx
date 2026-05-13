@@ -38,6 +38,7 @@ import { getOnboardingState, dismissOnboarding } from "@shared/onboarding";
 import { shareConfigured } from "@shared/shareSettings";
 import { getShareSettings, setShareSettings } from "@shared/shareSettings";
 import { listShareSessions, type ShareSessionSummary } from "../share/listShareSessions";
+import { startBillingCheckout } from "../share/startBillingCheckout";
 import { revokeShareSession } from "../share/revokeShareSession";
 import { InspectShell } from "./inspect/InspectShell";
 
@@ -1107,14 +1108,30 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
                 {!quota.hasLicense && quota.lifetimeUsed >= quota.freeLimit && (
                   <div style={{ marginTop: 4 }}>
                     <em>{COPY.shareUpgradeHint}</em>{" "}
-                    <a
-                      href={INSPECT_PAGE_PRICING_URL}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="lpe-link"
+                    <button
+                      type="button"
+                      className="lpe-btn lpe-btn-primary"
+                      onClick={async () => {
+                        try {
+                          const { url } = await startBillingCheckout({ getShareSettings });
+                          if (typeof window !== "undefined" && url) {
+                            window.open(url, "_blank", "noopener,noreferrer");
+                          }
+                        } catch {
+                          // Fall back to the static pricing page if checkout
+                          // is not configured / network fails.
+                          if (typeof window !== "undefined") {
+                            window.open(
+                              INSPECT_PAGE_PRICING_URL,
+                              "_blank",
+                              "noopener,noreferrer",
+                            );
+                          }
+                        }
+                      }}
                     >
                       {COPY.shareUpgradeBtn}
-                    </a>
+                    </button>
                   </div>
                 )}
               </div>
