@@ -52,7 +52,7 @@ final class InspectPage_REST {
 
         register_rest_route(
             $ns,
-            '/share/(?P<id>[A-Za-z0-9_-]{16,64})/(?P<slug>index\.html|style\.css|script\.js|preview\.png)',
+            '/share/(?P<id>[A-Za-z0-9_-]{16,64})(?:\.(?P<sig>[A-Za-z0-9_-]{16,43}))?/(?P<slug>index\.html|style\.css|script\.js|preview\.png)',
             [
                 'methods'             => 'GET',
                 'callback'            => [ __CLASS__, 'read_asset' ],
@@ -262,10 +262,23 @@ final class InspectPage_REST {
         $p    = $wpdb->prefix . 'pp_';
         $sid  = $req['id'];
         $slug = $req['slug'];
+        $sig  = isset( $req['sig'] ) ? (string) $req['sig'] : '';
         if ( ! isset( self::SLUGS[ $slug ] ) ) {
             return new WP_Error( InspectPage_ErrorCode::E_SHARE_NOT_FOUND, 'unknown asset', [ 'status' => 404 ] );
         }
         $kind = self::SLUGS[ $slug ];
+
+        // ---- HMAC URL signature ----
+        // Defence-in-depth: leaked session_ids alone cannot be replayed when
+        // signed URLs are required (default on). Old unsigned URLs continue to
+        // work only if the option is explicitly disabled.
+        $require_sig = (bool) get_option( 'inspect_page_require_signed_urls', true );
+        if ( $require_sig || $sig !== '' ) {
+            $expected = self::sign_session_id( $sid );
+            if ( $sig === '' || ! hash_equals( $expected, $sig ) ) {
+                return new WP_Error( InspectPage_ErrorCode::E_SHARE_NOT_FOUND, 'bad signature', [ 'status' => 404 ] );
+            }
+        }
 
         $row = $wpdb->get_row( $wpdb->prepare(
             "SELECT s.id, s.user_id, st.name AS status, s.expires_at, a.path, a.mime
@@ -320,13 +333,32 @@ final class InspectPage_REST {
     // helpers
     // ----------------------------------------------------------------------
     private static function asset_urls( $session_id ) {
-        $base = rest_url( INSPECT_PAGE_REST_NS . '/share/' . $session_id );
+        $sig  = self::sign_session_id( $session_id );
+        $base = rest_url( INSPECT_PAGE_REST_NS . '/share/' . $session_id . '.' . $sig );
         return [
             'html'  => $base . '/index.html',
             'css'   => $base . '/style.css',
             'js'    => $base . '/script.js',
             'image' => $base . '/preview.png',
         ];
+    }
+
+    /**
+     * HMAC-SHA256 over the session_id, truncated to 22 base64url chars
+     * (~128 bits of entropy). The key blends a per-install secret stored
+     * in options with WordPress' AUTH salt, so leaking either alone is
+     * not enough to forge URLs.
+     */
+    public static function sign_session_id( $session_id ) {
+        $secret = get_option( 'inspect_page_url_secret', '' );
+        if ( ! $secret ) {
+            $secret = wp_generate_password( 64, true, true );
+            update_option( 'inspect_page_url_secret', $secret, false );
+        }
+        $key  = $secret . '|' . wp_salt( 'auth' );
+        $raw  = hash_hmac( 'sha256', (string) $session_id, $key, true );
+        $b64  = rtrim( strtr( base64_encode( $raw ), '+/', '-_' ), '=' );
+        return substr( $b64, 0, 22 );
     }
 
     private static function content_type_for( $kind, $stored_mime ) {
