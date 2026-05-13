@@ -20,7 +20,12 @@ function current_user_can( $cap ) { return ! empty( $GLOBALS['_pp_caps'][ $cap ]
 function sanitize_text_field( $s ) { return is_string( $s ) ? trim( $s ) : ''; }
 function wp_unslash( $s ) { return is_string( $s ) ? stripslashes( $s ) : $s; }
 function wp_verify_nonce( $n, $a ) { return $GLOBALS['_pp_valid_nonce'] ? 1 : false; }
-function wp_safe_redirect( $url ) { $GLOBALS['_pp_redirects'][] = $url; return true; }
+class Redirected extends Exception {}
+function wp_safe_redirect( $url ) {
+    $GLOBALS['_pp_redirects'][] = $url;
+    // Throw to short-circuit before the source's `exit;` runs.
+    throw new Redirected( $url );
+}
 function remove_query_arg( $keys, $url = null ) { return '/redirected'; }
 function add_action() {}
 function add_shortcode() {}
@@ -132,7 +137,7 @@ reset_state();
 $_GET['inspect_page_revoke'] = 'sid-other';
 $_GET['_wpnonce'] = 'ok';
 $GLOBALS['_pp_caps']['manage_options'] = true;
-try { InspectPage_Shortcode::maybe_handle_revoke(); } catch ( Throwable $e ) {}
+try { InspectPage_Shortcode::maybe_handle_revoke(); } catch ( Redirected $e ) {}
 assert_eq( count( $GLOBALS['_pp_deleted'] ), 1, 'admin delete called' );
 assert_eq( $GLOBALS['_pp_deleted'][0]['sid'], 'sid-other', 'correct sid deleted' );
 assert_eq( $GLOBALS['wpdb']->updates[0]['set']['status_id'], 99, 'status flipped to revoked' );
@@ -141,7 +146,7 @@ echo "Shortcode revoke: owner can revoke own session\n";
 reset_state();
 $_GET['inspect_page_revoke'] = 'sid-mine';
 $_GET['_wpnonce'] = 'ok';
-try { InspectPage_Shortcode::maybe_handle_revoke(); } catch ( Throwable $e ) {}
+try { InspectPage_Shortcode::maybe_handle_revoke(); } catch ( Redirected $e ) {}
 assert_eq( count( $GLOBALS['_pp_deleted'] ), 1, 'owner delete called' );
 assert_eq( $GLOBALS['_pp_deleted'][0]['uid'], 7, 'owner uid passed' );
 assert_eq( count( $GLOBALS['_pp_redirects'] ), 1, 'redirected after revoke' );
