@@ -28,6 +28,7 @@ import type {
   StatusUpdatePayload,
 } from "@shared/types";
 import { collectElement } from "@element/collectElement";
+import { collectSnapshot } from "./inspect/collectSnapshot";
 
 logger.debug(LogCategory.Lifecycle, "Content script loaded");
 
@@ -82,6 +83,12 @@ router.on<CollectPageArtifactsPayload, CollectPageArtifactsResponse>(
 router.on<BeginScrollCapturePayload, BeginScrollCaptureResponse>(
   MessageKind.BeginScrollCapture,
   (payload) => beginScrollCapture(payload),
+);
+
+// Inspect Mode (Phase A3): collect the page snapshot in the page context.
+router.on<{ tabId: number }, { snapshot: unknown }>(
+  MessageKind.CollectInspectSnapshot,
+  () => ({ snapshot: collectSnapshot() }),
 );
 
 router.on<RestoreAfterCapturePayload, RestoreAfterCaptureResponse>(

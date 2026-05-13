@@ -45,6 +45,8 @@ import type {
   SetSettingsPayload,
   SetSettingsResponse,
   StatusUpdatePayload,
+  CollectInspectSnapshotPayload,
+  CollectInspectSnapshotResponse,
 } from "@shared/types";
 import { PanelStatus } from "@shared/enums";
 import { buildBundle } from "@zip/buildBundle";
@@ -179,6 +181,34 @@ router.on<ExitPickerModePayload, ExitPickerModeResponse>(
     } catch {
       // Tab may be closed; ignore.
     }
+  },
+);
+
+// Phase A3 — Inspect Mode snapshot. Asks the CS to collect, then captures the
+// visible viewport for the Overview hero thumbnail.
+router.on<CollectInspectSnapshotPayload, CollectInspectSnapshotResponse>(
+  MessageKind.CollectInspectSnapshot,
+  async ({ tabId }, sender) => {
+    const tid = tabId > 0 ? tabId : sender.tab?.id;
+    if (tid === undefined) {
+      throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, "Cannot resolve tab for inspect");
+    }
+    await ensureContentScript(tid);
+    const csRes = await sendToTab<{ tabId: number }, { snapshot: unknown }>(
+      tid, MessageKind.CollectInspectSnapshot, { tabId: tid },
+    );
+    let thumbnailDataUrl = "";
+    try {
+      const tab = await chrome.tabs.get(tid);
+      if (tab.windowId !== undefined) {
+        thumbnailDataUrl = await chrome.tabs.captureVisibleTab(
+          tab.windowId, { format: "jpeg", quality: 70 },
+        );
+      }
+    } catch (e) {
+      logger.warn(LogCategory.Capture, ErrorCode.E_CAPTURE_FAILED, "inspect thumbnail capture failed", e);
+    }
+    return { snapshot: csRes.snapshot, thumbnailDataUrl };
   },
 );
 

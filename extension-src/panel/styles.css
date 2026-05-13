@@ -77,6 +77,32 @@
 }
 .lpe-inspect-empty strong { color: var(--lpe-fg); font-size: 14px; }
 
+/* ---------- Overview (Phase A3) ---------- */
+.lpe-overview { display: flex; flex-direction: column; gap: 10px; }
+.lpe-overview-header { display: flex; align-items: center; }
+.lpe-overview-title {
+  margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--lpe-muted);
+}
+.lpe-overview-hero {
+  border: 1px solid var(--lpe-border); border-radius: 6px;
+  background: var(--lpe-surface); overflow: hidden;
+}
+.lpe-overview-hero-empty { aspect-ratio: 16 / 9; }
+.lpe-overview-thumb {
+  display: block; width: 100%; height: auto; max-height: 180px; object-fit: cover;
+}
+.lpe-overview-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.lpe-overview-page-title {
+  font-weight: 600; color: var(--lpe-fg);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lpe-overview-url {
+  color: var(--lpe-accent); text-decoration: none; font-size: 12px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lpe-overview-url:hover { text-decoration: underline; }
+
 .lpe-header {
   display: flex;
   align-items: center;

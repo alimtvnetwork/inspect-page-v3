@@ -76,3 +76,5 @@ export const INSPECT_PAGE_WP_SITE_URL = "" as const;
 export const INSPECT_PAGE_LANDING_URL = "https://inspectpage.app" as const;
 export const INSPECT_PAGE_PRICING_URL =
   `${INSPECT_PAGE_LANDING_URL}/#pricing` as const;
+export const INSPECT_PAGE_DOCS_URL =
+  `${INSPECT_PAGE_LANDING_URL}/docs` as const;
