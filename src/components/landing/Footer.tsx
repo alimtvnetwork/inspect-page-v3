@@ -13,6 +13,10 @@ export const Footer = ({ version }: FooterProps): JSX.Element => {
       <Link to="/privacy" className="hover:text-foreground transition-colors">
         Privacy
       </Link>
+      <span aria-hidden>·</span>
+      <span className="hover:text-foreground transition-colors cursor-default">
+        Terms
+      </span>
     </footer>
   );
 };

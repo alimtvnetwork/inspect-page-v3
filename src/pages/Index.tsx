@@ -11,6 +11,8 @@ import { WhatsNew } from "@/components/landing/WhatsNew";
 import { Privacy } from "@/components/landing/Privacy";
 import { WpPlugin } from "@/components/landing/WpPlugin";
 import { Footer } from "@/components/landing/Footer";
+import { Pricing } from "@/components/landing/Pricing";
+import { Faq } from "@/components/landing/Faq";
 
 const ZIP_URL = "/inspect-page.zip";
 
@@ -60,13 +62,15 @@ const Index = (): JSX.Element => {
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <main className="mx-auto w-full max-w-[720px] px-5 py-12 sm:py-16 space-y-16">
+      <main className="mx-auto w-full max-w-[720px] px-5 py-12 sm:py-16 space-y-20">
         <Hero zipUrl={ZIP_URL} version={meta.version} sizeKb={meta.sizeKb} />
         <HowItWorks />
         <InstallSteps />
         <WhatYouGet />
         <WhatsNew />
         <WpPlugin />
+        <Pricing />
+        <Faq />
         <Privacy />
       </main>
       <Footer version={meta.version} />

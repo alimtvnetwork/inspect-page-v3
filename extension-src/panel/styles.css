@@ -260,6 +260,38 @@
   white-space: pre-wrap; word-break: break-word;
 }
 
+/* v2.2 — onboarding banner in popup */
+.lpe-onboarding {
+  margin: 10px 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.lpe-onboarding strong {
+  display: block;
+  font-size: 13px;
+  color: #1e3a8a;
+  margin-bottom: 2px;
+}
+.lpe-onboarding span {
+  font-size: 12px;
+  color: #1e40af;
+}
+.lpe-onboarding-actions {
+  display: flex;
+  gap: 8px;
+}
+.lpe-onboarding-actions .lpe-btn {
+  width: auto;
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
 .lpe-export-modes {
   margin-top: 10px;
   padding-top: 10px;

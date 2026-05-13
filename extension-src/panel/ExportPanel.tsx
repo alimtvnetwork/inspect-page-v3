@@ -31,6 +31,8 @@ import { ExportFlow } from "@shared/enums";
 import { ExportModes } from "./ExportModes";
 import { interpolateAi } from "@shared/copy";
 import { MessageKind as MK } from "@shared/enums";
+import { getOnboardingState, dismissOnboarding } from "@shared/onboarding";
+import { shareConfigured } from "@shared/shareSettings";
 
 export type PanelSurface = "popup" | "floating";
 
@@ -108,9 +110,24 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [shareSettings, setShareSettingsState] = useState<ShareSettings | null>(null);
   const [shareResult, setShareResult] = useState<CreateShareSessionResponse | null>(null);
+  const [onboardingDismissed, setOnboardingDismissed] = useState<boolean>(true);
   const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const disabled = isDisabledUrl(activeUrl);
+
+  // ---- Load onboarding state ----
+  useEffect(() => {
+    let alive = true;
+    getOnboardingState()
+      .then((s) => { if (alive) setOnboardingDismissed(s.dismissed); })
+      .catch(() => { /* ignore */ });
+    return () => { alive = false; };
+  }, []);
+
+  const onDismissOnboarding = useCallback(async () => {
+    setOnboardingDismissed(true);
+    try { await dismissOnboarding(); } catch { /* ignore */ }
+  }, []);
 
   // ---- Load settings on mount ----
   useEffect(() => {
@@ -343,6 +360,23 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           </>
         )}
       </header>
+
+      {surface === "popup" && !onboardingDismissed && !shareConfigured(shareSettings ?? { siteUrl: "", userId: 0, displayName: "", email: "", nonce: "", signedInAtIso: "" }) && (
+        <div className="lpe-onboarding" role="status">
+          <div>
+            <strong>{COPY.onboardingTitle}</strong>
+            <span>{COPY.onboardingBody}</span>
+          </div>
+          <div className="lpe-onboarding-actions">
+            <button type="button" className="lpe-btn lpe-btn-primary" onClick={onDismissOnboarding}>
+              {COPY.onboardingSignIn}
+            </button>
+            <button type="button" className="lpe-btn" onClick={onDismissOnboarding}>
+              {COPY.onboardingDismiss}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="lpe-body">
         {disabled ? (

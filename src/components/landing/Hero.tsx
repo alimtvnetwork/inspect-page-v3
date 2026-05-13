@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Download } from "lucide-react";
+import { Loader2, Download, Chrome } from "lucide-react";
 
 interface HeroProps {
   zipUrl: string;
@@ -31,7 +31,6 @@ export const Hero = ({ zipUrl, version, sizeKb }: HeroProps): JSX.Element => {
       document.body.appendChild(a);
       a.click();
       a.remove();
-      // Defer revoke so the browser can pick up the download.
       setTimeout(() => URL.revokeObjectURL(url), 1_000);
       toast({ title: "Downloaded inspect-page.zip" });
     } catch (e) {
@@ -44,13 +43,14 @@ export const Hero = ({ zipUrl, version, sizeKb }: HeroProps): JSX.Element => {
   return (
     <header className="space-y-6">
       <span className="inline-flex items-center rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-        v2.2 · WordPress Smart Share
+        v2.2 · Smart Share · WordPress backend
       </span>
       <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight text-foreground">
         Export any web page for your LLM
       </h1>
-      <p className="text-lg text-muted-foreground">
+      <p className="text-lg text-muted-foreground max-w-xl">
         HTML, CSS, JavaScript and a full-page screenshot — bundled in one ZIP.
+        Smart Share generates 4 public links that expire after 24 hours.
       </p>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <Button
@@ -66,6 +66,16 @@ export const Hero = ({ zipUrl, version, sizeKb }: HeroProps): JSX.Element => {
             <Download className="mr-2 h-4 w-4" aria-hidden />
           )}
           Download extension
+        </Button>
+        <Button
+          size="lg"
+          variant="outline"
+          disabled
+          className="w-full sm:w-auto"
+          aria-label="Chrome Web Store (coming soon)"
+        >
+          <Chrome className="mr-2 h-4 w-4" aria-hidden />
+          Chrome Web Store
         </Button>
         <span className="text-sm text-muted-foreground">
           v{version}

@@ -1,16 +1,14 @@
 /**
- * "What's new in v1.1" block — surfaces the v1.1 fidelity pass on the
- * landing page so visitors downloading the zip see what improved since
- * v1.0. Source: CHANGELOG.md §[1.1.0].
+ * "What's new in v2.2" block — surfaces the v2.2 Smart Share features.
  */
-import { Layers, Palette, Type, Frame, BarChart3 } from "lucide-react";
+import { Share2, Timer, Globe, ShieldCheck, Zap } from "lucide-react";
 
 const ITEMS = [
-  { icon: Layers, title: "Open shadow DOM", body: "Web-component sites round-trip via declarative templates." },
-  { icon: Palette, title: "Constructed stylesheets", body: "adoptedStyleSheets are inlined so styling survives." },
-  { icon: Type, title: "Font bundling", body: "@font-face binaries inlined as base64. Renders offline." },
-  { icon: Frame, title: "Iframe traversal", body: "Same-origin frames serialized into srcdoc." },
-  { icon: BarChart3, title: "Panel telemetry", body: "See exactly what was captured after every export." },
+  { icon: Share2, title: "Smart Share", body: "Upload captures to your WordPress backend and get 4 public URLs — HTML, CSS, JS, and a live preview." },
+  { icon: Timer, title: "24-hour expiry", body: "Share links auto-delete after 24 hours. No clutter, no long-term hosting risk." },
+  { icon: Globe, title: "Self-hosted backend", body: "Your own WordPress site hosts the files. You control the data, not a third-party cloud." },
+  { icon: ShieldCheck, title: "Cookie + nonce auth", body: "Sign in via the standard WordPress login flow. No API keys, no app passwords to copy." },
+  { icon: Zap, title: "Free quota", body: "5 Smart Share sessions for free. Upgrade to Pro for unlimited sharing." },
 ];
 
 export const WhatsNew = (): JSX.Element => (
@@ -21,9 +19,9 @@ export const WhatsNew = (): JSX.Element => (
       </h2>
       <span
         className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
-        aria-label="Version 1.1"
+        aria-label="Version 2.2"
       >
-        v1.1
+        v2.2
       </span>
     </div>
     <div className="grid gap-3 sm:grid-cols-2">
