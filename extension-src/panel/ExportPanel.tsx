@@ -117,7 +117,7 @@ const BUSY_STATUSES: ReadonlySet<PanelStatus> = new Set([
 ]);
 
 export function ExportPanel(props: ExportPanelProps): JSX.Element {
-  const { surface, activeUrl, activeTabId, onMinimize, onClose } = props;
+  const { surface, activeUrl, activeTabId, onMinimize, onClose, onPopOut } = props;
   const [state, setState] = useState<PanelState>({ status: PanelStatus.Idle });
   const [settings, setSettings] = useState<Settings | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
