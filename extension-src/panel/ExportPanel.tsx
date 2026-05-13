@@ -15,7 +15,6 @@ import { COPY } from "@shared/copy";
 import {
   INSPECT_PAGE_WP_SITE_URL,
   INSPECT_PAGE_PRICING_URL,
-  SUCCESS_AUTO_DISMISS_MS,
 } from "@shared/constants";
 import { ErrorCode, MessageKind, PanelStatus } from "@shared/enums";
 import { MessageError, sendToBackground } from "@shared/messaging";
@@ -118,7 +117,6 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const [shareSettings, setShareSettingsState] = useState<ShareSettings | null>(null);
   const [shareResult, setShareResult] = useState<CreateShareSessionResponse | null>(null);
   const [onboardingDismissed, setOnboardingDismissed] = useState<boolean>(true);
-  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const disabled = isDisabledUrl(activeUrl);
 
@@ -198,22 +196,6 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       window.removeEventListener("inspect-page:status", winListener as EventListener);
     };
   }, []);
-
-  // ---- Auto-dismiss Success ----
-  // Only auto-dismiss when there is no rich post-export panel (artifacts/telemetry)
-  // to keep the re-download + Export-for-AI section visible until the user starts
-  // another action or closes the panel.
-  useEffect(() => {
-    if (state.status !== PanelStatus.Success) return;
-    if (state.fullPageArtifacts || state.successTelemetry) return;
-    if (successTimer.current) clearTimeout(successTimer.current);
-    successTimer.current = setTimeout(() => {
-      setState({ status: PanelStatus.Idle });
-    }, SUCCESS_AUTO_DISMISS_MS);
-    return () => {
-      if (successTimer.current) clearTimeout(successTimer.current);
-    };
-  }, [state.status, state.fullPageArtifacts, state.successTelemetry]);
 
   // ---- Action handlers ----
   const runAction = useCallback(async (kind: "fullPage" | "pick") => {
