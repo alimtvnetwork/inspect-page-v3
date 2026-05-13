@@ -11,6 +11,7 @@ import { sendToBackground } from "@shared/messaging";
 import type { CollectInspectSnapshotResponse } from "@shared/types";
 import type { InspectSnapshot } from "../../inspect/types";
 import { InspectOverview } from "./InspectOverview";
+import { InspectTypography } from "./InspectTypography";
 
 interface SnapshotState {
   status: "idle" | "loading" | "ready" | "error";
@@ -59,11 +60,14 @@ export function InspectShell(): JSX.Element {
         </div>
       )}
       {state.status === "ready" && state.snapshot && (
-        <InspectOverview
-          snapshot={state.snapshot}
-          thumbnailDataUrl={state.thumbnailDataUrl ?? ""}
-          onOpenDocs={onOpenDocs}
-        />
+        <>
+          <InspectOverview
+            snapshot={state.snapshot}
+            thumbnailDataUrl={state.thumbnailDataUrl ?? ""}
+            onOpenDocs={onOpenDocs}
+          />
+          <InspectTypography snapshot={state.snapshot} />
+        </>
       )}
     </div>
   );
