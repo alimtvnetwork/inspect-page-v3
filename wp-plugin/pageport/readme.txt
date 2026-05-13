@@ -4,7 +4,7 @@ Tags: ai, share, export
 Requires at least: 5.6
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 2.2.1
+Stable tag: 2.3.0
 License: MIT
 
 Backend for the PagePort Chrome extension. Hosts captured HTML / CSS / JS / image bundles for 24 hours behind public URLs so an LLM can read them.
@@ -13,6 +13,11 @@ Backend for the PagePort Chrome extension. Hosts captured HTML / CSS / JS / imag
 Install and activate the plugin, then in the PagePort extension open Settings → Smart Share (WordPress), enter your site URL and click **Sign in**. A WordPress login tab opens; sign in as usual and the extension picks up your cookie + REST nonce automatically — no tokens, no application passwords. The "Smart Share" export mode then uploads your captured HTML / CSS / JS / screenshot to your own site and returns four public URLs (plus an AI instruction block you can paste into ChatGPT, Claude, or Gemini). Each WordPress user is capped at 30 active sessions and 60 uploads per hour; individual share links expire after 24 hours.
 
 == Changelog ==
+= 2.3.0 =
+* Lifetime free-share quota: each WordPress user gets 5 Smart Share uploads for free (option `pageport_free_lifetime_limit`). Beyond that, `POST /sessions` returns `402 E_SHARE_QUOTA_FREE` until the user holds an active PagePort license.
+* License flag is the user meta `pageport_license` (set to `active` to grant Pro). Stripe / Paddle billing hookup is planned for a follow-up release.
+* `GET /auth-status` now also returns `lifetime_used`, `free_limit`, `has_license` so the extension can show "Free shares used: X / 5" or "Pro — unlimited".
+
 = 2.2.1 =
 * Plugin row "Visit plugin site" now opens the in-WP PagePort dashboard instead of an external URL.
 * New PagePort dashboard (WP Admin → PagePort): account info, extension pairing instructions, REST/permalinks health check, live quota counters (active sessions + uploads/hour), and recent share sessions with all 4 public URLs.
