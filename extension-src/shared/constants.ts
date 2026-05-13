@@ -69,3 +69,10 @@ export const README_TXT =
 // chosen; the Share Links export mode stays disabled while empty.
 // TODO: set this to the production WordPress URL before publishing.
 export const INSPECT_PAGE_WP_SITE_URL = "" as const;
+
+// ---- Landing page (marketing) ----
+// Public marketing site for Inspect Page. Used by the extension to deep-link
+// users to docs, pricing, and the upgrade flow.
+export const INSPECT_PAGE_LANDING_URL = "https://inspectpage.app" as const;
+export const INSPECT_PAGE_PRICING_URL =
+  `${INSPECT_PAGE_LANDING_URL}/#pricing` as const;
