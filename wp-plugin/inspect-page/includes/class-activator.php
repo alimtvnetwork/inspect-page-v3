@@ -12,6 +12,11 @@ final class InspectPage_Activator {
         $charset = $wpdb->get_charset_collate();
         $p = $wpdb->prefix . 'pp_';
 
+        // ---- Legacy rename migration: PagePort → Inspect Page ----
+        // Copy any old `pageport_*` options/meta over to the new
+        // `inspect_page_*` names so existing installs survive the rebrand.
+        self::migrate_legacy();
+
         $sql = [];
 
         $sql[] = "CREATE TABLE {$p}share_session_statuses (
@@ -93,6 +98,10 @@ final class InspectPage_Activator {
         if ( ! wp_next_scheduled( 'inspect_page_cleanup' ) ) {
             wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'inspect_page_cleanup' );
         }
+
+        // Unschedule legacy cron hook if still present.
+        $legacy_cron = wp_next_scheduled( 'pageport_cleanup' );
+        if ( $legacy_cron ) { wp_unschedule_event( $legacy_cron, 'pageport_cleanup' ); }
     }
 
     private static function seed_enum( $table, $values ) {
@@ -101,6 +110,57 @@ final class InspectPage_Activator {
             $wpdb->query( $wpdb->prepare(
                 "INSERT IGNORE INTO {$table} (name) VALUES (%s)", $name
             ) );
+        }
+    }
+
+    /**
+     * One-time copy of every old `pageport_*` option / user-meta key to its
+     * new `inspect_page_*` name. Safe to run on every activation — only
+     * copies when the new key doesn't already exist, then deletes the old.
+     * Also moves the uploads/pageport directory to uploads/inspect-page.
+     */
+    private static function migrate_legacy() {
+        global $wpdb;
+
+        $option_map = [
+            'pageport_db_version'             => 'inspect_page_db_version',
+            'pageport_max_active_per_user'    => 'inspect_page_max_active_per_user',
+            'pageport_max_per_hour_per_user'  => 'inspect_page_max_per_hour_per_user',
+            'pageport_free_lifetime_limit'    => 'inspect_page_free_lifetime_limit',
+            'pageport_expire_hours'           => 'inspect_page_expire_hours',
+            'pageport_max_uploads_per_hour'   => 'inspect_page_max_uploads_per_hour',
+        ];
+        foreach ( $option_map as $old => $new ) {
+            $old_val = get_option( $old, null );
+            if ( $old_val !== null && get_option( $new, null ) === null ) {
+                add_option( $new, $old_val, '', 'no' );
+            }
+            delete_option( $old );
+        }
+        // Drop options that no longer exist in the new naming.
+        delete_option( 'pageport_signing_key' );
+        delete_option( 'pageport_max_active_per_token' );
+
+        // User-meta: pageport_license → inspect_page_license.
+        $rows = $wpdb->get_results(
+            "SELECT user_id, meta_value FROM {$wpdb->usermeta} WHERE meta_key = 'pageport_license'"
+        );
+        if ( $rows ) {
+            foreach ( $rows as $row ) {
+                $existing = get_user_meta( (int) $row->user_id, 'inspect_page_license', true );
+                if ( $existing === '' ) {
+                    update_user_meta( (int) $row->user_id, 'inspect_page_license', $row->meta_value );
+                }
+            }
+            $wpdb->query( "DELETE FROM {$wpdb->usermeta} WHERE meta_key = 'pageport_license'" );
+        }
+
+        // Move uploads/pageport → uploads/inspect-page if old exists and new doesn't.
+        $up      = wp_upload_dir();
+        $old_dir = trailingslashit( $up['basedir'] ) . 'pageport';
+        $new_dir = trailingslashit( $up['basedir'] ) . 'inspect-page';
+        if ( is_dir( $old_dir ) && ! is_dir( $new_dir ) ) {
+            @rename( $old_dir, $new_dir );
         }
     }
 }
