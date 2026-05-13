@@ -4,6 +4,36 @@ All notable changes to **Inspect Page** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Extension 2.3.0] — 2026-05-13
+
+### Added — Inspect Mode (A1–A14)
+
+- New third panel tab **Inspect** alongside Export and Pick. CSS-Peeper-
+  class read-only inspector — works on any page, no sign-in required.
+- **Overview** card: viewport thumbnail + page title + URL + Open docs.
+- **Typography**: Headings + Body cards (family · generic chip ·
+  weights · text-style count) + "Show all" modal.
+- **Colors**: dedup'd Palette tab + Categories tab (background / text /
+  border / fill / stroke / gradient / shadow / other) with per-row
+  Locate + Copy.
+- **Color Detail drawer**: hex / rgb / hsl / alpha + per-format copy.
+- **Contrast Scanner**: pass/fail summary + Failing/Passing tabs +
+  per-pair AA/AAA grid.
+- **CSS Information**: rule count, inlined CSS bytes, external sheet
+  count, &lt;style&gt; tag count, unreachable-sheet warning.
+- **Element Inspector**: largest-element list, expandable computed
+  styles, Set-as-anchor + distance panel, Copy selector.
+- **Show Code drawer**: synthesized HTML/CSS for a sample with Copy.
+- **Export report ▾** menu: JSON / Markdown / Colors CSV / Fonts CSV
+  with stable serializers (`extension-src/inspect/exportSnapshot.ts`).
+- **Floating panel**: SE-corner resize handle (clamped 320×240 –
+  720×900), detached pop-out window via `chrome.windows.create`.
+- **Theme toggle**: ☾ / ☀ in header; full dark-theme variants for every
+  status / button / input / pill so contrast stays ≥4.5:1 in both modes.
+- Footer: "Inspect Page v2.3.0".
+- 74 unit tests (snapshot, contrast math, color math, distance,
+  synthesizeCode, exportSnapshot, rankSamples) — all green.
+
 ## [WP plugin 2.2.1] — 2026-05-12
 ## [WP plugin 2.3.0] — 2026-05-13
 
