@@ -43,7 +43,7 @@ describe("revokeShareSession", () => {
     });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://example.com/wp-json/pageport/v1/sessions/sess_42");
+    expect(url).toBe("https://example.com/wp-json/inspect-page/v1/sessions/sess_42");
     expect(init.method).toBe("DELETE");
     expect(init.credentials).toBe("include");
     expect((init.headers as Record<string, string>)["X-WP-Nonce"]).toBe("abc123");
@@ -55,7 +55,7 @@ describe("revokeShareSession", () => {
       getShareSettings: async () => validCfg, fetchImpl,
     });
     const [url] = fetchImpl.mock.calls[0] as [string];
-    expect(url).toBe("https://example.com/wp-json/pageport/v1/sessions/a%2Fb%20c");
+    expect(url).toBe("https://example.com/wp-json/inspect-page/v1/sessions/a%2Fb%20c");
   });
 
   it("treats 404 as success (idempotent)", async () => {
@@ -114,6 +114,6 @@ describe("revokeShareSession", () => {
       fetchImpl,
     });
     const [url] = fetchImpl.mock.calls[0] as [string];
-    expect(url).toBe("https://example.com/wp-json/pageport/v1/sessions/s1");
+    expect(url).toBe("https://example.com/wp-json/inspect-page/v1/sessions/s1");
   });
 });

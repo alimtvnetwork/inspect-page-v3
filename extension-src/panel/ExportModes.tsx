@@ -40,7 +40,7 @@ function flowSlug(f: ExportFlow): string {
 }
 
 function fileBaseName(a: ExportArtifacts): string {
-  return `pageport-${flowSlug(a.flow)}-${safeDomain(a.domain)}-${tsNow()}`;
+  return `inspect-page-${flowSlug(a.flow)}-${safeDomain(a.domain)}-${tsNow()}`;
 }
 
 /** Build the single-file MD: AI block + inlined html/css/js fences + base64 images. */

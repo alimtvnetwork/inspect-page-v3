@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Loader2, Server } from "lucide-react";
 
-const WP_ZIP_URL = "/pageport-wp.zip";
+const WP_ZIP_URL = "/inspect-page-wp.zip";
 
 export const WpPlugin = (): JSX.Element => {
   const [loading, setLoading] = useState(false);
@@ -41,12 +41,12 @@ export const WpPlugin = (): JSX.Element => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "pageport-wp.zip";
+      a.download = "inspect-page-wp.zip";
       document.body.appendChild(a);
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1_000);
-      toast({ title: "Downloaded pageport-wp.zip" });
+      toast({ title: "Downloaded inspect-page-wp.zip" });
     } catch (e) {
       setError(`Download failed: ${e instanceof Error ? e.message : "network error"}`);
     } finally {
@@ -88,7 +88,7 @@ export const WpPlugin = (): JSX.Element => {
         </span>
       </div>
       <ol className="list-decimal pl-5 text-sm text-muted-foreground space-y-1">
-        <li>Upload the unzipped <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">pageport</code> folder to <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">wp-content/plugins/</code> and activate it.</li>
+        <li>Upload the unzipped <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">inspect-page</code> folder to <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">wp-content/plugins/</code> and activate it.</li>
         <li>In the extension, open <strong>Settings → Smart Share (WordPress)</strong>, paste your site URL, and click <strong>Sign in</strong>. A WordPress login tab opens.</li>
         <li>Sign in to WordPress as usual. The extension picks up the cookie + nonce automatically — no tokens or app passwords to copy.</li>
       </ol>

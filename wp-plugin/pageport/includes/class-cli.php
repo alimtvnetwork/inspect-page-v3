@@ -1,17 +1,17 @@
 <?php
 /**
- * WP-CLI: `wp pageport cleanup` for ad-hoc expiry sweeps.
+ * WP-CLI: `wp inspect-page cleanup` for ad-hoc expiry sweeps.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 if ( ! ( defined( 'WP_CLI' ) && WP_CLI ) ) { return; }
 
-final class PagePort_CLI {
+final class InspectPage_CLI {
 
     /** Run the hourly expiry sweep immediately. */
     public function cleanup( $args, $assoc_args ) {
-        $n = PagePort_Cleanup::run();
+        $n = InspectPage_Cleanup::run();
         WP_CLI::success( "Expired {$n} session(s)." );
     }
 }
 
-WP_CLI::add_command( 'pageport', 'PagePort_CLI' );
+WP_CLI::add_command( 'inspect-page', 'InspectPage_CLI' );

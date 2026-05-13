@@ -1,10 +1,10 @@
-# PagePort — Chrome Web Store listing
+# Inspect Page — Chrome Web Store listing
 
 All character counts respect Chrome Web Store limits as of 2025.
 
 ## Item name (≤ 75 chars)
 
-    PagePort — HTML, CSS, JS & full-page screenshot
+    Inspect Page — HTML, CSS, JS & full-page screenshot
 
 (53 chars)
 
@@ -27,7 +27,7 @@ All character counts respect Chrome Web Store limits as of 2025.
 
     Stop pasting screenshots into your LLM and hoping for the best.
 
-    PagePort captures any web page exactly as you see it — HTML,
+    Inspect Page captures any web page exactly as you see it — HTML,
     every readable stylesheet, every readable script, and a full-page
     screenshot — and bundles them into a single ZIP your model can
     actually work with.
@@ -88,7 +88,7 @@ All character counts respect Chrome Web Store limits as of 2025.
       we never read pages you haven't explicitly exported.
 
     Open source. Issue tracker and changelog at:
-    https://github.com/<your-org>/pageport
+    https://github.com/<your-org>/inspect-page
 
 ## Single-purpose statement (required at submission)
 
@@ -160,7 +160,7 @@ All character counts respect Chrome Web Store limits as of 2025.
        && bun run package
     3. Re-zip without the parent folder (the existing ZIP is already
        laid out correctly: manifest.json must be at the ZIP root).
-    4. Upload public/pageport.zip to:
+    4. Upload public/inspect-page.zip to:
        https://chrome.google.com/webstore/devconsole
     5. Fill the listing using this file. Submit for review.
 

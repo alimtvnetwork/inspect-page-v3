@@ -44,28 +44,28 @@ export const ZIP_COMPRESSION_LEVEL = 6;
 
 // ---- Filenames ----
 export const DEFAULT_NAME_FULLPAGE_TEMPLATE =
-  "pageport-fullpage-{domain}-{timestamp}.zip";
+  "inspect-page-fullpage-{domain}-{timestamp}.zip";
 export const DEFAULT_NAME_ELEMENT_TEMPLATE =
-  "pageport-element-{domain}-{tag}-{timestamp}.md";
+  "inspect-page-element-{domain}-{tag}-{timestamp}.md";
 export const FILENAME_MAX_CHARS = 120;
 
 // ---- Schema ----
 export const CURRENT_SCHEMA_VERSION = 1 as const;
-export const STORAGE_ROOT_KEY = "pageport";
-export const STORAGE_SHARE_KEY = "pageport.share";
+export const STORAGE_ROOT_KEY = "inspect-page";
+export const STORAGE_SHARE_KEY = "inspect-page.share";
 
 // ---- Logger ----
-export const LOG_PREFIX = "[pageport]";
+export const LOG_PREFIX = "[inspect-page]";
 
 // ---- Static text ----
 export const README_TXT =
-  "This bundle was produced by the PagePort Chrome extension.\n" +
+  "This bundle was produced by the Inspect Page Chrome extension.\n" +
   "Feed the four files to your LLM together with your restyle prompt.\n" +
   "manifest.json contains capture metadata; screenshot.png is the full page.\n";
 
 // ---- Smart Share backend (v2.2) ----
-// The official PagePort WordPress backend. Baked into the extension so users
+// The official Inspect Page WordPress backend. Baked into the extension so users
 // never have to type a site URL. Leave empty until the production site is
 // chosen; the Share Links export mode stays disabled while empty.
 // TODO: set this to the production WordPress URL before publishing.
-export const PAGEPORT_WP_SITE_URL = "" as const;
+export const INSPECT_PAGE_WP_SITE_URL = "" as const;

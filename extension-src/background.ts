@@ -108,7 +108,7 @@ router.on<OpenLoginPopupPayload, OpenLoginPopupResponse>(
   MessageKind.OpenLoginPopup,
   async ({ siteUrl }) => {
     const base = normalizeBaseUrl(siteUrl);
-    const url = `${base}/wp-admin/admin.php?page=pageport-bridge`;
+    const url = `${base}/wp-admin/admin.php?page=inspect-page-bridge`;
     try {
       await chrome.tabs.create({ url, active: true });
     } catch (e) {
@@ -365,7 +365,7 @@ async function runFullPageExport(
   });
 
   const filename = applyTemplate(
-    settings?.namingTemplateFullPage ?? "pageport-fullpage-{domain}-{timestamp}.zip",
+    settings?.namingTemplateFullPage ?? "inspect-page-fullpage-{domain}-{timestamp}.zip",
     {
       domain: domainFromUrl(artifacts.meta.url),
       timestamp: localTimestamp(),
@@ -451,7 +451,7 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 }
 
 /**
- * Probe `/wp-json/pageport/v1/auth-status` on the saved WP site, persist the
+ * Probe `/wp-json/inspect-page/v1/auth-status` on the saved WP site, persist the
  * latest identity + nonce, and return a panel-friendly summary. Public route
  * so it works with the WP cookie alone (no nonce needed yet).
  */
@@ -461,7 +461,7 @@ async function checkShareAuth(): Promise<CheckShareAuthResponse> {
     loggedIn: false, userId: 0, displayName: "", email: "", nonce: "",
   };
   if (!cfg.siteUrl) return empty;
-  const url = `${normalizeBaseUrl(cfg.siteUrl)}/wp-json/pageport/v1/auth-status`;
+  const url = `${normalizeBaseUrl(cfg.siteUrl)}/wp-json/inspect-page/v1/auth-status`;
   let res: Response;
   try {
     res = await fetch(url, { credentials: "include" });

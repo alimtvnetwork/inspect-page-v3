@@ -1,51 +1,51 @@
 <?php
 /**
- * Plugin Name:       PagePort
- * Plugin URI:        admin.php?page=pageport
- * Description:       Share-Links backend for the PagePort Chrome extension. Hosts captured HTML / CSS / image bundles for 24 hours and exposes them via signed public URLs.
+ * Plugin Name:       Inspect Page
+ * Plugin URI:        admin.php?page=inspect-page
+ * Description:       Share-Links backend for the Inspect Page Chrome extension. Hosts captured HTML / CSS / image bundles for 24 hours and exposes them via signed public URLs.
  * Version:           2.3.0
  * Requires at least: 5.6
  * Requires PHP:      7.4
- * Author:            PagePort
- * Author URI:        admin.php?page=pageport
+ * Author:            Inspect Page
+ * Author URI:        admin.php?page=inspect-page
  * License:           MIT
- * Text Domain:       pageport
+ * Text Domain:       inspect-page
  */
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'PAGEPORT_VERSION', '2.3.0' );
-define( 'PAGEPORT_REST_NS', 'pageport/v1' );
-define( 'PAGEPORT_DIR', plugin_dir_path( __FILE__ ) );
-define( 'PAGEPORT_URL', plugin_dir_url( __FILE__ ) );
-define( 'PAGEPORT_SHARE_TTL', DAY_IN_SECONDS ); // 24h
+define( 'INSPECT_PAGE_VERSION', '2.3.0' );
+define( 'INSPECT_PAGE_REST_NS', 'inspect-page/v1' );
+define( 'INSPECT_PAGE_DIR', plugin_dir_path( __FILE__ ) );
+define( 'INSPECT_PAGE_URL', plugin_dir_url( __FILE__ ) );
+define( 'INSPECT_PAGE_SHARE_TTL', DAY_IN_SECONDS ); // 24h
 
-require_once PAGEPORT_DIR . 'includes/enums.php';
-require_once PAGEPORT_DIR . 'includes/class-activator.php';
-require_once PAGEPORT_DIR . 'includes/class-storage.php';
-require_once PAGEPORT_DIR . 'includes/class-auth.php';
-require_once PAGEPORT_DIR . 'includes/class-license.php';
-require_once PAGEPORT_DIR . 'includes/class-rest.php';
-require_once PAGEPORT_DIR . 'includes/class-cleanup.php';
+require_once INSPECT_PAGE_DIR . 'includes/enums.php';
+require_once INSPECT_PAGE_DIR . 'includes/class-activator.php';
+require_once INSPECT_PAGE_DIR . 'includes/class-storage.php';
+require_once INSPECT_PAGE_DIR . 'includes/class-auth.php';
+require_once INSPECT_PAGE_DIR . 'includes/class-license.php';
+require_once INSPECT_PAGE_DIR . 'includes/class-rest.php';
+require_once INSPECT_PAGE_DIR . 'includes/class-cleanup.php';
 if ( is_admin() ) {
-    require_once PAGEPORT_DIR . 'includes/class-admin.php';
+    require_once INSPECT_PAGE_DIR . 'includes/class-admin.php';
 }
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
-    require_once PAGEPORT_DIR . 'includes/class-cli.php';
+    require_once INSPECT_PAGE_DIR . 'includes/class-cli.php';
 }
 
-register_activation_hook( __FILE__, [ 'PagePort_Activator', 'activate' ] );
-register_deactivation_hook( __FILE__, [ 'PagePort_Cleanup', 'deactivate' ] );
+register_activation_hook( __FILE__, [ 'InspectPage_Activator', 'activate' ] );
+register_deactivation_hook( __FILE__, [ 'InspectPage_Cleanup', 'deactivate' ] );
 
-add_action( 'rest_api_init', [ 'PagePort_REST', 'register_routes' ] );
-add_action( 'rest_api_init', [ 'PagePort_Auth', 'register_routes' ] );
-add_filter( 'rest_pre_serve_request', [ 'PagePort_Auth', 'send_cors_headers' ], 10, 3 );
-add_action( 'pageport_cleanup', [ 'PagePort_Cleanup', 'run' ] );
+add_action( 'rest_api_init', [ 'InspectPage_REST', 'register_routes' ] );
+add_action( 'rest_api_init', [ 'InspectPage_Auth', 'register_routes' ] );
+add_filter( 'rest_pre_serve_request', [ 'InspectPage_Auth', 'send_cors_headers' ], 10, 3 );
+add_action( 'inspect_page_cleanup', [ 'InspectPage_Cleanup', 'run' ] );
 
 // Run schema upgrade when the plugin file version is newer than what's stored.
 add_action( 'plugins_loaded', function () {
-    if ( get_option( 'pageport_db_version' ) !== PAGEPORT_VERSION ) {
-        PagePort_Activator::activate();
-        update_option( 'pageport_db_version', PAGEPORT_VERSION, false );
+    if ( get_option( 'inspect_page_db_version' ) !== INSPECT_PAGE_VERSION ) {
+        InspectPage_Activator::activate();
+        update_option( 'inspect_page_db_version', INSPECT_PAGE_VERSION, false );
     }
 } );

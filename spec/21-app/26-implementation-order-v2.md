@@ -25,37 +25,37 @@ Verification: manual — pick element, all 3 buttons produce valid downloads; MD
 Verification: full-page export → all 3 buttons work; bundled ZIP now contains `prompt.md`.
 
 ## Stage V4 — WP plugin scaffold
-- New folder `wp-plugin/pageport/` with PHP files per `25-share-links.md` §B.
+- New folder `wp-plugin/inspect-page/` with PHP files per `25-share-links.md` §B.
 - Activator creates tables + seeds enum rows.
 - REST routes registered, all return 501 stubs except the seed routes.
-- Add `wp-plugin/pageport.zip` packaging script `wp-plugin/scripts/package.sh`.
+- Add `wp-plugin/inspect-page.zip` packaging script `wp-plugin/scripts/package.sh`.
 Verification: `php -l` clean on every file; activate locally creates tables.
 
 ## Stage V5 — WP plugin: sessions + uploads + reads
-- Implement `POST /sessions`, file storage under `uploads/pageport/...`, session ID generation.
+- Implement `POST /sessions`, file storage under `uploads/inspect-page/...`, session ID generation.
 - Implement `GET /share/{id}/{kind}` with expiry check.
 - Implement DELETE + LIST.
-- Add hourly cron + WP-CLI `pageport cleanup`.
+- Add hourly cron + WP-CLI `inspect-page cleanup`.
 Verification: cURL the routes locally; expiry test by setting `expires_at` in past.
 
 ## Stage V6 — WP admin UI
-- Tools → PagePort Sessions list table (`WP_List_Table`).
+- Tools → Inspect Page Sessions list table (`WP_List_Table`).
 - Revoke action.
 Verification: visible in wp-admin; revoke works.
 
 ## Stage V4' — WP scaffold + pairing tokens table  *(obsolete — superseded by V4'')*
-- `wp_options`: `pageport_signing_key` (32 random bytes hex), `pageport_max_active_per_token` (default 30).
+- `wp_options`: `inspect_page_signing_key` (32 random bytes hex), `inspect_page_max_active_per_token` (default 30).
 - New table `{$prefix}pp_pairing_tokens` (`tid`, `user_id`, `label`, `created_at`, `last_used_at`, `revoked_at`).
-- Empty `Tools → PagePort` admin screen.
+- Empty `Tools → Inspect Page` admin screen.
 
 ## Stage V5' — Pairing UI + Bearer middleware  *(obsolete — superseded by V5'')*
 - `class-pairing.php`: mint (`PPT1.<b64url(payload)>.<b64url(hmac)>`), verify (HMAC + `tid` lookup + revocation check + `last_used_at` touch), revoke, list.
 - `class-auth.php`: `require_bearer()` REST permission_callback; `wp_set_current_user` on success.
-- `Tools → PagePort` screen: mint button (one-shot token display), paired-devices table, per-row revoke.
+- `Tools → Inspect Page` screen: mint button (one-shot token display), paired-devices table, per-row revoke.
 
 ## Stage V6' — REST `/sessions` on Bearer + quota  *(obsolete — superseded by V5'')*
-- Switch `/sessions` POST/LIST/DELETE permission_callback to `PagePort_Auth::require_bearer`.
-- Enforce `pageport_max_active_per_token` on POST → `429 E_SHARE_QUOTA`.
+- Switch `/sessions` POST/LIST/DELETE permission_callback to `InspectPage_Auth::require_bearer`.
+- Enforce `inspect_page_max_active_per_token` on POST → `429 E_SHARE_QUOTA`.
 - New `DELETE /pairing/self` for extension-side unpair.
 
 ## Stage V7' — Extension Settings rewrite  *(obsolete — superseded by V6''/V7'')*
@@ -67,7 +67,7 @@ Verification: visible in wp-admin; revoke works.
 ## Stage V8' — Polish + AC  *(obsolete — superseded by V8'')*
 - Error codes wired: `E_SHARE_AUTH`, `E_SHARE_NETWORK`, `E_SHARE_UPSTREAM`, `E_SHARE_BAD_INPUT`, `E_SHARE_QUOTA`, `E_SHARE_BAD_TOKEN`.
 - Acceptance checklist in `11-acceptance-criteria.md` extended with AC-EX-* and AC-SH-*.
-- Repackage `pageport.zip` and `pageport-wp.zip`; landing page links both and documents the pairing flow.
+- Repackage `inspect-page.zip` and `inspect-page-wp.zip`; landing page links both and documents the pairing flow.
 
 ## Stages V4''–V8'' — v2.2 Smart Share rewrite (cookie + nonce)
 
@@ -75,10 +75,10 @@ Supersedes V4'–V8' (the pairing-token track is removed).
 
 - **V4'' Auth swap** — Delete `class-pairing.php` and the
   `pp_pairing_tokens` table. Replace `require_bearer()` with
-  `PagePort_Auth::require_wp_user()` (checks `is_user_logged_in()` +
+  `InspectPage_Auth::require_wp_user()` (checks `is_user_logged_in()` +
   `wp_verify_nonce(.., 'wp_rest')`). Add `GET /me` returning
   `{ logged_in, user_id, display_name, email, nonce, quota }`.
-  Bridge admin page (`pageport-bridge`, hidden) `postMessage`s the
+  Bridge admin page (`inspect-page-bridge`, hidden) `postMessage`s the
   fresh nonce back to the extension.
 - **V5'' Sessions on cookie + 4 files** — `POST/GET/DELETE /sessions`
   switch to `require_wp_user`. Accept `js` part. Strip EXIF on image.
@@ -98,7 +98,7 @@ Supersedes V4'–V8' (the pairing-token track is removed).
   (`smokeE2E` rewritten for cookie+nonce, `buildPromptMd` updated for
   4-URL refs). Manual checklist in
   [`docs/ACCEPTANCE-v2.2.md`](../../docs/ACCEPTANCE-v2.2.md). WP plugin
-  bumped to **2.2.0**; both `pageport.zip` and `pageport-wp.zip`
+  bumped to **2.2.0**; both `inspect-page.zip` and `inspect-page-wp.zip`
   repackaged; landing copy + Privacy page rewritten for the cookie
   flow.
 

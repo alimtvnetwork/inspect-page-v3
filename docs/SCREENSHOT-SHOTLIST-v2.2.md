@@ -1,14 +1,14 @@
-# PagePort 2.2 — Chrome Web Store screenshot shot-list
+# Inspect Page 2.2 — Chrome Web Store screenshot shot-list
 
 Five 1280×800 PNGs, sRGB, no transparency. Saved to
 `store-assets/screen-{1..5}.png` (overwrite). Take them on a clean
 Chrome profile with the v2.2.0 unpacked extension loaded against a
-throwaway WordPress install whose `pageport` plugin is also v2.2.0.
+throwaway WordPress install whose `inspect-page` plugin is also v2.2.0.
 
 Common rules
 
 - Browser: Chrome stable, default theme, no other extensions visible
-  in the toolbar except PagePort.
+  in the toolbar except Inspect Page.
 - Window chrome: include the URL bar so reviewers see we operate on a
   real page; hide bookmarks bar.
 - Zoom: 100%. Device pixel ratio 1. macOS or Linux — no Windows
@@ -22,7 +22,7 @@ Common rules
 ## screen-1.png — Hero: Full Page export on a real article
 
 - URL bar: `https://en.wikipedia.org/wiki/HTTP`
-- State: PagePort floating panel open in the bottom-right of the
+- State: Inspect Page floating panel open in the bottom-right of the
   viewport, mode = **Full Page**, format = **ZIP**, the four mode
   chips visible (MD, MD+files, ZIP, Smart Share). "Export" button
   hover state.
@@ -41,8 +41,8 @@ Common rules
 - URL bar: `https://news.ycombinator.com/`
 - State: Settings → Smart Share section of the floating panel,
   showing:
-  - Site URL: `https://demo.pageport.app`
-  - Signed in as: `Alice Example` `<alice@demo.pageport.app>`
+  - Site URL: `https://demo.inspect-page.app`
+  - Signed in as: `Alice Example` `<alice@demo.inspect-page.app>`
   - "Sign out" link
   - Quota readout: `2 / 30 active · 4 / 60 uploads this hour`
 - MUST NOT show any token, password, or "paste here" field.
@@ -55,10 +55,10 @@ Common rules
 - State: Share dialog modal centered on the page, showing:
   - Heading: "Smart Share — 4 links ready"
   - Four rows, each with a per-row Copy button:
-    - `https://demo.pageport.app/share/A1b2C3/index.html`
-    - `https://demo.pageport.app/share/A1b2C3/style.css`
-    - `https://demo.pageport.app/share/A1b2C3/script.js`
-    - `https://demo.pageport.app/share/A1b2C3/preview.png`
+    - `https://demo.inspect-page.app/share/A1b2C3/index.html`
+    - `https://demo.inspect-page.app/share/A1b2C3/style.css`
+    - `https://demo.inspect-page.app/share/A1b2C3/script.js`
+    - `https://demo.inspect-page.app/share/A1b2C3/preview.png`
   - Live countdown: `Expires in 23h 58m 14s`
   - Buttons: "Copy AI prompt + 4 URLs" (primary), "Revoke now" (danger
     secondary).

@@ -1,5 +1,5 @@
 /**
- * Distribution landing page for the PagePort Chrome extension.
+ * Distribution landing page for the Inspect Page Chrome extension.
  * Source: spec/21-app/18-distribution-page.md.
  */
 import { useEffect, useState } from "react";
@@ -12,7 +12,7 @@ import { Privacy } from "@/components/landing/Privacy";
 import { WpPlugin } from "@/components/landing/WpPlugin";
 import { Footer } from "@/components/landing/Footer";
 
-const ZIP_URL = "/pageport.zip";
+const ZIP_URL = "/inspect-page.zip";
 
 const Index = (): JSX.Element => {
   const [meta, setMeta] = useState<{ version: string; sizeKb: number | null }>({
@@ -21,7 +21,7 @@ const Index = (): JSX.Element => {
   });
 
   useEffect(() => {
-    document.title = "PagePort — Chrome extension";
+    document.title = "Inspect Page — Chrome extension";
     // Best-effort metadata fetch (HEAD). If the build is missing, we keep
     // sizeKb=null and the Hero hides the size pill.
     let cancelled = false;
@@ -45,7 +45,7 @@ const Index = (): JSX.Element => {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "PagePort",
+    name: "Inspect Page",
     applicationCategory: "BrowserApplication",
     operatingSystem: "Chromium",
     description:

@@ -3,7 +3,7 @@
  * Source: spec/21-app/02-ui-panel.md §D.
  */
 export const COPY = {
-  appName: "PagePort",
+  appName: "Inspect Page",
   btnFullPage: "Export Full Page",
   btnPick: "Pick Element",
   btnCancel: "Cancel",
@@ -69,9 +69,9 @@ export const COPY = {
   exportModeMdFiles: "MD + files",
   exportModeZip: "ZIP",
   exportModeShare: "Share Links",
-  exportModeShareDisabledTip: "Sign in to PagePort in Settings → Smart Share",
+  exportModeShareDisabledTip: "Sign in to Inspect Page in Settings → Smart Share",
   shareSettingsHeader: "Smart Share",
-  shareHelp: "Sign in once with the PagePort account — no passwords or tokens are saved on your device.",
+  shareHelp: "Sign in once with the Inspect Page account — no passwords or tokens are saved on your device.",
   shareNotConfiguredMsg: "Smart Share is being set up. This export mode will be available shortly.",
   shareSignInBtn: "Sign in",
   shareSignOutBtn: "Sign out",
@@ -101,7 +101,7 @@ export const COPY = {
   shareQuotaPrefix: "Free shares used:",
   shareQuotaUnlimited: "Pro plan — unlimited shares",
   shareUpgradeHint: "Upgrade to Pro — coming soon",
-  shareQuotaFreeReachedMsg: "Free quota reached. Upgrade to PagePort Pro to keep sharing (coming soon).",
+  shareQuotaFreeReachedMsg: "Free quota reached. Upgrade to Inspect Page Pro to keep sharing (coming soon).",
 } as const;
 
 export type CopyKey = keyof typeof COPY;

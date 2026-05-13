@@ -3,24 +3,24 @@
  * Lifetime free-share quota + license gate (v2.3.0).
  *
  * Free users get N lifetime Smart Share uploads (default 5). After that
- * they must hold an active PagePort license. Until billing is wired
+ * they must hold an active Inspect Page license. Until billing is wired
  * (planned) the license is a manual per-user flag set by site admins via
- * user meta `pageport_license` ("active" / anything-else).
+ * user meta `inspect_page_license` ("active" / anything-else).
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-final class PagePort_License {
+final class InspectPage_License {
 
-    const META_KEY = 'pageport_license';
+    const META_KEY = 'inspect_page_license';
 
-    /** True when the user holds an active PagePort license. */
+    /** True when the user holds an active Inspect Page license. */
     public static function has_license( $user_id ) {
         $val = get_user_meta( (int) $user_id, self::META_KEY, true );
         return is_string( $val ) && strtolower( $val ) === 'active';
     }
 
     public static function free_limit() {
-        return (int) get_option( 'pageport_free_lifetime_limit', 5 );
+        return (int) get_option( 'inspect_page_free_lifetime_limit', 5 );
     }
 
     /** Total Smart Share sessions ever created by this user (any status). */
@@ -44,9 +44,9 @@ final class PagePort_License {
         $limit = self::free_limit();
         if ( $used >= $limit ) {
             return new WP_Error(
-                PagePort_ErrorCode::E_SHARE_QUOTA_FREE,
+                InspectPage_ErrorCode::E_SHARE_QUOTA_FREE,
                 sprintf(
-                    'Free quota reached (%d/%d lifetime shares). Upgrade to PagePort Pro to keep sharing.',
+                    'Free quota reached (%d/%d lifetime shares). Upgrade to Inspect Page Pro to keep sharing.',
                     $used, $limit
                 ),
                 [ 'status' => 402 ]

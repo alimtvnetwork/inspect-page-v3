@@ -40,7 +40,7 @@ export const WhatsNew = (): JSX.Element => (
     <p className="text-xs text-muted-foreground">
       Full details in{" "}
       <a
-        href="https://github.com/lovable-dev/pageport/blob/main/CHANGELOG.md"
+        href="https://github.com/lovable-dev/inspect-page/blob/main/CHANGELOG.md"
         className="underline underline-offset-2 hover:text-foreground"
         target="_blank"
         rel="noreferrer"

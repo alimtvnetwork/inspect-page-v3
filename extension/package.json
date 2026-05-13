@@ -1,5 +1,5 @@
 {
-  "name": "pageport",
+  "name": "inspect-page",
   "private": true,
   "version": "2.2.0",
   "description": "Export any web page (or one element) for your LLM.",

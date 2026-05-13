@@ -33,7 +33,7 @@
 
 ## How to capture (deterministic recipe)
 
-1. Load the unpacked extension from `public/pageport.zip` in a clean
+1. Load the unpacked extension from `public/inspect-page.zip` in a clean
    Chrome profile at exactly **1280×800** window size (the Web Store
    prefers no DPR scaling — disable HiDPI in the OS for the run).
 2. Open the target page, mount the panel, perform the action.
@@ -44,7 +44,7 @@
 
 ## Promo tiles
 
-- Small (440×280): centered PagePort wordmark on the brand background,
+- Small (440×280): centered Inspect Page wordmark on the brand background,
   one-line subtitle "Export pages for your LLM".
 - Marquee (1400×560): same wordmark left-aligned, a faux ZIP bundle
   diagram on the right (HTML / CSS / JS / PNG icons).

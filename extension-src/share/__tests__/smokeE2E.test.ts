@@ -52,7 +52,7 @@ function makeServer() {
     const auth = checkAuth(init?.headers);
     if (auth instanceof Response) return auth;
 
-    if (url === `${SITE_URL}/wp-json/pageport/v1/sessions` && method === "POST") {
+    if (url === `${SITE_URL}/wp-json/inspect-page/v1/sessions` && method === "POST") {
       const active = [...sessions.values()].filter(
         (s) => s.uid === auth.uid && s.status === "Active" && s.expiresAt > Date.now(),
       ).length;
@@ -69,7 +69,7 @@ function makeServer() {
       const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
       sessions.set(id, { id, uid: auth.uid, status: "Active", expiresAt,
         assets: { html, css, js, image } });
-      const base = `${SITE_URL}/wp-json/pageport/v1/share/${id}`;
+      const base = `${SITE_URL}/wp-json/inspect-page/v1/share/${id}`;
       return new Response(JSON.stringify({
         session_id: id,
         expires_at: new Date(expiresAt).toISOString(),
@@ -130,7 +130,7 @@ describe("end-to-end smoke (mock WP REST, cookie+nonce)", () => {
     expect(new Set(created).size).toBe(MAX_ACTIVE);
 
     const probe = await fetchImpl(
-      `${SITE_URL}/wp-json/pageport/v1/share/${created[0]}/index.html`,
+      `${SITE_URL}/wp-json/inspect-page/v1/share/${created[0]}/index.html`,
       { headers: { "X-WP-Nonce": NONCE } },
     );
     expect(probe.status).toBe(200);

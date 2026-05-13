@@ -1,14 +1,14 @@
-# PagePort — Privacy Policy
+# Inspect Page — Privacy Policy
 
 _Last updated: 2026-05-10_
 
-PagePort is a Chrome extension that captures the page in the active
+Inspect Page is a Chrome extension that captures the page in the active
 tab into a downloadable bundle. This policy describes what data the
 extension touches and what it does (and does not) do with it.
 
 ## Summary
 
-- PagePort runs entirely on your machine.
+- Inspect Page runs entirely on your machine.
 - We do not operate any server. We do not collect telemetry, analytics,
   crash reports, or usage statistics.
 - We do not sell, share, or transfer any data.
@@ -30,7 +30,7 @@ extension touches and what it does (and does not) do with it.
 
 ## Permissions and why
 
-PagePort requests the minimum permissions needed to do its job. The
+Inspect Page requests the minimum permissions needed to do its job. The
 exact list and the per-permission justification is in
 [`permissions.md`](./permissions.md) and on the Chrome Web Store
 listing. Notably we do **not** request `cookies`, `history`,
@@ -51,13 +51,13 @@ export before sharing it.
 ## Smart Share (optional WordPress backend)
 
 If you install the companion WordPress plugin and enter your site URL
-in PagePort's Settings, the Smart Share export mode will:
+in Inspect Page's Settings, the Smart Share export mode will:
 
 1. Sign you in by opening your WordPress site's standard login page in
-   a hidden tab; PagePort never sees or stores your password. Your
+   a hidden tab; Inspect Page never sees or stores your password. Your
    browser's existing WP login cookie is what authenticates the upload.
 2. POST the captured HTML, CSS, JavaScript, and screenshot over HTTPS
-   to `https://your-site/wp-json/pageport/v1/sessions`, authenticated
+   to `https://your-site/wp-json/inspect-page/v1/sessions`, authenticated
    with that WP login cookie plus a short-lived `X-WP-Nonce`.
 3. Receive four short public URLs back (one each for `index.html`,
    `style.css`, `script.js`, `preview.png`), valid for 24 hours.
@@ -65,12 +65,12 @@ in PagePort's Settings, the Smart Share export mode will:
 
 After 24 hours an hourly cron job on your WordPress site deletes the
 files and marks the session expired. You can revoke any session
-earlier from **Tools → PagePort Sessions** in WordPress admin. We do
+earlier from **Tools → Inspect Page Sessions** in WordPress admin. We do
 not operate the WordPress site — you do.
 
 ## Children
 
-PagePort is not directed at children under 13. It does not knowingly
+Inspect Page is not directed at children under 13. It does not knowingly
 collect data from anyone.
 
 ## Changes
@@ -81,5 +81,5 @@ called out in the extension's "What's new" section.
 
 ## Contact
 
-Open an issue at https://github.com/pageport/pageport (or the
+Open an issue at https://github.com/inspect-page/inspect-page (or the
 repository linked from the Chrome Web Store listing).

@@ -66,7 +66,7 @@ describe("createShareSession", () => {
       urls: { html: "h", css: "c", js: "j", image: "i" },
     });
     const [calledUrl, init] = fetchImpl.mock.calls[0];
-    expect(calledUrl).toBe("https://example.com/wp-json/pageport/v1/sessions");
+    expect(calledUrl).toBe("https://example.com/wp-json/inspect-page/v1/sessions");
     expect((init?.headers as Record<string, string>)["X-WP-Nonce"]).toBe("abc123");
     expect((init as RequestInit).credentials).toBe("include");
     expect(init?.method).toBe("POST");

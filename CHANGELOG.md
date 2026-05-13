@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to **PagePort** are recorded here. The format
+All notable changes to **Inspect Page** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
@@ -9,12 +9,12 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added — Lifetime free-share quota + license gate
 
-- New `PagePort_License` helper: every Smart Share upload now passes
+- New `InspectPage_License` helper: every Smart Share upload now passes
   through `can_share($user_id)`. Free users get a **lifetime quota of
-  5** Smart Share sessions (option `pageport_free_lifetime_limit`,
+  5** Smart Share sessions (option `inspect_page_free_lifetime_limit`,
   default 5). When the limit is hit the REST `POST /sessions` returns
   `402 E_SHARE_QUOTA_FREE` instead of the asset bundle.
-- License flag stored as user meta `pageport_license` (`active` =
+- License flag stored as user meta `inspect_page_license` (`active` =
   unlimited). Until billing is wired (planned), site admins grant the
   license manually via Users → Edit user → custom meta. Stripe / Paddle
   hookup will land in a follow-up release.
@@ -24,30 +24,30 @@ project adheres to [Semantic Versioning](https://semver.org/).
   **"Free shares used: X / 5"** (or **"Pro plan — unlimited shares"**
   when licensed). On `402` Smart Share fails fast with a friendly
   "Upgrade to Pro — coming soon" message.
-- Plugin version bumped to `2.3.0`; `pageport-wp.zip` repackaged.
+- Plugin version bumped to `2.3.0`; `inspect-page-wp.zip` repackaged.
 
 ### Changed
 
-- **Plugin row "Visit plugin site"** now opens the in-WP PagePort
-  dashboard (`admin.php?page=pageport`) instead of an external URL.
-- **PagePort dashboard rebuilt**: shows the signed-in WP user, extension
+- **Plugin row "Visit plugin site"** now opens the in-WP Inspect Page
+  dashboard (`admin.php?page=inspect-page`) instead of an external URL.
+- **Inspect Page dashboard rebuilt**: shows the signed-in WP user, extension
   pairing instructions, REST + permalinks health checks, live quota
   counters (active sessions vs limit, uploads in the last hour vs
   limit), and the user's 10 most recent share sessions with links to
   all 4 public URLs.
-- **Tools → PagePort Sessions**: added a `js` column, a 24h expiry
+- **Tools → Inspect Page Sessions**: added a `js` column, a 24h expiry
   countdown next to `expires_at`, and a friendly empty state.
-- Plugin version bumped to `2.2.1`; `pageport-wp.zip` repackaged.
+- Plugin version bumped to `2.2.1`; `inspect-page-wp.zip` repackaged.
 
 ## [2.2.0] — 2026-05-12
 
 ### Changed — Smart Share v2.2 (no more pairing tokens)
 
-- **Auth replaced**: PagePort pairing tokens (`PPT1.…`) are gone. The
+- **Auth replaced**: Inspect Page pairing tokens (`PPT1.…`) are gone. The
   WordPress plugin now authenticates the extension via the standard
   WordPress login cookie + `X-WP-Nonce`. Users sign in by clicking
   **Sign in** in the extension's `Settings → Smart Share (WordPress)`
-  panel, which opens a hidden `pageport-bridge` admin page that forwards
+  panel, which opens a hidden `inspect-page-bridge` admin page that forwards
   the `wp_rest` nonce to the extension via `postMessage`.
 - **Four files, four URLs**: Smart Share now uploads HTML / CSS / **JS**
   / screenshot and serves them at `/share/{id}/index.html`,
@@ -60,34 +60,34 @@ project adheres to [Semantic Versioning](https://semver.org/).
   inline **Revoke now** button (calls `DELETE /sessions/{id}`).
 - **Removed**: `class-pairing.php`, `pairingToken` / `tokenId` /
   `pairedAtIso` extension settings, the pairing token UI in
-  `Tools → PagePort`, and the `DELETE /pairing/self` REST route.
+  `Tools → Inspect Page`, and the `DELETE /pairing/self` REST route.
 - **WP plugin version bumped** to 2.2.0; landing copy and Privacy page
-  updated for cookie-based Smart Share; `pageport-wp.zip` repackaged.
+  updated for cookie-based Smart Share; `inspect-page-wp.zip` repackaged.
 
 ## [2.0.0] — 2026-05-10
 
-### Added — v2 PagePort backend (`spec/21-app/`)
+### Added — v2 Inspect Page backend (`spec/21-app/`)
 
-- **WordPress companion plugin** (`wp-plugin/pageport/`, distributed as
-  `public/pageport-wp.zip`). Registers REST namespace `pageport/v1` with
+- **WordPress companion plugin** (`wp-plugin/inspect-page/`, distributed as
+  `public/inspect-page-wp.zip`). Registers REST namespace `inspect-page/v1` with
   routes `POST /sessions`, `GET /sessions`, `DELETE /sessions/{id}`,
   `GET /share/{id}/{html|css|image}`, and `DELETE /pairing/self`. Stores
-  uploads under `wp-content/uploads/pageport/{user_id}/{session_id}/` and
+  uploads under `wp-content/uploads/inspect-page/{user_id}/{session_id}/` and
   records sessions + assets in `wp_pp_share_sessions` /
   `wp_pp_share_assets` with normalized enum tables (kinds, statuses,
   asset types).
-- **PagePort pairing tokens** (`PPT1.<base64url(payload)>.<base64url(hmac)>`).
-  Admin mints a token in **Tools → PagePort**; the payload encodes
+- **Inspect Page pairing tokens** (`PPT1.<base64url(payload)>.<base64url(hmac)>`).
+  Admin mints a token in **Tools → Inspect Page**; the payload encodes
   `{ v:1, site, tid, uid }` so the extension never asks the user to
   type a site URL or password. Server signs with
-  `pageport_signing_key` (auto-generated on activation) and verifies on
+  `inspect_page_signing_key` (auto-generated on activation) and verifies on
   every Bearer-authenticated request. Tokens are tracked in
   `wp_pp_pairing_tokens` and revocable from wp-admin or via
   `DELETE /pairing/self`.
 - **Per-token quota** of 30 active sessions
-  (`pageport_max_active_per_token`). Excess uploads return HTTP 429 →
+  (`inspect_page_max_active_per_token`). Excess uploads return HTTP 429 →
   `E_SHARE_QUOTA`; the extension surfaces a "Revoke old links" hint.
-- **24h share-link TTL** (`PAGEPORT_SHARE_TTL`). Expired or revoked
+- **24h share-link TTL** (`INSPECT_PAGE_SHARE_TTL`). Expired or revoked
   sessions return 404 `E_SHARE_EXPIRED` and their files are pruned.
 - **Four export modes** (`spec/21-app/24-export-modes.md`): MD single
   (base64 inline), MD + files (zip), ZIP (with `prompt.md`), and Share
@@ -100,7 +100,7 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- Auth model migrated **from WordPress Application Passwords to PagePort
+- Auth model migrated **from WordPress Application Passwords to Inspect Page
   pairing tokens**. The `siteUrl` / `username` / `appPassword` fields in
   `ShareSettings` are gone; the new shape is
   `{ pairingToken, siteUrl, tokenId, pairedAtIso }`.
@@ -154,9 +154,9 @@ project adheres to [Semantic Versioning](https://semver.org/).
 - **Cross-origin iframe traversal** — same-origin `<iframe>`s have their
   `contentDocument` recursively serialized (HTML + CSS + adopted sheets +
   font bundling) and inlined as `srcdoc="…"` plus a
-  `data-pageport-srcdoc="true"` marker. Cross-origin frames are left
+  `data-inspect-page-srcdoc="true"` marker. Cross-origin frames are left
   with their original `src` and tagged
-  `data-pageport-cross-origin="true"` so consumers can see what was
+  `data-inspect-page-cross-origin="true"` so consumers can see what was
   unreachable. Recursion depth is capped at 3.
 - **Export metadata expansion** — `ExportMeta.counts` now reports
   `fontsInlined`, `fontsBytesInlined`, `fontsFailed`, `iframesTotal`,
@@ -193,7 +193,7 @@ project adheres to [Semantic Versioning](https://semver.org/).
   covering the four v2 features, the full-page panel telemetry, and the
   element-export telemetry parity, with 27 new acceptance items
   (AC-FD-1 … AC-FD-27) and a printable PDF mirror at
-  `/mnt/documents/pageport-qa-checklist.pdf`.
+  `/mnt/documents/inspect-page-qa-checklist.pdf`.
 
 ### Changed
 
@@ -222,8 +222,8 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Package
 
-- `public/pageport.zip`: 171 KB (well under the 1.5 MiB AC-BD-2 budget).
-- `public/pageport.zip.sha256`: refreshed.
+- `public/inspect-page.zip`: 171 KB (well under the 1.5 MiB AC-BD-2 budget).
+- `public/inspect-page.zip.sha256`: refreshed.
 
 ## [1.0.0] — 2026-05-06
 

@@ -7,9 +7,9 @@ Status: LOCKED for v2. Applies to BOTH Full Page export and Pick Element export.
 Success state of every export shows ONE toolbar with four buttons. Each is a direct action, no confirm step.
 
 1. **MD (single file)** — one self-contained `.md`. All images embedded as base64 data URIs. The AI instruction block (§D) is the first section. No external deps. Subject to `MD_FILE_MAX_BYTES` (10 MiB); on overflow, follows the same degradation ladder defined in `05-element-export.md` P7 and emits `W_MD_TRUNCATED`.
-2. **MD + files** — `.md` with relative image references plus the referenced image files, delivered as a small `.zip` (Chrome cannot drop multiple loose files in one trigger). Filename: `pageport-{flow}-{domain}-{ts}-mdfiles.zip`. Inside: `prompt.md`, `images/*.png`.
+2. **MD + files** — `.md` with relative image references plus the referenced image files, delivered as a small `.zip` (Chrome cannot drop multiple loose files in one trigger). Filename: `inspect-page-{flow}-{domain}-{ts}-mdfiles.zip`. Inside: `prompt.md`, `images/*.png`.
 3. **ZIP** — exact bundle today's Full Page produces, plus a top-level `prompt.md` containing the AI instruction block. For Pick Element the ZIP is `index.html` + `style.css` + `images/*` + `prompt.md`.
-4. **Smart Share** (label "Share Links" in the toolbar) — uploads HTML, CSS, JS, and the primary image to the user's WordPress site via the PagePort WP plugin (`25-share-links.md`), gets back four URLs (`index.html`, `style.css`, `script.js`, `preview.png`), and opens the in-panel **Share dialog** (per-row Copy, live 24h countdown, Copy AI prompt + 4 URLs, Revoke now). The clipboard "Copy AI prompt + 4 URLs" payload = the AI instruction block (§D) with all four URLs interpolated.
+4. **Smart Share** (label "Share Links" in the toolbar) — uploads HTML, CSS, JS, and the primary image to the user's WordPress site via the Inspect Page WP plugin (`25-share-links.md`), gets back four URLs (`index.html`, `style.css`, `script.js`, `preview.png`), and opens the in-panel **Share dialog** (per-row Copy, live 24h countdown, Copy AI prompt + 4 URLs, Revoke now). The clipboard "Copy AI prompt + 4 URLs" payload = the AI instruction block (§D) with all four URLs interpolated.
 
 ## B. Per-flow asset mapping
 

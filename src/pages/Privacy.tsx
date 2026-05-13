@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 
 const Privacy = (): JSX.Element => {
   useEffect(() => {
-    document.title = "Privacy — PagePort";
+    document.title = "Privacy — Inspect Page";
     let meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
     if (!meta) {
       meta = document.createElement("meta");
@@ -15,7 +15,7 @@ const Privacy = (): JSX.Element => {
       document.head.appendChild(meta);
     }
     meta.content =
-      "PagePort runs locally. No telemetry, analytics, or remote configuration. Read the full policy.";
+      "Inspect Page runs locally. No telemetry, analytics, or remote configuration. Read the full policy.";
   }, []);
 
   return (
@@ -23,7 +23,7 @@ const Privacy = (): JSX.Element => {
       <main className="mx-auto w-full max-w-[720px] px-5 py-12 sm:py-16 space-y-8">
         <nav className="text-sm">
           <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
-            ← Back to PagePort
+            ← Back to Inspect Page
           </Link>
         </nav>
         <header className="space-y-2">
@@ -33,7 +33,7 @@ const Privacy = (): JSX.Element => {
 
         <section className="space-y-3">
           <p className="text-base text-muted-foreground">
-            PagePort is a Chrome extension that captures the page in the active tab into a
+            Inspect Page is a Chrome extension that captures the page in the active tab into a
             downloadable bundle. This policy describes what data the extension touches and
             what it does (and does not) do with it.
           </p>
@@ -42,7 +42,7 @@ const Privacy = (): JSX.Element => {
         <section className="space-y-3">
           <h2 className="text-2xl font-semibold tracking-tight">Summary</h2>
           <ul className="list-disc pl-5 text-base text-muted-foreground space-y-1">
-            <li>PagePort runs entirely on your machine.</li>
+            <li>Inspect Page runs entirely on your machine.</li>
             <li>We do not operate any server. No telemetry, analytics, or crash reports.</li>
             <li>We do not sell, share, or transfer any data.</li>
             <li>
@@ -90,13 +90,13 @@ const Privacy = (): JSX.Element => {
           <h2 className="text-2xl font-semibold tracking-tight">Smart Share (optional)</h2>
           <p className="text-base text-muted-foreground">
             If you install the companion WordPress plugin and sign in via the popup
-            launched from PagePort's Settings, the Smart Share export uploads the
+            launched from Inspect Page's Settings, the Smart Share export uploads the
             captured HTML, CSS, JS, and screenshot to your WordPress site and returns
             four short public URLs valid for 24 hours. Authentication uses your existing
             WordPress login cookie plus a short-lived REST nonce — no passwords or
             tokens are saved. After 24 hours an hourly cron job on your site deletes
             the files and marks the session expired. You can revoke any session earlier
-            from the share dialog or from <strong>Tools → PagePort Sessions</strong> in
+            from the share dialog or from <strong>Tools → Inspect Page Sessions</strong> in
             WordPress admin. We do not operate the WordPress site — you do.
           </p>
         </section>
@@ -104,7 +104,7 @@ const Privacy = (): JSX.Element => {
         <section className="space-y-3">
           <h2 className="text-2xl font-semibold tracking-tight">Children</h2>
           <p className="text-base text-muted-foreground">
-            PagePort is not directed at children under 13 and does not knowingly collect
+            Inspect Page is not directed at children under 13 and does not knowingly collect
             data from anyone.
           </p>
         </section>

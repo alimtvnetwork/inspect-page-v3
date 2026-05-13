@@ -1,10 +1,10 @@
 <?php
 /**
- * Creates the 5 PagePort tables and seeds enum rows on activation.
+ * Creates the 5 Inspect Page tables and seeds enum rows on activation.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-final class PagePort_Activator {
+final class InspectPage_Activator {
 
     public static function activate() {
         global $wpdb;
@@ -74,24 +74,24 @@ final class PagePort_Activator {
 
         foreach ( $sql as $stmt ) { dbDelta( $stmt ); }
 
-        self::seed_enum( "{$p}share_session_statuses", PagePort_SessionStatus::all() );
-        self::seed_enum( "{$p}share_session_kinds",    PagePort_SessionKind::all() );
-        self::seed_enum( "{$p}share_asset_types",      PagePort_AssetType::all() );
+        self::seed_enum( "{$p}share_session_statuses", InspectPage_SessionStatus::all() );
+        self::seed_enum( "{$p}share_session_kinds",    InspectPage_SessionKind::all() );
+        self::seed_enum( "{$p}share_asset_types",      InspectPage_AssetType::all() );
 
-        if ( false === get_option( 'pageport_max_active_per_user' ) ) {
-            add_option( 'pageport_max_active_per_user', 30, '', 'no' );
+        if ( false === get_option( 'inspect_page_max_active_per_user' ) ) {
+            add_option( 'inspect_page_max_active_per_user', 30, '', 'no' );
         }
-        if ( false === get_option( 'pageport_max_per_hour_per_user' ) ) {
-            add_option( 'pageport_max_per_hour_per_user', 30, '', 'no' );
+        if ( false === get_option( 'inspect_page_max_per_hour_per_user' ) ) {
+            add_option( 'inspect_page_max_per_hour_per_user', 30, '', 'no' );
         }
 
         // Drop legacy pairing_tokens table + signing key option (v2.0/v2.1 → v2.2).
         $wpdb->query( "DROP TABLE IF EXISTS {$p}pairing_tokens" );
-        delete_option( 'pageport_signing_key' );
-        delete_option( 'pageport_max_active_per_token' );
+        delete_option( 'inspect_page_signing_key' );
+        delete_option( 'inspect_page_max_active_per_token' );
 
-        if ( ! wp_next_scheduled( 'pageport_cleanup' ) ) {
-            wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'pageport_cleanup' );
+        if ( ! wp_next_scheduled( 'inspect_page_cleanup' ) ) {
+            wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'inspect_page_cleanup' );
         }
     }
 

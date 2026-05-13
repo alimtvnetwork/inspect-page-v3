@@ -1,4 +1,4 @@
-# PagePort
+# Inspect Page
 
 Export any web page (or one element) as HTML, CSS, JavaScript, and a
 full-page screenshot — bundled into a single artifact your LLM can
@@ -8,8 +8,8 @@ This monorepo ships three things:
 
 | Folder | What |
 |---|---|
-| `extension/` + `extension-src/` | Chrome MV3 extension (v2.2.0). Build with `cd extension && bun run build && bun run package` → outputs `public/pageport.zip`. |
-| `wp-plugin/pageport/` | Companion WordPress plugin (v2.2.0) that powers Smart Share. Distributed as `public/pageport-wp.zip`. |
+| `extension/` + `extension-src/` | Chrome MV3 extension (v2.2.0). Build with `cd extension && bun run build && bun run package` → outputs `public/inspect-page.zip`. |
+| `wp-plugin/inspect-page/` | Companion WordPress plugin (v2.2.0) that powers Smart Share. Distributed as `public/inspect-page-wp.zip`. |
 | `src/` | Lovable landing site (download links, docs, privacy). |
 
 ## Export modes
@@ -25,7 +25,7 @@ This monorepo ships three things:
 ## Smart Share auth (v2.2)
 
 Standard WordPress login cookie + `X-WP-Nonce`. No pairing tokens, no
-Application Passwords. Sign-in opens the hidden `pageport-bridge` admin
+Application Passwords. Sign-in opens the hidden `inspect-page-bridge` admin
 page and the bridge sends a `wp_rest` nonce back to the extension via
 `postMessage`. Per-WP-user quota: 30 active sessions, 60 uploads/hour.
 

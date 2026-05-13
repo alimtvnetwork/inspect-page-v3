@@ -7,9 +7,9 @@ PR that bumps `manifest.json` version.
 - [ ] `manifest.json` version bumped (semver) and matches `package.json`.
 - [ ] `bun run lint` and `bunx vitest run` both exit 0.
 - [ ] `bun run build && bun run package` produced a fresh
-      `public/pageport.zip` ≤ 1.5 MiB.
+      `public/inspect-page.zip` ≤ 1.5 MiB.
 - [ ] `wp-plugin/scripts/package.sh` produced a fresh
-      `public/pageport-wp.zip` (only if WP plugin changed).
+      `public/inspect-page-wp.zip` (only if WP plugin changed).
 - [ ] Loaded the rebuilt unpacked folder in `chrome://extensions` with
       zero warnings.
 
