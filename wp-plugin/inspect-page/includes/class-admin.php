@@ -509,6 +509,14 @@ final class InspectPage_Admin {
             $portal_endpoint = esc_url( admin_url( 'admin-post.php?action=inspect_page_portal' ) );
             echo '<p style="margin-top:12px"><a class="button" href="' . $portal_endpoint . '">' . esc_html__( 'Manage subscription', 'inspect-page' ) . '</a></p>';
         }
+
+        // Marketing-page hint (admins only): show the pricing shortcode.
+        if ( current_user_can( 'manage_options' ) ) {
+            echo '<h3>' . esc_html__( 'Public pricing page', 'inspect-page' ) . '</h3>';
+            echo '<p>' . wp_kses_post( __( 'Drop this shortcode on any page to render a Free vs Pro comparison with a one-click Stripe Checkout button:', 'inspect-page' ) ) . '</p>';
+            echo '<p><code style="user-select:all;font-size:13px;background:#f6f7f7;padding:6px 10px;border-radius:4px;">[inspect_page_pricing]</code></p>';
+            echo '<p class="description">' . wp_kses_post( __( 'There is also <code>[inspect_page_account]</code> for a logged-in "My Inspect Page" panel (license status, recent shares, revoke buttons).', 'inspect-page' ) ) . '</p>';
+        }
     }
 
     /** Saves Stripe credentials posted from the Billing section. */
