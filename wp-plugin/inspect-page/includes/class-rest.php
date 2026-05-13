@@ -71,7 +71,15 @@ final class InspectPage_REST {
 
         // ---- Lifetime free quota / license gate ----
         $can = InspectPage_License::can_share( $user_id );
-        if ( is_wp_error( $can ) ) { return $can; }
+        if ( is_wp_error( $can ) ) {
+            /**
+             * Fires when a Smart Share upload is blocked by the lifetime free
+             * quota. Listeners (e.g. InspectPage_Notify) may send the user an
+             * upgrade email. Throttling is the listener's responsibility.
+             */
+            do_action( 'inspect_page_quota_blocked', $user_id );
+            return $can;
+        }
 
         // ---- Quota: active + hourly ----
         $max_active = (int) get_option( 'inspect_page_max_active_per_user', 30 );
