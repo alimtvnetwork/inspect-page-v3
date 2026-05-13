@@ -5,6 +5,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { COPY } from "@shared/copy";
+import { format } from "../format";
 import { INSPECT_PAGE_DOCS_URL } from "@shared/constants";
 import { MessageKind } from "@shared/enums";
 import { sendToBackground } from "@shared/messaging";
@@ -81,6 +82,9 @@ export function InspectShell(): JSX.Element {
           <InspectContrast snapshot={state.snapshot} />
           <InspectCssInfo snapshot={state.snapshot} />
           <InspectInspector snapshot={state.snapshot} />
+          <footer className="lpe-inspect-footer">
+            <span>{format(COPY.inspectFooterLabel, { version: "2.3.0" })}</span>
+          </footer>
         </>
       )}
     </div>
