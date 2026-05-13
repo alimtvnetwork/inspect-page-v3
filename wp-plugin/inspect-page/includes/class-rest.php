@@ -298,6 +298,20 @@ final class InspectPage_REST {
         header( 'Cache-Control: public, max-age=300' );
         header( 'Access-Control-Allow-Origin: *' );
         header( 'Access-Control-Allow-Methods: GET, OPTIONS' );
+        // Hardening: prevent the served HTML/CSS/JS from being framed or
+        // re-purposed across origins, and lock its execution surface.
+        header( 'X-Frame-Options: SAMEORIGIN' );
+        header( 'Referrer-Policy: no-referrer' );
+        header( 'Permissions-Policy: interest-cohort=(), browsing-topics=()' );
+        if ( $kind === InspectPage_AssetType::HTML ) {
+            // Static snapshot — no scripts, no inline handlers, no fetch.
+            header(
+                "Content-Security-Policy: default-src 'none'; "
+                . "img-src * data: blob:; style-src 'unsafe-inline' *; "
+                . "font-src * data:; base-uri 'none'; form-action 'none'; "
+                . "frame-ancestors 'self'"
+            );
+        }
         readfile( $row->path );
         exit;
     }
