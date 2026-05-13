@@ -12,6 +12,11 @@
  *   GET /inspect-page/v1/share/{id}/style.css
  *   GET /inspect-page/v1/share/{id}/script.js
  *   GET /inspect-page/v1/share/{id}/preview.png
+ *
+ * Public URLs are HMAC-signed by default:
+ *   GET /inspect-page/v1/share/{id}.{sig}/{slug}
+ * Disable enforcement (legacy unsigned URLs) by setting the option
+ * `inspect_page_require_signed_urls` to `0`.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
