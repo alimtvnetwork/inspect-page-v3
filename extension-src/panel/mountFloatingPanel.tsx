@@ -102,6 +102,18 @@ export function mountFloatingPanel(): void {
     void persistPosition({ minimized: true }).catch(() => undefined);
   };
 
+  const popOut = (): void => {
+    // Open the extension's popup as a detached browser window so the panel
+    // survives page navigations. Falls back silently if the API is missing.
+    try {
+      const url = chrome.runtime?.getURL?.("popup/index.html");
+      if (!url) return;
+      void chrome.windows?.create?.({
+        url, type: "popup", width: 420, height: 720, focused: true,
+      });
+    } catch { /* ignore */ }
+  };
+
   root.render(
     <StrictMode>
       <ExportPanel
@@ -109,6 +121,7 @@ export function mountFloatingPanel(): void {
         activeUrl={location.href}
         onMinimize={minimize}
         onClose={close}
+        onPopOut={popOut}
       />
     </StrictMode>,
   );
