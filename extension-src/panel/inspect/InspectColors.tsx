@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
 import { COPY } from "@shared/copy";
 import { format } from "../format";
 import type { ColorUsage, InspectSnapshot } from "../../inspect/types";
+import type { ColorCategory } from "../../inspect/types";
 
 export interface InspectColorsProps { snapshot: InspectSnapshot }
 
@@ -89,12 +90,89 @@ export function InspectColors({ snapshot }: InspectColorsProps): JSX.Element {
           : <PaletteGrid items={palette} copied={copied} onCopy={onCopy} onLocate={onLocate} />
       )}
       {tab === "categories" && (
-        <div className="lpe-inspect-empty">
-          <span>Categories view arrives in the next phase (A5b).</span>
-        </div>
+        <CategoriesView
+          colors={snapshot.colors}
+          copied={copied}
+          onCopy={onCopy}
+          onLocate={onLocate}
+        />
       )}
     </section>
   );
+}
+
+/* -------------------- Categories view (Phase A5b) -------------------- */
+
+const CATEGORY_ORDER: readonly ColorCategory[] = [
+  "background", "text", "border", "fill", "stroke", "gradient", "shadow", "other",
+];
+
+function categoryLabel(c: ColorCategory): string {
+  switch (c) {
+    case "background": return COPY.inspectColorCatBackground;
+    case "text": return COPY.inspectColorCatText;
+    case "border": return COPY.inspectColorCatBorder;
+    case "fill": return COPY.inspectColorCatFill;
+    case "stroke": return COPY.inspectColorCatStroke;
+    case "gradient": return COPY.inspectColorCatGradient;
+    case "shadow": return COPY.inspectColorCatShadow;
+    case "other": return COPY.inspectColorCatOther;
+  }
+}
+
+interface CategoriesViewProps {
+  colors: ColorUsage[];
+  copied: string | null;
+  onCopy: (v: string) => void;
+  onLocate: (v: string) => void;
+}
+
+function CategoriesView(props: CategoriesViewProps): JSX.Element {
+  const { colors, copied, onCopy, onLocate } = props;
+  const groups = useMemo(() => groupByCategory(colors), [colors]);
+
+  if (colors.length === 0) {
+    return <div className="lpe-inspect-empty"><span>{COPY.inspectColorsNone}</span></div>;
+  }
+
+  return (
+    <div className="lpe-color-categories">
+      {CATEGORY_ORDER.flatMap((cat) => {
+        const items = groups.get(cat);
+        if (!items || items.length === 0) return [];
+        return [(
+          <div key={cat} className="lpe-color-category">
+            <header className="lpe-color-category-header">
+              <span className="lpe-color-category-title">{categoryLabel(cat)}</span>
+              <span className="lpe-color-category-count">{items.length}</span>
+            </header>
+            <div className="lpe-color-grid">
+              {items.map((c) => (
+                <ColorRow
+                  key={`${cat}-${c.value}`}
+                  color={c}
+                  copied={copied === c.value}
+                  onCopy={onCopy}
+                  onLocate={onLocate}
+                />
+              ))}
+            </div>
+          </div>
+        )];
+      })}
+    </div>
+  );
+}
+
+function groupByCategory(colors: ColorUsage[]): Map<ColorCategory, ColorUsage[]> {
+  const out = new Map<ColorCategory, ColorUsage[]>();
+  for (const c of colors) {
+    const arr = out.get(c.category) ?? [];
+    arr.push(c);
+    out.set(c.category, arr);
+  }
+  for (const arr of out.values()) arr.sort((a, b) => b.instances - a.instances);
+  return out;
 }
 
 /** Collapse colors to unique hex values, summing instances across categories. */
