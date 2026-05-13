@@ -13,6 +13,7 @@ import type { InspectSnapshot } from "../../inspect/types";
 import { InspectOverview } from "./InspectOverview";
 import { InspectTypography } from "./InspectTypography";
 import { InspectColors } from "./InspectColors";
+import { InspectContrast } from "./InspectContrast";
 
 interface SnapshotState {
   status: "idle" | "loading" | "ready" | "error";
@@ -69,6 +70,7 @@ export function InspectShell(): JSX.Element {
           />
           <InspectTypography snapshot={state.snapshot} />
           <InspectColors snapshot={state.snapshot} />
+          <InspectContrast snapshot={state.snapshot} />
         </>
       )}
     </div>
