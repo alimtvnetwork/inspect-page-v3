@@ -348,11 +348,16 @@
   background: #f6f8fa;
   font: inherit;
   cursor: pointer;
+  color: #1f2328;
 }
 .lpe-btn:hover:not([disabled]) { background: #eaeef2; }
 .lpe-btn-primary { background: #0969da; color: white; border-color: #0969da; }
 .lpe-btn-primary:hover:not([disabled]) { background: #0860c2; }
 .lpe-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+.lpe-root[data-lpe-theme="dark"] .lpe-btn { background: #161b22; border-color: #30363d; color: #e6edf3; }
+.lpe-root[data-lpe-theme="dark"] .lpe-btn:hover:not([disabled]) { background: #1f242c; }
+.lpe-root[data-lpe-theme="dark"] .lpe-btn-primary { background: var(--lpe-accent); color: var(--lpe-accent-fg); border-color: var(--lpe-accent); }
+.lpe-root[data-lpe-theme="dark"] .lpe-btn-primary:hover:not([disabled]) { background: #1f6feb; }
 .lpe-status {
   padding: 8px 10px;
   border: 1px solid #d0d7de;
@@ -392,6 +397,10 @@
   margin-left: 4px;
 }
 .lpe-settings[open] summary::before { transform: rotate(45deg); }
+.lpe-root[data-lpe-theme="dark"] .lpe-settings { border-top-color: #30363d; }
+.lpe-root[data-lpe-theme="dark"] .lpe-settings summary { color: #e6edf3; }
+.lpe-root[data-lpe-theme="dark"] .lpe-settings summary:hover { background: #161b22; }
+.lpe-root[data-lpe-theme="dark"] .lpe-settings summary::before { border-color: #8b949e; }
 .lpe-settings-body {
   display: flex; flex-direction: column; gap: 12px;
   padding: 10px 2px 4px;
@@ -428,6 +437,13 @@
   border-left: 2px solid white; border-bottom: 2px solid white;
   transform: rotate(-45deg) translate(1px, -1px);
 }
+.lpe-root[data-lpe-theme="dark"] .lpe-field > label { color: #8b949e; }
+.lpe-root[data-lpe-theme="dark"] .lpe-field-row { background: #0d1117; border-color: #30363d; }
+.lpe-root[data-lpe-theme="dark"] .lpe-field-row:hover { background: #161b22; border-color: #30363d; }
+.lpe-root[data-lpe-theme="dark"] .lpe-field-row > span { color: #e6edf3; }
+.lpe-root[data-lpe-theme="dark"] .lpe-field-row input[type="checkbox"] { background: #0d1117; border-color: #30363d; }
+.lpe-root[data-lpe-theme="dark"] .lpe-field-row input[type="checkbox"]:hover { border-color: var(--lpe-accent); }
+.lpe-root[data-lpe-theme="dark"] .lpe-field-row input[type="checkbox"]:checked { background: var(--lpe-accent); border-color: var(--lpe-accent); }
 .lpe-input, .lpe-select {
   width: 100%; padding: 7px 10px;
   border: 1px solid #d0d7de; border-radius: 6px;
