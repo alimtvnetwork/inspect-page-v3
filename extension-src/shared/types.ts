@@ -230,6 +230,12 @@ export interface StatusUpdatePayload {
     css: string;
     js: string;
   };
+  /**
+   * Full-page artifacts may be attached to the terminal Success broadcast so
+   * floating panels receive the rich post-export actions before the top-level
+   * background response returns.
+   */
+  fullPageArtifacts?: RunFullPageExportResponse["artifacts"];
 }
 export type StatusUpdateResponse = void;
 

@@ -384,10 +384,9 @@ async function runFullPageExport(
       e instanceof Error ? e.message : String(e),
     );
   }
-  await broadcast({ status: PanelStatus.Success, message: filename });
   logger.info(LogCategory.Download, `bundle saved as ${filename} (id=${downloadId})`);
   const screenshotDataUrl = await blobToDataUrl(screenshot.blob);
-  return {
+  const response: RunFullPageExportResponse = {
     bundleFilename: filename,
     downloadId,
     telemetry: finalMeta.counts,
@@ -399,6 +398,13 @@ async function runFullPageExport(
       meta: finalMeta,
     },
   };
+  await broadcast({
+    status: PanelStatus.Success,
+    message: filename,
+    telemetry: response.telemetry,
+    fullPageArtifacts: response.artifacts,
+  });
+  return response;
   } finally {
     stopKeepAlive();
   }
