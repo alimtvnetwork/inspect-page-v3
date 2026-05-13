@@ -28,6 +28,8 @@ require_once INSPECT_PAGE_DIR . 'includes/class-license.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-billing.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-rest.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-cleanup.php';
+require_once INSPECT_PAGE_DIR . 'includes/class-shortcode.php';
+require_once INSPECT_PAGE_DIR . 'includes/class-notify.php';
 if ( is_admin() ) {
     require_once INSPECT_PAGE_DIR . 'includes/class-admin.php';
 }
@@ -43,6 +45,8 @@ add_action( 'rest_api_init', [ 'InspectPage_Auth', 'register_routes' ] );
 add_action( 'rest_api_init', [ 'InspectPage_Billing', 'register_routes' ] );
 add_filter( 'rest_pre_serve_request', [ 'InspectPage_Auth', 'send_cors_headers' ], 10, 3 );
 add_action( 'inspect_page_cleanup', [ 'InspectPage_Cleanup', 'run' ] );
+InspectPage_Shortcode::register();
+InspectPage_Notify::register();
 
 // Run schema upgrade when the plugin file version is newer than what's stored.
 add_action( 'plugins_loaded', function () {
