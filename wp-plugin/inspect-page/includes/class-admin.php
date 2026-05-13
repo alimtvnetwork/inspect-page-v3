@@ -39,11 +39,12 @@ final class InspectPage_Sessions_Table extends WP_List_Table {
 
     protected function column_default( $item, $col ) {
         if ( $col === 'urls' ) {
-            $base = rest_url( INSPECT_PAGE_REST_NS . '/share/' . $item['session_id'] );
+            $sig  = InspectPage_REST::sign_session_id( $item['session_id'] );
+            $base = rest_url( INSPECT_PAGE_REST_NS . '/share/' . $item['session_id'] . '.' . $sig );
             $out = [];
-            foreach ( [ 'html', 'css', 'js', 'image' ] as $k ) {
-                $u = esc_url( $base . '/' . $k );
-                $out[] = sprintf( '<a href="%s" target="_blank" rel="noopener">%s</a>', $u, esc_html( $k ) );
+            foreach ( [ 'html' => 'index.html', 'css' => 'style.css', 'js' => 'script.js', 'image' => 'preview.png' ] as $label => $slug ) {
+                $u = esc_url( $base . '/' . $slug );
+                $out[] = sprintf( '<a href="%s" target="_blank" rel="noopener">%s</a>', $u, esc_html( $label ) );
             }
             return implode( ' · ', $out );
         }
@@ -278,10 +279,11 @@ final class InspectPage_Admin {
             echo '<th>' . esc_html__( 'Public URLs', 'inspect-page' ) . '</th>';
             echo '</tr></thead><tbody>';
             foreach ( $recent as $r ) {
-                $base = rest_url( INSPECT_PAGE_REST_NS . '/share/' . $r['session_id'] );
+                $sig  = InspectPage_REST::sign_session_id( $r['session_id'] );
+                $base = rest_url( INSPECT_PAGE_REST_NS . '/share/' . $r['session_id'] . '.' . $sig );
                 $links = [];
-                foreach ( [ 'html', 'css', 'js', 'image' ] as $k ) {
-                    $links[] = '<a href="' . esc_url( $base . '/' . $k ) . '" target="_blank" rel="noopener">' . esc_html( $k ) . '</a>';
+                foreach ( [ 'html' => 'index.html', 'css' => 'style.css', 'js' => 'script.js', 'image' => 'preview.png' ] as $label => $slug ) {
+                    $links[] = '<a href="' . esc_url( $base . '/' . $slug ) . '" target="_blank" rel="noopener">' . esc_html( $label ) . '</a>';
                 }
                 echo '<tr>';
                 echo '<td><code>' . esc_html( substr( $r['session_id'], 0, 12 ) ) . '…</code></td>';
