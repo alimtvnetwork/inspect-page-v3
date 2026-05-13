@@ -361,6 +361,23 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         )}
       </header>
 
+      {surface === "popup" && !onboardingDismissed && !shareConfigured(shareSettings ?? { siteUrl: "", userId: 0, displayName: "", email: "", nonce: "", signedInAtIso: "" }) && (
+        <div className="lpe-onboarding" role="status">
+          <div>
+            <strong>{COPY.onboardingTitle}</strong>
+            <span>{COPY.onboardingBody}</span>
+          </div>
+          <div className="lpe-onboarding-actions">
+            <button type="button" className="lpe-btn lpe-btn-primary" onClick={onDismissOnboarding}>
+              {COPY.onboardingSignIn}
+            </button>
+            <button type="button" className="lpe-btn" onClick={onDismissOnboarding}>
+              {COPY.onboardingDismiss}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="lpe-body">
         {disabled ? (
           <div className="lpe-not-available" role="alert">{COPY.notAvailable}</div>
