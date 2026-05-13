@@ -79,7 +79,7 @@ function Row({ label, value, copyLabel, copied, onCopy }: {
     <div className="lpe-detail-row">
       <dt>{label}</dt>
       <dd className="lpe-detail-value" title={value}>{value}</dd>
-      <button type="button" className="lpe-link" onClick={onCopy}>
+      <button type="button" className="lpe-link" onClick={onCopy} aria-label={copyLabel}>
         {copied ? COPY.inspectDetailCopied : copyLabel}
       </button>
     </div>
