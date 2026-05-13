@@ -69,6 +69,10 @@ final class PagePort_REST {
         $p       = $wpdb->prefix . 'pp_';
         $user_id = PagePort_Auth::current_user_id();
 
+        // ---- Lifetime free quota / license gate ----
+        $can = PagePort_License::can_share( $user_id );
+        if ( is_wp_error( $can ) ) { return $can; }
+
         // ---- Quota: active + hourly ----
         $max_active = (int) get_option( 'pageport_max_active_per_user', 30 );
         $max_hour   = (int) get_option( 'pageport_max_per_hour_per_user', 30 );

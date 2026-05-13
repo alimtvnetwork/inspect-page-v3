@@ -98,6 +98,10 @@ export const COPY = {
   shareRevokingMsg: "Revoking…",
   shareCloseBtn: "Close",
   shareExpiredMsg: "Expired",
+  shareQuotaPrefix: "Free shares used:",
+  shareQuotaUnlimited: "Pro plan — unlimited shares",
+  shareUpgradeHint: "Upgrade to Pro — coming soon",
+  shareQuotaFreeReachedMsg: "Free quota reached. Upgrade to PagePort Pro to keep sharing (coming soon).",
 } as const;
 
 export type CopyKey = keyof typeof COPY;

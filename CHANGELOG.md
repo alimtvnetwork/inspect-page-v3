@@ -5,6 +5,26 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [WP plugin 2.2.1] — 2026-05-12
+## [WP plugin 2.3.0] — 2026-05-13
+
+### Added — Lifetime free-share quota + license gate
+
+- New `PagePort_License` helper: every Smart Share upload now passes
+  through `can_share($user_id)`. Free users get a **lifetime quota of
+  5** Smart Share sessions (option `pageport_free_lifetime_limit`,
+  default 5). When the limit is hit the REST `POST /sessions` returns
+  `402 E_SHARE_QUOTA_FREE` instead of the asset bundle.
+- License flag stored as user meta `pageport_license` (`active` =
+  unlimited). Until billing is wired (planned), site admins grant the
+  license manually via Users → Edit user → custom meta. Stripe / Paddle
+  hookup will land in a follow-up release.
+- `GET /auth-status` quota payload extended with `lifetime_used`,
+  `free_limit`, `has_license`.
+- Extension: Settings → Smart Share now shows
+  **"Free shares used: X / 5"** (or **"Pro plan — unlimited shares"**
+  when licensed). On `402` Smart Share fails fast with a friendly
+  "Upgrade to Pro — coming soon" message.
+- Plugin version bumped to `2.3.0`; `pageport-wp.zip` repackaged.
 
 ### Changed
 

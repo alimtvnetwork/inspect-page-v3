@@ -472,7 +472,11 @@ async function checkShareAuth(): Promise<CheckShareAuthResponse> {
   let json: {
     logged_in: boolean; user_id?: number; display_name?: string;
     email?: string; nonce?: string;
-    quota?: { active: number; max_active: number; hourly_used: number; max_hourly: number };
+    quota?: {
+      active: number; max_active: number;
+      hourly_used: number; max_hourly: number;
+      lifetime_used?: number; free_limit?: number; has_license?: boolean;
+    };
   };
   try { json = await res.json(); } catch { return empty; }
   if (!json.logged_in) {
@@ -497,6 +501,9 @@ async function checkShareAuth(): Promise<CheckShareAuthResponse> {
       maxActive: json.quota.max_active,
       hourlyUsed: json.quota.hourly_used,
       maxHourly: json.quota.max_hourly,
+      lifetimeUsed: json.quota.lifetime_used ?? 0,
+      freeLimit: json.quota.free_limit ?? 5,
+      hasLicense: json.quota.has_license ?? false,
     } : undefined,
   };
 }

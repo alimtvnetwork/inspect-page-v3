@@ -68,6 +68,15 @@ export async function createShareSession(
       "WordPress session expired — sign in again from Settings → Smart Share.",
     );
   }
+  if (res.status === 402) {
+    let detail = "";
+    try { detail = (await res.text()).slice(0, 300); } catch { /* ignore */ }
+    throw new MessageError(
+      ErrorCode.E_SHARE_QUOTA_FREE,
+      "Free quota reached. Upgrade to PagePort Pro to keep sharing.",
+      detail,
+    );
+  }
   if (res.status === 429) {
     throw new MessageError(
       ErrorCode.E_SHARE_QUOTA,

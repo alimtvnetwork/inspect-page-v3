@@ -44,5 +44,6 @@ final class PagePort_ErrorCode {
     const E_SHARE_BAD_INPUT  = 'E_SHARE_BAD_INPUT';
     const E_SHARE_STORAGE    = 'E_SHARE_STORAGE';
     const E_SHARE_QUOTA      = 'E_SHARE_QUOTA';
+    const E_SHARE_QUOTA_FREE = 'E_SHARE_QUOTA_FREE';
     const E_SHARE_BAD_TOKEN  = 'E_SHARE_BAD_TOKEN';
 }
