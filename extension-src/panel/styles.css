@@ -741,3 +741,45 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
 }
+
+/* ---------- Distance guides (Phase A8b) ---------- */
+.lpe-inspector-row.is-anchor {
+  background: color-mix(in srgb, var(--lpe-accent) 10%, transparent);
+}
+.lpe-inspector-anchor-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 6px 10px; border: 1px dashed var(--lpe-border); border-radius: 6px;
+  background: var(--lpe-surface);
+  font-size: 11px; color: var(--lpe-fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.lpe-inspector-anchor-banner > span {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.lpe-inspector-dist {
+  margin-top: 2px; padding: 6px 8px; border-radius: 4px;
+  background: var(--lpe-bg); border: 1px solid var(--lpe-border);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.lpe-inspector-dist-title {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--lpe-muted); font-weight: 600;
+}
+.lpe-inspector-dist-grid {
+  margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px;
+}
+.lpe-inspector-dist-row {
+  display: grid; grid-template-columns: 1fr auto; gap: 8px;
+  font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.lpe-inspector-dist-row dt { margin: 0; color: var(--lpe-muted); }
+.lpe-inspector-dist-row dd { margin: 0; color: var(--lpe-fg); font-variant-numeric: tabular-nums; }
+.lpe-inspector-dist-chip {
+  align-self: flex-start; font-size: 10px;
+  padding: 1px 6px; border-radius: 999px;
+  background: color-mix(in srgb, var(--lpe-accent) 15%, transparent);
+  color: var(--lpe-accent); border: 1px solid var(--lpe-border);
+}
+.lpe-inspector-dist-self {
+  margin: 0; font-size: 11px; color: var(--lpe-muted); font-style: italic;
+}

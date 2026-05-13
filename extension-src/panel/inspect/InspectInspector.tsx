@@ -13,6 +13,7 @@ import { useMemo, useState } from "react";
 import { COPY } from "@shared/copy";
 import { format } from "../format";
 import type { ComputedSample, InspectSnapshot } from "../../inspect/types";
+import { distanceBetween } from "../../inspect/distance";
 
 const INITIAL_VISIBLE = 8;
 const STYLE_ORDER: Array<keyof ComputedSample["styles"]> = [
@@ -29,8 +30,10 @@ export function InspectInspector({ snapshot }: InspectInspectorProps): JSX.Eleme
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [showAll, setShowAll] = useState(false);
   const [copied, setCopied] = useState<number | null>(null);
+  const [anchorIdx, setAnchorIdx] = useState<number | null>(null);
 
   const visible = showAll ? samples : samples.slice(0, INITIAL_VISIBLE);
+  const anchor = anchorIdx !== null ? samples[anchorIdx] ?? null : null;
 
   const toggle = (i: number): void => {
     setExpanded((prev) => {
@@ -57,15 +60,26 @@ export function InspectInspector({ snapshot }: InspectInspectorProps): JSX.Eleme
       ) : (
         <>
           <p className="lpe-inspector-hint">{COPY.inspectInspectorHint}</p>
+          {anchor && (
+            <div className="lpe-inspector-anchor-banner">
+              <span title={anchor.selector}>
+                {format(COPY.inspectInspectorAnchorBanner, { selector: anchor.selector })}
+              </span>
+              <button type="button" className="lpe-link" onClick={() => setAnchorIdx(null)}>
+                {COPY.inspectInspectorClearAnchor}
+              </button>
+            </div>
+          )}
           <ul className="lpe-inspector-list">
             {visible.map((s, i) => {
               const isOpen = expanded.has(i);
               const dims = format(COPY.inspectInspectorRect, { w: s.rect.w, h: s.rect.h });
+              const isAnchor = anchorIdx === i;
               return (
                 <li key={`${s.selector}-${i}`} className="lpe-inspector-item">
                   <button
                     type="button"
-                    className="lpe-inspector-row"
+                    className={`lpe-inspector-row${isAnchor ? " is-anchor" : ""}`}
                     aria-expanded={isOpen}
                     onClick={() => toggle(i)}
                   >
@@ -88,12 +102,25 @@ export function InspectInspector({ snapshot }: InspectInspectorProps): JSX.Eleme
                           );
                         })}
                       </dl>
+                      {anchor && !isAnchor && (
+                        <DistancePanel anchor={anchor.rect} target={s.rect} />
+                      )}
+                      {anchor && isAnchor && (
+                        <p className="lpe-inspector-dist-self">{COPY.inspectInspectorDistSelf}</p>
+                      )}
                       <button
                         type="button"
                         className="lpe-link"
                         onClick={() => void copySelector(i, s.selector)}
                       >
                         {copied === i ? COPY.inspectInspectorCopied : COPY.inspectInspectorCopySelector}
+                      </button>
+                      <button
+                        type="button"
+                        className="lpe-link"
+                        onClick={() => setAnchorIdx(isAnchor ? null : i)}
+                      >
+                        {isAnchor ? COPY.inspectInspectorClearAnchor : COPY.inspectInspectorAnchor}
                       </button>
                     </div>
                   )}
@@ -113,6 +140,37 @@ export function InspectInspector({ snapshot }: InspectInspectorProps): JSX.Eleme
         </>
       )}
     </section>
+  );
+}
+
+interface DistancePanelProps { anchor: { x: number; y: number; w: number; h: number }; target: { x: number; y: number; w: number; h: number } }
+
+function DistancePanel({ anchor, target }: DistancePanelProps): JSX.Element {
+  const d = distanceBetween(anchor, target);
+  return (
+    <div className="lpe-inspector-dist" role="group" aria-label={COPY.inspectInspectorDistTitle}>
+      <div className="lpe-inspector-dist-title">{COPY.inspectInspectorDistTitle}</div>
+      <dl className="lpe-inspector-dist-grid">
+        <DistRow label={COPY.inspectInspectorDistLeft} value={d.left} />
+        <DistRow label={COPY.inspectInspectorDistRight} value={d.right} />
+        <DistRow label={COPY.inspectInspectorDistTop} value={d.top} />
+        <DistRow label={COPY.inspectInspectorDistBottom} value={d.bottom} />
+        <DistRow label={COPY.inspectInspectorDistHGap} value={d.hGap} />
+        <DistRow label={COPY.inspectInspectorDistVGap} value={d.vGap} />
+      </dl>
+      {d.overlap && (
+        <span className="lpe-inspector-dist-chip">{COPY.inspectInspectorDistOverlap}</span>
+      )}
+    </div>
+  );
+}
+
+function DistRow({ label, value }: { label: string; value: number }): JSX.Element {
+  return (
+    <div className="lpe-inspector-dist-row">
+      <dt>{label}</dt>
+      <dd>{value}px</dd>
+    </div>
   );
 }
 
