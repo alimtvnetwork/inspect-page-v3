@@ -1,6 +1,6 @@
 <?php
 /**
- * Drops PagePort tables and removes uploads/pageport when the plugin is
+ * Drops Inspect Page tables and removes uploads/inspect-page when the plugin is
  * deleted via wp-admin.
  */
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) { exit; }
@@ -11,11 +11,11 @@ foreach ( [ 'share_assets', 'share_sessions', 'share_session_statuses', 'share_s
     $wpdb->query( "DROP TABLE IF EXISTS {$p}{$t}" );
 }
 
-$ts = wp_next_scheduled( 'pageport_cleanup' );
-if ( $ts ) { wp_unschedule_event( $ts, 'pageport_cleanup' ); }
+$ts = wp_next_scheduled( 'inspect_page_cleanup' );
+if ( $ts ) { wp_unschedule_event( $ts, 'inspect_page_cleanup' ); }
 
 $up = wp_upload_dir();
-$dir = trailingslashit( $up['basedir'] ) . 'pageport';
+$dir = trailingslashit( $up['basedir'] ) . 'inspect-page';
 if ( is_dir( $dir ) ) {
     require_once ABSPATH . 'wp-admin/includes/file.php';
     WP_Filesystem();

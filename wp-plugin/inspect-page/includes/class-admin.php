@@ -1,6 +1,6 @@
 <?php
 /**
- * wp-admin → Tools → PagePort Sessions screen.
+ * wp-admin → Tools → Inspect Page Sessions screen.
  * Lists current user's sessions (admins see everyone) and exposes a revoke action.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
@@ -9,7 +9,7 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
     require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
 }
 
-final class PagePort_Sessions_Table extends WP_List_Table {
+final class InspectPage_Sessions_Table extends WP_List_Table {
 
     public function __construct() {
         parent::__construct( [
@@ -22,14 +22,14 @@ final class PagePort_Sessions_Table extends WP_List_Table {
     public function get_columns() {
         return [
             'cb'         => '<input type="checkbox" />',
-            'session_id' => __( 'Session', 'pageport' ),
-            'user'       => __( 'User', 'pageport' ),
-            'kind'       => __( 'Kind', 'pageport' ),
-            'status'     => __( 'Status', 'pageport' ),
-            'source_url' => __( 'Source URL', 'pageport' ),
-            'created_at' => __( 'Created (UTC)', 'pageport' ),
-            'expires_at' => __( 'Expires (UTC)', 'pageport' ),
-            'urls'       => __( 'Public URLs', 'pageport' ),
+            'session_id' => __( 'Session', 'inspect-page' ),
+            'user'       => __( 'User', 'inspect-page' ),
+            'kind'       => __( 'Kind', 'inspect-page' ),
+            'status'     => __( 'Status', 'inspect-page' ),
+            'source_url' => __( 'Source URL', 'inspect-page' ),
+            'created_at' => __( 'Created (UTC)', 'inspect-page' ),
+            'expires_at' => __( 'Expires (UTC)', 'inspect-page' ),
+            'urls'       => __( 'Public URLs', 'inspect-page' ),
         ];
     }
 
@@ -39,7 +39,7 @@ final class PagePort_Sessions_Table extends WP_List_Table {
 
     protected function column_default( $item, $col ) {
         if ( $col === 'urls' ) {
-            $base = rest_url( PAGEPORT_REST_NS . '/share/' . $item['session_id'] );
+            $base = rest_url( INSPECT_PAGE_REST_NS . '/share/' . $item['session_id'] );
             $out = [];
             foreach ( [ 'html', 'css', 'js', 'image' ] as $k ) {
                 $u = esc_url( $base . '/' . $k );
@@ -53,7 +53,7 @@ final class PagePort_Sessions_Table extends WP_List_Table {
             $ts  = strtotime( $exp . ' UTC' );
             $now = time();
             if ( $ts <= $now ) {
-                return esc_html( $exp ) . ' <span style="color:#a04100">(' . esc_html__( 'expired', 'pageport' ) . ')</span>';
+                return esc_html( $exp ) . ' <span style="color:#a04100">(' . esc_html__( 'expired', 'inspect-page' ) . ')</span>';
             }
             $delta = $ts - $now;
             $h = (int) floor( $delta / 3600 );
@@ -68,23 +68,23 @@ final class PagePort_Sessions_Table extends WP_List_Table {
         $sid = esc_html( $item['session_id'] );
         $revoke_url = wp_nonce_url(
             add_query_arg( [
-                'page'       => 'pageport-sessions',
+                'page'       => 'inspect-page-sessions',
                 'action'     => 'revoke',
                 'session_id' => $item['session_id'],
             ], admin_url( 'tools.php' ) ),
-            'pageport_revoke_' . $item['session_id']
+            'inspect_page_revoke_' . $item['session_id']
         );
         $actions = [
             'revoke' => sprintf(
                 '<a href="%s" onclick="return confirm(\'Revoke this session?\')">%s</a>',
-                esc_url( $revoke_url ), esc_html__( 'Revoke', 'pageport' )
+                esc_url( $revoke_url ), esc_html__( 'Revoke', 'inspect-page' )
             ),
         ];
         return '<code>' . $sid . '</code>' . $this->row_actions( $actions );
     }
 
     protected function get_bulk_actions() {
-        return [ 'revoke' => __( 'Revoke', 'pageport' ) ];
+        return [ 'revoke' => __( 'Revoke', 'inspect-page' ) ];
     }
 
     public function prepare_items() {
@@ -131,11 +131,11 @@ final class PagePort_Sessions_Table extends WP_List_Table {
     }
 
     public function no_items() {
-        esc_html_e( 'No share sessions yet — capture a page from the PagePort Chrome extension to create one.', 'pageport' );
+        esc_html_e( 'No share sessions yet — capture a page from the Inspect Page Chrome extension to create one.', 'inspect-page' );
     }
 }
 
-final class PagePort_Admin {
+final class InspectPage_Admin {
 
     public static function init() {
         add_action( 'admin_menu',  [ __CLASS__, 'menu' ] );
@@ -144,17 +144,17 @@ final class PagePort_Admin {
 
     public static function menu() {
         add_management_page(
-            __( 'PagePort Sessions', 'pageport' ),
-            __( 'PagePort Sessions', 'pageport' ),
+            __( 'Inspect Page Sessions', 'inspect-page' ),
+            __( 'Inspect Page Sessions', 'inspect-page' ),
             'upload_files',
-            'pageport-sessions',
+            'inspect-page-sessions',
             [ __CLASS__, 'render' ]
         );
         add_management_page(
-            __( 'PagePort', 'pageport' ),
-            __( 'PagePort', 'pageport' ),
+            __( 'Inspect Page', 'inspect-page' ),
+            __( 'Inspect Page', 'inspect-page' ),
             'upload_files',
-            'pageport',
+            'inspect-page',
             [ __CLASS__, 'render_settings' ]
         );
         // Hidden bridge page used by the extension's login popup. After WP
@@ -162,10 +162,10 @@ final class PagePort_Admin {
         // back to the opener with a fresh wp_rest nonce, then closes.
         add_submenu_page(
             null, // hidden from menu
-            __( 'PagePort Bridge', 'pageport' ),
-            __( 'PagePort Bridge', 'pageport' ),
+            __( 'Inspect Page Bridge', 'inspect-page' ),
+            __( 'Inspect Page Bridge', 'inspect-page' ),
             'upload_files',
-            'pageport-bridge',
+            'inspect-page-bridge',
             [ __CLASS__, 'render_bridge' ]
         );
     }
@@ -180,15 +180,15 @@ final class PagePort_Admin {
         $user = wp_get_current_user();
         $uid  = (int) $user->ID;
 
-        $max_active = (int) get_option( 'pageport_max_active_per_user', 30 );
-        $max_hour   = (int) get_option( 'pageport_max_per_hour_per_user', 30 );
-        $ttl_hours  = (int) ( defined( 'PAGEPORT_SHARE_TTL' ) ? PAGEPORT_SHARE_TTL / HOUR_IN_SECONDS : 24 );
+        $max_active = (int) get_option( 'inspect_page_max_active_per_user', 30 );
+        $max_hour   = (int) get_option( 'inspect_page_max_per_hour_per_user', 30 );
+        $ttl_hours  = (int) ( defined( 'INSPECT_PAGE_SHARE_TTL' ) ? INSPECT_PAGE_SHARE_TTL / HOUR_IN_SECONDS : 24 );
         $nextend    = is_plugin_active( 'nextend-facebook-connect/nextend-facebook-connect.php' )
             || class_exists( 'NextendSocialLogin' );
 
         $active_status_id = (int) $wpdb->get_var( $wpdb->prepare(
             "SELECT id FROM {$p}share_session_statuses WHERE name = %s",
-            PagePort_SessionStatus::ACTIVE
+            InspectPage_SessionStatus::ACTIVE
         ) );
         $active_count = (int) $wpdb->get_var( $wpdb->prepare(
             "SELECT COUNT(*) FROM {$p}share_sessions WHERE user_id = %d AND status_id = %d AND expires_at > UTC_TIMESTAMP()",
@@ -212,72 +212,72 @@ final class PagePort_Admin {
         ), ARRAY_A );
 
         $site_url     = untrailingslashit( home_url( '/' ) );
-        $bridge_url   = admin_url( 'admin.php?page=pageport-bridge' );
-        $sessions_url = admin_url( 'tools.php?page=pageport-sessions' );
-        $rest_health  = esc_url_raw( rest_url( PAGEPORT_REST_NS . '/auth-status' ) );
+        $bridge_url   = admin_url( 'admin.php?page=inspect-page-bridge' );
+        $sessions_url = admin_url( 'tools.php?page=inspect-page-sessions' );
+        $rest_health  = esc_url_raw( rest_url( INSPECT_PAGE_REST_NS . '/auth-status' ) );
         $permalinks_ok = (bool) get_option( 'permalink_structure' );
 
-        echo '<div class="wrap"><h1>' . esc_html__( 'PagePort', 'pageport' ) . '</h1>';
-        echo '<p style="max-width:780px">' . esc_html__( 'PagePort Smart Share is the WordPress backend for the PagePort Chrome extension. It hosts captured HTML / CSS / JS / preview bundles for 24 hours and exposes them via 4 public URLs you can paste into ChatGPT, Claude, Cursor, or Lovable.', 'pageport' ) . '</p>';
+        echo '<div class="wrap"><h1>' . esc_html__( 'Inspect Page', 'inspect-page' ) . '</h1>';
+        echo '<p style="max-width:780px">' . esc_html__( 'Inspect Page Smart Share is the WordPress backend for the Inspect Page Chrome extension. It hosts captured HTML / CSS / JS / preview bundles for 24 hours and exposes them via 4 public URLs you can paste into ChatGPT, Claude, Cursor, or Lovable.', 'inspect-page' ) . '</p>';
 
         if ( ! $permalinks_ok ) {
-            echo '<div class="notice notice-error"><p><strong>' . esc_html__( 'Pretty permalinks are disabled.', 'pageport' ) . '</strong> ';
-            echo esc_html__( 'The REST API needs them. Go to Settings → Permalinks and pick anything other than “Plain”.', 'pageport' );
-            echo ' <a href="' . esc_url( admin_url( 'options-permalink.php' ) ) . '">' . esc_html__( 'Open Permalinks', 'pageport' ) . '</a></p></div>';
+            echo '<div class="notice notice-error"><p><strong>' . esc_html__( 'Pretty permalinks are disabled.', 'inspect-page' ) . '</strong> ';
+            echo esc_html__( 'The REST API needs them. Go to Settings → Permalinks and pick anything other than “Plain”.', 'inspect-page' );
+            echo ' <a href="' . esc_url( admin_url( 'options-permalink.php' ) ) . '">' . esc_html__( 'Open Permalinks', 'inspect-page' ) . '</a></p></div>';
         }
 
         // ── Account ──────────────────────────────────────────────
-        echo '<h2>' . esc_html__( 'Your account', 'pageport' ) . '</h2>';
+        echo '<h2>' . esc_html__( 'Your account', 'inspect-page' ) . '</h2>';
         echo '<table class="widefat striped" style="max-width:780px"><tbody>';
-        echo '<tr><th style="width:180px">' . esc_html__( 'Signed in as', 'pageport' ) . '</th><td><strong>' . esc_html( $user->display_name ) . '</strong> <span class="description">(' . esc_html( $user->user_login ) . ')</span></td></tr>';
-        echo '<tr><th>' . esc_html__( 'Email', 'pageport' ) . '</th><td>' . esc_html( $user->user_email ) . '</td></tr>';
-        echo '<tr><th>' . esc_html__( 'WP user ID', 'pageport' ) . '</th><td><code>' . esc_html( (string) $uid ) . '</code></td></tr>';
-        echo '<tr><th>' . esc_html__( 'Sign out', 'pageport' ) . '</th><td><a class="button" href="' . esc_url( wp_logout_url( admin_url() ) ) . '">' . esc_html__( 'Sign out of WordPress', 'pageport' ) . '</a></td></tr>';
+        echo '<tr><th style="width:180px">' . esc_html__( 'Signed in as', 'inspect-page' ) . '</th><td><strong>' . esc_html( $user->display_name ) . '</strong> <span class="description">(' . esc_html( $user->user_login ) . ')</span></td></tr>';
+        echo '<tr><th>' . esc_html__( 'Email', 'inspect-page' ) . '</th><td>' . esc_html( $user->user_email ) . '</td></tr>';
+        echo '<tr><th>' . esc_html__( 'WP user ID', 'inspect-page' ) . '</th><td><code>' . esc_html( (string) $uid ) . '</code></td></tr>';
+        echo '<tr><th>' . esc_html__( 'Sign out', 'inspect-page' ) . '</th><td><a class="button" href="' . esc_url( wp_logout_url( admin_url() ) ) . '">' . esc_html__( 'Sign out of WordPress', 'inspect-page' ) . '</a></td></tr>';
         echo '</tbody></table>';
 
         // ── Pair extension ──────────────────────────────────────
-        echo '<h2>' . esc_html__( 'Pair the Chrome extension', 'pageport' ) . '</h2>';
+        echo '<h2>' . esc_html__( 'Pair the Chrome extension', 'inspect-page' ) . '</h2>';
         echo '<ol style="max-width:780px">';
-        echo '<li>' . esc_html__( 'Install the PagePort Chrome extension (pageport.zip).', 'pageport' ) . '</li>';
+        echo '<li>' . esc_html__( 'Install the Inspect Page Chrome extension (inspect-page.zip).', 'inspect-page' ) . '</li>';
         echo '<li>' . sprintf(
             /* translators: %s = site URL */
-            esc_html__( 'In the extension Settings → Smart Share, the backend is hard-coded to %s.', 'pageport' ),
+            esc_html__( 'In the extension Settings → Smart Share, the backend is hard-coded to %s.', 'inspect-page' ),
             '<code>' . esc_html( $site_url ) . '</code>'
         ) . '</li>';
-        echo '<li>' . esc_html__( 'Click “Sign in” in the extension. A WordPress login window will open and pair automatically.', 'pageport' ) . '</li>';
+        echo '<li>' . esc_html__( 'Click “Sign in” in the extension. A WordPress login window will open and pair automatically.', 'inspect-page' ) . '</li>';
         echo '</ol>';
-        echo '<p><a class="button button-primary" href="' . esc_url( $bridge_url ) . '" target="_blank" rel="noopener">' . esc_html__( 'Test pairing bridge', 'pageport' ) . '</a> ';
-        echo '<a class="button" href="' . esc_url( $rest_health ) . '" target="_blank" rel="noopener">' . esc_html__( 'Check REST endpoint', 'pageport' ) . '</a></p>';
+        echo '<p><a class="button button-primary" href="' . esc_url( $bridge_url ) . '" target="_blank" rel="noopener">' . esc_html__( 'Test pairing bridge', 'inspect-page' ) . '</a> ';
+        echo '<a class="button" href="' . esc_url( $rest_health ) . '" target="_blank" rel="noopener">' . esc_html__( 'Check REST endpoint', 'inspect-page' ) . '</a></p>';
 
         // ── Quota ───────────────────────────────────────────────
-        echo '<h2>' . esc_html__( 'Your usage', 'pageport' ) . '</h2>';
+        echo '<h2>' . esc_html__( 'Your usage', 'inspect-page' ) . '</h2>';
         echo '<table class="widefat striped" style="max-width:780px"><thead><tr>';
-        echo '<th>' . esc_html__( 'Metric', 'pageport' ) . '</th><th>' . esc_html__( 'Current', 'pageport' ) . '</th><th>' . esc_html__( 'Limit', 'pageport' ) . '</th>';
+        echo '<th>' . esc_html__( 'Metric', 'inspect-page' ) . '</th><th>' . esc_html__( 'Current', 'inspect-page' ) . '</th><th>' . esc_html__( 'Limit', 'inspect-page' ) . '</th>';
         echo '</tr></thead><tbody>';
-        echo '<tr><td>' . esc_html__( 'Active share sessions', 'pageport' ) . '</td><td>' . (int) $active_count . '</td><td>' . (int) $max_active . '</td></tr>';
-        echo '<tr><td>' . esc_html__( 'Uploads in the last hour', 'pageport' ) . '</td><td>' . (int) $hour_count . '</td><td>' . (int) $max_hour . '</td></tr>';
-        echo '<tr><td>' . esc_html__( 'Share lifetime', 'pageport' ) . '</td><td>' . (int) $ttl_hours . 'h</td><td>' . (int) $ttl_hours . 'h</td></tr>';
+        echo '<tr><td>' . esc_html__( 'Active share sessions', 'inspect-page' ) . '</td><td>' . (int) $active_count . '</td><td>' . (int) $max_active . '</td></tr>';
+        echo '<tr><td>' . esc_html__( 'Uploads in the last hour', 'inspect-page' ) . '</td><td>' . (int) $hour_count . '</td><td>' . (int) $max_hour . '</td></tr>';
+        echo '<tr><td>' . esc_html__( 'Share lifetime', 'inspect-page' ) . '</td><td>' . (int) $ttl_hours . 'h</td><td>' . (int) $ttl_hours . 'h</td></tr>';
         echo '</tbody></table>';
         echo '<p class="description">' . sprintf(
-            esc_html__( 'Limits are stored in wp_options keys %1$s and %2$s.', 'pageport' ),
-            '<code>pageport_max_active_per_user</code>',
-            '<code>pageport_max_per_hour_per_user</code>'
+            esc_html__( 'Limits are stored in wp_options keys %1$s and %2$s.', 'inspect-page' ),
+            '<code>inspect_page_max_active_per_user</code>',
+            '<code>inspect_page_max_per_hour_per_user</code>'
         ) . '</p>';
 
         // ── Recent sessions ─────────────────────────────────────
-        echo '<h2>' . esc_html__( 'Recent share sessions', 'pageport' ) . '</h2>';
+        echo '<h2>' . esc_html__( 'Recent share sessions', 'inspect-page' ) . '</h2>';
         if ( ! $recent ) {
-            echo '<p>' . esc_html__( 'No share sessions yet — capture a page from the PagePort Chrome extension to create one.', 'pageport' ) . '</p>';
+            echo '<p>' . esc_html__( 'No share sessions yet — capture a page from the Inspect Page Chrome extension to create one.', 'inspect-page' ) . '</p>';
         } else {
             echo '<table class="widefat striped"><thead><tr>';
-            echo '<th>' . esc_html__( 'Session', 'pageport' ) . '</th>';
-            echo '<th>' . esc_html__( 'Kind', 'pageport' ) . '</th>';
-            echo '<th>' . esc_html__( 'Status', 'pageport' ) . '</th>';
-            echo '<th>' . esc_html__( 'Expires (UTC)', 'pageport' ) . '</th>';
-            echo '<th>' . esc_html__( 'Public URLs', 'pageport' ) . '</th>';
+            echo '<th>' . esc_html__( 'Session', 'inspect-page' ) . '</th>';
+            echo '<th>' . esc_html__( 'Kind', 'inspect-page' ) . '</th>';
+            echo '<th>' . esc_html__( 'Status', 'inspect-page' ) . '</th>';
+            echo '<th>' . esc_html__( 'Expires (UTC)', 'inspect-page' ) . '</th>';
+            echo '<th>' . esc_html__( 'Public URLs', 'inspect-page' ) . '</th>';
             echo '</tr></thead><tbody>';
             foreach ( $recent as $r ) {
-                $base = rest_url( PAGEPORT_REST_NS . '/share/' . $r['session_id'] );
+                $base = rest_url( INSPECT_PAGE_REST_NS . '/share/' . $r['session_id'] );
                 $links = [];
                 foreach ( [ 'html', 'css', 'js', 'image' ] as $k ) {
                     $links[] = '<a href="' . esc_url( $base . '/' . $k ) . '" target="_blank" rel="noopener">' . esc_html( $k ) . '</a>';
@@ -291,17 +291,17 @@ final class PagePort_Admin {
                 echo '</tr>';
             }
             echo '</tbody></table>';
-            echo '<p><a href="' . esc_url( $sessions_url ) . '">' . esc_html__( 'Manage all sessions →', 'pageport' ) . '</a></p>';
+            echo '<p><a href="' . esc_url( $sessions_url ) . '">' . esc_html__( 'Manage all sessions →', 'inspect-page' ) . '</a></p>';
         }
 
         // ── Sign-in providers ───────────────────────────────────
-        echo '<h2>' . esc_html__( 'Sign-in providers', 'pageport' ) . '</h2>';
-        echo '<p>' . esc_html__( 'Email + password is built in. Add Google sign-in by installing Nextend Social Login.', 'pageport' ) . '</p>';
+        echo '<h2>' . esc_html__( 'Sign-in providers', 'inspect-page' ) . '</h2>';
+        echo '<p>' . esc_html__( 'Email + password is built in. Add Google sign-in by installing Nextend Social Login.', 'inspect-page' ) . '</p>';
         if ( $nextend ) {
             echo '<p><strong style="color:#1a7f37;">✓ Nextend Social Login detected.</strong></p>';
         } else {
             echo '<p><strong style="color:#a04100;">Nextend Social Login not detected.</strong> ';
-            echo '<a href="' . esc_url( admin_url( 'plugin-install.php?s=nextend+social+login&tab=search&type=term' ) ) . '">' . esc_html__( 'Install it', 'pageport' ) . '</a>.</p>';
+            echo '<a href="' . esc_url( admin_url( 'plugin-install.php?s=nextend+social+login&tab=search&type=term' ) ) . '">' . esc_html__( 'Install it', 'inspect-page' ) . '</a>.</p>';
         }
 
         echo '</div>';
@@ -314,14 +314,14 @@ final class PagePort_Admin {
      */
     public static function render_bridge() {
         if ( ! is_user_logged_in() ) {
-            $login = wp_login_url( admin_url( 'admin.php?page=pageport-bridge' ) );
+            $login = wp_login_url( admin_url( 'admin.php?page=inspect-page-bridge' ) );
             wp_safe_redirect( $login );
             exit;
         }
         $user  = wp_get_current_user();
         $nonce = wp_create_nonce( 'wp_rest' );
         $payload = wp_json_encode( [
-            'type'         => 'pageport:auth-ok',
+            'type'         => 'inspect-page:auth-ok',
             'nonce'        => $nonce,
             'user_id'      => (int) $user->ID,
             'display_name' => $user->display_name,
@@ -329,9 +329,9 @@ final class PagePort_Admin {
         ] );
         ?>
 <!doctype html>
-<html><head><meta charset="utf-8"><title>PagePort paired</title></head>
+<html><head><meta charset="utf-8"><title>Inspect Page paired</title></head>
 <body style="font-family:system-ui;padding:24px;text-align:center">
-<h1 style="font-size:18px">PagePort signed in</h1>
+<h1 style="font-size:18px">Inspect Page signed in</h1>
 <p>You can close this window.</p>
 <script>
 (function () {
@@ -351,26 +351,26 @@ final class PagePort_Admin {
 
     public static function render() {
         if ( ! current_user_can( 'upload_files' ) ) { wp_die( 'forbidden' ); }
-        $table = new PagePort_Sessions_Table();
+        $table = new InspectPage_Sessions_Table();
         $table->prepare_items();
-        echo '<div class="wrap"><h1>' . esc_html__( 'PagePort Sessions', 'pageport' ) . '</h1>';
+        echo '<div class="wrap"><h1>' . esc_html__( 'Inspect Page Sessions', 'inspect-page' ) . '</h1>';
         if ( ! empty( $_GET['msg'] ) ) {
             $msg = sanitize_text_field( wp_unslash( $_GET['msg'] ) );
             echo '<div class="notice notice-success"><p>' . esc_html( $msg ) . '</p></div>';
         }
-        echo '<form method="get"><input type="hidden" name="page" value="pageport-sessions" />';
+        echo '<form method="get"><input type="hidden" name="page" value="inspect-page-sessions" />';
         $table->display();
         echo '</form></div>';
     }
 
     public static function handle_actions() {
-        if ( empty( $_GET['page'] ) || $_GET['page'] !== 'pageport-sessions' ) return;
+        if ( empty( $_GET['page'] ) || $_GET['page'] !== 'inspect-page-sessions' ) return;
         if ( empty( $_GET['action'] ) || $_GET['action'] !== 'revoke' ) return;
         if ( ! current_user_can( 'upload_files' ) ) { wp_die( 'forbidden' ); }
 
         $sids = [];
         if ( ! empty( $_GET['session_id'] ) ) {
-            check_admin_referer( 'pageport_revoke_' . sanitize_text_field( wp_unslash( $_GET['session_id'] ) ) );
+            check_admin_referer( 'inspect_page_revoke_' . sanitize_text_field( wp_unslash( $_GET['session_id'] ) ) );
             $sids[] = sanitize_text_field( wp_unslash( $_GET['session_id'] ) );
         } elseif ( ! empty( $_REQUEST['session_ids'] ) && is_array( $_REQUEST['session_ids'] ) ) {
             check_admin_referer( 'bulk-sessions' );
@@ -382,8 +382,8 @@ final class PagePort_Admin {
         $n = 0;
         foreach ( $sids as $sid ) { if ( self::revoke( $sid ) ) $n++; }
         wp_safe_redirect( add_query_arg( [
-            'page' => 'pageport-sessions',
-            'msg'  => sprintf( _n( 'Revoked %d session.', 'Revoked %d sessions.', $n, 'pageport' ), $n ),
+            'page' => 'inspect-page-sessions',
+            'msg'  => sprintf( _n( 'Revoked %d session.', 'Revoked %d sessions.', $n, 'inspect-page' ), $n ),
         ], admin_url( 'tools.php' ) ) );
         exit;
     }
@@ -398,10 +398,10 @@ final class PagePort_Admin {
         if ( (int) $row->user_id !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) {
             return false;
         }
-        PagePort_Storage::delete_session_files( $row->user_id, $sid );
+        InspectPage_Storage::delete_session_files( $row->user_id, $sid );
         $status_id = (int) $wpdb->get_var( $wpdb->prepare(
             "SELECT id FROM {$p}share_session_statuses WHERE name = %s",
-            PagePort_SessionStatus::REVOKED
+            InspectPage_SessionStatus::REVOKED
         ) );
         if ( $status_id ) {
             $wpdb->update( "{$p}share_sessions", [ 'status_id' => $status_id ], [ 'id' => $row->id ] );
@@ -410,4 +410,4 @@ final class PagePort_Admin {
     }
 }
 
-PagePort_Admin::init();
+InspectPage_Admin::init();

@@ -24,7 +24,7 @@ export async function revokeShareSession(
       "Sign in to your WordPress site in Settings → Smart Share.",
     );
   }
-  const url = `${normalizeBaseUrl(cfg.siteUrl)}/wp-json/pageport/v1/sessions/${encodeURIComponent(sessionId)}`;
+  const url = `${normalizeBaseUrl(cfg.siteUrl)}/wp-json/inspect-page/v1/sessions/${encodeURIComponent(sessionId)}`;
   const fetchFn = deps.fetchImpl ?? fetch;
   let res: Response;
   try {

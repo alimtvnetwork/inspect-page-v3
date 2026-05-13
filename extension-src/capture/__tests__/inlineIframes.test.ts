@@ -59,7 +59,7 @@ describe("inlineIframes", () => {
     expect(r.counts.sameOrigin).toBe(1);
     expect(r.counts.crossOrigin).toBe(0);
     expect(r.html).toContain(`srcdoc="`);
-    expect(r.html).toContain(`data-pageport-srcdoc="true"`);
+    expect(r.html).toContain(`data-inspect-page-srcdoc="true"`);
     // Inner content is base64-or-escaped inside srcdoc; just check it's there.
     expect(r.html).toMatch(/srcdoc="[^"]*&lt;h1>inner&lt;\/h1>[^"]*"/);
     // Original src attribute preserved.
@@ -73,7 +73,7 @@ describe("inlineIframes", () => {
     expect(r.counts.total).toBe(1);
     expect(r.counts.sameOrigin).toBe(0);
     expect(r.counts.crossOrigin).toBe(1);
-    expect(r.html).toContain(`data-pageport-cross-origin="true"`);
+    expect(r.html).toContain(`data-inspect-page-cross-origin="true"`);
     expect(r.html).not.toContain(`srcdoc=`);
     expect(r.html).toContain(`src="https://other.com/sub"`);
   });
@@ -88,9 +88,9 @@ describe("inlineIframes", () => {
     expect(r.counts.total).toBe(3);
     expect(r.counts.sameOrigin).toBe(2);
     expect(r.counts.crossOrigin).toBe(1);
-    // Match the srcdoc attribute itself, not the data-pageport-srcdoc marker.
+    // Match the srcdoc attribute itself, not the data-inspect-page-srcdoc marker.
     expect((r.html.match(/(?<![-\w])srcdoc="/g) || []).length).toBe(2);
-    expect((r.html.match(/data-pageport-cross-origin/g) || []).length).toBe(1);
+    expect((r.html.match(/data-inspect-page-cross-origin/g) || []).length).toBe(1);
   });
 
   it("escapes quotes in srcdoc so the attribute stays well-formed", async () => {

@@ -28,7 +28,7 @@ export async function createShareSession(
       "Sign in to your WordPress site in Settings → Smart Share.",
     );
   }
-  const url = `${normalizeBaseUrl(cfg.siteUrl)}/wp-json/pageport/v1/sessions`;
+  const url = `${normalizeBaseUrl(cfg.siteUrl)}/wp-json/inspect-page/v1/sessions`;
 
   const fd = new FormData();
   fd.append("kind", p.kind);
@@ -73,7 +73,7 @@ export async function createShareSession(
     try { detail = (await res.text()).slice(0, 300); } catch { /* ignore */ }
     throw new MessageError(
       ErrorCode.E_SHARE_QUOTA_FREE,
-      "Free quota reached. Upgrade to PagePort Pro to keep sharing.",
+      "Free quota reached. Upgrade to Inspect Page Pro to keep sharing.",
       detail,
     );
   }

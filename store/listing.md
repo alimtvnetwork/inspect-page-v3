@@ -1,7 +1,7 @@
 # Listing copy
 
 ## Name (max 45 chars)
-PagePort — Export pages for your LLM
+Inspect Page — Export pages for your LLM
 
 ## Short summary (max 132 chars)
 Export any web page (or one element) as HTML, CSS, JS and a full-page screenshot — bundled for ChatGPT, Claude, and Gemini.
@@ -14,7 +14,7 @@ English (United States)
 
 ## Detailed description (≤16 000 chars)
 
-PagePort packages whatever is on screen into a tidy ZIP — HTML, CSS,
+Inspect Page packages whatever is on screen into a tidy ZIP — HTML, CSS,
 JavaScript, and a true full-page screenshot — so you can hand it to an
 LLM in one paste.
 
@@ -25,7 +25,7 @@ can fetch the page. Most of the time it can't: the site is behind a
 login wall, the layout depends on JavaScript that the model's browser
 tool refuses to run, the page is too long for the assistant's crawler,
 or you're working from a localhost build that has no public URL at all.
-PagePort sidesteps every one of those failure modes by snapshotting
+Inspect Page sidesteps every one of those failure modes by snapshotting
 exactly what your browser already rendered.
 
 ### What you get
@@ -50,7 +50,7 @@ exactly what your browser already rendered.
 
 ### Privacy
 
-PagePort is fully local. There is no telemetry, no analytics, no
+Inspect Page is fully local. There is no telemetry, no analytics, no
 remote configuration. The only network traffic the extension itself
 initiates is fetching stylesheets and scripts that the page already
 references, and (only if you explicitly configure it) uploading a
@@ -59,7 +59,7 @@ never read cookies, history, bookmarks, or other tabs.
 
 Password fields are redacted by default before any export is written.
 
-Full policy: https://pageport.app/privacy
+Full policy: https://inspect-page.app/privacy
 
 ### Permissions in plain English
 
@@ -69,10 +69,10 @@ Full policy: https://pageport.app/privacy
 - `offscreen` — own a hidden canvas for stitching the full-page
   screenshot (Chrome service workers have no DOM).
 - Host permission `<all_urls>` — needed because you may invoke the
-  extension on any site you visit. PagePort only acts on the tab you
+  extension on any site you visit. Inspect Page only acts on the tab you
   trigger it on; it does not background-scan the web.
 
 ### Open source & support
 
-PagePort is MIT-licensed. File issues, request features, or read the
-full architectural specification at https://pageport.app.
+Inspect Page is MIT-licensed. File issues, request features, or read the
+full architectural specification at https://inspect-page.app.

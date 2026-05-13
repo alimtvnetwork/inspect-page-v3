@@ -12,7 +12,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COPY } from "@shared/copy";
-import { PAGEPORT_WP_SITE_URL, SUCCESS_AUTO_DISMISS_MS } from "@shared/constants";
+import { INSPECT_PAGE_WP_SITE_URL, SUCCESS_AUTO_DISMISS_MS } from "@shared/constants";
 import { ErrorCode, MessageKind, PanelStatus } from "@shared/enums";
 import { MessageError, sendToBackground } from "@shared/messaging";
 import type {
@@ -168,10 +168,10 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       if (ce.detail) handlePayload(ce.detail);
     };
     chrome?.runtime?.onMessage?.addListener?.(runtimeListener as never);
-    window.addEventListener("pageport:status", winListener as EventListener);
+    window.addEventListener("inspect-page:status", winListener as EventListener);
     return () => {
       chrome?.runtime?.onMessage?.removeListener?.(runtimeListener as never);
-      window.removeEventListener("pageport:status", winListener as EventListener);
+      window.removeEventListener("inspect-page:status", winListener as EventListener);
     };
   }, []);
 
@@ -620,7 +620,7 @@ function DebugPreview({ preview, activeUrl, shareEnabled, onShare, onClear }: De
         const md = buildSingleMd(tab, value || "");
         triggerDownload(
           new Blob([md], { type: "text/markdown;charset=utf-8" }),
-          `pageport-element-${safe}-${tab}-${ts}.md`,
+          `inspect-page-element-${safe}-${tab}-${ts}.md`,
         );
       } else {
         const mime =
@@ -629,7 +629,7 @@ function DebugPreview({ preview, activeUrl, shareEnabled, onShare, onClear }: De
           : "text/javascript";
         triggerDownload(
           new Blob([value || ""], { type: `${mime};charset=utf-8` }),
-          `pageport-element-${safe}-${ts}.${tab}`,
+          `inspect-page-element-${safe}-${ts}.${tab}`,
         );
       }
     } catch { /* ignore */ }
@@ -649,7 +649,7 @@ function DebugPreview({ preview, activeUrl, shareEnabled, onShare, onClear }: De
       }
       zip.file("selector.txt", `${preview.selectorPath}\n`);
       const blob = await zip.generateAsync({ type: "blob" });
-      triggerDownload(blob, `pageport-element-${safe}-${ts}.zip`);
+      triggerDownload(blob, `inspect-page-element-${safe}-${ts}.zip`);
     } catch { /* ignore */ }
   }, [preview, fmt]);
   return (
@@ -784,7 +784,7 @@ function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }: FullPa
     if (fmt === "md") {
       triggerDownload(
         new Blob([buildSingleMd(k)], { type: "text/markdown;charset=utf-8" }),
-        `pageport-fullpage-${safe}-${k}-${ts}.md`,
+        `inspect-page-fullpage-${safe}-${k}-${ts}.md`,
       );
     } else {
       const mime =
@@ -793,7 +793,7 @@ function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }: FullPa
         : "text/javascript";
       triggerDownload(
         new Blob([artifacts[k] || ""], { type: `${mime};charset=utf-8` }),
-        `pageport-fullpage-${safe}-${ts}.${k}`,
+        `inspect-page-fullpage-${safe}-${ts}.${k}`,
       );
     }
   }, [artifacts, fmt]);
@@ -802,7 +802,7 @@ function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }: FullPa
     try {
       const blob = await dataUrlToBlob(artifacts.screenshotDataUrl);
       const ext = blob.type.includes("jpeg") ? "jpg" : "png";
-      triggerDownload(blob, `pageport-fullpage-${domainSafe()}-${tsNow()}.${ext}`);
+      triggerDownload(blob, `inspect-page-fullpage-${domainSafe()}-${tsNow()}.${ext}`);
     } catch { /* ignore */ }
   }, [artifacts]);
 
@@ -825,7 +825,7 @@ function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }: FullPa
       } catch { /* skip screenshot if conversion fails */ }
       zip.file("manifest.json", `${JSON.stringify(artifacts.meta, null, 2)}\n`);
       const blob = await zip.generateAsync({ type: "blob" });
-      triggerDownload(blob, `pageport-fullpage-${safe}-${ts}.zip`);
+      triggerDownload(blob, `inspect-page-fullpage-${safe}-${ts}.zip`);
     } catch { /* ignore */ }
   }, [artifacts, fmt]);
 
@@ -912,7 +912,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
   const [quota, setQuota] = useState<{
     lifetimeUsed: number; freeLimit: number; hasLicense: boolean;
   } | null>(null);
-  const siteUrl = PAGEPORT_WP_SITE_URL;
+  const siteUrl = INSPECT_PAGE_WP_SITE_URL;
   const configured = !!siteUrl;
   const signedIn = configured && !!settings.nonce && !!settings.userId;
 

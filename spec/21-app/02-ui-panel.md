@@ -19,7 +19,7 @@ Two surfaces, one component (`<ExportPanel />`). All copy in `COPY` table below;
 ### B1. Default panel
 ```
 ┌──────────────────────────────────────────────┐
-│ ≡  PagePort              ─  ✕         │  ← header (drag handle)
+│ ≡  Inspect Page              ─  ✕         │  ← header (drag handle)
 ├──────────────────────────────────────────────┤
 │  [  Export Full Page          ]              │
 │  [  Pick Element              ]              │
@@ -60,9 +60,9 @@ Two surfaces, one component (`<ExportPanel />`). All copy in `COPY` table below;
 │    [x] Include computed styles               │
 │    [x] Include matched rules                 │
 │    Filename — full page:                     │
-│    [ pageport-fullpage-{domain}-{ts}.zip ] │
+│    [ inspect-page-fullpage-{domain}-{ts}.zip ] │
 │    Filename — element:                       │
-│    [ pageport-element-{domain}-{tag}-{ts} ]│
+│    [ inspect-page-element-{domain}-{tag}-{ts} ]│
 │    [ Reset to defaults ]                     │
 ```
 
@@ -84,7 +84,7 @@ Status values: `Idle | Collecting | Capturing | Stitching | Bundling | Downloadi
 
 | Key | English text |
 |---|---|
-| `appName` | PagePort |
+| `appName` | Inspect Page |
 | `btnFullPage` | Export Full Page |
 | `btnPick` | Pick Element |
 | `btnCancel` | Cancel |
@@ -142,7 +142,7 @@ All keys live in `shared/copy.ts` as a `const` object.
 
 ## G. Accessibility
 
-- Root container `role="region"`, `aria-label="PagePort panel"`.
+- Root container `role="region"`, `aria-label="Inspect Page panel"`.
 - Status region: `role="status" aria-live="polite" aria-atomic="true"`.
 - Errors: `role="alert" aria-live="assertive"`.
 - Buttons: `<button>` elements, never `<div onClick>`.

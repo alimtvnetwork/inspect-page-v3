@@ -1,4 +1,4 @@
-# PagePort — Manual QA Checklist
+# Inspect Page — Manual QA Checklist
 
 Use this before every release. Maps 1:1 to the 36 acceptance criteria in
 `spec/21-app/11-acceptance-criteria.md`. A release is shippable iff every
@@ -9,7 +9,7 @@ box is checked or has a documented waiver.
 - [ ] `cd extension && bun run lint` exits 0 (AC-BD-1)
 - [ ] `cd extension && bun run test` reports 95/95 passing (AC-BD-1)
 - [ ] `cd extension && bun run build && bun run package` succeeds (AC-BD-2)
-- [ ] `public/pageport.zip` ≤ 1.5 MiB and `public/pageport.zip.sha256` exists (AC-BD-2)
+- [ ] `public/inspect-page.zip` ≤ 1.5 MiB and `public/inspect-page.zip.sha256` exists (AC-BD-2)
 - [ ] Unzip the bundle locally; verify the 9 files: `manifest.json`,
       `background.js`, `content.js`, `offscreen.{html,js}`,
       `icons/{16,48,128}.png`
@@ -35,7 +35,7 @@ box is checked or has a documented waiver.
 Run on **S1** then **S2** then **S5**.
 
 - [ ] AC-FP-1 — Click toolbar action → **Export Full Page** → a `.zip`
-      downloads with name `pageport-fullpage-{domain}-{timestamp}.zip`
+      downloads with name `inspect-page-fullpage-{domain}-{timestamp}.zip`
 - [ ] AC-FP-2 — Unzip → open `page.html` directly in a new tab → renders
       visually similar to the live page (subject to host CSS/fonts)
 - [ ] AC-FP-3 — `styles.css` opens, contains `/* === <source> === */`
@@ -160,11 +160,11 @@ its own playground) **and** a page with a YouTube/Twitter embed
 (cross-origin).
 
 - [ ] AC-FD-13 — Same-origin iframe → exported `page.html` contains an
-      `<iframe ... srcdoc="…" data-pageport-srcdoc="true">` with the
+      `<iframe ... srcdoc="…" data-inspect-page-srcdoc="true">` with the
       sub-document fully serialized inside (verify by viewing the iframe
       in the offline export)
 - [ ] AC-FD-14 — Cross-origin iframe → exported `<iframe>` has
-      `data-pageport-cross-origin="true"` and an unchanged `src`
+      `data-inspect-page-cross-origin="true"` and an unchanged `src`
       (no srcdoc attempted)
 - [ ] AC-FD-15 — Recursion stops at depth 3 (no infinite loop on a page
       that frames itself); the SW console shows no stack overflow
@@ -229,10 +229,10 @@ pricing card with web fonts). Open the floating panel.
 ## 9. Smart Share — v2.2 (requires WP plugin install)
 
 Detailed live checklist: `docs/ACCEPTANCE-v2.2.md`. Run on a throwaway
-WordPress install with the `pageport` plugin v2.2.0 active.
+WordPress install with the `inspect-page` plugin v2.2.0 active.
 
 - [ ] AC-SH-AUTH-1 — Settings → Smart Share → enter site URL → "Sign in"
-      opens the hidden `pageport-bridge` admin page → on success the
+      opens the hidden `inspect-page-bridge` admin page → on success the
       panel shows the WP display name + email
 - [ ] AC-SH-AUTH-2 — Sign out from WP wp-admin → next Smart Share upload
       surfaces `E_SHARE_AUTH` and clears the cached nonce
@@ -248,8 +248,8 @@ WordPress install with the `pageport` plugin v2.2.0 active.
       31st surfaces `E_SHARE_QUOTA`
 - [ ] AC-SH-QUOTA-2 — Burst 61 uploads in <1h as the same WP user →
       61st surfaces `E_SHARE_QUOTA`
-- [ ] AC-WP-1 — `wp-plugin/pageport/` v2.2.0 active; REST namespace
-      `pageport/v1` responds to `/auth-status` with cookie + nonce
+- [ ] AC-WP-1 — `wp-plugin/inspect-page/` v2.2.0 active; REST namespace
+      `inspect-page/v1` responds to `/auth-status` with cookie + nonce
 - [ ] AC-WP-2 — Uploaded assets land at the 4 expected paths under the
       session id; EXIF stripped from `preview.png`
 - [ ] AC-WP-3 — Hourly WP cron purges expired sessions; UI shows
@@ -259,7 +259,7 @@ WordPress install with the `pageport` plugin v2.2.0 active.
 
 - Tester: __________________
 - Date:   __________________
-- Build:  v2.2.0 (sha256 from `public/pageport.zip.sha256`)
+- Build:  v2.2.0 (sha256 from `public/inspect-page.zip.sha256`)
 - Result: [ ] PASS  [ ] FAIL — see notes
 
 Notes / failures / waivers:

@@ -4,7 +4,7 @@
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-final class PagePort_SessionStatus {
+final class InspectPage_SessionStatus {
     const ACTIVE  = 'Active';
     const EXPIRED = 'Expired';
     const REVOKED = 'Revoked';
@@ -14,7 +14,7 @@ final class PagePort_SessionStatus {
     }
 }
 
-final class PagePort_SessionKind {
+final class InspectPage_SessionKind {
     const FULL_PAGE = 'FullPage';
     const ELEMENT   = 'Element';
 
@@ -23,7 +23,7 @@ final class PagePort_SessionKind {
     }
 }
 
-final class PagePort_AssetType {
+final class InspectPage_AssetType {
     const HTML  = 'html';
     const CSS   = 'css';
     const JS    = 'js';
@@ -34,7 +34,7 @@ final class PagePort_AssetType {
     }
 }
 
-final class PagePort_ErrorCode {
+final class InspectPage_ErrorCode {
     const E_SHARE_AUTH       = 'E_SHARE_AUTH';
     const E_SHARE_NETWORK    = 'E_SHARE_NETWORK';
     const E_SHARE_UPSTREAM   = 'E_SHARE_UPSTREAM';

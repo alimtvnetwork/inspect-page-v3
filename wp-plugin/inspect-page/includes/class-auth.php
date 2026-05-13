@@ -1,6 +1,6 @@
 <?php
 /**
- * WP-cookie + nonce permission callback for PagePort REST routes (v2.2).
+ * WP-cookie + nonce permission callback for Inspect Page REST routes (v2.2).
  *
  * The extension authenticates by:
  *   1. Letting the user log in via the WordPress login screen in a popup
@@ -13,29 +13,29 @@
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-final class PagePort_Auth {
+final class InspectPage_Auth {
 
     /** Permission callback: must be a logged-in WP user with a valid wp_rest nonce. */
     public static function require_wp_user() {
         if ( ! is_user_logged_in() ) {
             return new WP_Error(
-                PagePort_ErrorCode::E_SHARE_AUTH,
-                __( 'Login required.', 'pageport' ),
+                InspectPage_ErrorCode::E_SHARE_AUTH,
+                __( 'Login required.', 'inspect-page' ),
                 [ 'status' => 401 ]
             );
         }
         $nonce = self::read_nonce();
         if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
             return new WP_Error(
-                PagePort_ErrorCode::E_SHARE_AUTH,
-                __( 'Invalid or missing X-WP-Nonce.', 'pageport' ),
+                InspectPage_ErrorCode::E_SHARE_AUTH,
+                __( 'Invalid or missing X-WP-Nonce.', 'inspect-page' ),
                 [ 'status' => 401 ]
             );
         }
         if ( ! current_user_can( 'upload_files' ) ) {
             return new WP_Error(
-                PagePort_ErrorCode::E_SHARE_FORBIDDEN,
-                __( 'Insufficient capability.', 'pageport' ),
+                InspectPage_ErrorCode::E_SHARE_FORBIDDEN,
+                __( 'Insufficient capability.', 'inspect-page' ),
                 [ 'status' => 403 ]
             );
         }
@@ -51,7 +51,7 @@ final class PagePort_Auth {
         // Public probe — uses the WP cookie only (no nonce). Tells the
         // extension whether the user is signed in on this site and hands
         // back a fresh `wp_rest` nonce + identity for follow-up calls.
-        register_rest_route( PAGEPORT_REST_NS, '/auth-status', [
+        register_rest_route( INSPECT_PAGE_REST_NS, '/auth-status', [
             'methods'             => 'GET',
             'callback'            => [ __CLASS__, 'rest_auth_status' ],
             'permission_callback' => '__return_true',
@@ -71,12 +71,12 @@ final class PagePort_Auth {
         $user    = wp_get_current_user();
         $user_id = (int) $user->ID;
 
-        $max_active = (int) get_option( 'pageport_max_active_per_user', 30 );
-        $max_hour   = (int) get_option( 'pageport_max_per_hour_per_user', 30 );
+        $max_active = (int) get_option( 'inspect_page_max_active_per_user', 30 );
+        $max_hour   = (int) get_option( 'inspect_page_max_per_hour_per_user', 30 );
 
         $active_status_id = (int) $wpdb->get_var( $wpdb->prepare(
             "SELECT id FROM {$p}share_session_statuses WHERE name = %s",
-            PagePort_SessionStatus::ACTIVE
+            InspectPage_SessionStatus::ACTIVE
         ) );
         $active = $active_status_id ? (int) $wpdb->get_var( $wpdb->prepare(
             "SELECT COUNT(*) FROM {$p}share_sessions
@@ -89,7 +89,7 @@ final class PagePort_Auth {
             $user_id
         ) );
 
-        $lic = PagePort_License::summary( $user_id );
+        $lic = InspectPage_License::summary( $user_id );
         return new WP_REST_Response( [
             'logged_in'    => (bool) $logged_in,
             'user_id'      => $user_id,
@@ -110,7 +110,7 @@ final class PagePort_Auth {
 
     /**
      * CORS allow-listing for browser extensions (chrome-extension://* /
-     * moz-extension://*). Hooked from pageport.php on rest_api_init.
+     * moz-extension://*). Hooked from inspect-page.php on rest_api_init.
      */
     public static function send_cors_headers( $served, $result, $request ) {
         $origin = isset( $_SERVER['HTTP_ORIGIN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ) : '';

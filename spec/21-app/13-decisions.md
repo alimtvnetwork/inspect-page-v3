@@ -23,7 +23,7 @@ Every entry is `LOCKED` unless marked otherwise. Do not reopen.
 | D17 | Throttle for `captureVisibleTab` | One capture per `CAPTURE_GAP_MS` | No throttle | Chrome rate-limits to ~2/sec. |
 | D18 | Sticky/fixed handling during stitch | Hide via `visibility: hidden`, restore after | Leave visible | Prevents ghosting across frames. |
 | D19 | Privacy | No network egress beyond fetching same-page assets | Telemetry | User asked for an in-browser tool. |
-| D20 | Distribution | Lovable landing page hosts `public/pageport.zip` for "Load unpacked" | Chrome Web Store | v1 only; CWS submission deferred. |
+| D20 | Distribution | Lovable landing page hosts `public/inspect-page.zip` for "Load unpacked" | Chrome Web Store | v1 only; CWS submission deferred. |
 
 ## DEFERRED to v2
 - Cross-origin iframe capture.

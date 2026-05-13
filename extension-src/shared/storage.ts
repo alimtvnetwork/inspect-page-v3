@@ -18,11 +18,37 @@ const chromeDriver: StorageDriver = {
   set: (items) => chrome.storage.local.set(items),
 };
 
+// One-time migration of legacy `pageport` / `pageport.share` chrome.storage
+// keys to the new `inspect-page` / `inspect-page.share` names. Runs at most
+// once per session — no-op after migration is complete.
+const LEGACY_KEYS = ["pageport", "pageport.share"] as const;
+const NEW_KEYS    = ["inspect-page", "inspect-page.share"] as const;
+let legacyMigrationDone = false;
+async function migrateLegacyKeys(driver: StorageDriver): Promise<void> {
+  if (legacyMigrationDone) return;
+  legacyMigrationDone = true;
+  try {
+    for (let i = 0; i < LEGACY_KEYS.length; i++) {
+      const oldKey = LEGACY_KEYS[i];
+      const newKey = NEW_KEYS[i];
+      const both = await driver.get(oldKey);
+      const oldVal = (both as Record<string, unknown>)[oldKey];
+      if (oldVal === undefined) continue;
+      const existing = await driver.get(newKey);
+      if ((existing as Record<string, unknown>)[newKey] === undefined) {
+        await driver.set({ [newKey]: oldVal });
+      }
+      try { await chrome.storage.local.remove(oldKey); } catch { /* ignore */ }
+    }
+  } catch { /* best-effort */ }
+}
+
 export function readRoot(driver: StorageDriver = chromeDriver): Promise<StorageRoot> {
   return readRootSafely(driver);
 }
 
 async function readRootSafely(driver: StorageDriver): Promise<StorageRoot> {
+  await migrateLegacyKeys(driver);
   const raw = await readRaw(driver);
   if (!isStorageRoot(raw)) {
     return resetToDefaults(driver, raw === undefined ? "missing" : "invalid");

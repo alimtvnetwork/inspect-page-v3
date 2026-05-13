@@ -19,7 +19,7 @@ import panelCss from "./styles.css?raw";
 import { clamp } from "./clamp";
 export { clamp } from "./clamp";
 
-const HOST_ID = "pageport-panel-host";
+const HOST_ID = "inspect-page-panel-host";
 
 interface MountedPanel {
   host: HTMLElement;

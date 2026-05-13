@@ -4,11 +4,11 @@
  * authenticates by sending the WP cookie (`credentials: 'include'`) plus
  * the `X-WP-Nonce` header from `/auth-status`.
  */
-import { PAGEPORT_WP_SITE_URL, STORAGE_SHARE_KEY } from "./constants";
+import { INSPECT_PAGE_WP_SITE_URL, STORAGE_SHARE_KEY } from "./constants";
 import type { ShareSettings } from "./types";
 
 export const DEFAULT_SHARE_SETTINGS: ShareSettings = {
-  siteUrl: PAGEPORT_WP_SITE_URL,
+  siteUrl: INSPECT_PAGE_WP_SITE_URL,
   userId: 0,
   displayName: "",
   email: "",
@@ -33,12 +33,12 @@ export async function getShareSettings(): Promise<ShareSettings> {
   const base = isShareSettings(raw) ? raw : { ...DEFAULT_SHARE_SETTINGS };
   // Site URL is no longer user-editable: always force the baked-in value so
   // a stale persisted URL can never override the official backend.
-  return { ...base, siteUrl: PAGEPORT_WP_SITE_URL };
+  return { ...base, siteUrl: INSPECT_PAGE_WP_SITE_URL };
 }
 
 export async function setShareSettings(patch: Partial<ShareSettings>): Promise<ShareSettings> {
   const current = await getShareSettings();
-  const next: ShareSettings = { ...current, ...patch, siteUrl: PAGEPORT_WP_SITE_URL };
+  const next: ShareSettings = { ...current, ...patch, siteUrl: INSPECT_PAGE_WP_SITE_URL };
   await chrome.storage.local.set({ [STORAGE_SHARE_KEY]: next });
   return next;
 }

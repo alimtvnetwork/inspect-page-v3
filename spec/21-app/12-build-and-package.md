@@ -72,14 +72,14 @@ extension-src/
 ```json
 {
   "manifest_version": 3,
-  "name": "PagePort",
-  "short_name": "PagePort",
+  "name": "Inspect Page",
+  "short_name": "Inspect Page",
   "version": "1.0.0",
   "description": "Export any web page (or one element) for your LLM: HTML, CSS, JS and a full-page screenshot.",
   "minimum_chrome_version": "116",
   "icons": { "16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png" },
   "action": {
-    "default_title": "PagePort",
+    "default_title": "Inspect Page",
     "default_popup": "popup/index.html",
     "default_icon": { "16": "icons/16.png", "48": "icons/48.png" }
   },
@@ -163,7 +163,7 @@ bun run build:watch         # vite build --watch
 # production build
 bun run build               # vite build
 
-# package (zip dist/extension into public/pageport.zip)
+# package (zip dist/extension into public/inspect-page.zip)
 bun run package
 ```
 
@@ -185,20 +185,20 @@ bun run package
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-rm -f public/pageport.zip
+rm -f public/inspect-page.zip
 cd dist/extension
-nix run nixpkgs#zip -- -r ../../public/pageport.zip .
+nix run nixpkgs#zip -- -r ../../public/inspect-page.zip .
 cd -
-sha256sum public/pageport.zip > public/pageport.zip.sha256
-echo "Built $(du -h public/pageport.zip | cut -f1) — see sha256 next to it."
+sha256sum public/inspect-page.zip > public/inspect-page.zip.sha256
+echo "Built $(du -h public/inspect-page.zip | cut -f1) — see sha256 next to it."
 ```
 
 ## Build acceptance
 - `bun run lint` exits 0.
 - `bun run test` exits 0.
 - `bun run build` produces `dist/extension/manifest.json` with `manifest_version: 3`.
-- `bun run package` writes `public/pageport.zip` ≤ `1.5 MiB` (see `20-performance-budgets.md`).
+- `bun run package` writes `public/inspect-page.zip` ≤ `1.5 MiB` (see `20-performance-budgets.md`).
 - Loading `dist/extension` via `chrome://extensions` → "Load unpacked" succeeds with no warnings in the extension's "Errors" pane.
 
 ## Distribution
-The Lovable host page (see `18-distribution-page.md`) downloads `/pageport.zip` via the fetch+blob approach.
+The Lovable host page (see `18-distribution-page.md`) downloads `/inspect-page.zip` via the fetch+blob approach.

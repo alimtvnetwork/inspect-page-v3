@@ -1,4 +1,4 @@
-# CI for the PagePort Chrome extension.
+# CI for the Inspect Page Chrome extension.
 # Mirrors the Stage 11 release pipeline (spec/21-app/12-build-and-package.md):
 #   lint → test → build → package → upload artifact.
 name: extension-ci
@@ -54,7 +54,7 @@ jobs:
         run: |
           set -euo pipefail
           DIST="extension/dist/extension"
-          OUT="public/pageport.zip"
+          OUT="public/inspect-page.zip"
           if [ ! -d "$DIST" ]; then
             echo "::error::extension/dist/extension not found"
             exit 1
@@ -67,7 +67,7 @@ jobs:
           mkdir -p public
           rm -f "$OUT" "$OUT.sha256"
           ( cd "$DIST" && zip -r "${{ github.workspace }}/$OUT" . > /dev/null )
-          ( cd public && sha256sum "pageport.zip" > "pageport.zip.sha256" )
+          ( cd public && sha256sum "inspect-page.zip" > "inspect-page.zip.sha256" )
           ls -la "$OUT" "$OUT.sha256"
           # Hard size budget per spec/21-app/11 AC-BD-2 (1.5 MiB).
           BYTES=$(stat -c '%s' "$OUT")
@@ -79,9 +79,9 @@ jobs:
       - name: Upload extension artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pageport-zip
+          name: inspect-page-zip
           path: |
-            public/pageport.zip
-            public/pageport.zip.sha256
+            public/inspect-page.zip
+            public/inspect-page.zip.sha256
           if-no-files-found: error
           retention-days: 30

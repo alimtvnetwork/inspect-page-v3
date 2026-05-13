@@ -1,4 +1,4 @@
-# Implementation Plan — PagePort Chrome Extension
+# Implementation Plan — Inspect Page Chrome Extension
 
 Mirror of `.lovable/plan.md`. Source of truth for phase tracking.
 

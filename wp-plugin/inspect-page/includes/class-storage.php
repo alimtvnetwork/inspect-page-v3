@@ -4,16 +4,16 @@
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-final class PagePort_Storage {
+final class InspectPage_Storage {
 
     public static function base_dir() {
         $up = wp_upload_dir();
-        return trailingslashit( $up['basedir'] ) . 'pageport';
+        return trailingslashit( $up['basedir'] ) . 'inspect-page';
     }
 
     public static function base_url() {
         $up = wp_upload_dir();
-        return trailingslashit( $up['baseurl'] ) . 'pageport';
+        return trailingslashit( $up['baseurl'] ) . 'inspect-page';
     }
 
     public static function ensure_root() {
@@ -36,14 +36,14 @@ final class PagePort_Storage {
         self::ensure_root();
         $dir = self::session_dir( $user_id, $session_id );
         if ( ! wp_mkdir_p( $dir ) ) {
-            return new WP_Error( PagePort_ErrorCode::E_SHARE_STORAGE, 'mkdir failed', [ 'status' => 500 ] );
+            return new WP_Error( InspectPage_ErrorCode::E_SHARE_STORAGE, 'mkdir failed', [ 'status' => 500 ] );
         }
         $ext = self::ext_for( $kind, $mime );
         $abs = $dir . '/' . $kind . '.' . $ext;
         if ( ! @move_uploaded_file( $tmp_path, $abs ) ) {
             // Fallback for CLI / tests where move_uploaded_file rejects the source.
             if ( ! @copy( $tmp_path, $abs ) ) {
-                return new WP_Error( PagePort_ErrorCode::E_SHARE_STORAGE, 'write failed', [ 'status' => 500 ] );
+                return new WP_Error( InspectPage_ErrorCode::E_SHARE_STORAGE, 'write failed', [ 'status' => 500 ] );
             }
         }
         @chmod( $abs, 0644 );
@@ -51,9 +51,9 @@ final class PagePort_Storage {
     }
 
     public static function ext_for( $kind, $mime ) {
-        if ( $kind === PagePort_AssetType::HTML ) return 'html';
-        if ( $kind === PagePort_AssetType::CSS )  return 'css';
-        if ( $kind === PagePort_AssetType::JS )   return 'js';
+        if ( $kind === InspectPage_AssetType::HTML ) return 'html';
+        if ( $kind === InspectPage_AssetType::CSS )  return 'css';
+        if ( $kind === InspectPage_AssetType::JS )   return 'js';
         if ( strpos( $mime, 'jpeg' ) !== false )  return 'jpg';
         if ( strpos( $mime, 'webp' ) !== false )  return 'webp';
         return 'png';

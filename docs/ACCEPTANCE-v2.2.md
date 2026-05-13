@@ -1,4 +1,4 @@
-# PagePort v2.2 Smart Share — Acceptance Checklist
+# Inspect Page v2.2 Smart Share — Acceptance Checklist
 
 The sandbox cannot run WordPress, so this checklist is the source of truth
 for verifying a fresh install against a real WP site.
@@ -6,8 +6,8 @@ for verifying a fresh install against a real WP site.
 ## Prereqs
 
 - WordPress ≥ 5.6, PHP ≥ 7.4, HTTPS site (cookies + cross-origin XHR).
-- Fresh Chrome profile with `pageport.zip` (v2.2) loaded unpacked.
-- `pageport-wp.zip` (v2.2.0) unzipped to `wp-content/plugins/pageport/`
+- Fresh Chrome profile with `inspect-page.zip` (v2.2) loaded unpacked.
+- `inspect-page-wp.zip` (v2.2.0) unzipped to `wp-content/plugins/inspect-page/`
   and **Activated** in wp-admin → Plugins.
 
 ## 1. Sign-in flow
@@ -16,7 +16,7 @@ for verifying a fresh install against a real WP site.
 2. Paste your site URL (e.g. `https://example.com`), tab out → it should
    normalize (no trailing slash, http(s) only).
 3. Click **Sign in**. A new tab opens at
-   `…/wp-admin/admin.php?page=pageport-bridge`.
+   `…/wp-admin/admin.php?page=inspect-page-bridge`.
 4. Sign in with your WP user (or you're already logged in).
 5. The bridge page auto-closes; the extension panel updates within ~2 s
    to show **Signed in as &lt;display name&gt; · &lt;hostname&gt;**.
@@ -30,7 +30,7 @@ No tokens or passwords were typed.
 2. In **Export for AI**, pick **Share Links**.
 3. Upload should complete in &lt; 5 s; the **Share dialog** opens with:
    - 4 input rows (HTML / CSS / JS / Image) showing
-     `…/wp-json/pageport/v1/share/&lt;43-char-id&gt;/index.html`,
+     `…/wp-json/inspect-page/v1/share/&lt;43-char-id&gt;/index.html`,
      `/style.css`, `/script.js`, `/preview.png`.
    - Live countdown showing `~23h 59m 59s` ticking down.
 4. Click each row's **Copy** → button label flips to **Copied** for ~1.5 s.
@@ -41,7 +41,7 @@ Verify with curl (no auth needed for public reads):
 
 ```bash
 for f in index.html style.css script.js preview.png; do
-  curl -sI "$BASE/wp-json/pageport/v1/share/$ID/$f" | head -1
+  curl -sI "$BASE/wp-json/inspect-page/v1/share/$ID/$f" | head -1
 done
 # expect: HTTP/1.1 200 OK (×4)
 ```
@@ -60,7 +60,7 @@ done
 2. Attempt the 31st → extension shows error
    `E_SHARE_QUOTA — Share quota reached. Revoke old links in WordPress
    and try again.`
-3. Revoke any one session in **Tools → PagePort Sessions** → next upload
+3. Revoke any one session in **Tools → Inspect Page Sessions** → next upload
    succeeds.
 
 ## 5. Hourly burst quota
@@ -72,8 +72,8 @@ done
 ## 6. Expiry
 
 1. Either wait 24 h or temporarily set
-   `define( 'PAGEPORT_EXPIRE_HOURS', 0 );` in `wp-config.php` and run
-   the cron job (`wp cron event run pageport_cron_expire_sessions`).
+   `define( 'INSPECT_PAGE_EXPIRE_HOURS', 0 );` in `wp-config.php` and run
+   the cron job (`wp cron event run inspect_page_cron_expire_sessions`).
 2. The countdown in the dialog should switch to **Expired** in red and
    the curl loop returns 404.
 
