@@ -43,10 +43,28 @@ class InspectPage_ErrorCode {
     const E_SHARE_FORBIDDEN = 'E_SHARE_FORBIDDEN';
 }
 
+// License + user-meta shims for the event-log path.
+$GLOBALS['_pp_user_meta'] = [];
+$GLOBALS['_pp_pro_users'] = []; // uid => true means Pro
+function get_user_meta( $uid, $key, $single = false ) {
+    return $GLOBALS['_pp_user_meta'][ "$uid:$key" ] ?? '';
+}
+function update_user_meta( $uid, $key, $value ) {
+    $GLOBALS['_pp_user_meta'][ "$uid:$key" ] = $value;
+    return true;
+}
+class InspectPage_License {
+    public static function has_license( $uid ) {
+        return ! empty( $GLOBALS['_pp_pro_users'][ (int) $uid ] );
+    }
+}
+
 // ---- $wpdb mock ---------------------------------------------------------
 class FakeWpdb {
     public $prefix = 'wp_';
     public $rows = []; // id => row array
+    public $events = [];
+    public $deleted = 0;
     public function prepare( $q, ...$args ) {
         // Naive %d / %s substitution (single placeholder cases only).
         foreach ( $args as $a ) {
@@ -72,6 +90,43 @@ class FakeWpdb {
         if ( ! isset( $this->rows[ $id ] ) ) return false;
         foreach ( $data as $k => $v ) { $this->rows[ $id ][ $k ] = $v; }
         return 1;
+    }
+    public function get_var( $q ) {
+        if ( preg_match( "/WHERE name = '([^']+)'/", $q, $m ) ) {
+            $map = [ 'html' => 1, 'css' => 2, 'js' => 3, 'image' => 4 ];
+            return isset( $map[ $m[1] ] ) ? $map[ $m[1] ] : 0;
+        }
+        return null;
+    }
+    public function insert( $table, $data ) {
+        $this->events[] = $data + [ '_table' => $table ];
+        return 1;
+    }
+    public function get_results( $q, $type = 0 ) {
+        // recent_events_for_user query
+        if ( strpos( $q, 'FROM wp_pp_share_events' ) !== false ) {
+            $out = [];
+            foreach ( array_reverse( $this->events ) as $e ) {
+                $out[] = [
+                    'created_at' => $e['created_at'] ?? '',
+                    'ip_hash'    => $e['ip_hash']    ?? '',
+                    'ua_hash'    => $e['ua_hash']    ?? '',
+                    'kind'       => 'html',
+                    'session_id' => 'sess-aaaaaaaaaaaaaaaa',
+                ];
+            }
+            return $out;
+        }
+        return [];
+    }
+    public function query( $q ) {
+        if ( strpos( $q, 'DELETE FROM wp_pp_share_events' ) !== false ) {
+            $n = count( $this->events );
+            $this->events = [];
+            $this->deleted += $n;
+            return $n;
+        }
+        return 0;
     }
 }
 $GLOBALS['wpdb'] = new FakeWpdb();
