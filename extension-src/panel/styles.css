@@ -24,23 +24,25 @@
 
 /* ---------- Theme tokens (Phase A1) ---------- */
 .lpe-root[data-lpe-theme="light"] {
-  --lpe-bg: #ffffff;
-  --lpe-fg: #1f2328;
-  --lpe-muted: #57606a;
-  --lpe-surface: #f6f8fa;
-  --lpe-surface-2: #eaeef2;
-  --lpe-border: #d0d7de;
-  --lpe-accent: #0969da;
+  --lpe-bg: #FAFBFC;
+  --lpe-fg: #1B2230;
+  --lpe-muted: #5E6878;
+  --lpe-surface: #F1F3F7;
+  --lpe-surface-2: #E5E8EE;
+  --lpe-border: #D8DEE6;
+  --lpe-accent: #2563EB;
+  --lpe-accent-hover: #1D4ED8;
   --lpe-accent-fg: #ffffff;
 }
 .lpe-root[data-lpe-theme="dark"] {
-  --lpe-bg: #0d1117;
-  --lpe-fg: #e6edf3;
-  --lpe-muted: #8b949e;
-  --lpe-surface: #161b22;
-  --lpe-surface-2: #1f242c;
-  --lpe-border: #30363d;
-  --lpe-accent: #2f81f7;
+  --lpe-bg: #0E1116;
+  --lpe-fg: #E6EAF2;
+  --lpe-muted: #9AA4B2;
+  --lpe-surface: #151A22;
+  --lpe-surface-2: #1C232E;
+  --lpe-border: #262E3B;
+  --lpe-accent: #3B82F6;
+  --lpe-accent-hover: #2563EB;
   --lpe-accent-fg: #ffffff;
 }
 
