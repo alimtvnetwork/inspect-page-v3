@@ -37,6 +37,11 @@ export const CAPTURE_RETRY_MAX = 1;
 export const Z_INDEX_PICKER = 2_147_483_647;
 export const Z_INDEX_PANEL = 2_147_483_646;
 
+// Max CSS-px dimension allowed for the isolated iframe render. Above this we
+// skip the isolated screenshot to avoid html-to-image hanging or OOM on huge
+// elements. Context screenshot is independently clamped to the viewport.
+export const ELEMENT_ISOLATED_MAX_CSS_PX = 4_096;
+
 // ---- Format defaults ----
 export const DEFAULT_IMAGE_FORMAT = "png" as const;
 export const DEFAULT_JPEG_QUALITY = 90;
