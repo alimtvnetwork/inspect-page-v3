@@ -173,6 +173,7 @@ final class InspectPage_Admin {
         add_action( 'admin_init',  [ __CLASS__, 'handle_actions' ] );
         add_action( 'admin_init',  [ __CLASS__, 'handle_billing_form' ] );
         add_action( 'admin_init',  [ __CLASS__, 'handle_privacy_form' ] );
+        add_action( 'admin_init',  [ __CLASS__, 'handle_digest_form' ] );
     }
 
     public static function menu() {
