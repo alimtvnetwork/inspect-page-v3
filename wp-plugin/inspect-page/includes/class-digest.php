@@ -16,15 +16,35 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 final class InspectPage_Digest {
 
     const HOOK            = 'inspect_page_weekly_digest';
+    const HOOK_DAILY      = 'inspect_page_daily_digest';
     const OPTOUT_META     = 'inspect_page_digest_optout';
     const TOKEN_META      = 'inspect_page_digest_token';
     const RUN_OPTION      = 'inspect_page_digest_last_run';
+    const CADENCE_META    = 'inspect_page_digest_cadence';
+    const LAST_OPEN_META  = 'inspect_page_digest_last_open';
+    const OPEN_COUNT_META = 'inspect_page_digest_open_count';
+    const OPEN_LOG_META   = 'inspect_page_digest_open_log';   // JSON list of UTC timestamps (last 30 d)
     const WINDOW_DAYS     = 7;
     const MAX_PER_USER    = 50; // cap rendered rows; rest counted in summary
 
+    /** Allowed cadence values. `daily` is Pro-only (enforced in setter). */
+    const CADENCE_WEEKLY = 'weekly';
+    const CADENCE_DAILY  = 'daily';
+
     public static function register() {
         add_action( self::HOOK, [ __CLASS__, 'run' ] );
+        add_action( self::HOOK_DAILY, [ __CLASS__, 'run_daily' ] );
         add_filter( 'cron_schedules', [ __CLASS__, 'add_weekly_schedule' ] );
+        add_action( 'rest_api_init', [ __CLASS__, 'register_pixel_route' ] );
+    }
+
+    /** REST: 1×1 PNG that records an "open" against $token. */
+    public static function register_pixel_route() {
+        register_rest_route( INSPECT_PAGE_REST_NS, '/digest/open/(?P<token>[A-Za-z0-9]{24,64})\.png', [
+            'methods'             => 'GET',
+            'callback'            => [ __CLASS__, 'serve_open_pixel' ],
+            'permission_callback' => '__return_true',
+        ] );
     }
 
     /** Provide a 'weekly' interval for older WP installs that lack one. */
@@ -38,11 +58,39 @@ final class InspectPage_Digest {
         return $schedules;
     }
 
+    // ------------------------------------------------------------------
+    // Cadence helpers (D2)
+    // ------------------------------------------------------------------
+    public static function cadence_for( $user_id ) {
+        $val = (string) get_user_meta( (int) $user_id, self::CADENCE_META, true );
+        return ( $val === self::CADENCE_DAILY ) ? self::CADENCE_DAILY : self::CADENCE_WEEKLY;
+    }
+
+    /** Server-side enforcement: only Pro users can opt into daily. */
+    public static function set_cadence( $user_id, $cadence ) {
+        $uid = (int) $user_id;
+        $is_pro = class_exists( 'InspectPage_License' ) && InspectPage_License::has_license( $uid );
+        if ( $cadence === self::CADENCE_DAILY && $is_pro ) {
+            update_user_meta( $uid, self::CADENCE_META, self::CADENCE_DAILY );
+        } else {
+            delete_user_meta( $uid, self::CADENCE_META );
+        }
+    }
+
     /**
      * Find users with expired sessions in the last WINDOW_DAYS days, render
      * a digest, and email each one. Returns count of digests sent.
      */
     public static function run() {
+        return self::run_for_window( self::WINDOW_DAYS, self::CADENCE_WEEKLY );
+    }
+
+    /** Daily cron — only emails users on the `daily` cadence (Pro). */
+    public static function run_daily() {
+        return self::run_for_window( 1, self::CADENCE_DAILY );
+    }
+
+    private static function run_for_window( $window_days, $only_cadence ) {
         global $wpdb;
         $p = $wpdb->prefix . 'pp_';
         $expired_id = (int) $wpdb->get_var( $wpdb->prepare(
@@ -51,7 +99,7 @@ final class InspectPage_Digest {
         ) );
         if ( ! $expired_id ) { update_option( self::RUN_OPTION, time(), false ); return 0; }
 
-        $since = gmdate( 'Y-m-d H:i:s', time() - self::WINDOW_DAYS * DAY_IN_SECONDS );
+        $since = gmdate( 'Y-m-d H:i:s', time() - (int) $window_days * DAY_IN_SECONDS );
         $rows  = $wpdb->get_results( $wpdb->prepare(
             "SELECT user_id, session_id, source_url, expires_at
              FROM {$p}share_sessions
@@ -69,7 +117,10 @@ final class InspectPage_Digest {
         $sent = 0;
         foreach ( $by_user as $uid => $sessions ) {
             if ( self::user_opted_out( $uid ) ) continue;
-            if ( self::send_for_user( $uid, $sessions ) ) $sent++;
+            // Cadence routing: weekly cron skips users who opted into daily,
+            // daily cron only handles those users.
+            if ( self::cadence_for( $uid ) !== $only_cadence ) continue;
+            if ( self::send_for_user( $uid, $sessions, (int) $window_days ) ) $sent++;
         }
         update_option( self::RUN_OPTION, time(), false );
         return $sent;
@@ -108,7 +159,7 @@ final class InspectPage_Digest {
         return $uid;
     }
 
-    private static function send_for_user( $user_id, $sessions ) {
+    private static function send_for_user( $user_id, $sessions, $window_days = self::WINDOW_DAYS ) {
         $user = get_user_by( 'id', (int) $user_id );
         if ( ! $user || empty( $user->user_email ) ) return false;
 
@@ -120,7 +171,7 @@ final class InspectPage_Digest {
         $lines[] = sprintf(
             /* translators: 1: display name, 2: count, 3: window-days */
             __( "Hi %1\$s,\n\nIn the last %3\$d days, %2\$d Smart Share session(s) on your Inspect Page account expired and are no longer reachable:", 'inspect-page' ),
-            $user->display_name, $count, self::WINDOW_DAYS
+            $user->display_name, $count, (int) $window_days
         );
         $lines[] = '';
         foreach ( $shown as $s ) {
@@ -159,12 +210,77 @@ final class InspectPage_Digest {
             __( 'Your Inspect Page weekly digest — %d session(s) expired', 'inspect-page' ),
             $count
         );
-        $body = implode( "\n", $lines );
-        return (bool) wp_mail( $user->user_email, $subject, $body );
+        $text = implode( "\n", $lines );
+        // Multipart with embedded 1×1 open-rate pixel. The plain-text part is
+        // the canonical body — older clients without HTML still see the same
+        // content. Pixel URL carries the same per-user token used for
+        // unsubscribe; rotates when the user opts out + back in.
+        $pixel  = rest_url( INSPECT_PAGE_REST_NS . '/digest/open/' . rawurlencode( $tok ) . '.png' );
+        $html   = '<pre style="font:14px/1.5 -apple-system,Segoe UI,sans-serif;white-space:pre-wrap">'
+                . esc_html( $text )
+                . '</pre>'
+                . '<img src="' . esc_url( $pixel ) . '" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0" />';
+        $boundary = 'inspect-page-' . md5( $user->user_email . $count . microtime( true ) );
+        $headers  = [
+            'MIME-Version: 1.0',
+            'Content-Type: multipart/alternative; boundary="' . $boundary . '"',
+        ];
+        $body  = "--$boundary\r\n";
+        $body .= "Content-Type: text/plain; charset=UTF-8\r\n\r\n" . $text . "\r\n\r\n";
+        $body .= "--$boundary\r\n";
+        $body .= "Content-Type: text/html; charset=UTF-8\r\n\r\n" . $html . "\r\n\r\n";
+        $body .= "--$boundary--\r\n";
+        return (bool) wp_mail( $user->user_email, $subject, $body, $headers );
+    }
+
+    /**
+     * REST GET /digest/open/{token}.png — records an open against the user
+     * resolved from the token, then serves a 1×1 transparent PNG. Always
+     * returns 200 + an image so misbehaving clients/proxies cannot probe
+     * for valid tokens via timing / status differences.
+     */
+    public static function serve_open_pixel( $req ) {
+        $tok = (string) $req['token'];
+        $uid = self::user_id_for_token( $tok );
+        if ( $uid > 0 ) {
+            update_user_meta( $uid, self::LAST_OPEN_META, gmdate( 'Y-m-d H:i:s' ) );
+            $cur = (int) get_user_meta( $uid, self::OPEN_COUNT_META, true );
+            update_user_meta( $uid, self::OPEN_COUNT_META, $cur + 1 );
+            $log = json_decode( (string) get_user_meta( $uid, self::OPEN_LOG_META, true ), true );
+            if ( ! is_array( $log ) ) $log = [];
+            $log[] = time();
+            // Trim to last 30 days.
+            $cutoff = time() - 30 * DAY_IN_SECONDS;
+            $log = array_values( array_filter( $log, function ( $t ) use ( $cutoff ) { return (int) $t >= $cutoff; } ) );
+            update_user_meta( $uid, self::OPEN_LOG_META, wp_json_encode( $log ) );
+        }
+        // 43-byte 1×1 transparent PNG.
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+        );
+        header_remove( 'Cache-Control' );
+        header( 'Content-Type: image/png' );
+        header( 'Content-Length: ' . strlen( $png ) );
+        header( 'Cache-Control: private, no-store, no-cache, must-revalidate' );
+        header( 'X-Content-Type-Options: nosniff' );
+        echo $png;
+        exit;
+    }
+
+    /** Open count in the last 7 days, derived from OPEN_LOG_META. */
+    public static function opens_last_7d( $user_id ) {
+        $log = json_decode( (string) get_user_meta( (int) $user_id, self::OPEN_LOG_META, true ), true );
+        if ( ! is_array( $log ) ) return 0;
+        $cutoff = time() - 7 * DAY_IN_SECONDS;
+        $n = 0;
+        foreach ( $log as $t ) { if ( (int) $t >= $cutoff ) $n++; }
+        return $n;
     }
 
     public static function deactivate() {
         $ts = wp_next_scheduled( self::HOOK );
         if ( $ts ) wp_unschedule_event( $ts, self::HOOK );
+        $td = wp_next_scheduled( self::HOOK_DAILY );
+        if ( $td ) wp_unschedule_event( $td, self::HOOK_DAILY );
     }
 }
