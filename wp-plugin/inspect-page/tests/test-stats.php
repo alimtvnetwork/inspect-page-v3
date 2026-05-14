@@ -41,6 +41,7 @@ class InspectPage_AssetType {
 class InspectPage_ErrorCode {
     const E_SHARE_NOT_FOUND = 'E_SHARE_NOT_FOUND';
     const E_SHARE_FORBIDDEN = 'E_SHARE_FORBIDDEN';
+    const E_PRO_REQUIRED    = 'E_PRO_REQUIRED';
 }
 
 // License + user-meta shims for the event-log path.
