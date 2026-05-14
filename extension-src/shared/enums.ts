@@ -61,6 +61,7 @@ export enum LogCategory {
   Storage = "Storage",
   Settings = "Settings",
   Lifecycle = "Lifecycle",
+  Billing = "Billing",
 }
 
 export enum LogLevel {
