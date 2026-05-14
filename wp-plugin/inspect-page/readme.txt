@@ -16,6 +16,11 @@ Install and activate the plugin, then in the Inspect Page extension open Setting
 * `[inspect_page_account]` — front-end "My Inspect Page" panel: display name, license status, lifetime quota, and the user's last 20 Smart Share sessions with revoke buttons. Logged-out visitors see a Log in link.
 * `[inspect_page_pricing]` — Free vs Pro comparison card. Logged-in users get a one-click **Upgrade to Pro** button (or **Manage subscription** for Pro users) that opens Stripe-hosted Checkout / Customer Portal via the plugin's `/billing/checkout` and `/billing/portal` REST endpoints. Requires Stripe to be configured in WP Admin → Inspect Page → Billing.
 
+== Privacy ==
+The plugin records aggregate per-session view counters (`views`, `views_per_file`, `last_viewed_at` on `pp_share_sessions`) for every public Smart Share URL. These counters contain no visitor identity — only totals.
+
+Pro users may additionally opt into an anonymized event log via WP Admin → Inspect Page → Privacy. When enabled, each visit to one of their share URLs writes a row to `pp_share_events` containing only HMAC-SHA256 hashes of the visitor's IP and User-Agent (keyed with the per-install `inspect_page_url_secret`). Raw IPs and user-agents are never stored. The log is a rolling 30-day window — older rows are deleted by the hourly cleanup cron. Default OFF for every user; Free accounts cannot enable it.
+
 == Changelog ==
 = 2.4.0 =
 * Pricing shortcode polish: responsive 2-col grid that collapses on mobile, ✓-style feature checks, "Current plan" highlight for Free / Pro users, "You have used X of Y free Smart Shares" hint for Free users, post-checkout success banner via `?inspect_page_upgraded=1`, and richer Free-tier feature list (Pick Element inspector, distance guides, keyboard nav).
