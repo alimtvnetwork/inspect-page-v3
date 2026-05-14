@@ -929,6 +929,7 @@ function DebugPreview({ preview, activeUrl, shareEnabled, onShare, onClear }: De
 }
 
 function deriveDomain(url: string | undefined): string {
+  // (helper stays below)
   if (!url) return "page";
   try {
     return new URL(url).hostname.replace(/^www\./, "");
