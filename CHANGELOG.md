@@ -4,6 +4,34 @@ All notable changes to **Inspect Page** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Extension 2.5.4] — 2026-05-14
+
+### Added — In-extension billing UI (Option C)
+
+- **Enriched `/billing/status`**: the WP plugin now returns `plan`
+  (`pro` / `free`), `lifetime_used`, `free_limit`, and `remaining` so
+  the extension can render plan + quota state without a second
+  roundtrip.
+- **`getBillingStatus()` client wrapper**: typed cookie + `X-WP-Nonce`
+  GET in `extension-src/share/getBillingStatus.ts` with full error
+  mapping (`E_SHARE_AUTH` / `E_SHARE_NETWORK`) and 5 vitest cases.
+- **Pricing card / active-license panel**: a new `BillingPanel` block
+  in the Settings popover shows a plan badge (Pro / Free), a masked
+  subscription id (`sub_1A2B…7Z9X`) on Pro, and the `$5/month —
+  unlimited Smart Shares` tagline on Free. Refreshes on focus and on
+  the new `inspect-page:billing-changed` event.
+- **Post-checkout poll**: `pollBillingUntilPro()` polls
+  `/billing/status` every 3 s (5-min timeout) after Upgrade is
+  clicked from either the Settings popover or the inline
+  `E_SHARE_QUOTA_FREE` error CTA. On flip to Pro it dispatches
+  `inspect-page:billing-changed`, which both `BillingPanel` and the
+  Smart Share quota refresher listen to — the UI updates without a
+  manual sign-out + sign-in cycle. 3 vitest cases cover success,
+  timeout, and cancel.
+- **Tests**: 166/166 extension tests green (was 158).
+- **Repackaged**: `public/inspect-page.zip` (186K, sha
+  `ab7cd1…68acfb`) at extension version `2.5.4`.
+
 ## [Extension 2.5.3] — 2026-05-14
 
 ### Changed — Panel UI overhaul
