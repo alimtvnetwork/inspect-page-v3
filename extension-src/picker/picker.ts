@@ -24,6 +24,11 @@ interface PickerState {
   host: HTMLDivElement;
   shadow: ShadowRoot;
   box: HTMLDivElement;
+  marginBox: HTMLDivElement;
+  paddingBox: HTMLDivElement;
+  size: HTMLDivElement;
+  badges: HTMLDivElement[]; // [top, right, bottom, left] padding badges
+  mBadges: HTMLDivElement[]; // [top, right, bottom, left] margin badges
   tip: HTMLDivElement;
   prevCursor: string;
   rafScheduled: boolean;
@@ -107,6 +112,27 @@ export function enterPicker(handlers: PickerHandlers): void {
   const box = document.createElement("div");
   box.className = "lpe-pk-box";
   shadow.appendChild(box);
+
+  const marginBox = document.createElement("div");
+  marginBox.className = "lpe-pk-margin";
+  shadow.appendChild(marginBox);
+
+  const paddingBox = document.createElement("div");
+  paddingBox.className = "lpe-pk-padding";
+  shadow.appendChild(paddingBox);
+
+  const size = document.createElement("div");
+  size.className = "lpe-pk-size";
+  shadow.appendChild(size);
+
+  const mkBadge = (): HTMLDivElement => {
+    const b = document.createElement("div");
+    b.className = "lpe-pk-badge";
+    shadow.appendChild(b);
+    return b;
+  };
+  const badges = [mkBadge(), mkBadge(), mkBadge(), mkBadge()];
+  const mBadges = [mkBadge(), mkBadge(), mkBadge(), mkBadge()];
 
   const tip = document.createElement("div");
   tip.className = "lpe-pk-tip";
@@ -193,7 +219,7 @@ export function enterPicker(handlers: PickerHandlers): void {
   };
 
   state = {
-    host, shadow, box, tip,
+    host, shadow, box, marginBox, paddingBox, size, badges, mBadges, tip,
     prevCursor,
     rafScheduled: false,
     pendingEvent: null,
