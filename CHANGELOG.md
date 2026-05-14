@@ -4,6 +4,31 @@ All notable changes to **Inspect Page** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [WP 2.5.3] — 2026-05-14
+
+### Added — Weekly digest tuning (D2)
+
+- Per-user cadence: new `inspect_page_digest_cadence` user meta with
+  values `weekly` (default) and `daily` (Pro only — server-side
+  enforced in `InspectPage_Digest::set_cadence()`).
+- Cron split: existing weekly `inspect_page_weekly_digest` now skips
+  users on `daily`; new `inspect_page_daily_digest` (registered in
+  the activator with WP's `daily` interval) emails only Pro users on
+  the daily cadence using a 1-day window.
+- Open-rate pixel: digest emails are now multipart/alternative; the
+  HTML part embeds a 1×1 transparent PNG served by REST
+  `GET /inspect-page/v1/digest/open/{token}.png`. Each open updates
+  `inspect_page_digest_last_open` + `_open_count` + a rolling 30-day
+  `_open_log` JSON list.
+- Admin Tools → Sessions screen gains an **Email digest** panel:
+  cadence dropdown + opt-out checkbox + table showing last cron run,
+  last open, and opens in the last 7 days
+  (`InspectPage_Digest::opens_last_7d`).
+- 4 new unit tests in `tests/test-digest.php` cover cadence routing,
+  daily cron Pro-only filter, default cadence, and
+  `opens_last_7d` window math. All Digest + Stats tests pass.
+- Bumped WP plugin to `2.5.3`; repackaged `public/inspect-page-wp.zip`.
+
 ## [WP 2.5.2] — 2026-05-14
 
 ### Added — CSV export of share-link visitor events (Pro)
