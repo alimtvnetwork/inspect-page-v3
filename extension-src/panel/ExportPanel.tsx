@@ -43,6 +43,7 @@ import { startBillingPortal } from "../share/startBillingPortal";
 import { revokeShareSession } from "../share/revokeShareSession";
 import { InspectShell } from "./inspect/InspectShell";
 import { ElementInspector } from "./element/ElementInspector";
+import { CodeDrawer } from "./element/CodeDrawer";
 import type { ElementSnapshot } from "@element/collectElementSnapshot";
 
 type PanelMode = "export" | "pick" | "inspect";
@@ -538,7 +539,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         )}
 
         {state.elementSnapshot && (
-          <ElementInspector
+          <ElementInspectorWithCode
             snapshot={state.elementSnapshot}
             onBack={() => setState((s) => ({ ...s, elementSnapshot: undefined, debugPreview: undefined, status: PanelStatus.Idle }))}
           />
@@ -1466,4 +1467,20 @@ function formatRemaining(ms: number): string {
   const s = total % 60;
   const pad = (n: number): string => n.toString().padStart(2, "0");
   return h > 0 ? `${h}h ${pad(m)}m ${pad(s)}s` : `${m}m ${pad(s)}s`;
+}
+
+function ElementInspectorWithCode(
+  { snapshot, onBack }: { snapshot: ElementSnapshot; onBack: () => void },
+): JSX.Element {
+  const [showCode, setShowCode] = useState(false);
+  return (
+    <>
+      <ElementInspector
+        snapshot={snapshot}
+        onBack={onBack}
+        onShowCode={() => setShowCode(true)}
+      />
+      {showCode && <CodeDrawer snapshot={snapshot} onClose={() => setShowCode(false)} />}
+    </>
+  );
 }
