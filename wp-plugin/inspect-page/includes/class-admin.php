@@ -172,6 +172,7 @@ final class InspectPage_Admin {
         add_action( 'admin_menu',  [ __CLASS__, 'menu' ] );
         add_action( 'admin_init',  [ __CLASS__, 'handle_actions' ] );
         add_action( 'admin_init',  [ __CLASS__, 'handle_billing_form' ] );
+        add_action( 'admin_init',  [ __CLASS__, 'handle_privacy_form' ] );
     }
 
     public static function menu() {
@@ -351,6 +352,9 @@ final class InspectPage_Admin {
 
         // ── Billing (Stripe) ────────────────────────────────────
         self::render_billing_section();
+
+        // ── Privacy / event log ────────────────────────────────
+        self::render_privacy_section( $uid );
 
         echo '</div>';
     }
