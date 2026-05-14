@@ -183,6 +183,8 @@ export function enterPicker(handlers: PickerHandlers): void {
   // ---- listeners ----
   const onMove = (e: PointerEvent | MouseEvent): void => {
     if (!state) return;
+    // Cursor moved → resume cursor-driven highlight, clear keyboard lock.
+    if (state.navTarget) state.navTarget = null;
     state.pendingEvent = e;
     if (state.rafScheduled) return;
     state.rafScheduled = true;
