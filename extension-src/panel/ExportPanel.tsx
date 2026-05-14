@@ -428,6 +428,35 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         )}
       </header>
 
+      {settingsOpen && (
+        <div className="lpe-settings-popover" role="dialog" aria-label={COPY.settingsHeader}>
+          <div className="lpe-settings-popover-head">
+            <strong>{COPY.settingsHeader}</strong>
+            <button
+              type="button"
+              className="lpe-header-btn"
+              onClick={onCloseSettings}
+              aria-label={COPY.btnClose}
+            >✕</button>
+          </div>
+          <div className="lpe-settings-popover-body">
+            {settings && (
+              <SettingsSection
+                settings={settings}
+                error={settingsError}
+                onPatch={onSettingsPatch}
+              />
+            )}
+            {shareSettings && (
+              <ShareSettingsSection
+                settings={shareSettings}
+                onPatch={onShareSettingsPatch}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="lpe-tabs" role="tablist" aria-label={COPY.appName}>
         {(["export", "pick", "inspect"] as const).map((m) => (
           <button
