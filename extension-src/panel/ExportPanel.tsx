@@ -40,6 +40,7 @@ import { getShareSettings, setShareSettings } from "@shared/shareSettings";
 import { listShareSessions, type ShareSessionSummary } from "../share/listShareSessions";
 import { startBillingCheckout } from "../share/startBillingCheckout";
 import { startBillingPortal } from "../share/startBillingPortal";
+import { getBillingStatus, type BillingStatus } from "../share/getBillingStatus";
 import { emitBilling } from "../share/billingTelemetry";
 import { revokeShareSession } from "../share/revokeShareSession";
 import { InspectShell } from "./inspect/InspectShell";
@@ -1117,6 +1118,64 @@ interface ShareSettingsSectionProps {
   onPatch: (patch: Partial<ShareSettings>) => void;
 }
 
+/**
+ * Option C — Phase 3: Pricing card / active-license panel.
+ *
+ * Reads the enriched `/billing/status` (Phase 1) via `getBillingStatus`
+ * and renders a compact plan badge + masked subscription id (Pro) or
+ * persistent upgrade tagline (Free). Sits inside the Settings popover
+ * above the existing quota block, which still drives the per-share
+ * progress bar from `/auth-status`.
+ */
+function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
+  const [status, setStatus] = useState<BillingStatus | null>(null);
+  useEffect(() => {
+    if (!signedIn) { setStatus(null); return; }
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const s = await getBillingStatus({ getShareSettings });
+        if (!cancelled) setStatus(s);
+      } catch { if (!cancelled) setStatus(null); }
+    };
+    void refresh();
+    if (typeof window === "undefined") return () => { cancelled = true; };
+    const onFocus = () => { void refresh(); };
+    window.addEventListener("focus", onFocus);
+    return () => { cancelled = true; window.removeEventListener("focus", onFocus); };
+  }, [signedIn]);
+  if (!status) return null;
+  const isPro = status.plan === "pro";
+  const sub = status.subscription
+    ? `${status.subscription.slice(0, 8)}…${status.subscription.slice(-4)}`
+    : "";
+  return (
+    <div
+      className="lpe-billing-panel"
+      data-plan={status.plan}
+      role="group"
+      aria-label={COPY.billingPlanLabel}
+    >
+      <div className="lpe-billing-row">
+        <span className="lpe-billing-label">{COPY.billingPlanLabel}</span>
+        <span className="lpe-billing-badge" data-plan={status.plan}>
+          {isPro ? COPY.billingPlanPro : COPY.billingPlanFree}
+        </span>
+      </div>
+      {isPro && sub && (
+        <div className="lpe-billing-row">
+          <span className="lpe-billing-label">{COPY.billingSubscriptionLabel}</span>
+          <code className="lpe-billing-sub">{sub}</code>
+        </div>
+      )}
+      {!isPro && (
+        <div className="lpe-billing-tagline">{COPY.billingPriceTagline}</div>
+      )}
+    </div>
+  );
+}
+
+
 function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps): JSX.Element {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -1234,6 +1293,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
               {COPY.shareSignedInAsPrefix}{" "}
               <strong>{settings.displayName || settings.email}</strong>
             </div>
+            <BillingPanel signedIn={signedIn} />
             {quota && (
               <div className="lpe-debug-note" role="status">
                 {quota.hasLicense

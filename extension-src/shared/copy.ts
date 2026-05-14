@@ -212,6 +212,13 @@ export const COPY = {
   shareUpgradeHint: "Upgrade to Pro for unlimited shares",
   shareUpgradeBtn: "Upgrade to Pro",
   shareManageSubscriptionBtn: "Manage subscription",
+  /** Phase 3 — plan badge / pricing card in Settings popover. */
+  billingPlanLabel: "Plan",
+  billingPlanFree: "Free",
+  billingPlanPro: "Pro",
+  billingSubscriptionLabel: "Subscription",
+  billingPriceTagline: "$5 / month — unlimited Smart Shares",
+  billingUpgradeAlwaysHint: "Tip: Pro removes the 5-share lifetime cap.",
   shareQuotaFreeReachedMsg: "Free quota reached. Upgrade to Inspect Page Pro to keep sharing.",
 } as const;
 

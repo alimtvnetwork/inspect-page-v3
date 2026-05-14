@@ -1207,3 +1207,48 @@
 .lpe-settings-popover { background: var(--lpe-surface); border-color: var(--lpe-border); }
 .lpe-root[data-lpe-theme="dark"] .lpe-settings-popover { background: var(--lpe-surface); border-color: var(--lpe-border); }
 .lpe-settings-popover-head { border-bottom-color: var(--lpe-border); color: var(--lpe-fg); background: var(--lpe-surface-2); }
+
+/* Phase 3 — Billing plan panel */
+.lpe-billing-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--lpe-surface);
+  border: 1px solid var(--lpe-border);
+}
+.lpe-billing-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.lpe-billing-label {
+  color: var(--lpe-muted);
+  font-size: 12px;
+}
+.lpe-billing-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--lpe-surface-2);
+  color: var(--lpe-fg);
+  border: 1px solid var(--lpe-border);
+}
+.lpe-billing-badge[data-plan="pro"] {
+  background: var(--lpe-accent);
+  color: #fff;
+  border-color: var(--lpe-accent);
+}
+.lpe-billing-sub {
+  font-size: 11px;
+  color: var(--lpe-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.lpe-billing-tagline {
+  font-size: 11px;
+  color: var(--lpe-muted);
+}
