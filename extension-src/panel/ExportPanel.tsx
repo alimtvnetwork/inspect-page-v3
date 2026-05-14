@@ -1482,7 +1482,7 @@ function ElementInspectorWithCode(
     preview?: StatusUpdatePayload["debugPreview"];
     activeUrl?: string;
     shareEnabled?: boolean;
-    onShare?: (artifacts: ExportArtifacts) => Promise<ShareResult> | ShareResult;
+    onShare?: (artifacts: ExportArtifacts) => Promise<void>;
   },
 ): JSX.Element {
   const [showCode, setShowCode] = useState(false);
