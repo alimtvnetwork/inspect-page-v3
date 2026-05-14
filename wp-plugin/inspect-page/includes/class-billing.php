@@ -138,10 +138,18 @@ final class InspectPage_Billing {
 
     public static function rest_status( WP_REST_Request $req ) {
         $user = wp_get_current_user();
+        $has_license   = InspectPage_License::has_license( $user->ID );
+        $lifetime_used = InspectPage_License::lifetime_used( $user->ID );
+        $free_limit    = InspectPage_License::free_limit();
+        $remaining     = $has_license ? null : max( 0, $free_limit - $lifetime_used );
         return [
-            'has_license'   => InspectPage_License::has_license( $user->ID ),
+            'has_license'   => $has_license,
+            'plan'          => $has_license ? 'pro' : 'free',
             'configured'    => self::is_configured(),
             'subscription'  => (string) get_user_meta( $user->ID, self::META_SUB, true ),
+            'lifetime_used' => $lifetime_used,
+            'free_limit'    => $free_limit,
+            'remaining'     => $remaining,
         ];
     }
 
