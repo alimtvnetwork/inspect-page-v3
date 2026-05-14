@@ -1596,3 +1596,41 @@ function ElementInspectorWithCode(
     </>
   );
 }
+
+interface ShareLinksButtonProps {
+  shareSettings: ShareSettings | null;
+  hasArtifacts: boolean;
+  busy: boolean;
+  artifacts: ExportArtifacts | null;
+  onShare: (artifacts: ExportArtifacts) => Promise<void>;
+  onOpenSettings: () => void;
+}
+
+function ShareLinksButton(props: ShareLinksButtonProps): JSX.Element {
+  const { shareSettings, hasArtifacts, busy, artifacts, onShare, onOpenSettings } = props;
+  const signedIn = !!shareSettings && !!shareSettings.nonce && !!shareSettings.siteUrl;
+  if (!signedIn) {
+    return (
+      <button
+        type="button"
+        className="lpe-btn"
+        onClick={onOpenSettings}
+        disabled={busy}
+        title={COPY.exportModeShareDisabledTip}
+      >
+        {COPY.shareSignInBtn} — {COPY.exportModeShare}
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className="lpe-btn"
+      onClick={() => { if (artifacts) void onShare(artifacts); }}
+      disabled={busy || !hasArtifacts || !artifacts}
+      title={hasArtifacts ? COPY.exportModeShare : "Run export first"}
+    >
+      {COPY.exportModeShare}
+    </button>
+  );
+}
