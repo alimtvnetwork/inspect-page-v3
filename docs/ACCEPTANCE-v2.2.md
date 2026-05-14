@@ -99,3 +99,17 @@ PASS criteria: **86 / 86 tests green**, including:
 - `share/__tests__/createShareSession.test.ts` (8 cases)
 - `share/__tests__/smokeE2E.test.ts` (2 cases — cookie+nonce mock)
 - `share/__tests__/buildPromptMd.test.ts` (6 cases — 4-URL AI block)
+
+## 9. Share-link analytics (WP 2.5.1 / Ext 2.5.5)
+
+1. Create a Smart Share session, then `curl` each of the 4 returned URLs
+   twice. In Settings → Recent Shares the row shows `👁 8`. Click it →
+   per-file breakdown reads `html 2 · css 2 · js 2 · image 2` and the
+   "last viewed" timestamp matches now (±1 min).
+2. WP admin → Inspect Page → Sessions → toggle **Recent visitors** ON
+   on a Pro account. Hit any asset URL → drawer lists 1 anonymised
+   visitor (hashed IP/UA, file kind, ts).
+3. Repeat (2) on a Free account → no rows are written; toggle is
+   disabled with "Pro only" hint.
+4. Regression: `cd extension && bunx vitest run` → **175 / 175 green**,
+   including `share/__tests__/getSessionStats.test.ts` (9 cases).
