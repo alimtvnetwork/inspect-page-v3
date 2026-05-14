@@ -237,6 +237,9 @@ export function enterPicker(handlers: PickerHandlers): void {
   // ---- listeners ----
   const onMove = (e: PointerEvent | MouseEvent): void => {
     if (!state) return;
+    // Don't re-target while pointer is over our chip — keeps chip stable
+    // and prevents the highlighted element from changing under the cursor.
+    if (state.chipHover) return;
     // Cursor moved → resume cursor-driven highlight, clear keyboard lock.
     if (state.navTarget) state.navTarget = null;
     state.pendingEvent = e;
@@ -441,6 +444,7 @@ function updateOverlay(x: number, y: number): void {
     hideAll();
     return;
   }
+  state.currentTarget = target;
   state.box.style.left = `${r.left}px`;
   state.box.style.top = `${r.top}px`;
   state.box.style.width = `${r.width}px`;
@@ -489,11 +493,20 @@ function updateOverlay(x: number, y: number): void {
   positionBadge(state.mBadges[2]!, mb, r.left + r.width / 2, r.bottom + mb / 2, "cx");
   positionBadge(state.mBadges[3]!, ml, r.left - ml / 2, r.top + r.height / 2, "cx");
 
-  // Size chip — bottom-right of the element
+  // Chip — size badge + action icons, anchored bottom-right of element with
+  // viewport-edge collision flips so it never overlaps the highlighted box.
   state.size.textContent = `${Math.round(r.width)} × ${Math.round(r.height)}`;
-  state.size.style.left = `${Math.max(0, r.right - 60)}px`;
-  state.size.style.top = `${Math.min(window.innerHeight - 18, r.bottom + 4)}px`;
-  state.size.style.display = "block";
+  state.chip.style.display = "inline-flex";
+  // Measure first to flip cleanly
+  const cw = state.chip.offsetWidth || 120;
+  const ch = state.chip.offsetHeight || 28;
+  let chipLeft = Math.min(window.innerWidth - cw - 4, Math.max(4, r.right - cw));
+  let chipTop = r.bottom + 6;
+  if (chipTop + ch > window.innerHeight) chipTop = Math.max(4, r.top - ch - 6);
+  // Avoid covering the element if it's tall and chip would land inside it.
+  if (chipTop > r.top && chipTop < r.bottom) chipTop = r.bottom + 6;
+  state.chip.style.left = `${chipLeft}px`;
+  state.chip.style.top = `${chipTop}px`;
 
   // Tooltip — tag + id + classes (rich markup)
   state.tip.innerHTML = describeRich(target);
@@ -536,7 +549,8 @@ function hideAll(): void {
   state.tip.style.display = "none";
   state.marginBox.style.display = "none";
   state.paddingBox.style.display = "none";
-  state.size.style.display = "none";
+  state.chip.style.display = "none";
+  state.currentTarget = null;
   for (const b of state.badges) b.style.display = "none";
   for (const b of state.mBadges) b.style.display = "none";
   for (const g of state.guides) g.style.display = "none";
@@ -637,4 +651,14 @@ export function describe(el: Element): string {
   const id = el.id ? `#${el.id}` : "";
   const cls = Array.from(el.classList).slice(0, 3).map((c) => `.${c}`).join("");
   return `${tag}${id}${cls}`.slice(0, PICKER_TOOLTIP_MAX_CHARS);
+}
+
+/** P2: short selector for chip Copy action. Mirrors inspect/collectSnapshot. */
+function chipShortSelector(el: Element): string {
+  const tag = el.tagName.toLowerCase();
+  if (el.id) return `${tag}#${el.id}`;
+  const cls = (typeof el.className === "string")
+    ? el.className.trim().split(/\s+/).filter(Boolean).slice(0, 2).join(".")
+    : "";
+  return cls ? `${tag}.${cls}` : tag;
 }
