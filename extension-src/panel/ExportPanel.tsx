@@ -10,7 +10,7 @@
  *     handlers for RunFullPageExport / EnterPickerMode arrive in later stages.
  *     For now, clicking them shows an Error if the handler is missing — by design.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COPY } from "@shared/copy";
 import {
   INSPECT_PAGE_WP_SITE_URL,
@@ -133,6 +133,8 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const [shareResult, setShareResult] = useState<CreateShareSessionResponse | null>(null);
   const [onboardingDismissed, setOnboardingDismissed] = useState<boolean>(true);
   const [mode, setMode] = useState<PanelMode>("export");
+  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
+  const settingsBtnRef = useRef<HTMLButtonElement | null>(null);
   const [theme, setTheme] = useState<PanelTheme>(() => {
     try {
       const v = globalThis.localStorage?.getItem(THEME_STORAGE_KEY);
@@ -147,6 +149,22 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       return next;
     });
   }, []);
+
+  const onToggleSettings = useCallback(() => {
+    setSettingsOpen((v) => !v);
+  }, []);
+  const onCloseSettings = useCallback(() => {
+    setSettingsOpen(false);
+    settingsBtnRef.current?.focus();
+  }, []);
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); onCloseSettings(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [settingsOpen, onCloseSettings]);
 
   const disabled = isDisabledUrl(activeUrl);
 
@@ -378,7 +396,16 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         data-draggable={surface === "floating" ? "true" : "false"}
         data-drag-handle={surface === "floating" ? "true" : undefined}
       >
-        <span aria-hidden="true">≡</span>
+        <button
+          ref={settingsBtnRef}
+          type="button"
+          className="lpe-header-btn"
+          onClick={onToggleSettings}
+          aria-label={COPY.settingsHeader}
+          aria-expanded={settingsOpen}
+          aria-haspopup="dialog"
+          title={COPY.settingsHeader}
+        >≡</button>
         <span className="lpe-header-title">{COPY.appName}</span>
         <button
           type="button"
@@ -400,6 +427,35 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           </>
         )}
       </header>
+
+      {settingsOpen && (
+        <div className="lpe-settings-popover" role="dialog" aria-label={COPY.settingsHeader}>
+          <div className="lpe-settings-popover-head">
+            <strong>{COPY.settingsHeader}</strong>
+            <button
+              type="button"
+              className="lpe-header-btn"
+              onClick={onCloseSettings}
+              aria-label={COPY.btnClose}
+            >✕</button>
+          </div>
+          <div className="lpe-settings-popover-body">
+            {settings && (
+              <SettingsSection
+                settings={settings}
+                error={settingsError}
+                onPatch={onSettingsPatch}
+              />
+            )}
+            {shareSettings && (
+              <ShareSettingsSection
+                settings={shareSettings}
+                onPatch={onShareSettingsPatch}
+              />
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="lpe-tabs" role="tablist" aria-label={COPY.appName}>
         {(["export", "pick", "inspect"] as const).map((m) => (
@@ -596,7 +652,7 @@ interface SettingsSectionProps {
 
 function SettingsSection({ settings, error, onPatch }: SettingsSectionProps): JSX.Element {
   return (
-    <details className="lpe-settings">
+    <details className="lpe-settings" open>
       <summary>{COPY.settingsHeader}</summary>
       <div className="lpe-settings-body">
         {error && <div className="lpe-not-available" role="alert">{error}</div>}
@@ -1140,7 +1196,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
   }, [signedIn]);
 
   return (
-    <details className="lpe-settings">
+    <details className="lpe-settings" open>
       <summary>{COPY.shareSettingsHeader}</summary>
       <div className="lpe-settings-body">
         {!configured ? (
