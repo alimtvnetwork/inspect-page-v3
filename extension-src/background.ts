@@ -201,12 +201,48 @@ router.on<CollectInspectSnapshotPayload, CollectInspectSnapshotResponse>(
     try {
       const tab = await chrome.tabs.get(tid);
       if (tab.windowId !== undefined) {
+        // Hide our own UI (floating panel + picker overlay) so they don't
+        // appear in the Overview thumbnail. Restore in a finally below.
+        await chrome.scripting.executeScript({
+          target: { tabId: tid },
+          func: () => {
+            const ids = ["inspect-page-panel-host", "inspect-page-picker-host"];
+            const saved: Array<{ id: string; prev: string }> = [];
+            for (const id of ids) {
+              const el = document.getElementById(id);
+              if (el) {
+                saved.push({ id, prev: el.style.visibility });
+                el.style.visibility = "hidden";
+              }
+            }
+            (window as unknown as { __ipThumbHidden?: typeof saved }).__ipThumbHidden = saved;
+          },
+        }).catch(() => undefined);
+        // One frame for the browser to repaint without our overlays.
+        await new Promise((r) => setTimeout(r, 32));
         thumbnailDataUrl = await chrome.tabs.captureVisibleTab(
           tab.windowId, { format: "jpeg", quality: 70 },
         );
       }
     } catch (e) {
       logger.warn(LogCategory.Capture, ErrorCode.E_CAPTURE_FAILED, "inspect thumbnail capture failed", e);
+    } finally {
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tid },
+          func: () => {
+            const w = window as unknown as {
+              __ipThumbHidden?: Array<{ id: string; prev: string }>;
+            };
+            const saved = w.__ipThumbHidden ?? [];
+            for (const { id, prev } of saved) {
+              const el = document.getElementById(id);
+              if (el) el.style.visibility = prev;
+            }
+            delete w.__ipThumbHidden;
+          },
+        });
+      } catch { /* ignore restore failure */ }
     }
     return { snapshot: csRes.snapshot, thumbnailDataUrl };
   },
