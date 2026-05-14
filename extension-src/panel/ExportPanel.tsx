@@ -1277,12 +1277,15 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
     if (typeof document !== "undefined") {
       document.addEventListener("visibilitychange", onVisibility);
     }
+    const onBillingChanged = () => { void refresh(); };
+    window.addEventListener(BILLING_CHANGED_EVENT, onBillingChanged);
     return () => {
       cancelled = true;
       window.removeEventListener("focus", onFocus);
       if (typeof document !== "undefined") {
         document.removeEventListener("visibilitychange", onVisibility);
       }
+      window.removeEventListener(BILLING_CHANGED_EVENT, onBillingChanged);
     };
   }, [signedIn]);
 
