@@ -479,8 +479,9 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           data-status={state.status}
           role="status"
           aria-live="polite"
+          hidden={state.status === PanelStatus.Idle}
         >
-          {statusLabel(state)}
+          {state.status !== PanelStatus.Idle && statusLabel(state)}
           {state.status === PanelStatus.Capturing && state.progress && (
             <div className="lpe-progress" aria-hidden="true">
               <div
@@ -565,20 +566,8 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           />
         )}
 
-        {settings && !disabled && (
-          <SettingsSection
-            settings={settings}
-            error={settingsError}
-            onPatch={onSettingsPatch}
-          />
-        )}
-
-        {shareSettings && !disabled && (
-          <ShareSettingsSection
-            settings={shareSettings}
-            onPatch={onShareSettingsPatch}
-          />
-        )}
+        {/* Settings + Share Settings moved to header ≡ menu in Phase 2.
+            Intentionally hidden from the default first view. */}
       </div>
       {shareResult && (
         <ShareDialog
