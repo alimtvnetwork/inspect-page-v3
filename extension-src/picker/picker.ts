@@ -26,7 +26,14 @@ interface PickerState {
   box: HTMLDivElement;
   marginBox: HTMLDivElement;
   paddingBox: HTMLDivElement;
-  size: HTMLDivElement;
+  size: HTMLDivElement;       // size text inside chip
+  chip: HTMLDivElement;       // P1: chip group with size + action icons
+  chipBtnSelect: HTMLButtonElement;
+  chipBtnCopy: HTMLButtonElement;
+  chipBtnCancel: HTMLButtonElement;
+  chipFlash: HTMLSpanElement; // ephemeral "Copied" tag
+  chipHover: boolean;         // suppress overlay updates while pointer is on chip
+  currentTarget: Element | null; // last highlighted element (used by chip buttons)
   badges: HTMLDivElement[]; // [top, right, bottom, left] padding badges
   mBadges: HTMLDivElement[]; // [top, right, bottom, left] margin badges
   tip: HTMLDivElement;
@@ -74,14 +81,37 @@ const STYLE = `
   white-space: nowrap;
 }
 .lpe-pk-size {
-  position: fixed; pointer-events: none;
-  z-index: ${Z_INDEX_PICKER};
-  display: none;
   background: #7c5cff; color: #ffffff;
   font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
-  padding: 2px 5px; border-radius: 3px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+  padding: 2px 6px; border-radius: 3px;
   white-space: nowrap;
+}
+/* P1: chip group with size + action icons (clickable) */
+.lpe-pk-chip {
+  position: fixed; z-index: ${Z_INDEX_PICKER};
+  display: none; align-items: center; gap: 4px;
+  padding: 3px; border-radius: 5px;
+  background: rgba(13,17,23,0.92); color: #f6f8fa;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.08);
+  pointer-events: auto;
+  font: 11px ui-sans-serif, system-ui, sans-serif;
+}
+.lpe-pk-chip-btn {
+  all: unset; box-sizing: border-box;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 4px;
+  cursor: pointer; color: #f6f8fa;
+  font: 12px ui-sans-serif, system-ui, sans-serif;
+}
+.lpe-pk-chip-btn:hover { background: rgba(255,255,255,0.12); }
+.lpe-pk-chip-btn:focus-visible { outline: 2px solid #7c5cff; outline-offset: 1px; }
+.lpe-pk-chip-btn[data-variant="select"]:hover { background: rgba(60,200,140,0.25); color: #6dffb0; }
+.lpe-pk-chip-btn[data-variant="cancel"]:hover { background: rgba(255,90,90,0.25); color: #ffb4b4; }
+.lpe-pk-chip-flash {
+  display: none; padding: 0 6px; border-radius: 3px;
+  background: rgba(60,200,140,0.25); color: #6dffb0;
+  font-size: 10px;
 }
 .lpe-pk-guide {
   position: fixed; pointer-events: none;
