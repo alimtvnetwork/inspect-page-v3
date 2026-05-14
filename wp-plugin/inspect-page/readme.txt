@@ -4,7 +4,7 @@ Tags: ai, share, export
 Requires at least: 5.6
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 2.3.0
+Stable tag: 2.4.0
 License: MIT
 
 Backend for the Inspect Page Chrome extension. Hosts captured HTML / CSS / JS / image bundles for 24 hours behind public URLs so an LLM can read them.
@@ -17,6 +17,9 @@ Install and activate the plugin, then in the Inspect Page extension open Setting
 * `[inspect_page_pricing]` — Free vs Pro comparison card. Logged-in users get a one-click **Upgrade to Pro** button (or **Manage subscription** for Pro users) that opens Stripe-hosted Checkout / Customer Portal via the plugin's `/billing/checkout` and `/billing/portal` REST endpoints. Requires Stripe to be configured in WP Admin → Inspect Page → Billing.
 
 == Changelog ==
+= 2.4.0 =
+* Pricing shortcode polish: responsive 2-col grid that collapses on mobile, ✓-style feature checks, "Current plan" highlight for Free / Pro users, "You have used X of Y free Smart Shares" hint for Free users, post-checkout success banner via `?inspect_page_upgraded=1`, and richer Free-tier feature list (Pick Element inspector, distance guides, keyboard nav).
+
 = 2.3.0 =
 * Stripe Checkout + Customer Portal wired end-to-end. New REST routes `/billing/checkout`, `/billing/portal`, `/billing/webhook`, `/billing/status`. Webhook is signature-verified (manual `v1=` HMAC, no Stripe SDK required) and flips `inspect_page_license` to `active` automatically on `checkout.session.completed` / `invoice.paid` and clears it on `customer.subscription.deleted` / `invoice.payment_failed`.
 * WP Admin → Inspect Page → Billing section: paste Stripe secret / price ID / webhook secret, see configured status, and copy the webhook endpoint URL.
