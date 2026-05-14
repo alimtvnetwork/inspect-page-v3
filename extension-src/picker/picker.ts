@@ -176,7 +176,31 @@ export function enterPicker(handlers: PickerHandlers): void {
 
   const size = document.createElement("div");
   size.className = "lpe-pk-size";
-  shadow.appendChild(size);
+  // (size now lives inside the chip group below)
+
+  // P1: chip group — size badge + action icons (Select / Copy / Cancel)
+  const chip = document.createElement("div");
+  chip.className = "lpe-pk-chip";
+  chip.appendChild(size);
+
+  const mkChipBtn = (label: string, glyph: string, variant: string): HTMLButtonElement => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "lpe-pk-chip-btn";
+    b.dataset.variant = variant;
+    b.setAttribute("aria-label", label);
+    b.title = label;
+    b.textContent = glyph;
+    return b;
+  };
+  const chipBtnSelect = mkChipBtn("Select element", "✓", "select");
+  const chipBtnCopy = mkChipBtn("Copy selector", "⧉", "copy");
+  const chipBtnCancel = mkChipBtn("Cancel picker", "✕", "cancel");
+  const chipFlash = document.createElement("span");
+  chipFlash.className = "lpe-pk-chip-flash";
+  chipFlash.textContent = "Copied";
+  chip.append(chipBtnSelect, chipBtnCopy, chipBtnCancel, chipFlash);
+  shadow.appendChild(chip);
 
   const mkBadge = (): HTMLDivElement => {
     const b = document.createElement("div");
@@ -268,6 +292,45 @@ export function enterPicker(handlers: PickerHandlers): void {
     });
   };
 
+  // P1: short-circuit overlay re-targeting while pointer is on the chip
+  const onChipEnter = (): void => { if (state) state.chipHover = true; };
+  const onChipLeave = (): void => { if (state) state.chipHover = false; };
+  chip.addEventListener("pointerenter", onChipEnter);
+  chip.addEventListener("pointerleave", onChipLeave);
+
+  // P2: chip button handlers — operate on the last highlighted target.
+  const fireSelect = (e: Event): void => {
+    e.preventDefault(); e.stopPropagation();
+    const t = state?.currentTarget ?? null;
+    if (!t) return;
+    const rect = t.getBoundingClientRect();
+    void Promise.resolve(handlers.onSelect({ element: t, rect })).catch((err) => {
+      logger.warn(LogCategory.Picker, "SELECT_FAIL", "select handler threw", err);
+    });
+  };
+  const fireCopy = async (e: Event): Promise<void> => {
+    e.preventDefault(); e.stopPropagation();
+    const t = state?.currentTarget ?? null;
+    if (!t) return;
+    const sel = chipShortSelector(t);
+    try { await navigator.clipboard.writeText(sel); } catch { /* ignore */ }
+    if (state) {
+      state.chipFlash.style.display = "inline-block";
+      window.setTimeout(() => {
+        if (state) state.chipFlash.style.display = "none";
+      }, 1100);
+    }
+    logger.info(LogCategory.Picker, "Copied selector via chip", sel);
+  };
+  const fireCancel = (e: Event): void => {
+    e.preventDefault(); e.stopPropagation();
+    handlers.onCancel();
+    exitPicker();
+  };
+  chipBtnSelect.addEventListener("click", fireSelect);
+  chipBtnCopy.addEventListener("click", (e) => { void fireCopy(e); });
+  chipBtnCancel.addEventListener("click", fireCancel);
+
   const onKeyDown = (e: KeyboardEvent): void => {
     if (e.key === "Escape") {
       e.preventDefault(); e.stopPropagation();
@@ -320,10 +383,15 @@ export function enterPicker(handlers: PickerHandlers): void {
     window.removeEventListener("click", onClick, true);
     window.removeEventListener("keydown", onKeyDown, true);
     window.removeEventListener("keyup", onKeyUp, true);
+    chip.removeEventListener("pointerenter", onChipEnter);
+    chip.removeEventListener("pointerleave", onChipLeave);
   };
 
   state = {
-    host, shadow, box, marginBox, paddingBox, size, badges, mBadges, tip,
+    host, shadow, box, marginBox, paddingBox, size,
+    chip, chipBtnSelect, chipBtnCopy, chipBtnCancel, chipFlash,
+    chipHover: false, currentTarget: null,
+    badges, mBadges, tip,
     guides, gBadges, altDown: false, lastX: -1, lastY: -1, navTarget: null,
     prevCursor,
     rafScheduled: false,
