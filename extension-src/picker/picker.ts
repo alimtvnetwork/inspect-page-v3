@@ -333,7 +333,7 @@ function pickTarget(x: number, y: number): Element | null {
 function updateOverlay(x: number, y: number): void {
   if (!state) return;
   state.lastX = x; state.lastY = y;
-  const target = pickTarget(x, y);
+  const target = state.navTarget ?? pickTarget(x, y);
   if (!target) {
     hideAll();
     return;
