@@ -724,6 +724,22 @@
 .lpe-recent-status[data-expired="true"] { color: #b42318; }
 .lpe-recent-row .lpe-btn { width: auto; padding: 2px 8px; font-size: 11px; }
 
+/* Views badge + per-file breakdown (Option A — Phase 4) */
+.lpe-views-badge {
+  background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 10px;
+  padding: 1px 7px; font-size: 10px; color: #374151; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 3px; line-height: 1.4;
+}
+.lpe-views-badge:hover { background: #e5e7eb; }
+.lpe-views-badge[aria-expanded="true"] { background: #dbeafe; border-color: #93c5fd; color: #1e40af; }
+.lpe-views-breakdown {
+  flex: 1 0 100%; display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 4px; padding: 6px 8px; background: #f9fafb;
+  border: 1px solid #e5e7eb; border-radius: 4px; font-size: 10px; color: #4b5563;
+}
+.lpe-views-breakdown b { color: #111827; font-weight: 600; }
+.lpe-views-last { margin-left: auto; color: #6b7280; font-style: italic; }
+
 /* ---------- CSS Information (Phase A7) ---------- */
 .lpe-cssinfo { display: flex; flex-direction: column; gap: 8px; }
 .lpe-cssinfo-grid {
