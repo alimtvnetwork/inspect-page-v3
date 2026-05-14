@@ -42,6 +42,8 @@ import { startBillingCheckout } from "../share/startBillingCheckout";
 import { startBillingPortal } from "../share/startBillingPortal";
 import { revokeShareSession } from "../share/revokeShareSession";
 import { InspectShell } from "./inspect/InspectShell";
+import { ElementInspector } from "./element/ElementInspector";
+import type { ElementSnapshot } from "@element/collectElementSnapshot";
 
 type PanelMode = "export" | "pick" | "inspect";
 type PanelTheme = "light" | "dark";
@@ -75,6 +77,8 @@ interface PanelState {
   lastAction?: "fullPage" | "pick";
   /** v1.2: in-panel debug preview for the picked element. */
   debugPreview?: NonNullable<StatusUpdatePayload["debugPreview"]>;
+  /** C3 — rich element snapshot for the new Inspector view. */
+  elementSnapshot?: ElementSnapshot;
   /** v1.3: artifacts returned by a successful Full Page export. */
   fullPageArtifacts?: {
     html: string;
@@ -192,6 +196,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           ? { errorCode: p.errorCode, errorDetail: p.errorDetail }
           : {}),
         ...(p.debugPreview ? { debugPreview: p.debugPreview } : {}),
+        ...(p.elementSnapshot ? { elementSnapshot: p.elementSnapshot as ElementSnapshot } : {}),
         ...(p.status === PanelStatus.Success && p.telemetry
           ? { successTelemetry: p.telemetry }
           : {}),
