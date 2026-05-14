@@ -498,24 +498,48 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         ) : (
           <>
             {mode === "export" && (
-              <button
-                type="button"
-                className="lpe-btn lpe-btn-primary"
-                onClick={onFullPage}
-                disabled={busy || settings === null}
-              >
-                {COPY.btnFullPage}
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="lpe-btn lpe-btn-primary"
+                  onClick={onFullPage}
+                  disabled={busy || settings === null}
+                >
+                  {COPY.btnFullPage}
+                </button>
+                <ShareLinksButton
+                  shareSettings={shareSettings}
+                  hasArtifacts={!!state.fullPageArtifacts}
+                  busy={busy}
+                  artifacts={state.fullPageArtifacts
+                    ? buildFullPageArtifactsForShare(state.fullPageArtifacts, activeUrl)
+                    : null}
+                  onShare={onShare}
+                  onOpenSettings={() => setSettingsOpen(true)}
+                />
+              </>
             )}
             {mode === "pick" && (
-              <button
-                type="button"
-                className="lpe-btn lpe-btn-primary"
-                onClick={onPick}
-                disabled={busy || settings === null}
-              >
-                {COPY.btnPick}
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="lpe-btn lpe-btn-primary"
+                  onClick={onPick}
+                  disabled={busy || settings === null}
+                >
+                  {COPY.btnPick}
+                </button>
+                <ShareLinksButton
+                  shareSettings={shareSettings}
+                  hasArtifacts={!!state.debugPreview}
+                  busy={busy}
+                  artifacts={state.debugPreview
+                    ? buildElementArtifacts(state.debugPreview, activeUrl)
+                    : null}
+                  onShare={onShare}
+                  onOpenSettings={() => setSettingsOpen(true)}
+                />
+              </>
             )}
             {surface === "popup" && (
               <button
