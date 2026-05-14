@@ -14,6 +14,7 @@ import {
 } from "@shared/constants";
 import { LogCategory } from "@shared/enums";
 import { logger } from "@shared/logger";
+import { contrastRatio, isLargeText, verdict } from "../inspect/contrast";
 
 export interface PickerHandlers {
   onSelect(detail: { element: Element; rect: DOMRect }): void | Promise<void>;
@@ -134,15 +135,26 @@ const STYLE = `
   position: fixed; pointer-events: none;
   background: #0d1117; color: #f6f8fa;
   font: 12px ui-sans-serif, system-ui, sans-serif;
-  padding: 4px 8px; border-radius: 6px;
+  padding: 10px 12px; border-radius: 10px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.32);
   border: 1px solid rgba(255,255,255,0.08);
   z-index: ${Z_INDEX_PICKER};
-  white-space: nowrap; max-width: 80vw; overflow: hidden;
+  max-width: 360px; min-width: 240px;
   display: none;
 }
 .lpe-pk-tip b { color: #c4b5fd; font-weight: 600; }
 .lpe-pk-tip i { color: #9ca3af; font-style: normal; margin-left: 6px; }
+.lpe-pk-tip .lpe-pk-head { font: 600 13px ui-sans-serif, system-ui, sans-serif; color: #f6f8fa; margin-bottom: 2px; word-break: break-all; }
+.lpe-pk-tip .lpe-pk-sub { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; color: #9ca3af; margin-bottom: 8px; }
+.lpe-pk-tip .lpe-pk-rows { display: grid; grid-template-columns: 88px 1fr; row-gap: 4px; column-gap: 8px; align-items: center; }
+.lpe-pk-tip .lpe-pk-k { color: #9ca3af; font-size: 11px; }
+.lpe-pk-tip .lpe-pk-v { color: #f6f8fa; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; display: inline-flex; align-items: center; gap: 6px; word-break: break-all; }
+.lpe-pk-tip .lpe-pk-sw { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.18); flex: none; background-image: linear-gradient(45deg, #555 25%, transparent 25%), linear-gradient(-45deg, #555 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #555 75%), linear-gradient(-45deg, transparent 75%, #555 75%); background-size: 6px 6px; background-position: 0 0, 0 3px, 3px -3px, -3px 0; }
+.lpe-pk-tip .lpe-pk-sw-fill { background-image: none; }
+.lpe-pk-tip .lpe-pk-pill { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.lpe-pk-tip .lpe-pk-pill.ok { background: rgba(60,200,140,0.18); color: #6dffb0; }
+.lpe-pk-tip .lpe-pk-pill.warn { background: rgba(255,196,84,0.18); color: #ffd479; }
+.lpe-pk-tip .lpe-pk-pill.bad { background: rgba(255,90,90,0.2); color: #ffb4b4; }
 `;
 
 export function isPickerActive(): boolean {
@@ -513,7 +525,7 @@ function updateOverlay(x: number, y: number): void {
   state.chip.style.top = `${chipTop}px`;
 
   // Tooltip — tag + id + classes (rich markup)
-  state.tip.innerHTML = describeRich(target);
+  state.tip.innerHTML = buildDetailHtml(target);
   state.tip.style.display = "block";
   // Position: prefer cursor + (12,12), flip if overflows.
   const tipRect = state.tip.getBoundingClientRect();
@@ -639,6 +651,97 @@ function describeRich(el: Element): string {
   const roleHtml = role ? `<i>${escapeHtml(role)}</i>` : "";
   const text = `<b>${tag}</b>${id}${cls}`.slice(0, PICKER_TOOLTIP_MAX_CHARS + 32);
   return `${text}${roleHtml}`;
+}
+
+function rgbToHex(value: string): string {
+  const v = (value || "").trim();
+  if (!v || v === "transparent" || v === "rgba(0, 0, 0, 0)") return "transparent";
+  if (v.startsWith("#")) return v.length === 4
+    ? `#${v[1]}${v[1]}${v[2]}${v[2]}${v[3]}${v[3]}`.toUpperCase()
+    : v.toUpperCase();
+  const m = /rgba?\(\s*(\d+)\s*[, ]\s*(\d+)\s*[, ]\s*(\d+)(?:\s*[,/ ]\s*([\d.]+))?\s*\)/i.exec(v);
+  if (!m) return v;
+  const r = (+m[1]!).toString(16).padStart(2, "0");
+  const g = (+m[2]!).toString(16).padStart(2, "0");
+  const b = (+m[3]!).toString(16).padStart(2, "0");
+  const aRaw = m[4] !== undefined ? Math.round(parseFloat(m[4]) * 255) : 255;
+  if (aRaw === 0) return "transparent";
+  const a = aRaw < 255 ? aRaw.toString(16).padStart(2, "0") : "";
+  return `#${r}${g}${b}${a}`.toUpperCase();
+}
+
+function resolveBgHex(el: Element): string {
+  let cur: Element | null = el;
+  while (cur) {
+    let cs: CSSStyleDeclaration | null = null;
+    try { cs = getComputedStyle(cur); } catch { cs = null; }
+    const hex = rgbToHex(cs?.backgroundColor ?? "");
+    if (hex !== "transparent") {
+      // collapse alpha for contrast math
+      return hex.length === 9 ? hex.slice(0, 7) : hex;
+    }
+    cur = cur.parentElement;
+  }
+  return "#FFFFFF";
+}
+
+function shortFontFamily(stack: string): string {
+  const first = stack.split(",")[0]?.trim().replace(/^["']|["']$/g, "") ?? "";
+  return first || stack;
+}
+
+function buildDetailHtml(el: Element): string {
+  const tag = el.tagName.toLowerCase();
+  const id = el.id ? `#${escapeHtml(el.id)}` : "";
+  const cls = Array.from(el.classList).slice(0, 2).map((c) => `.${escapeHtml(c)}`).join("");
+  const head = `${tag}${id}${cls}`.slice(0, PICKER_TOOLTIP_MAX_CHARS + 32);
+  const r = el.getBoundingClientRect();
+  const sub = `${Math.round(r.width)} × ${Math.round(r.height)}`;
+
+  let cs: CSSStyleDeclaration | null = null;
+  try { cs = getComputedStyle(el); } catch { cs = null; }
+
+  const fgHex = rgbToHex(cs?.color ?? "");
+  const bgRawHex = rgbToHex(cs?.backgroundColor ?? "");
+  const bgHex = bgRawHex === "transparent" ? resolveBgHex(el) : (bgRawHex.length === 9 ? bgRawHex.slice(0, 7) : bgRawHex);
+  const fontFamily = shortFontFamily(cs?.fontFamily ?? "");
+  const fontSize = cs?.fontSize ?? "";
+  const lineHeightRaw = cs?.lineHeight ?? "";
+  const lineHeight = lineHeightRaw === "normal" ? "normal" : lineHeightRaw;
+  const fontWeight = cs?.fontWeight ?? "";
+  const padding = cs ? `${cs.paddingTop} ${cs.paddingRight} ${cs.paddingBottom} ${cs.paddingLeft}` : "";
+
+  const fSize = parseFloat(fontSize) || 0;
+  const fWeight = parseInt(fontWeight, 10) || 400;
+  const fgForRatio = fgHex === "transparent" ? "#000000" : (fgHex.length === 9 ? fgHex.slice(0, 7) : fgHex);
+  const ratio = contrastRatio(fgForRatio, bgHex);
+  const v = verdict(ratio);
+  const large = isLargeText(fSize, fWeight);
+  const passes = large ? v.largeAA : v.normalAA;
+  const pillClass = v.label === "Excellent" ? "ok" : v.label === "Good" ? "ok" : v.label === "Poor" ? "warn" : "bad";
+
+  const swatch = (hex: string): string => {
+    if (hex === "transparent") return `<span class="lpe-pk-sw" title="transparent"></span>`;
+    const css = hex.length === 9 ? `#${hex.slice(1, 7)}` : hex;
+    return `<span class="lpe-pk-sw lpe-pk-sw-fill" style="background:${css}"></span>`;
+  };
+
+  const row = (k: string, v: string): string =>
+    `<div class="lpe-pk-k">${escapeHtml(k)}</div><div class="lpe-pk-v">${v}</div>`;
+
+  const rows = [
+    row("Text color", `${swatch(fgHex)}${escapeHtml(fgHex)}`),
+    row("Background", `${swatch(bgHex)}${escapeHtml(bgHex)}`),
+    row("Font family", escapeHtml(fontFamily)),
+    row("Font size", escapeHtml(fontSize)),
+    row("Line height", escapeHtml(String(lineHeight))),
+    row("Font weight", escapeHtml(fontWeight)),
+    row("Padding", escapeHtml(padding)),
+    row("Contrast",
+      `<span>${ratio.toFixed(2)}</span><span class="lpe-pk-pill ${pillClass}" title="${large ? "Large text" : "Normal text"} · ${passes ? "Passes" : "Fails"} WCAG AA">${escapeHtml(v.label)}</span>`),
+  ].join("");
+
+  return `<div class="lpe-pk-head">${escapeHtml(head)}</div><div class="lpe-pk-sub">${escapeHtml(sub)}</div><div class="lpe-pk-rows">${rows}</div>`;
 }
 
 function escapeHtml(s: string): string {
