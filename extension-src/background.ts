@@ -3,7 +3,7 @@
  */
 import { ErrorCode, LogCategory, MessageKind } from "@shared/enums";
 import { logger } from "@shared/logger";
-import { MessageError, MessageRouter, sendToTab } from "@shared/messaging";
+import { MessageError, MessageRouter, makeRequestId, sendToTab } from "@shared/messaging";
 import { getPanelPosition, getSettings, setPanelPosition, setSettings } from "@shared/settings";
 import { getShareSettings, normalizeBaseUrl, setShareSettings } from "@shared/shareSettings";
 import { createShareSession as createShareSessionImpl } from "@share/createShareSession";
@@ -51,7 +51,7 @@ import type {
 import { PanelStatus } from "@shared/enums";
 import { buildBundle } from "@zip/buildBundle";
 import { applyTemplate, domainFromUrl, localTimestamp } from "@zip/filename";
-import { captureFullPage } from "@capture/screenshotOrchestrator";
+import { captureFullPage, ensureOffscreen } from "@capture/screenshotOrchestrator";
 import { runElementExport } from "@element/runElementExport";
 
 logger.info(LogCategory.Lifecycle, `Service worker booted v${__EXT_VERSION__}`);
@@ -197,53 +197,7 @@ router.on<CollectInspectSnapshotPayload, CollectInspectSnapshotResponse>(
     const csRes = await sendToTab<{ tabId: number }, { snapshot: unknown }>(
       tid, MessageKind.CollectInspectSnapshot, { tabId: tid },
     );
-    let thumbnailDataUrl = "";
-    try {
-      const tab = await chrome.tabs.get(tid);
-      if (tab.windowId !== undefined) {
-        // Hide our own UI (floating panel + picker overlay) so they don't
-        // appear in the Overview thumbnail. Restore in a finally below.
-        await chrome.scripting.executeScript({
-          target: { tabId: tid },
-          func: () => {
-            const ids = ["inspect-page-panel-host", "inspect-page-picker-host"];
-            const saved: Array<{ id: string; prev: string }> = [];
-            for (const id of ids) {
-              const el = document.getElementById(id);
-              if (el) {
-                saved.push({ id, prev: el.style.visibility });
-                el.style.visibility = "hidden";
-              }
-            }
-            (window as unknown as { __ipThumbHidden?: typeof saved }).__ipThumbHidden = saved;
-          },
-        }).catch(() => undefined);
-        // One frame for the browser to repaint without our overlays.
-        await new Promise((r) => setTimeout(r, 32));
-        thumbnailDataUrl = await chrome.tabs.captureVisibleTab(
-          tab.windowId, { format: "jpeg", quality: 70 },
-        );
-      }
-    } catch (e) {
-      logger.warn(LogCategory.Capture, ErrorCode.E_CAPTURE_FAILED, "inspect thumbnail capture failed", e);
-    } finally {
-      try {
-        await chrome.scripting.executeScript({
-          target: { tabId: tid },
-          func: () => {
-            const w = window as unknown as {
-              __ipThumbHidden?: Array<{ id: string; prev: string }>;
-            };
-            const saved = w.__ipThumbHidden ?? [];
-            for (const { id, prev } of saved) {
-              const el = document.getElementById(id);
-              if (el) el.style.visibility = prev;
-            }
-            delete w.__ipThumbHidden;
-          },
-        });
-      } catch { /* ignore restore failure */ }
-    }
+    const thumbnailDataUrl = await captureInspectThumbnail(tid);
     return { snapshot: csRes.snapshot, thumbnailDataUrl };
   },
 );
