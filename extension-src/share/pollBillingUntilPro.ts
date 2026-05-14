@@ -45,8 +45,10 @@ export function pollBillingUntilPro(deps: PollDeps): PollHandle {
   let timer: ReturnType<typeof setTimeout> | null = null;
   const startedAt = Date.now();
   let last: BillingStatus | null = null;
+  let resolveOuter: ((v: BillingStatus | null) => void) | null = null;
 
   const done = new Promise<BillingStatus | null>((resolve) => {
+    resolveOuter = resolve;
     const tick = async (): Promise<void> => {
       if (cancelled) { resolve(last); return; }
       try {
@@ -69,6 +71,7 @@ export function pollBillingUntilPro(deps: PollDeps): PollHandle {
     cancel: () => {
       cancelled = true;
       if (timer) clearT(timer);
+      if (resolveOuter) { resolveOuter(last); resolveOuter = null; }
     },
   };
 }
