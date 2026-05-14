@@ -1,6 +1,6 @@
 # Phase 6 — Hardening + Chrome Web Store launch checklist
 
-Last updated: 13 May 2026 · Status: in progress
+Last updated: 14 May 2026 · Status: in progress · Targets **extension v2.5.0** + **WP plugin v2.4.0**
 
 This is the final gate before flipping the listing to **Public** on the Chrome
 Web Store. Everything below must be checked off (or explicitly waived) before
@@ -23,6 +23,11 @@ submitting.
 - [ ] Verify `INSPECT_PAGE_WP_SITE_URL` is set to the production HTTPS URL
       and that the production WP has Application Passwords disabled for the
       service account.
+- [ ] Stripe webhook signature: replay the same event with a tampered body
+      and confirm `403`; replay with a stale timestamp (>5 min) and confirm
+      `400`.
+- [ ] `inspect_page_license` cannot be set by an unprivileged user (REST or
+      profile edit) — only the webhook + admins.
 
 ## 2. Privacy + Terms
 
@@ -60,18 +65,51 @@ a fresh Chrome profile. Check:
 - [ ] Cron deletes a 24h-old session; URLs return 404 immediately after.
 - [ ] Front-end `[inspect_page_account]` page revokes correctly.
 - [ ] `/privacy` and `/terms` render on landing.
+- [ ] Pick Element inspector: identity, box-model, text props, selection
+      colors + WCAG verdict, Code drawer tabs, and 4 export modes all
+      render and copy correctly on a `<button>`, `<article>`, and an SVG.
+- [ ] Picker keyboard nav (↑ parent / ↓ first child / ←→ siblings / Enter
+      select) and Alt-held distance guides both work; mouse releases lock.
+
+### AC-BILL — Stripe billing acceptance
+
+- [ ] **AC-BILL-1** Free user clicks **Upgrade to Pro** in Settings →
+      lands on Stripe Checkout in <3s; cancel returns to extension; success
+      flips license to `active` within 5s of webhook delivery; quota row
+      now reads "Pro — unlimited".
+- [ ] **AC-BILL-2** Free user hits 5/5 quota; inline **Upgrade to Pro**
+      CTA on the Smart Share error opens Checkout; same end-state as AC-1.
+- [ ] **AC-BILL-3** Pro user clicks **Manage subscription** → Customer
+      Portal opens; cancel-at-period-end stays Pro until period end; full
+      cancel + `customer.subscription.deleted` flips license off; quota
+      row reverts to "Free shares used: X / 5".
+- [ ] **AC-BILL-4** `[inspect_page_pricing]` shortcode: shows "Current
+      plan" badge on the right tier, "X of Y free Smart Shares used" hint
+      for Free users, post-checkout success banner via
+      `?inspect_page_upgraded=1`, and collapses to a single column at
+      ≤640 px.
+- [ ] **AC-BILL-5** `chrome://extensions` service-worker logs show the
+      `Billing` category events: `UPGRADE_CLICKED`, `CHECKOUT_OPENED`,
+      (`CHECKOUT_FAILED` on forced failure), `PORTAL_CLICKED`,
+      `PORTAL_OPENED`, with the correct `surface` (`settings` vs
+      `inline_quota_error`) in the props bag.
 
 ## 5. Submit
 
-- [ ] Bump version in `extension/manifest.json` and `wp-plugin/inspect-page/inspect-page.php` to `2.3.0`.
-- [ ] Run `extension/scripts/package.sh` → upload `inspect-page.zip` to
-      Chrome Web Store dashboard.
-- [ ] Upload `wp-plugin/scripts/package.sh` output (`inspect-page-wp.zip`)
-      to `public/` and update download link version on landing.
-- [ ] Tag release `v2.3.0` and publish CHANGELOG entry.
+- [x] Bump `extension/manifest.json` + `extension/package.json` to `2.5.0`.
+- [x] Bump `wp-plugin/inspect-page/inspect-page.php` to `2.4.0`.
+- [x] `bash scripts/release.sh` → `public/inspect-page.zip` (extension)
+      and `public/inspect-page-wp.zip` (WP plugin) regenerated with fresh
+      `.sha256` files.
+- [ ] Upload `inspect-page.zip` to Chrome Web Store dashboard; pick
+      `store-assets/listing-2.5.0.md` for the listing copy.
+- [ ] Refresh the WP plugin download link on the landing page to
+      `inspect-page-wp.zip` (already in `public/`).
+- [ ] Tag release `v2.5.0` and publish the CHANGELOG entry above.
 
 ## 6. Post-launch (out of scope, tracked here)
 
 - Stripe Checkout subscription wiring (currently manual `wp user meta update`).
 - Signed (HMAC) share URLs — current scheme is unguessable IDs only.
 - Email digest of expired sessions.
+- Picker-chip action-icon UX (deferred since v2.3.0 — no in-page chip yet).
