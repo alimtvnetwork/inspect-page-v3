@@ -1235,6 +1235,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
               {COPY.shareSignedInAsPrefix}{" "}
               <strong>{settings.displayName || settings.email}</strong>
             </div>
+            <BillingPanel signedIn={signedIn} />
             {quota && (
               <div className="lpe-debug-note" role="status">
                 {quota.hasLicense
