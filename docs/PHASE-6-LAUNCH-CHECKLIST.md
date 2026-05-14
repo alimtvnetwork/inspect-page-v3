@@ -1,6 +1,6 @@
 # Phase 6 — Hardening + Chrome Web Store launch checklist
 
-Last updated: 14 May 2026 · Status: in progress · Targets **extension v2.5.0** + **WP plugin v2.4.0**
+Last updated: 14 May 2026 · Status: in progress · Targets **extension v2.5.1** + **WP plugin v2.4.0**
 
 This is the final gate before flipping the listing to **Public** on the Chrome
 Web Store. Everything below must be checked off (or explicitly waived) before
@@ -96,20 +96,23 @@ a fresh Chrome profile. Check:
 
 ## 5. Submit
 
-- [x] Bump `extension/manifest.json` + `extension/package.json` to `2.5.0`.
+- [x] Bump `extension/manifest.json` + `extension/package.json` to `2.5.1`.
 - [x] Bump `wp-plugin/inspect-page/inspect-page.php` to `2.4.0`.
 - [x] `bash scripts/release.sh` → `public/inspect-page.zip` (extension)
       and `public/inspect-page-wp.zip` (WP plugin) regenerated with fresh
       `.sha256` files.
 - [ ] Upload `inspect-page.zip` to Chrome Web Store dashboard; pick
-      `store-assets/listing-2.5.0.md` for the listing copy.
+      `store-assets/listing-2.5.1.md` for the listing copy and the
+      "Recent changes" field.
 - [ ] Refresh the WP plugin download link on the landing page to
       `inspect-page-wp.zip` (already in `public/`).
-- [ ] Tag release `v2.5.0` and publish the CHANGELOG entry above.
+- [ ] Tag release `v2.5.1` and publish `docs/RELEASE-NOTES-v2.5.1.md`
+      alongside the CHANGELOG entry above.
 
 ## 6. Post-launch (out of scope, tracked here)
 
 - Stripe Checkout subscription wiring (currently manual `wp user meta update`).
 - Signed (HMAC) share URLs — current scheme is unguessable IDs only.
 - Email digest of expired sessions.
-- Picker-chip action-icon UX (deferred since v2.3.0 — no in-page chip yet).
+- ~~Picker-chip action-icon UX (deferred since v2.3.0)~~ — **shipped in
+  v2.5.1**: in-page chip with ✓ Select / ⧉ Copy selector / ✕ Cancel.
