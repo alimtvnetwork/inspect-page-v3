@@ -294,7 +294,7 @@ export function enterPicker(handlers: PickerHandlers): void {
 
   state = {
     host, shadow, box, marginBox, paddingBox, size, badges, mBadges, tip,
-    guides, gBadges, altDown: false, lastX: -1, lastY: -1,
+    guides, gBadges, altDown: false, lastX: -1, lastY: -1, navTarget: null,
     prevCursor,
     rafScheduled: false,
     pendingEvent: null,
