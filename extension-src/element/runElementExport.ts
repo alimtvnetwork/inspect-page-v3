@@ -21,6 +21,7 @@ import { applyTemplate, domainFromUrl, localTimestamp } from "@zip/filename";
 import { blobToBase64, buildMarkdown } from "./buildMarkdown";
 import { captureAndCrop } from "./screenshotElement";
 import { ensureOffscreen } from "../capture/screenshotOrchestrator";
+import { ELEMENT_ISOLATED_MAX_CSS_PX } from "@shared/constants";
 
 interface OrchestratorEnv {
   tab: chrome.tabs.Tab;
@@ -50,24 +51,37 @@ export async function runElementExport(
     windowId: env.tab.windowId,
     rect: payload.rect,
     dpr: env.dpr,
+    viewportCssPx: env.viewportCssPx,
   });
   const contextBase64 = await blobToBase64(contextBlob);
 
   // P6 — isolated screenshot via offscreen iframe + html-to-image.
   let isolatedBase64: string | undefined;
   let isolatedSkipped = false;
-  try {
+  const elW = Math.round(payload.rect.width);
+  const elH = Math.round(payload.rect.height);
+  const tooLargeForIsolated =
+    elW > ELEMENT_ISOLATED_MAX_CSS_PX || elH > ELEMENT_ISOLATED_MAX_CSS_PX;
+  if (tooLargeForIsolated) {
+    isolatedSkipped = true;
+    logger.warn(
+      LogCategory.Element, "ISOLATED_SKIP",
+      `element ${elW}x${elH} exceeds ${ELEMENT_ISOLATED_MAX_CSS_PX}px cap; skipping isolated render`,
+    );
+  } else {
+    try {
     const env2 = await sendOffscreen<OffscreenRenderIsolatedResponse>(
       MessageKind.OffscreenRenderIsolated,
-      { html: payload.isolatedHtml, widthPx: Math.round(payload.rect.width), heightPx: Math.round(payload.rect.height) },
+      { html: payload.isolatedHtml, widthPx: elW, heightPx: elH },
     );
     // env2.dataUrl is `data:image/png;base64,XYZ` — strip prefix.
     const url = env2.dataUrl;
     const comma = url.indexOf(",");
     if (comma >= 0) isolatedBase64 = url.slice(comma + 1);
-  } catch (e) {
-    isolatedSkipped = true;
-    logger.warn(LogCategory.Element, "ISOLATED_SKIP", "isolated render failed; continuing", e);
+    } catch (e) {
+      isolatedSkipped = true;
+      logger.warn(LogCategory.Element, "ISOLATED_SKIP", "isolated render failed; continuing", e);
+    }
   }
 
   // P7 — assemble markdown.
