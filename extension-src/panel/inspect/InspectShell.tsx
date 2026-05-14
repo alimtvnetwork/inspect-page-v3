@@ -83,7 +83,7 @@ export function InspectShell(): JSX.Element {
           <InspectCssInfo snapshot={state.snapshot} />
           <InspectInspector snapshot={state.snapshot} />
           <footer className="lpe-inspect-footer">
-            <span>{format(COPY.inspectFooterLabel, { version: "2.3.0" })}</span>
+            <span>{format(COPY.inspectFooterLabel, { version: "2.5.0" })}</span>
           </footer>
         </>
       )}
