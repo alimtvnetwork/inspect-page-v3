@@ -33,29 +33,92 @@ final class InspectPage_Shortcode {
     public static function render_pricing() {
         $configured = class_exists( 'InspectPage_Billing' ) && InspectPage_Billing::is_configured();
         $free_limit = (int) get_option( 'inspect_page_free_lifetime_limit', 5 );
+        $is_logged_in = is_user_logged_in();
+        $is_pro       = false;
+        $used         = 0;
+        if ( $is_logged_in ) {
+            $uid     = get_current_user_id();
+            $summary = InspectPage_License::summary( $uid );
+            $is_pro  = ! empty( $summary['has_license'] );
+            $used    = (int) ( $summary['lifetime_used'] ?? 0 );
+        }
+        $just_upgraded = ! empty( $_GET['inspect_page_upgraded'] );
         ob_start();
         ?>
-        <div class="inspect-page-pricing" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:780px;margin:24px 0;">
-            <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;background:#fff;">
-                <h3 style="margin-top:0;"><?php esc_html_e( 'Free', 'inspect-page' ); ?></h3>
-                <p style="font-size:28px;margin:4px 0 12px;font-weight:600;">$0<span style="font-size:14px;color:#6b7280;font-weight:400;">/forever</span></p>
-                <ul style="line-height:1.8;padding-left:18px;">
-                    <li><?php echo esc_html( sprintf( __( '%d lifetime Smart Shares', 'inspect-page' ), $free_limit ) ); ?></li>
-                    <li><?php esc_html_e( '24-hour share-link expiry', 'inspect-page' ); ?></li>
-                    <li><?php esc_html_e( 'All export modes (MD / ZIP / Smart Share)', 'inspect-page' ); ?></li>
-                    <li><?php esc_html_e( 'Inspect Mode (read-only DOM/CSS inspector)', 'inspect-page' ); ?></li>
-                </ul>
-            </div>
-            <div style="border:2px solid #2563eb;border-radius:8px;padding:16px;background:#fff;position:relative;">
-                <span style="position:absolute;top:-10px;right:12px;background:#2563eb;color:#fff;font-size:11px;padding:2px 8px;border-radius:999px;"><?php esc_html_e( 'Recommended', 'inspect-page' ); ?></span>
-                <h3 style="margin-top:0;"><?php esc_html_e( 'Pro', 'inspect-page' ); ?></h3>
-                <p style="font-size:28px;margin:4px 0 12px;font-weight:600;">$5<span style="font-size:14px;color:#6b7280;font-weight:400;">/month</span></p>
-                <ul style="line-height:1.8;padding-left:18px;">
-                    <li><strong><?php esc_html_e( 'Unlimited Smart Shares', 'inspect-page' ); ?></strong></li>
-                    <li><?php esc_html_e( 'Everything in Free', 'inspect-page' ); ?></li>
-                    <li><?php esc_html_e( 'Cancel anytime via Stripe portal', 'inspect-page' ); ?></li>
-                </ul>
-                <?php self::render_pricing_cta( $configured ); ?>
+        <style>
+        .ip-pricing { max-width: 880px; margin: 24px 0; font-family: inherit; }
+        .ip-pricing-banner { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px;
+            background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-size: 14px; }
+        .ip-pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 640px) { .ip-pricing-grid { grid-template-columns: 1fr; } }
+        .ip-pricing-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px;
+            background: #fff; position: relative; display: flex; flex-direction: column; }
+        .ip-pricing-card.is-featured { border: 2px solid #2563eb; box-shadow: 0 6px 20px -8px rgba(37,99,235,0.35); }
+        .ip-pricing-card.is-current  { border-color: #16a34a; }
+        .ip-pricing-tag { position: absolute; top: -10px; right: 14px;
+            font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+            background: #2563eb; color: #fff; letter-spacing: 0.02em; }
+        .ip-pricing-tag.is-current { background: #16a34a; }
+        .ip-pricing-name { margin: 0 0 4px 0; font-size: 18px; }
+        .ip-pricing-price { font-size: 32px; font-weight: 700; margin: 4px 0 16px; line-height: 1; }
+        .ip-pricing-price small { font-size: 14px; color: #6b7280; font-weight: 400; margin-left: 4px; }
+        .ip-pricing-feats { list-style: none; padding: 0; margin: 0 0 16px; }
+        .ip-pricing-feats li { padding: 4px 0 4px 22px; position: relative; line-height: 1.5; font-size: 14px; }
+        .ip-pricing-feats li::before { content: "✓"; position: absolute; left: 0; top: 4px;
+            color: #16a34a; font-weight: 700; }
+        .ip-pricing-feats li.is-strong { font-weight: 600; }
+        .ip-pricing-cta { margin-top: auto; }
+        .ip-pricing-status { color: #6b7280; font-size: 13px; margin-left: 8px; }
+        .ip-pricing-note { color: #6b7280; font-size: 12px; margin-top: 10px; }
+        </style>
+        <div class="ip-pricing inspect-page-pricing">
+            <?php if ( $just_upgraded && $is_pro ) : ?>
+                <div class="ip-pricing-banner" role="status">
+                    <?php esc_html_e( "You're on Pro — thanks for supporting Inspect Page!", 'inspect-page' ); ?>
+                </div>
+            <?php endif; ?>
+            <div class="ip-pricing-grid">
+                <div class="ip-pricing-card<?php echo ( $is_logged_in && ! $is_pro ) ? ' is-current' : ''; ?>">
+                    <?php if ( $is_logged_in && ! $is_pro ) : ?>
+                        <span class="ip-pricing-tag is-current"><?php esc_html_e( 'Current plan', 'inspect-page' ); ?></span>
+                    <?php endif; ?>
+                    <h3 class="ip-pricing-name"><?php esc_html_e( 'Free', 'inspect-page' ); ?></h3>
+                    <p class="ip-pricing-price">$0<small><?php esc_html_e( 'forever', 'inspect-page' ); ?></small></p>
+                    <ul class="ip-pricing-feats">
+                        <li><?php echo esc_html( sprintf( _n( '%d lifetime Smart Share', '%d lifetime Smart Shares', $free_limit, 'inspect-page' ), $free_limit ) ); ?></li>
+                        <li><?php esc_html_e( '24-hour share-link expiry', 'inspect-page' ); ?></li>
+                        <li><?php esc_html_e( 'All export modes — MD, MD + files, ZIP, Smart Share', 'inspect-page' ); ?></li>
+                        <li><?php esc_html_e( 'Pick Element with full DOM/CSS inspector', 'inspect-page' ); ?></li>
+                        <li><?php esc_html_e( 'Box-model overlay, distance guides (Alt), keyboard nav', 'inspect-page' ); ?></li>
+                    </ul>
+                    <?php if ( $is_logged_in && ! $is_pro ) : ?>
+                        <p class="ip-pricing-note">
+                            <?php echo esc_html( sprintf(
+                                /* translators: 1: used, 2: limit */
+                                __( 'You have used %1$d of %2$d free Smart Shares.', 'inspect-page' ),
+                                $used, $free_limit
+                            ) ); ?>
+                        </p>
+                    <?php endif; ?>
+                </div>
+                <div class="ip-pricing-card is-featured<?php echo $is_pro ? ' is-current' : ''; ?>">
+                    <?php if ( $is_pro ) : ?>
+                        <span class="ip-pricing-tag is-current"><?php esc_html_e( 'Current plan', 'inspect-page' ); ?></span>
+                    <?php else : ?>
+                        <span class="ip-pricing-tag"><?php esc_html_e( 'Recommended', 'inspect-page' ); ?></span>
+                    <?php endif; ?>
+                    <h3 class="ip-pricing-name"><?php esc_html_e( 'Pro', 'inspect-page' ); ?></h3>
+                    <p class="ip-pricing-price">$5<small><?php esc_html_e( '/ month', 'inspect-page' ); ?></small></p>
+                    <ul class="ip-pricing-feats">
+                        <li class="is-strong"><?php esc_html_e( 'Unlimited Smart Shares', 'inspect-page' ); ?></li>
+                        <li><?php esc_html_e( 'Everything in Free', 'inspect-page' ); ?></li>
+                        <li><?php esc_html_e( 'Priority Smart Share queueing', 'inspect-page' ); ?></li>
+                        <li><?php esc_html_e( 'Cancel anytime via Stripe Customer Portal', 'inspect-page' ); ?></li>
+                    </ul>
+                    <div class="ip-pricing-cta">
+                        <?php self::render_pricing_cta( $configured ); ?>
+                    </div>
+                </div>
             </div>
         </div>
         <?php
