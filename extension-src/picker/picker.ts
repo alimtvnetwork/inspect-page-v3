@@ -35,6 +35,7 @@ interface PickerState {
   altDown: boolean;
   lastX: number;
   lastY: number;
+  navTarget: Element | null;  // B4: keyboard-navigated element (overrides cursor)
   prevCursor: string;
   rafScheduled: boolean;
   pendingEvent: PointerEvent | MouseEvent | null;
@@ -182,6 +183,8 @@ export function enterPicker(handlers: PickerHandlers): void {
   // ---- listeners ----
   const onMove = (e: PointerEvent | MouseEvent): void => {
     if (!state) return;
+    // Cursor moved → resume cursor-driven highlight, clear keyboard lock.
+    if (state.navTarget) state.navTarget = null;
     state.pendingEvent = e;
     if (state.rafScheduled) return;
     state.rafScheduled = true;
@@ -246,6 +249,25 @@ export function enterPicker(handlers: PickerHandlers): void {
       state.altDown = true;
       updateOverlay(state.lastX, state.lastY);
     }
+    if (!state) return;
+    const navKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"];
+    if (!navKeys.includes(e.key)) return;
+    const t = e.target as Element | null;
+    if (t?.closest?.("#inspect-page-panel-host")) return;
+    e.preventDefault(); e.stopPropagation();
+    const current = state.navTarget ?? pickTarget(state.lastX, state.lastY);
+    if (!current) return;
+    if (e.key === "Enter") {
+      const rect = current.getBoundingClientRect();
+      void Promise.resolve(handlers.onSelect({ element: current, rect })).catch((err) => {
+        logger.warn(LogCategory.Picker, "SELECT_FAIL", "select handler threw", err);
+      });
+      return;
+    }
+    const next = walkDom(current, e.key as "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight");
+    if (!next) return;
+    state.navTarget = next;
+    showTarget(next);
   };
   const onKeyUp = (e: KeyboardEvent): void => {
     if (e.key === "Alt" && state && state.altDown) {
@@ -272,7 +294,7 @@ export function enterPicker(handlers: PickerHandlers): void {
 
   state = {
     host, shadow, box, marginBox, paddingBox, size, badges, mBadges, tip,
-    guides, gBadges, altDown: false, lastX: -1, lastY: -1,
+    guides, gBadges, altDown: false, lastX: -1, lastY: -1, navTarget: null,
     prevCursor,
     rafScheduled: false,
     pendingEvent: null,
@@ -311,7 +333,7 @@ function pickTarget(x: number, y: number): Element | null {
 function updateOverlay(x: number, y: number): void {
   if (!state) return;
   state.lastX = x; state.lastY = y;
-  const target = pickTarget(x, y);
+  const target = state.navTarget ?? pickTarget(x, y);
   if (!target) {
     hideAll();
     return;
@@ -453,6 +475,34 @@ function setGLabel(el: HTMLDivElement, value: number, cx: number, cy: number): v
   const rect = el.getBoundingClientRect();
   el.style.left = `${Math.max(0, Math.round(cx - rect.width / 2))}px`;
   el.style.top = `${Math.max(0, Math.round(cy - rect.height / 2))}px`;
+}
+
+/** B4: re-render overlay anchored on a keyboard-selected element. */
+function showTarget(el: Element): void {
+  if (!state) return;
+  const r = el.getBoundingClientRect();
+  // Anchor cursor coordinates near the element so the tooltip lands sensibly.
+  updateOverlay(r.left + Math.min(40, r.width / 2), r.top + Math.min(20, r.height / 2));
+}
+
+/** B4: walk the DOM by arrow direction, skipping non-element nodes. */
+function walkDom(
+  el: Element,
+  key: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight",
+): Element | null {
+  if (key === "ArrowUp") {
+    const p = el.parentElement;
+    if (!p || p === document.documentElement) return null;
+    return p;
+  }
+  if (key === "ArrowDown") {
+    return el.firstElementChild ?? null;
+  }
+  if (key === "ArrowLeft") {
+    return el.previousElementSibling ?? null;
+  }
+  // ArrowRight
+  return el.nextElementSibling ?? null;
 }
 
 function positionBadge(el: HTMLDivElement, value: number, cx: number, cy: number, _anchor: string): void {
