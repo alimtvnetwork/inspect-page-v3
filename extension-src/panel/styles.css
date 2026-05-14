@@ -698,11 +698,7 @@
   font-size: 11px;
 }
 .lpe-share-url-row .lpe-btn { width: auto; padding: 3px 10px; font-size: 12px; }
-.lpe-share-link {
-  color: #2563eb; text-decoration: underline; font-weight: 500;
-  border: none; background: transparent; cursor: pointer; font: inherit; padding: 0;
-}
-.lpe-share-link:hover { color: #1d4ed8; }
+/* (removed duplicate .lpe-link override that was clobbering inspector buttons) */
 .lpe-recent-shares { margin-top: 10px; padding-top: 8px; border-top: 1px dashed #d0d7de; }
 .lpe-recent-header {
   display: flex; align-items: center; justify-content: space-between;
