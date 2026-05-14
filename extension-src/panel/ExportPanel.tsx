@@ -1435,6 +1435,7 @@ function RecentSharesList(): JSX.Element {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [revoking, setRevoking] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setBusy(true); setErr("");
@@ -1447,6 +1448,14 @@ function RecentSharesList(): JSX.Element {
   }, []);
 
   useEffect(() => { void refresh(); }, [refresh]);
+
+  // Refresh on focus so newly-created shares (and incremented views)
+  // appear without manual interaction.
+  useEffect(() => {
+    const onFocus = () => { void refresh(); };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [refresh]);
 
   const onRevoke = async (sid: string): Promise<void> => {
     setRevoking(sid); setErr("");
@@ -1486,7 +1495,29 @@ function RecentSharesList(): JSX.Element {
                   <span className="lpe-recent-status" data-expired={expired || !isActive}>
                     {expired ? "Expired" : r.status}
                   </span>
+                  <button
+                    type="button"
+                    className="lpe-views-badge"
+                    onClick={() => setExpanded((cur) => (cur === r.sessionId ? null : r.sessionId))}
+                    title={`html ${r.perFile.html} · css ${r.perFile.css} · js ${r.perFile.js} · image ${r.perFile.image}`}
+                    aria-expanded={expanded === r.sessionId}
+                  >
+                    <span aria-hidden="true">👁</span> {r.views}
+                  </button>
                 </div>
+                {expanded === r.sessionId && (
+                  <div className="lpe-views-breakdown" role="region" aria-label="Per-file views">
+                    <span><b>html</b> {r.perFile.html}</span>
+                    <span><b>css</b> {r.perFile.css}</span>
+                    <span><b>js</b> {r.perFile.js}</span>
+                    <span><b>image</b> {r.perFile.image}</span>
+                    {r.lastViewedAtIso && (
+                      <span className="lpe-views-last">
+                        last viewed {new Date(r.lastViewedAtIso).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                )}
                 {isActive && !expired && (
                   <button
                     type="button"
