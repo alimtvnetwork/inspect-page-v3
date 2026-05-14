@@ -652,7 +652,7 @@ interface SettingsSectionProps {
 
 function SettingsSection({ settings, error, onPatch }: SettingsSectionProps): JSX.Element {
   return (
-    <details className="lpe-settings">
+    <details className="lpe-settings" open>
       <summary>{COPY.settingsHeader}</summary>
       <div className="lpe-settings-body">
         {error && <div className="lpe-not-available" role="alert">{error}</div>}
@@ -1196,7 +1196,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
   }, [signedIn]);
 
   return (
-    <details className="lpe-settings">
+    <details className="lpe-settings" open>
       <summary>{COPY.shareSettingsHeader}</summary>
       <div className="lpe-settings-body">
         {!configured ? (
