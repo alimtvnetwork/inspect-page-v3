@@ -61,6 +61,12 @@ final class InspectPage_REST {
             'permission_callback' => [ 'InspectPage_Auth', 'require_wp_user' ],
         ] );
 
+        register_rest_route( $ns, '/sessions/(?P<id>[A-Za-z0-9_-]{16,64})/events.csv', [
+            'methods'             => 'GET',
+            'callback'            => [ __CLASS__, 'session_events_csv' ],
+            'permission_callback' => [ 'InspectPage_Auth', 'require_wp_user' ],
+        ] );
+
         register_rest_route(
             $ns,
             '/share/(?P<id>[A-Za-z0-9_-]{16,64})(?:\.(?P<sig>[A-Za-z0-9_-]{16,43}))?/(?P<slug>index\.html|style\.css|script\.js|preview\.png)',
