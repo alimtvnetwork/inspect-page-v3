@@ -172,6 +172,7 @@ final class InspectPage_Admin {
         add_action( 'admin_menu',  [ __CLASS__, 'menu' ] );
         add_action( 'admin_init',  [ __CLASS__, 'handle_actions' ] );
         add_action( 'admin_init',  [ __CLASS__, 'handle_billing_form' ] );
+        add_action( 'admin_init',  [ __CLASS__, 'handle_privacy_form' ] );
     }
 
     public static function menu() {
@@ -351,6 +352,9 @@ final class InspectPage_Admin {
 
         // ── Billing (Stripe) ────────────────────────────────────
         self::render_billing_section();
+
+        // ── Privacy / event log ────────────────────────────────
+        self::render_privacy_section( $uid );
 
         echo '</div>';
     }
@@ -606,6 +610,75 @@ final class InspectPage_Admin {
         $res = InspectPage_Billing::rest_portal( $req );
         if ( is_wp_error( $res ) ) wp_die( esc_html( $res->get_error_message() ) );
         wp_redirect( $res['url'] ); exit;
+    }
+
+    /**
+     * Privacy section — per-user opt-in to the anonymized event log
+     * (Pro only). Free users see the toggle disabled with an upgrade hint.
+     */
+    public static function render_privacy_section( $uid ) {
+        $is_pro  = class_exists( 'InspectPage_License' ) && InspectPage_License::has_license( (int) $uid );
+        $optin   = get_user_meta( (int) $uid, InspectPage_Stats::OPTIN_META, true );
+        $checked = ( $optin === '1' || $optin === 1 || $optin === true );
+
+        echo '<h2>' . esc_html__( 'Privacy — visitor analytics', 'inspect-page' ) . '</h2>';
+        echo '<form method="post" style="max-width:780px">';
+        wp_nonce_field( 'inspect_page_privacy_save' );
+        echo '<input type="hidden" name="inspect_page_privacy_form" value="1" />';
+        echo '<p><label>';
+        echo '<input type="checkbox" name="event_log_optin" value="1" ' . checked( $checked, true, false );
+        if ( ! $is_pro ) echo ' disabled';
+        echo ' /> ';
+        echo esc_html__( 'Log per-visit anonymized analytics (hashed IP + user-agent) for 30 days.', 'inspect-page' );
+        echo '</label></p>';
+        echo '<p class="description">';
+        echo esc_html__( 'Default OFF. When enabled, each visit to one of your Smart Share URLs is recorded as a one-way HMAC hash so you can see how many distinct visitors viewed your share. Raw IP and user-agent never hit the database. Rolling 30-day window — older rows are deleted automatically.', 'inspect-page' );
+        echo '</p>';
+        if ( ! $is_pro ) {
+            echo '<p><strong>' . esc_html__( 'Upgrade to Pro to enable this.', 'inspect-page' ) . '</strong></p>';
+        }
+        submit_button( __( 'Save privacy settings', 'inspect-page' ), 'secondary', '', false );
+        echo '</form>';
+
+        if ( $is_pro && $checked ) {
+            $events = InspectPage_Stats::recent_events_for_user( (int) $uid, 50 );
+            echo '<h3>' . esc_html__( 'Recent visitors', 'inspect-page' ) . '</h3>';
+            if ( ! $events ) {
+                echo '<p>' . esc_html__( 'No visits recorded yet in the last 30 days.', 'inspect-page' ) . '</p>';
+            } else {
+                echo '<table class="widefat striped" style="max-width:780px"><thead><tr>';
+                echo '<th>' . esc_html__( 'When (UTC)', 'inspect-page' ) . '</th>';
+                echo '<th>' . esc_html__( 'Session', 'inspect-page' ) . '</th>';
+                echo '<th>' . esc_html__( 'Asset', 'inspect-page' ) . '</th>';
+                echo '<th>' . esc_html__( 'Visitor (hashed)', 'inspect-page' ) . '</th>';
+                echo '</tr></thead><tbody>';
+                foreach ( $events as $e ) {
+                    echo '<tr>';
+                    echo '<td>' . esc_html( (string) $e['created_at'] ) . '</td>';
+                    echo '<td><code>' . esc_html( substr( (string) $e['session_id'], 0, 12 ) ) . '…</code></td>';
+                    echo '<td>' . esc_html( (string) $e['kind'] ) . '</td>';
+                    echo '<td><code>' . esc_html( substr( (string) $e['ip_hash'], 0, 12 ) ) . '…</code></td>';
+                    echo '</tr>';
+                }
+                echo '</tbody></table>';
+            }
+        }
+    }
+
+    /** Saves the privacy opt-in toggle. */
+    public static function handle_privacy_form() {
+        if ( empty( $_POST['inspect_page_privacy_form'] ) ) return;
+        if ( ! is_user_logged_in() ) wp_die( 'login required' );
+        check_admin_referer( 'inspect_page_privacy_save' );
+        $uid = get_current_user_id();
+        $val = ! empty( $_POST['event_log_optin'] ) ? '1' : '';
+        // Pro gate enforced server-side: free users cannot enable the log.
+        if ( $val === '1' && ! ( class_exists( 'InspectPage_License' ) && InspectPage_License::has_license( $uid ) ) ) {
+            $val = '';
+        }
+        update_user_meta( $uid, InspectPage_Stats::OPTIN_META, $val );
+        wp_safe_redirect( add_query_arg( [ 'page' => 'inspect-page', 'privacy' => 'saved' ], admin_url( 'admin.php' ) ) );
+        exit;
     }
 }
 

@@ -34,6 +34,10 @@ final class InspectPage_Cleanup {
         $wpdb->query(
             "DELETE FROM {$p}rate_events WHERE created_at < (UTC_TIMESTAMP() - INTERVAL 2 HOUR)"
         );
+        // Purge anonymized visitor events past the 30-day rolling window.
+        if ( class_exists( 'InspectPage_Stats' ) ) {
+            InspectPage_Stats::purge_old_events();
+        }
         return $n;
     }
 

@@ -43,10 +43,28 @@ class InspectPage_ErrorCode {
     const E_SHARE_FORBIDDEN = 'E_SHARE_FORBIDDEN';
 }
 
+// License + user-meta shims for the event-log path.
+$GLOBALS['_pp_user_meta'] = [];
+$GLOBALS['_pp_pro_users'] = []; // uid => true means Pro
+function get_user_meta( $uid, $key, $single = false ) {
+    return $GLOBALS['_pp_user_meta'][ "$uid:$key" ] ?? '';
+}
+function update_user_meta( $uid, $key, $value ) {
+    $GLOBALS['_pp_user_meta'][ "$uid:$key" ] = $value;
+    return true;
+}
+class InspectPage_License {
+    public static function has_license( $uid ) {
+        return ! empty( $GLOBALS['_pp_pro_users'][ (int) $uid ] );
+    }
+}
+
 // ---- $wpdb mock ---------------------------------------------------------
 class FakeWpdb {
     public $prefix = 'wp_';
     public $rows = []; // id => row array
+    public $events = [];
+    public $deleted = 0;
     public function prepare( $q, ...$args ) {
         // Naive %d / %s substitution (single placeholder cases only).
         foreach ( $args as $a ) {
@@ -72,6 +90,43 @@ class FakeWpdb {
         if ( ! isset( $this->rows[ $id ] ) ) return false;
         foreach ( $data as $k => $v ) { $this->rows[ $id ][ $k ] = $v; }
         return 1;
+    }
+    public function get_var( $q ) {
+        if ( preg_match( "/WHERE name = '([^']+)'/", $q, $m ) ) {
+            $map = [ 'html' => 1, 'css' => 2, 'js' => 3, 'image' => 4 ];
+            return isset( $map[ $m[1] ] ) ? $map[ $m[1] ] : 0;
+        }
+        return null;
+    }
+    public function insert( $table, $data ) {
+        $this->events[] = $data + [ '_table' => $table ];
+        return 1;
+    }
+    public function get_results( $q, $type = 0 ) {
+        // recent_events_for_user query
+        if ( strpos( $q, 'FROM wp_pp_share_events' ) !== false ) {
+            $out = [];
+            foreach ( array_reverse( $this->events ) as $e ) {
+                $out[] = [
+                    'created_at' => $e['created_at'] ?? '',
+                    'ip_hash'    => $e['ip_hash']    ?? '',
+                    'ua_hash'    => $e['ua_hash']    ?? '',
+                    'kind'       => 'html',
+                    'session_id' => 'sess-aaaaaaaaaaaaaaaa',
+                ];
+            }
+            return $out;
+        }
+        return [];
+    }
+    public function query( $q ) {
+        if ( strpos( $q, 'DELETE FROM wp_pp_share_events' ) !== false ) {
+            $n = count( $this->events );
+            $this->events = [];
+            $this->deleted += $n;
+            return $n;
+        }
+        return 0;
     }
 }
 $GLOBALS['wpdb'] = new FakeWpdb();
@@ -143,5 +198,41 @@ assert_eq( $err->code, 'E_SHARE_NOT_FOUND', 'not-found code' );
 
 echo "Stats: cross-user isolation (session 2 untouched)\n";
 assert_eq( $GLOBALS['wpdb']->rows[2]['views'], 0, "user 8's session not affected" );
+
+// ---- Event log (Phase 5) ------------------------------------------------
+echo "Stats: event log is OFF for free user even when opt-in flag set\n";
+$GLOBALS['wpdb']->events = [];
+update_user_meta( 7, 'inspect_page_event_log_optin', '1' );  // opt-in but not Pro
+InspectPage_Stats::record_view( 2, 'html', '8.8.8.8' );      // session owned by user 8 (free)
+update_user_meta( 8, 'inspect_page_event_log_optin', '1' );
+InspectPage_Stats::record_view( 2, 'css', '8.8.8.8' );
+assert_eq( count( $GLOBALS['wpdb']->events ), 0, 'no events for free user' );
+
+echo "Stats: Pro + opt-in writes anonymized event\n";
+$GLOBALS['_pp_pro_users'][8] = true; // promote user 8 to Pro
+InspectPage_Stats::record_view( 2, 'js', '8.8.8.8' );
+assert_eq( count( $GLOBALS['wpdb']->events ), 1, 'one event recorded' );
+$evt = $GLOBALS['wpdb']->events[0];
+assert_eq( strlen( $evt['ip_hash'] ), 40, 'ip_hash is 40 chars' );
+assert_eq( strlen( $evt['ua_hash'] ), 40, 'ua_hash is 40 chars' );
+assert_eq( $evt['session_id'], 2, 'event linked to session row 2' );
+assert_eq( $evt['asset_type_id'], 3, 'asset_type_id resolved (js=3)' );
+
+echo "Stats: Pro without opt-in does not log\n";
+$GLOBALS['_pp_pro_users'][8] = true;
+update_user_meta( 8, 'inspect_page_event_log_optin', '' );
+$before = count( $GLOBALS['wpdb']->events );
+InspectPage_Stats::record_view( 2, 'image', '8.8.8.8' );
+assert_eq( count( $GLOBALS['wpdb']->events ), $before, 'opt-in off blocks event' );
+
+echo "Stats: recent_events_for_user returns rows for owner\n";
+$rows = InspectPage_Stats::recent_events_for_user( 8, 50 );
+assert_eq( is_array( $rows ), true, 'returns array' );
+assert_eq( count( $rows ) >= 1, true, 'has at least one row' );
+
+echo "Stats: purge_old_events clears the table\n";
+$n = InspectPage_Stats::purge_old_events();
+assert_eq( $n, count( $rows ), 'purged equals previous count' );
+assert_eq( count( $GLOBALS['wpdb']->events ), 0, 'events table empty' );
 
 echo "\nAll Stats tests passed.\n";

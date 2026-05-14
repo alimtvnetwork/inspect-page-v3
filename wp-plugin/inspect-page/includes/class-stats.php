@@ -2,23 +2,30 @@
 /**
  * Per-session view-counter for Smart Share public asset URLs.
  *
- * Two surfaces:
+ * Surfaces:
  *   - InspectPage_Stats::record_view( $session_row_id, $kind )
  *       Increments aggregate + per-file counters. Throttled per
- *       (client IP, session) for 60 s via transient cache so a single
- *       client reloading a tab cannot inflate the count.
+ *       (client IP, session, kind) for 60 s via transient cache so a
+ *       single client reloading a tab cannot inflate the count.
  *   - InspectPage_Stats::get_stats( $session_id, $user_id )
  *       Owner-only summary used by REST GET /sessions/{id}/stats.
- *
- * Storage: aggregate `views`, JSON `views_per_file` and `last_viewed_at`
- * columns on `pp_share_sessions` (added by the activator on upgrade).
+ *   - InspectPage_Stats::recent_events_for_user( $user_id, $limit )
+ *       Pro-only opt-in event log (anonymized hashes only).
+ *   - InspectPage_Stats::purge_old_events()
+ *       Hourly cleanup; rolling EVENT_LOG_DAYS window.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 final class InspectPage_Stats {
 
-    /** Throttle window (seconds) per IP+session. */
+    /** Throttle window (seconds) per IP+session+kind. */
     const THROTTLE_TTL = 60;
+
+    /** User-meta key gating the optional event log (Pro only). */
+    const OPTIN_META = 'inspect_page_event_log_optin';
+
+    /** Rolling event-log window (days). */
+    const EVENT_LOG_DAYS = 30;
 
     /**
      * Record a single view. $kind must be one of InspectPage_AssetType.
@@ -59,6 +66,46 @@ final class InspectPage_Stats {
             ],
             [ 'id' => $session_row_id ]
         );
+
+        // Optional anonymized event log (Pro + opt-in only).
+        self::maybe_record_event( $session_row_id, $kind, $client_ip, $secret );
+
+        return true;
+    }
+
+    /**
+     * Append an anonymized event row when the session owner is on Pro AND
+     * has opted into the visitor log. IP + UA are HMAC-hashed with the
+     * per-install URL secret so raw values never hit the database.
+     */
+    private static function maybe_record_event( $session_row_id, $kind, $client_ip, $secret ) {
+        global $wpdb;
+        $p   = $wpdb->prefix . 'pp_';
+        $row = $wpdb->get_row( $wpdb->prepare(
+            "SELECT user_id FROM {$p}share_sessions WHERE id = %d", (int) $session_row_id
+        ), ARRAY_A );
+        if ( ! $row ) { return false; }
+        $owner = (int) $row['user_id'];
+        if ( ! class_exists( 'InspectPage_License' ) || ! InspectPage_License::has_license( $owner ) ) {
+            return false;
+        }
+        $optin = get_user_meta( $owner, self::OPTIN_META, true );
+        if ( $optin !== '1' && $optin !== 1 && $optin !== true ) { return false; }
+
+        $kind_id = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT id FROM {$p}share_asset_types WHERE name = %s", $kind
+        ) );
+        if ( ! $kind_id ) { return false; }
+
+        $ua  = isset( $_SERVER['HTTP_USER_AGENT'] ) ? (string) $_SERVER['HTTP_USER_AGENT'] : '';
+        $key = $secret ?: 'inspect-page';
+        $wpdb->insert( "{$p}share_events", [
+            'session_id'    => (int) $session_row_id,
+            'asset_type_id' => $kind_id,
+            'created_at'    => current_time( 'mysql', true ),
+            'ip_hash'       => substr( hash_hmac( 'sha256', (string) $client_ip, $key ), 0, 40 ),
+            'ua_hash'       => substr( hash_hmac( 'sha256', $ua, $key ), 0, 40 ),
+        ] );
         return true;
     }
 
@@ -93,5 +140,36 @@ final class InspectPage_Stats {
                 : null,
             'per_file'      => $out_per,
         ];
+    }
+
+    /**
+     * Recent anonymized events for sessions owned by $user_id (Pro + opt-in
+     * only). Returns at most $limit rows, newest first.
+     */
+    public static function recent_events_for_user( $user_id, $limit = 50 ) {
+        global $wpdb;
+        $p     = $wpdb->prefix . 'pp_';
+        $limit = max( 1, min( 200, (int) $limit ) );
+        $rows  = $wpdb->get_results( $wpdb->prepare(
+            "SELECT e.created_at, e.ip_hash, e.ua_hash, t.name AS kind, s.session_id
+               FROM {$p}share_events e
+               JOIN {$p}share_sessions s     ON s.id = e.session_id
+               JOIN {$p}share_asset_types t  ON t.id = e.asset_type_id
+              WHERE s.user_id = %d
+              ORDER BY e.created_at DESC
+              LIMIT %d",
+            (int) $user_id, $limit
+        ), ARRAY_A );
+        return is_array( $rows ) ? $rows : [];
+    }
+
+    /** Hourly cleanup hook calls this. Returns rows deleted. */
+    public static function purge_old_events() {
+        global $wpdb;
+        $p = $wpdb->prefix . 'pp_';
+        return (int) $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$p}share_events WHERE created_at < (UTC_TIMESTAMP() - INTERVAL %d DAY)",
+            self::EVENT_LOG_DAYS
+        ) );
     }
 }
