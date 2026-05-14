@@ -35,7 +35,7 @@ final class InspectPage_Stats {
             $client_ip = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
         }
         $secret = (string) get_option( 'inspect_page_url_secret', '' );
-        $hash   = hash_hmac( 'sha256', $client_ip . '|' . $session_row_id, $secret ?: 'inspect-page' );
+        $hash   = hash_hmac( 'sha256', $client_ip . '|' . $session_row_id . '|' . $kind, $secret ?: 'inspect-page' );
         $key    = 'inspect_page_view_' . substr( $hash, 0, 32 );
         if ( get_transient( $key ) ) { return false; }
         set_transient( $key, 1, self::THROTTLE_TTL );
