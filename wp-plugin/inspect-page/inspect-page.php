@@ -31,6 +31,7 @@ require_once INSPECT_PAGE_DIR . 'includes/class-cleanup.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-shortcode.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-notify.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-digest.php';
+require_once INSPECT_PAGE_DIR . 'includes/class-stats.php';
 if ( is_admin() ) {
     require_once INSPECT_PAGE_DIR . 'includes/class-admin.php';
 }
