@@ -1142,8 +1142,14 @@ function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
     void refresh();
     if (typeof window === "undefined") return () => { cancelled = true; };
     const onFocus = () => { void refresh(); };
+    const onChanged = () => { void refresh(); };
     window.addEventListener("focus", onFocus);
-    return () => { cancelled = true; window.removeEventListener("focus", onFocus); };
+    window.addEventListener(BILLING_CHANGED_EVENT, onChanged);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener(BILLING_CHANGED_EVENT, onChanged);
+    };
   }, [signedIn]);
   if (!status) return null;
   const isPro = status.plan === "pro";
