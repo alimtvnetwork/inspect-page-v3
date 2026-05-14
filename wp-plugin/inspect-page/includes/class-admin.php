@@ -173,6 +173,7 @@ final class InspectPage_Admin {
         add_action( 'admin_init',  [ __CLASS__, 'handle_actions' ] );
         add_action( 'admin_init',  [ __CLASS__, 'handle_billing_form' ] );
         add_action( 'admin_init',  [ __CLASS__, 'handle_privacy_form' ] );
+        add_action( 'admin_init',  [ __CLASS__, 'handle_digest_form' ] );
     }
 
     public static function menu() {
@@ -355,6 +356,9 @@ final class InspectPage_Admin {
 
         // ── Privacy / event log ────────────────────────────────
         self::render_privacy_section( $uid );
+
+        // ── Email digest cadence + open rate (D2) ──────────────
+        self::render_digest_section( $uid );
 
         echo '</div>';
     }
@@ -693,6 +697,68 @@ final class InspectPage_Admin {
         }
         update_user_meta( $uid, InspectPage_Stats::OPTIN_META, $val );
         wp_safe_redirect( add_query_arg( [ 'page' => 'inspect-page', 'privacy' => 'saved' ], admin_url( 'admin.php' ) ) );
+        exit;
+    }
+
+    /**
+     * D2 — Email digest cadence + open-rate panel.
+     * Free users can only choose Weekly. Pro users can switch to Daily.
+     */
+    public static function render_digest_section( $uid ) {
+        if ( ! class_exists( 'InspectPage_Digest' ) ) return;
+        $is_pro   = class_exists( 'InspectPage_License' ) && InspectPage_License::has_license( (int) $uid );
+        $cadence  = InspectPage_Digest::cadence_for( (int) $uid );
+        $optout   = InspectPage_Digest::user_opted_out( (int) $uid );
+        $last_op  = (string) get_user_meta( (int) $uid, InspectPage_Digest::LAST_OPEN_META, true );
+        $opens_7  = InspectPage_Digest::opens_last_7d( (int) $uid );
+        $last_run = (int) get_option( InspectPage_Digest::RUN_OPTION, 0 );
+
+        echo '<h2>' . esc_html__( 'Email digest', 'inspect-page' ) . '</h2>';
+        echo '<form method="post" style="max-width:780px">';
+        wp_nonce_field( 'inspect_page_digest_save' );
+        echo '<input type="hidden" name="inspect_page_digest_form" value="1" />';
+
+        echo '<p><label><input type="checkbox" name="digest_optout" value="1" '
+            . checked( $optout, true, false ) . ' /> '
+            . esc_html__( 'Stop sending me the digest.', 'inspect-page' )
+            . '</label></p>';
+
+        echo '<p><label>' . esc_html__( 'Cadence', 'inspect-page' ) . ' ';
+        echo '<select name="digest_cadence">';
+        echo '<option value="weekly"' . selected( $cadence, 'weekly', false ) . '>'
+            . esc_html__( 'Weekly (default)', 'inspect-page' ) . '</option>';
+        echo '<option value="daily"' . selected( $cadence, 'daily', false );
+        if ( ! $is_pro ) echo ' disabled';
+        echo '>' . esc_html__( 'Daily — Pro only', 'inspect-page' ) . '</option>';
+        echo '</select></label></p>';
+        if ( ! $is_pro ) {
+            echo '<p class="description">' . esc_html__( 'Upgrade to Pro to switch to a daily cadence.', 'inspect-page' ) . '</p>';
+        }
+        submit_button( __( 'Save digest settings', 'inspect-page' ), 'secondary', '', false );
+        echo '</form>';
+
+        echo '<table class="widefat striped" style="max-width:780px;margin-top:16px"><tbody>';
+        echo '<tr><th>' . esc_html__( 'Last cron run (UTC)', 'inspect-page' ) . '</th><td>'
+            . esc_html( $last_run ? gmdate( 'Y-m-d H:i:s', $last_run ) : '—' ) . '</td></tr>';
+        echo '<tr><th>' . esc_html__( 'Last open (UTC)', 'inspect-page' ) . '</th><td>'
+            . esc_html( $last_op ?: '—' ) . '</td></tr>';
+        echo '<tr><th>' . esc_html__( 'Opens (last 7 days)', 'inspect-page' ) . '</th><td>'
+            . (int) $opens_7 . '</td></tr>';
+        echo '</tbody></table>';
+        echo '<p class="description">' . esc_html__( 'Opens are counted via a 1×1 transparent pixel embedded in the digest email. Some clients block remote images, so this is a lower bound.', 'inspect-page' ) . '</p>';
+    }
+
+    /** Saves digest cadence + opt-out. Pro gate enforced server-side. */
+    public static function handle_digest_form() {
+        if ( empty( $_POST['inspect_page_digest_form'] ) ) return;
+        if ( ! is_user_logged_in() ) wp_die( 'login required' );
+        check_admin_referer( 'inspect_page_digest_save' );
+        if ( ! class_exists( 'InspectPage_Digest' ) ) return;
+        $uid = get_current_user_id();
+        InspectPage_Digest::set_optout( $uid, ! empty( $_POST['digest_optout'] ) );
+        $cad = isset( $_POST['digest_cadence'] ) ? (string) $_POST['digest_cadence'] : 'weekly';
+        InspectPage_Digest::set_cadence( $uid, $cad );
+        wp_safe_redirect( add_query_arg( [ 'page' => 'inspect-page', 'digest' => 'saved' ], admin_url( 'admin.php' ) ) );
         exit;
     }
 }

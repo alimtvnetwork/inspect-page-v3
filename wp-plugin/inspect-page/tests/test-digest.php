@@ -31,6 +31,11 @@ function wp_generate_password( $len, $special = true, $extra = false ) {
 function home_url( $path = '' ) { return 'https://example.test' . $path; }
 function add_action() {} function add_filter() {}
 function __( $s, $d = null ) { return $s; }
+function esc_html( $s ) { return $s; }
+function esc_url( $s ) { return $s; }
+function rest_url( $p = '' ) { return 'https://example.test/wp-json/' . ltrim( $p, '/' ); }
+function wp_json_encode( $v ) { return json_encode( $v ); }
+if ( ! defined( 'INSPECT_PAGE_REST_NS' ) ) { define( 'INSPECT_PAGE_REST_NS', 'inspect-page/v1' ); }
 
 // Status / license stubs.
 class InspectPage_SessionStatus {
@@ -115,6 +120,8 @@ assert_true( strpos( $m['body'], 'https://x.test/a' ) !== false, 'Alice body lis
 assert_true( strpos( $m['body'], 'https://x.test/b' ) !== false, 'Alice body lists URL b' );
 assert_true( strpos( $m['body'], 'inspect_page_digest_unsubscribe=' ) !== false, 'unsubscribe link present' );
 assert_true( strpos( $m['body'], 'free Smart Share links' ) !== false, 'Free-tier footer present' );
+assert_true( strpos( $m['body'], '/digest/open/' ) !== false, 'open-rate pixel embedded' );
+assert_true( strpos( $m['body'], 'multipart/alternative' ) !== false || strpos( $m['body'], 'Content-Type: text/html' ) !== false, 'multipart HTML part present' );
 
 echo "Digest: opted-out users are skipped\n";
 reset_state();
@@ -150,5 +157,47 @@ $n = InspectPage_Digest::run();
 assert_eq( $n, 0, 'no users emailed' );
 assert_eq( count( $GLOBALS['_pp_mail'] ), 0, 'no mail sent' );
 assert_true( get_option( 'inspect_page_digest_last_run' ) > 0, 'last_run option still updated' );
+
+// ---- D2: cadence routing -----------------------------------------------
+// We need has_license() on the License stub for set_cadence().
+if ( ! method_exists( 'InspectPage_License', 'has_license' ) ) {
+    // shim was missing — but tests below need it; emulate.
+}
+class _PP_LicenseExt {
+    public static function has_license( $uid ) {
+        return (string) ( $GLOBALS['_pp_user_meta'][ "$uid:inspect_page_license" ] ?? '' ) === 'active';
+    }
+}
+// Patch InspectPage_License::has_license via a pass-through if missing.
+if ( ! method_exists( 'InspectPage_License', 'has_license' ) ) {
+    eval( 'class InspectPage_License2 extends InspectPage_License { public static function has_license($u){ return _PP_LicenseExt::has_license($u);} }' );
+}
+
+echo "Digest: weekly cron skips users opted into daily cadence\n";
+reset_state();
+update_user_meta( 7, InspectPage_License::META_KEY, 'active' );        // Alice = Pro
+update_user_meta( 7, InspectPage_Digest::CADENCE_META, 'daily' );      // opt into daily
+$n = InspectPage_Digest::run();
+assert_eq( $n, 1, 'only Bob (weekly) emailed by weekly cron' );
+assert_eq( $GLOBALS['_pp_mail'][0]['to'], 'b@x.test', 'Bob got the weekly mail' );
+
+echo "Digest: daily cron only emails Pro users on daily cadence\n";
+reset_state();
+update_user_meta( 7, InspectPage_License::META_KEY, 'active' );
+update_user_meta( 7, InspectPage_Digest::CADENCE_META, 'daily' );
+$n = InspectPage_Digest::run_daily();
+assert_eq( $n, 1, 'one user emailed by daily cron' );
+assert_eq( $GLOBALS['_pp_mail'][0]['to'], 'a@x.test', 'Alice (daily Pro) got it' );
+assert_true( strpos( $GLOBALS['_pp_mail'][0]['subj'], 'session(s) expired' ) !== false, 'subject set' );
+
+echo "Digest: cadence_for defaults to weekly\n";
+reset_state();
+assert_eq( InspectPage_Digest::cadence_for( 8 ), 'weekly', 'free user defaults weekly' );
+
+echo "Digest: opens_last_7d counts entries within window\n";
+reset_state();
+$now = time();
+update_user_meta( 9, InspectPage_Digest::OPEN_LOG_META, json_encode( [ $now - 60, $now - 86400, $now - 30 * 86400 ] ) );
+assert_eq( InspectPage_Digest::opens_last_7d( 9 ), 2, '2 of 3 opens are within 7d' );
 
 echo "\nAll Digest tests passed.\n";
