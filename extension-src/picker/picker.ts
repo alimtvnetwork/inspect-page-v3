@@ -14,6 +14,7 @@ import {
 } from "@shared/constants";
 import { LogCategory } from "@shared/enums";
 import { logger } from "@shared/logger";
+import { contrastRatio, isLargeText, verdict } from "../inspect/contrast";
 
 export interface PickerHandlers {
   onSelect(detail: { element: Element; rect: DOMRect }): void | Promise<void>;
@@ -134,15 +135,26 @@ const STYLE = `
   position: fixed; pointer-events: none;
   background: #0d1117; color: #f6f8fa;
   font: 12px ui-sans-serif, system-ui, sans-serif;
-  padding: 4px 8px; border-radius: 6px;
+  padding: 10px 12px; border-radius: 10px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.32);
   border: 1px solid rgba(255,255,255,0.08);
   z-index: ${Z_INDEX_PICKER};
-  white-space: nowrap; max-width: 80vw; overflow: hidden;
+  max-width: 360px; min-width: 240px;
   display: none;
 }
 .lpe-pk-tip b { color: #c4b5fd; font-weight: 600; }
 .lpe-pk-tip i { color: #9ca3af; font-style: normal; margin-left: 6px; }
+.lpe-pk-tip .lpe-pk-head { font: 600 13px ui-sans-serif, system-ui, sans-serif; color: #f6f8fa; margin-bottom: 2px; word-break: break-all; }
+.lpe-pk-tip .lpe-pk-sub { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; color: #9ca3af; margin-bottom: 8px; }
+.lpe-pk-tip .lpe-pk-rows { display: grid; grid-template-columns: 88px 1fr; row-gap: 4px; column-gap: 8px; align-items: center; }
+.lpe-pk-tip .lpe-pk-k { color: #9ca3af; font-size: 11px; }
+.lpe-pk-tip .lpe-pk-v { color: #f6f8fa; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; display: inline-flex; align-items: center; gap: 6px; word-break: break-all; }
+.lpe-pk-tip .lpe-pk-sw { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.18); flex: none; background-image: linear-gradient(45deg, #555 25%, transparent 25%), linear-gradient(-45deg, #555 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #555 75%), linear-gradient(-45deg, transparent 75%, #555 75%); background-size: 6px 6px; background-position: 0 0, 0 3px, 3px -3px, -3px 0; }
+.lpe-pk-tip .lpe-pk-sw-fill { background-image: none; }
+.lpe-pk-tip .lpe-pk-pill { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.lpe-pk-tip .lpe-pk-pill.ok { background: rgba(60,200,140,0.18); color: #6dffb0; }
+.lpe-pk-tip .lpe-pk-pill.warn { background: rgba(255,196,84,0.18); color: #ffd479; }
+.lpe-pk-tip .lpe-pk-pill.bad { background: rgba(255,90,90,0.2); color: #ffb4b4; }
 `;
 
 export function isPickerActive(): boolean {
