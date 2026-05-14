@@ -103,8 +103,9 @@ class FakeWpdb {
         return 1;
     }
     public function get_results( $q, $type = 0 ) {
-        // recent_events_for_user query
-        if ( strpos( $q, 'FROM wp_pp_share_events' ) !== false ) {
+        // recent_events_for_user / events_for_session queries both start with
+        // "FROM wp_pp_share_events" (with optional alias `e`).
+        if ( strpos( $q, 'wp_pp_share_events' ) !== false ) {
             $out = [];
             foreach ( array_reverse( $this->events ) as $e ) {
                 $out[] = [
