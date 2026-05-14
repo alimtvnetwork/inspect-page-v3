@@ -477,6 +477,34 @@ function setGLabel(el: HTMLDivElement, value: number, cx: number, cy: number): v
   el.style.top = `${Math.max(0, Math.round(cy - rect.height / 2))}px`;
 }
 
+/** B4: re-render overlay anchored on a keyboard-selected element. */
+function showTarget(el: Element): void {
+  if (!state) return;
+  const r = el.getBoundingClientRect();
+  // Anchor cursor coordinates near the element so the tooltip lands sensibly.
+  updateOverlay(r.left + Math.min(40, r.width / 2), r.top + Math.min(20, r.height / 2));
+}
+
+/** B4: walk the DOM by arrow direction, skipping non-element nodes. */
+function walkDom(
+  el: Element,
+  key: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight",
+): Element | null {
+  if (key === "ArrowUp") {
+    const p = el.parentElement;
+    if (!p || p === document.documentElement) return null;
+    return p;
+  }
+  if (key === "ArrowDown") {
+    return el.firstElementChild ?? null;
+  }
+  if (key === "ArrowLeft") {
+    return el.previousElementSibling ?? null;
+  }
+  // ArrowRight
+  return el.nextElementSibling ?? null;
+}
+
 function positionBadge(el: HTMLDivElement, value: number, cx: number, cy: number, _anchor: string): void {
   if (!value || value < 1) { el.style.display = "none"; return; }
   el.textContent = `${Math.round(value)}px`;
