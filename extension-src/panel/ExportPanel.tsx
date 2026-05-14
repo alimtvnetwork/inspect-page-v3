@@ -537,6 +537,13 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           />
         )}
 
+        {state.elementSnapshot && (
+          <ElementInspector
+            snapshot={state.elementSnapshot}
+            onBack={() => setState((s) => ({ ...s, elementSnapshot: undefined, debugPreview: undefined, status: PanelStatus.Idle }))}
+          />
+        )}
+
         {state.debugPreview && (
           <DebugPreview
             preview={state.debugPreview}
