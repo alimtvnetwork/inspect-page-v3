@@ -40,6 +40,7 @@ import { getShareSettings, setShareSettings } from "@shared/shareSettings";
 import { listShareSessions, type ShareSessionSummary } from "../share/listShareSessions";
 import { startBillingCheckout } from "../share/startBillingCheckout";
 import { startBillingPortal } from "../share/startBillingPortal";
+import { getBillingStatus, type BillingStatus } from "../share/getBillingStatus";
 import { emitBilling } from "../share/billingTelemetry";
 import { revokeShareSession } from "../share/revokeShareSession";
 import { InspectShell } from "./inspect/InspectShell";
