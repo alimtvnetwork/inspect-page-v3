@@ -46,4 +46,5 @@ final class InspectPage_ErrorCode {
     const E_SHARE_QUOTA      = 'E_SHARE_QUOTA';
     const E_SHARE_QUOTA_FREE = 'E_SHARE_QUOTA_FREE';
     const E_SHARE_BAD_TOKEN  = 'E_SHARE_BAD_TOKEN';
+    const E_PRO_REQUIRED     = 'E_PRO_REQUIRED';
 }
