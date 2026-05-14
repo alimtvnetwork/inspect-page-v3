@@ -16,6 +16,8 @@ import type { ColorCategory } from "../../inspect/types";
 import { DetailDrawer } from "./DetailDrawer";
 import { colorsToCsv, safeBaseName, mimeFor } from "../../inspect/exportSnapshot";
 import { downloadText } from "./downloadBlob";
+import { sendToBackground } from "@shared/messaging";
+import { MessageKind } from "@shared/enums";
 
 export interface InspectColorsProps { snapshot: InspectSnapshot }
 
@@ -25,6 +27,7 @@ export function InspectColors({ snapshot }: InspectColorsProps): JSX.Element {
   const [tab, setTab] = useState<Tab>("palette");
   const [copied, setCopied] = useState<string | null>(null);
   const [detail, setDetail] = useState<ColorUsage | null>(null);
+  const [locateMsg, setLocateMsg] = useState<string | null>(null);
 
   const palette = useMemo(() => dedupePalette(snapshot.colors), [snapshot.colors]);
 
@@ -36,9 +39,21 @@ export function InspectColors({ snapshot }: InspectColorsProps): JSX.Element {
     } catch { /* ignore */ }
   };
 
-  const onLocate = (_value: string): void => {
-    // Locate (highlight matching elements on the page) lands in Phase A8b.
-    // Stub no-op for now — the button keeps its place in the row.
+  const onLocate = async (value: string): Promise<void> => {
+    // Phase A8b — forward to the active tab's content script. The CS scans
+    // the live DOM, scrolls the first match into view, and flashes a ring
+    // around every match. Failures must never break the panel.
+    try {
+      const res = await sendToBackground<
+        { tabId: number; target: string },
+        { count: number }
+      >(MessageKind.LocateColor, { tabId: -1, target: value });
+      const n = res.count;
+      setLocateMsg(n === 0 ? `No matches for ${value}` : `${n} match${n === 1 ? "" : "es"} for ${value}`);
+    } catch {
+      setLocateMsg(`Couldn't locate ${value}`);
+    }
+    window.setTimeout(() => setLocateMsg((m) => (m && m.includes(value) ? null : m)), 2000);
   };
 
   const onOpenDetail = (color: ColorUsage): void => {
@@ -99,6 +114,11 @@ export function InspectColors({ snapshot }: InspectColorsProps): JSX.Element {
         />
       )}
       {detail && <DetailDrawer color={detail} onClose={() => setDetail(null)} />}
+      {locateMsg && (
+        <div className="lpe-locate-toast" role="status" aria-live="polite">
+          {locateMsg}
+        </div>
+      )}
     </section>
   );
 }

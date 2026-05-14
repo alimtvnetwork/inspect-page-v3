@@ -31,6 +31,7 @@ export enum MessageKind {
   OpenLoginPopup = "OpenLoginPopup",
   RevokeShareSession = "RevokeShareSession",
   CollectInspectSnapshot = "CollectInspectSnapshot",
+  LocateColor = "LocateColor",
 }
 
 export enum PanelStatus {

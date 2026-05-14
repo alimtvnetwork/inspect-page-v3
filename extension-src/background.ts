@@ -202,6 +202,26 @@ router.on<CollectInspectSnapshotPayload, CollectInspectSnapshotResponse>(
   },
 );
 
+// Phase A8b: Locate — forward the color target to the active tab's content
+// script. The CS scans the live DOM and flashes matches in place.
+router.on<{ tabId: number; target: string }, { count: number }>(
+  MessageKind.LocateColor,
+  async ({ tabId, target }, sender) => {
+    let tid = tabId > 0 ? tabId : sender.tab?.id;
+    if (tid === undefined) {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      tid = tab?.id;
+    }
+    if (tid === undefined) {
+      throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, "Cannot resolve tab for locate");
+    }
+    await ensureContentScript(tid);
+    return sendToTab<{ target: string }, { count: number }>(
+      tid, MessageKind.LocateColor, { target },
+    );
+  },
+);
+
 router.on<RunElementExportPayload, RunElementExportResponse>(
   MessageKind.RunElementExport,
   async (payload, sender) => {

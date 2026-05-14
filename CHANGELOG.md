@@ -6,6 +6,29 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [WP 2.5.1 / Extension 2.5.5] — 2026-05-14
 
+## [Extension 2.5.6] — 2026-05-14
+
+### Fixed — Locate color button (Phase A8b)
+
+- The crosshair (`⌖`) button next to each color in the Inspector
+  Colors panel was a documented stub — clicking it did nothing. It
+  now scans the active tab's live DOM via a new `LocateColor`
+  message, scrolls the first match into view, and flashes a pulsing
+  ring around every element whose computed `background`, `color`,
+  border, outline, `fill`, or `stroke` equals the target hex.
+- Toast feedback below the colors list reports `N matches for #abc`
+  (or `No matches`) and auto-clears after 2 s.
+- New module `extension-src/inspect/locateColor.ts` (`findColorMatches`
+  + `flashElements` + `locateColor`) — pure scan capped at 8000
+  elements; injected `<style>` tag drives a 1.5 s
+  `lpe-locate-pulse` keyframe.
+- Background route forwards to active tab via `chrome.tabs.query`
+  fallback so it works from popup and floating panel.
+- Tests: `inspect/__tests__/locateColor.test.ts` (6 cases) → 181/181
+  extension green.
+- Repackaged `public/inspect-page.zip` at extension `2.5.6`.
+
+
 ### Added — Share-link analytics (Option A)
 
 - **Aggregate counters**: every Smart Share asset fetch increments a
