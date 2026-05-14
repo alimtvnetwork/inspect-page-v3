@@ -233,6 +233,7 @@ final class InspectPage_Admin {
 
         $recent = $wpdb->get_results( $wpdb->prepare(
             "SELECT s.session_id, s.created_at, s.expires_at, s.source_url,
+                    s.views, s.views_per_file,
                     k.name AS kind, st.name AS status
                FROM {$p}share_sessions s
                JOIN {$p}share_session_kinds k    ON k.id = s.kind_id
@@ -306,6 +307,7 @@ final class InspectPage_Admin {
             echo '<th>' . esc_html__( 'Kind', 'inspect-page' ) . '</th>';
             echo '<th>' . esc_html__( 'Status', 'inspect-page' ) . '</th>';
             echo '<th>' . esc_html__( 'Expires (UTC)', 'inspect-page' ) . '</th>';
+            echo '<th>' . esc_html__( 'Views', 'inspect-page' ) . '</th>';
             echo '<th>' . esc_html__( 'Public URLs', 'inspect-page' ) . '</th>';
             echo '</tr></thead><tbody>';
             foreach ( $recent as $r ) {
@@ -315,11 +317,21 @@ final class InspectPage_Admin {
                 foreach ( [ 'html' => 'index.html', 'css' => 'style.css', 'js' => 'script.js', 'image' => 'preview.png' ] as $label => $slug ) {
                     $links[] = '<a href="' . esc_url( $base . '/' . $slug ) . '" target="_blank" rel="noopener">' . esc_html( $label ) . '</a>';
                 }
+                $per = isset( $r['views_per_file'] ) ? json_decode( (string) $r['views_per_file'], true ) : null;
+                if ( ! is_array( $per ) ) { $per = []; }
+                $tip = sprintf(
+                    'html %d · css %d · js %d · image %d',
+                    (int) ( $per['html']  ?? 0 ),
+                    (int) ( $per['css']   ?? 0 ),
+                    (int) ( $per['js']    ?? 0 ),
+                    (int) ( $per['image'] ?? 0 )
+                );
                 echo '<tr>';
                 echo '<td><code>' . esc_html( substr( $r['session_id'], 0, 12 ) ) . '…</code></td>';
                 echo '<td>' . esc_html( $r['kind'] ) . '</td>';
                 echo '<td>' . esc_html( $r['status'] ) . '</td>';
                 echo '<td>' . esc_html( $r['expires_at'] ) . '</td>';
+                echo '<td><span title="' . esc_attr( $tip ) . '">' . (int) ( $r['views'] ?? 0 ) . '</span></td>';
                 echo '<td>' . implode( ' · ', $links ) . '</td>';
                 echo '</tr>';
             }
