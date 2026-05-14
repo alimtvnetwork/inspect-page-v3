@@ -99,6 +99,14 @@ final class InspectPage_Activator {
             wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'inspect_page_cleanup' );
         }
 
+        // Schedule weekly digest of expired sessions (v2.5.0). Use the
+        // 'weekly' interval registered by InspectPage_Digest. First run
+        // is offset by 1 day so freshly-installed sites don't email
+        // immediately on activation.
+        if ( ! wp_next_scheduled( InspectPage_Digest::HOOK ) ) {
+            wp_schedule_event( time() + DAY_IN_SECONDS, 'weekly', InspectPage_Digest::HOOK );
+        }
+
         // Unschedule legacy cron hook if still present.
         $legacy_cron = wp_next_scheduled( 'pageport_cleanup' );
         if ( $legacy_cron ) { wp_unschedule_event( $legacy_cron, 'pageport_cleanup' ); }
