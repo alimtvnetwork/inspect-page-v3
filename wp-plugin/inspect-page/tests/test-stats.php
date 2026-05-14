@@ -199,4 +199,40 @@ assert_eq( $err->code, 'E_SHARE_NOT_FOUND', 'not-found code' );
 echo "Stats: cross-user isolation (session 2 untouched)\n";
 assert_eq( $GLOBALS['wpdb']->rows[2]['views'], 0, "user 8's session not affected" );
 
+// ---- Event log (Phase 5) ------------------------------------------------
+echo "Stats: event log is OFF for free user even when opt-in flag set\n";
+$GLOBALS['wpdb']->events = [];
+update_user_meta( 7, 'inspect_page_event_log_optin', '1' );  // opt-in but not Pro
+InspectPage_Stats::record_view( 2, 'html', '8.8.8.8' );      // session owned by user 8 (free)
+update_user_meta( 8, 'inspect_page_event_log_optin', '1' );
+InspectPage_Stats::record_view( 2, 'css', '8.8.8.8' );
+assert_eq( count( $GLOBALS['wpdb']->events ), 0, 'no events for free user' );
+
+echo "Stats: Pro + opt-in writes anonymized event\n";
+$GLOBALS['_pp_pro_users'][8] = true; // promote user 8 to Pro
+InspectPage_Stats::record_view( 2, 'js', '8.8.8.8' );
+assert_eq( count( $GLOBALS['wpdb']->events ), 1, 'one event recorded' );
+$evt = $GLOBALS['wpdb']->events[0];
+assert_eq( strlen( $evt['ip_hash'] ), 40, 'ip_hash is 40 chars' );
+assert_eq( strlen( $evt['ua_hash'] ), 40, 'ua_hash is 40 chars' );
+assert_eq( $evt['session_id'], 2, 'event linked to session row 2' );
+assert_eq( $evt['asset_type_id'], 3, 'asset_type_id resolved (js=3)' );
+
+echo "Stats: Pro without opt-in does not log\n";
+$GLOBALS['_pp_pro_users'][8] = true;
+update_user_meta( 8, 'inspect_page_event_log_optin', '' );
+$before = count( $GLOBALS['wpdb']->events );
+InspectPage_Stats::record_view( 2, 'image', '8.8.8.8' );
+assert_eq( count( $GLOBALS['wpdb']->events ), $before, 'opt-in off blocks event' );
+
+echo "Stats: recent_events_for_user returns rows for owner\n";
+$rows = InspectPage_Stats::recent_events_for_user( 8, 50 );
+assert_eq( is_array( $rows ), true, 'returns array' );
+assert_eq( count( $rows ) >= 1, true, 'has at least one row' );
+
+echo "Stats: purge_old_events clears the table\n";
+$n = InspectPage_Stats::purge_old_events();
+assert_eq( $n, count( $rows ), 'purged equals previous count' );
+assert_eq( count( $GLOBALS['wpdb']->events ), 0, 'events table empty' );
+
 echo "\nAll Stats tests passed.\n";
