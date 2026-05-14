@@ -5,6 +5,23 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [WP 2.5.4 / Extension 2.5.7] — 2026-05-14
+## [Extension 2.5.8] — 2026-05-14
+
+### Added — Smart Share preview thumbnails (Option E)
+
+- Recent Shares rows in the Settings popover now render a 36×36
+  preview thumbnail on the left, sourced from the share session's
+  signed `urls.image` asset (lazy-loaded, no-referrer, graceful
+  hide on 404). Sessions without an image fall back to a neutral
+  monogram tile showing the first letter of the export `kind`.
+- Pure CSS additions (`.lpe-share-thumb` /
+  `.lpe-share-thumb-empty`) — no new REST routes, no schema
+  changes, no extra network calls beyond the asset already linked
+  from the row.
+- 181/181 extension tests still green.
+- Bumped extension to `2.5.8`; repackaged
+  `public/inspect-page.zip`.
+
 
 ### Added — i18n pass (D3)
 
