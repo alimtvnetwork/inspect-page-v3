@@ -156,6 +156,22 @@ export function enterPicker(handlers: PickerHandlers): void {
   const badges = [mkBadge(), mkBadge(), mkBadge(), mkBadge()];
   const mBadges = [mkBadge(), mkBadge(), mkBadge(), mkBadge()];
 
+  const mkGuide = (orient: "h" | "v"): HTMLDivElement => {
+    const g = document.createElement("div");
+    g.className = `lpe-pk-guide ${orient}`;
+    shadow.appendChild(g);
+    return g;
+  };
+  // [top, right, bottom, left] — top/bottom are vertical lines, left/right are horizontal
+  const guides = [mkGuide("v"), mkGuide("h"), mkGuide("v"), mkGuide("h")];
+  const mkGLabel = (): HTMLDivElement => {
+    const l = document.createElement("div");
+    l.className = "lpe-pk-glabel";
+    shadow.appendChild(l);
+    return l;
+  };
+  const gBadges = [mkGLabel(), mkGLabel(), mkGLabel(), mkGLabel()];
+
   const tip = document.createElement("div");
   tip.className = "lpe-pk-tip";
   shadow.appendChild(tip);
@@ -220,10 +236,22 @@ export function enterPicker(handlers: PickerHandlers): void {
   };
 
   const onKeyDown = (e: KeyboardEvent): void => {
-    if (e.key !== "Escape") return;
-    e.preventDefault(); e.stopPropagation();
-    handlers.onCancel();
-    exitPicker();
+    if (e.key === "Escape") {
+      e.preventDefault(); e.stopPropagation();
+      handlers.onCancel();
+      exitPicker();
+      return;
+    }
+    if ((e.key === "Alt" || e.altKey) && state && !state.altDown) {
+      state.altDown = true;
+      updateOverlay(state.lastX, state.lastY);
+    }
+  };
+  const onKeyUp = (e: KeyboardEvent): void => {
+    if (e.key === "Alt" && state && state.altDown) {
+      state.altDown = false;
+      updateOverlay(state.lastX, state.lastY);
+    }
   };
 
   window.addEventListener("mousemove", onMoveThrottled, true);
@@ -231,6 +259,7 @@ export function enterPicker(handlers: PickerHandlers): void {
   window.addEventListener("contextmenu", onContextMenu, true);
   window.addEventListener("click", onClick, true);
   window.addEventListener("keydown", onKeyDown, true);
+  window.addEventListener("keyup", onKeyUp, true);
 
   const cleanup = (): void => {
     window.removeEventListener("mousemove", onMoveThrottled, true);
@@ -238,10 +267,12 @@ export function enterPicker(handlers: PickerHandlers): void {
     window.removeEventListener("contextmenu", onContextMenu, true);
     window.removeEventListener("click", onClick, true);
     window.removeEventListener("keydown", onKeyDown, true);
+    window.removeEventListener("keyup", onKeyUp, true);
   };
 
   state = {
     host, shadow, box, marginBox, paddingBox, size, badges, mBadges, tip,
+    guides, gBadges, altDown: false, lastX: -1, lastY: -1,
     prevCursor,
     rafScheduled: false,
     pendingEvent: null,
