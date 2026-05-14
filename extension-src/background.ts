@@ -349,15 +349,6 @@ async function sendOffscreen<P, R>(kind: MessageKind, payload: P): Promise<R> {
   return res.data;
 }
 
-async function blobToDataUrl(blob: Blob): Promise<string> {
-  const bytes = new Uint8Array(await blob.arrayBuffer());
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  }
-  return `data:${blob.type || "image/jpeg"};base64,${btoa(binary)}`;
-}
-
 /**
  * Ensure the content script is alive in the target tab. The manifest
  * `content_scripts` entry only injects on navigation — tabs already open
@@ -575,7 +566,7 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
     );
   }
   const b64 = btoa(binary);
-  return `data:application/zip;base64,${b64}`;
+  return `data:${blob.type || "application/zip"};base64,${b64}`;
 }
 
 async function broadcast(payload: StatusUpdatePayload): Promise<void> {
