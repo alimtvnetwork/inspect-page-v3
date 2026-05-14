@@ -20,6 +20,7 @@ final class InspectPage_Shortcode {
         add_shortcode( 'inspect_page_account', [ __CLASS__, 'render' ] );
         add_shortcode( 'inspect_page_pricing', [ __CLASS__, 'render_pricing' ] );
         add_action( 'init', [ __CLASS__, 'maybe_handle_revoke' ] );
+        add_action( 'init', [ __CLASS__, 'maybe_handle_digest_unsubscribe' ] );
     }
 
     /**
