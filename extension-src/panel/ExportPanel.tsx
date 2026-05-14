@@ -43,6 +43,7 @@ import { startBillingPortal } from "../share/startBillingPortal";
 import { revokeShareSession } from "../share/revokeShareSession";
 import { InspectShell } from "./inspect/InspectShell";
 import { ElementInspector } from "./element/ElementInspector";
+import { CodeDrawer } from "./element/CodeDrawer";
 import type { ElementSnapshot } from "@element/collectElementSnapshot";
 
 type PanelMode = "export" | "pick" | "inspect";
@@ -538,7 +539,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         )}
 
         {state.elementSnapshot && (
-          <ElementInspector
+          <ElementInspectorWithCode
             snapshot={state.elementSnapshot}
             onBack={() => setState((s) => ({ ...s, elementSnapshot: undefined, debugPreview: undefined, status: PanelStatus.Idle }))}
           />
