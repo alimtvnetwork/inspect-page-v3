@@ -29,6 +29,7 @@ final class InspectPage_Sessions_Table extends WP_List_Table {
             'source_url' => __( 'Source URL', 'inspect-page' ),
             'created_at' => __( 'Created (UTC)', 'inspect-page' ),
             'expires_at' => __( 'Expires (UTC)', 'inspect-page' ),
+            'views'      => __( 'Views', 'inspect-page' ),
             'urls'       => __( 'Public URLs', 'inspect-page' ),
         ];
     }
@@ -61,6 +62,19 @@ final class InspectPage_Sessions_Table extends WP_List_Table {
             $m = (int) floor( ( $delta % 3600 ) / 60 );
             $countdown = sprintf( '%dh %02dm', $h, $m );
             return esc_html( $exp ) . ' <span class="description">(' . esc_html( $countdown ) . ')</span>';
+        }
+        if ( $col === 'views' ) {
+            $v = isset( $item['views'] ) ? (int) $item['views'] : 0;
+            $per = isset( $item['views_per_file'] ) ? json_decode( (string) $item['views_per_file'], true ) : null;
+            if ( ! is_array( $per ) ) { $per = []; }
+            $tip = sprintf(
+                'html %d · css %d · js %d · image %d',
+                (int) ( $per['html']  ?? 0 ),
+                (int) ( $per['css']   ?? 0 ),
+                (int) ( $per['js']    ?? 0 ),
+                (int) ( $per['image'] ?? 0 )
+            );
+            return '<span title="' . esc_attr( $tip ) . '">' . esc_html( (string) $v ) . '</span>';
         }
         return isset( $item[ $col ] ) ? esc_html( (string) $item[ $col ] ) : '';
     }
@@ -106,6 +120,7 @@ final class InspectPage_Sessions_Table extends WP_List_Table {
         $total = (int) $wpdb->get_var( $args ? $wpdb->prepare( $total_sql, $args ) : $total_sql );
 
         $list_sql = "SELECT s.session_id, s.user_id, s.source_url, s.created_at, s.expires_at,
+                            s.views, s.views_per_file,
                             k.name AS kind, st.name AS status,
                             u.user_login
                      FROM {$p}share_sessions s
@@ -113,7 +128,7 @@ final class InspectPage_Sessions_Table extends WP_List_Table {
                      JOIN {$p}share_session_statuses st ON st.id = s.status_id
                      LEFT JOIN {$wpdb->users} u        ON u.ID = s.user_id
                      {$where}
-                     ORDER BY s.created_at DESC
+                     ORDER BY {$orderby} {$order}
                      LIMIT %d OFFSET %d";
         $args2 = array_merge( $args, [ $per_page, $offset ] );
         $rows = $wpdb->get_results( $wpdb->prepare( $list_sql, $args2 ), ARRAY_A );
