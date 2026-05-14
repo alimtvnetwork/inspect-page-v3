@@ -28,6 +28,7 @@ import type {
   StatusUpdatePayload,
 } from "@shared/types";
 import { collectElement } from "@element/collectElement";
+import { collectElementSnapshot } from "@element/collectElementSnapshot";
 import { collectSnapshot } from "./inspect/collectSnapshot";
 
 logger.debug(LogCategory.Lifecycle, "Content script loaded");
@@ -126,6 +127,16 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
               js: JSON.stringify(payload.computedDiff, null, 2),
             },
           };
+          // C3 — also attach the rich element snapshot. Failures here must not
+          // break the existing export flow, so wrap defensively.
+          try {
+            previewPayload.elementSnapshot = await collectElementSnapshot(element, {
+              includeMatchedRules: settings.includeMatchedRules,
+              includeComputedStyles: settings.includeComputedStyles,
+            });
+          } catch (e) {
+            logger.warn(LogCategory.Element, "SNAPSHOT_FAIL", "element snapshot failed", e);
+          }
           dispatchStatusLocal(previewPayload);
           try {
             await chrome.runtime.sendMessage({
