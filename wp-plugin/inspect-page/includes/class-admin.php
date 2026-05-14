@@ -29,6 +29,7 @@ final class InspectPage_Sessions_Table extends WP_List_Table {
             'source_url' => __( 'Source URL', 'inspect-page' ),
             'created_at' => __( 'Created (UTC)', 'inspect-page' ),
             'expires_at' => __( 'Expires (UTC)', 'inspect-page' ),
+            'views'      => __( 'Views', 'inspect-page' ),
             'urls'       => __( 'Public URLs', 'inspect-page' ),
         ];
     }
@@ -62,6 +63,19 @@ final class InspectPage_Sessions_Table extends WP_List_Table {
             $countdown = sprintf( '%dh %02dm', $h, $m );
             return esc_html( $exp ) . ' <span class="description">(' . esc_html( $countdown ) . ')</span>';
         }
+        if ( $col === 'views' ) {
+            $v = isset( $item['views'] ) ? (int) $item['views'] : 0;
+            $per = isset( $item['views_per_file'] ) ? json_decode( (string) $item['views_per_file'], true ) : null;
+            if ( ! is_array( $per ) ) { $per = []; }
+            $tip = sprintf(
+                'html %d · css %d · js %d · image %d',
+                (int) ( $per['html']  ?? 0 ),
+                (int) ( $per['css']   ?? 0 ),
+                (int) ( $per['js']    ?? 0 ),
+                (int) ( $per['image'] ?? 0 )
+            );
+            return '<span title="' . esc_attr( $tip ) . '">' . esc_html( (string) $v ) . '</span>';
+        }
         return isset( $item[ $col ] ) ? esc_html( (string) $item[ $col ] ) : '';
     }
 
@@ -88,12 +102,27 @@ final class InspectPage_Sessions_Table extends WP_List_Table {
         return [ 'revoke' => __( 'Revoke', 'inspect-page' ) ];
     }
 
+    protected function get_sortable_columns() {
+        return [
+            'views'      => [ 'views', true ],
+            'created_at' => [ 'created_at', false ],
+            'expires_at' => [ 'expires_at', false ],
+        ];
+    }
+
     public function prepare_items() {
         global $wpdb;
         $p = $wpdb->prefix . 'pp_';
         $per_page = 25;
         $page     = max( 1, $this->get_pagenum() );
         $offset   = ( $page - 1 ) * $per_page;
+
+        // Whitelist orderby/order to safely interpolate into the SQL.
+        $orderby_in = isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : 'created_at';
+        $order_in   = isset( $_GET['order'] )   ? strtoupper( sanitize_key( wp_unslash( $_GET['order'] ) ) ) : 'DESC';
+        $allowed    = [ 'views' => 's.views', 'created_at' => 's.created_at', 'expires_at' => 's.expires_at' ];
+        $orderby    = $allowed[ $orderby_in ] ?? 's.created_at';
+        $order      = ( $order_in === 'ASC' ) ? 'ASC' : 'DESC';
 
         $where = '';
         $args  = [];
@@ -106,6 +135,7 @@ final class InspectPage_Sessions_Table extends WP_List_Table {
         $total = (int) $wpdb->get_var( $args ? $wpdb->prepare( $total_sql, $args ) : $total_sql );
 
         $list_sql = "SELECT s.session_id, s.user_id, s.source_url, s.created_at, s.expires_at,
+                            s.views, s.views_per_file,
                             k.name AS kind, st.name AS status,
                             u.user_login
                      FROM {$p}share_sessions s
@@ -113,7 +143,7 @@ final class InspectPage_Sessions_Table extends WP_List_Table {
                      JOIN {$p}share_session_statuses st ON st.id = s.status_id
                      LEFT JOIN {$wpdb->users} u        ON u.ID = s.user_id
                      {$where}
-                     ORDER BY s.created_at DESC
+                     ORDER BY {$orderby} {$order}
                      LIMIT %d OFFSET %d";
         $args2 = array_merge( $args, [ $per_page, $offset ] );
         $rows = $wpdb->get_results( $wpdb->prepare( $list_sql, $args2 ), ARRAY_A );
@@ -122,7 +152,7 @@ final class InspectPage_Sessions_Table extends WP_List_Table {
             unset( $r['user_login'] );
         }
 
-        $this->_column_headers = [ $this->get_columns(), [], [] ];
+        $this->_column_headers = [ $this->get_columns(), [], $this->get_sortable_columns() ];
         $this->items = $rows;
         $this->set_pagination_args( [
             'total_items' => $total,
@@ -203,6 +233,7 @@ final class InspectPage_Admin {
 
         $recent = $wpdb->get_results( $wpdb->prepare(
             "SELECT s.session_id, s.created_at, s.expires_at, s.source_url,
+                    s.views, s.views_per_file,
                     k.name AS kind, st.name AS status
                FROM {$p}share_sessions s
                JOIN {$p}share_session_kinds k    ON k.id = s.kind_id
@@ -276,6 +307,7 @@ final class InspectPage_Admin {
             echo '<th>' . esc_html__( 'Kind', 'inspect-page' ) . '</th>';
             echo '<th>' . esc_html__( 'Status', 'inspect-page' ) . '</th>';
             echo '<th>' . esc_html__( 'Expires (UTC)', 'inspect-page' ) . '</th>';
+            echo '<th>' . esc_html__( 'Views', 'inspect-page' ) . '</th>';
             echo '<th>' . esc_html__( 'Public URLs', 'inspect-page' ) . '</th>';
             echo '</tr></thead><tbody>';
             foreach ( $recent as $r ) {
@@ -285,11 +317,21 @@ final class InspectPage_Admin {
                 foreach ( [ 'html' => 'index.html', 'css' => 'style.css', 'js' => 'script.js', 'image' => 'preview.png' ] as $label => $slug ) {
                     $links[] = '<a href="' . esc_url( $base . '/' . $slug ) . '" target="_blank" rel="noopener">' . esc_html( $label ) . '</a>';
                 }
+                $per = isset( $r['views_per_file'] ) ? json_decode( (string) $r['views_per_file'], true ) : null;
+                if ( ! is_array( $per ) ) { $per = []; }
+                $tip = sprintf(
+                    'html %d · css %d · js %d · image %d',
+                    (int) ( $per['html']  ?? 0 ),
+                    (int) ( $per['css']   ?? 0 ),
+                    (int) ( $per['js']    ?? 0 ),
+                    (int) ( $per['image'] ?? 0 )
+                );
                 echo '<tr>';
                 echo '<td><code>' . esc_html( substr( $r['session_id'], 0, 12 ) ) . '…</code></td>';
                 echo '<td>' . esc_html( $r['kind'] ) . '</td>';
                 echo '<td>' . esc_html( $r['status'] ) . '</td>';
                 echo '<td>' . esc_html( $r['expires_at'] ) . '</td>';
+                echo '<td><span title="' . esc_attr( $tip ) . '">' . (int) ( $r['views'] ?? 0 ) . '</span></td>';
                 echo '<td>' . implode( ' · ', $links ) . '</td>';
                 echo '</tr>';
             }
