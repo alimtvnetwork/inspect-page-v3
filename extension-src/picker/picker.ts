@@ -269,6 +269,8 @@ export function enterPicker(handlers: PickerHandlers): void {
     // interact with Cancel / Close / Minimize while picker is active.
     const t = e.target as Element | null;
     if (t?.closest?.("#inspect-page-panel-host")) return;
+    // Don't hijack right-clicks on our chip either.
+    if (e.composedPath().includes(chip)) return;
     e.preventDefault(); e.stopPropagation();
     const target = pickTarget(e.clientX, e.clientY);
     if (!target) return;
@@ -284,6 +286,8 @@ export function enterPicker(handlers: PickerHandlers): void {
     // the page doesn't navigate while the picker is active.
     const t = e.target as Element | null;
     if (t?.closest?.("#inspect-page-panel-host")) return;
+    // Let chip-button clicks through to their own handlers.
+    if (e.composedPath().includes(chip)) return;
     e.preventDefault(); e.stopPropagation();
     // Treat a left-click as a selection too (in addition to right-click)
     // so the picker is discoverable without needing the context menu.
