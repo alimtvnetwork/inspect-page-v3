@@ -30,6 +30,11 @@ interface PickerState {
   badges: HTMLDivElement[]; // [top, right, bottom, left] padding badges
   mBadges: HTMLDivElement[]; // [top, right, bottom, left] margin badges
   tip: HTMLDivElement;
+  guides: HTMLDivElement[];   // [top, right, bottom, left] distance lines
+  gBadges: HTMLDivElement[];  // [top, right, bottom, left] distance labels
+  altDown: boolean;
+  lastX: number;
+  lastY: number;
   prevCursor: string;
   rafScheduled: boolean;
   pendingEvent: PointerEvent | MouseEvent | null;
@@ -75,6 +80,23 @@ const STYLE = `
   font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
   padding: 2px 5px; border-radius: 3px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+  white-space: nowrap;
+}
+.lpe-pk-guide {
+  position: fixed; pointer-events: none;
+  z-index: ${Z_INDEX_PICKER};
+  display: none;
+  background: rgba(124,92,255,0.55);
+}
+.lpe-pk-guide.h { height: 1px; }
+.lpe-pk-guide.v { width: 1px; }
+.lpe-pk-glabel {
+  position: fixed; pointer-events: none;
+  z-index: ${Z_INDEX_PICKER};
+  display: none;
+  background: #7c5cff; color: #ffffff;
+  font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 1px 4px; border-radius: 3px;
   white-space: nowrap;
 }
 .lpe-pk-tip {
@@ -133,6 +155,22 @@ export function enterPicker(handlers: PickerHandlers): void {
   };
   const badges = [mkBadge(), mkBadge(), mkBadge(), mkBadge()];
   const mBadges = [mkBadge(), mkBadge(), mkBadge(), mkBadge()];
+
+  const mkGuide = (orient: "h" | "v"): HTMLDivElement => {
+    const g = document.createElement("div");
+    g.className = `lpe-pk-guide ${orient}`;
+    shadow.appendChild(g);
+    return g;
+  };
+  // [top, right, bottom, left] — top/bottom are vertical lines, left/right are horizontal
+  const guides = [mkGuide("v"), mkGuide("h"), mkGuide("v"), mkGuide("h")];
+  const mkGLabel = (): HTMLDivElement => {
+    const l = document.createElement("div");
+    l.className = "lpe-pk-glabel";
+    shadow.appendChild(l);
+    return l;
+  };
+  const gBadges = [mkGLabel(), mkGLabel(), mkGLabel(), mkGLabel()];
 
   const tip = document.createElement("div");
   tip.className = "lpe-pk-tip";
@@ -198,10 +236,22 @@ export function enterPicker(handlers: PickerHandlers): void {
   };
 
   const onKeyDown = (e: KeyboardEvent): void => {
-    if (e.key !== "Escape") return;
-    e.preventDefault(); e.stopPropagation();
-    handlers.onCancel();
-    exitPicker();
+    if (e.key === "Escape") {
+      e.preventDefault(); e.stopPropagation();
+      handlers.onCancel();
+      exitPicker();
+      return;
+    }
+    if ((e.key === "Alt" || e.altKey) && state && !state.altDown) {
+      state.altDown = true;
+      updateOverlay(state.lastX, state.lastY);
+    }
+  };
+  const onKeyUp = (e: KeyboardEvent): void => {
+    if (e.key === "Alt" && state && state.altDown) {
+      state.altDown = false;
+      updateOverlay(state.lastX, state.lastY);
+    }
   };
 
   window.addEventListener("mousemove", onMoveThrottled, true);
@@ -209,6 +259,7 @@ export function enterPicker(handlers: PickerHandlers): void {
   window.addEventListener("contextmenu", onContextMenu, true);
   window.addEventListener("click", onClick, true);
   window.addEventListener("keydown", onKeyDown, true);
+  window.addEventListener("keyup", onKeyUp, true);
 
   const cleanup = (): void => {
     window.removeEventListener("mousemove", onMoveThrottled, true);
@@ -216,10 +267,12 @@ export function enterPicker(handlers: PickerHandlers): void {
     window.removeEventListener("contextmenu", onContextMenu, true);
     window.removeEventListener("click", onClick, true);
     window.removeEventListener("keydown", onKeyDown, true);
+    window.removeEventListener("keyup", onKeyUp, true);
   };
 
   state = {
     host, shadow, box, marginBox, paddingBox, size, badges, mBadges, tip,
+    guides, gBadges, altDown: false, lastX: -1, lastY: -1,
     prevCursor,
     rafScheduled: false,
     pendingEvent: null,
@@ -257,6 +310,7 @@ function pickTarget(x: number, y: number): Element | null {
 
 function updateOverlay(x: number, y: number): void {
   if (!state) return;
+  state.lastX = x; state.lastY = y;
   const target = pickTarget(x, y);
   if (!target) {
     hideAll();
@@ -332,6 +386,28 @@ function updateOverlay(x: number, y: number): void {
   if (ty + tipRect.height > window.innerHeight) ty = y - 12 - tipRect.height;
   state.tip.style.left = `${Math.max(0, tx)}px`;
   state.tip.style.top = `${Math.max(0, ty)}px`;
+
+  // ---- B3: distance guides (Alt held) — distance to viewport edges ----
+  if (state.altDown) {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    // top guide: vertical line from element top to y=0
+    setGuide(state.guides[0]!, "v", cx, 0, r.top, "v");
+    setGLabel(state.gBadges[0]!, Math.round(r.top), cx + 6, r.top / 2);
+    // right guide: horizontal line from r.right to vw
+    setGuide(state.guides[1]!, "h", r.right, cy, vw - r.right, "h");
+    setGLabel(state.gBadges[1]!, Math.round(vw - r.right), (r.right + vw) / 2, cy - 14);
+    // bottom guide: vertical line from r.bottom to vh
+    setGuide(state.guides[2]!, "v", cx, r.bottom, vh - r.bottom, "v");
+    setGLabel(state.gBadges[2]!, Math.round(vh - r.bottom), cx + 6, (r.bottom + vh) / 2);
+    // left guide: horizontal line from x=0 to r.left
+    setGuide(state.guides[3]!, "h", 0, cy, r.left, "h");
+    setGLabel(state.gBadges[3]!, Math.round(r.left), r.left / 2, cy - 14);
+  } else {
+    for (const g of state.guides) g.style.display = "none";
+    for (const b of state.gBadges) b.style.display = "none";
+  }
 }
 
 function hideAll(): void {
@@ -343,6 +419,40 @@ function hideAll(): void {
   state.size.style.display = "none";
   for (const b of state.badges) b.style.display = "none";
   for (const b of state.mBadges) b.style.display = "none";
+  for (const g of state.guides) g.style.display = "none";
+  for (const b of state.gBadges) b.style.display = "none";
+}
+
+function setGuide(
+  el: HTMLDivElement,
+  orient: "h" | "v",
+  x: number,
+  y: number,
+  length: number,
+  _kind: "h" | "v",
+): void {
+  if (length < 1) { el.style.display = "none"; return; }
+  el.style.display = "block";
+  if (orient === "v") {
+    el.style.left = `${Math.round(x)}px`;
+    el.style.top = `${Math.round(y)}px`;
+    el.style.height = `${Math.round(length)}px`;
+    el.style.width = "1px";
+  } else {
+    el.style.left = `${Math.round(x)}px`;
+    el.style.top = `${Math.round(y)}px`;
+    el.style.width = `${Math.round(length)}px`;
+    el.style.height = "1px";
+  }
+}
+
+function setGLabel(el: HTMLDivElement, value: number, cx: number, cy: number): void {
+  if (value < 1) { el.style.display = "none"; return; }
+  el.textContent = `${value}px`;
+  el.style.display = "block";
+  const rect = el.getBoundingClientRect();
+  el.style.left = `${Math.max(0, Math.round(cx - rect.width / 2))}px`;
+  el.style.top = `${Math.max(0, Math.round(cy - rect.height / 2))}px`;
 }
 
 function positionBadge(el: HTMLDivElement, value: number, cx: number, cy: number, _anchor: string): void {
