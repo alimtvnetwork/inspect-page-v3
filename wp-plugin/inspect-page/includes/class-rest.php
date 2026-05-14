@@ -55,6 +55,12 @@ final class InspectPage_REST {
             'permission_callback' => [ 'InspectPage_Auth', 'require_wp_user' ],
         ] );
 
+        register_rest_route( $ns, '/sessions/(?P<id>[A-Za-z0-9_-]{16,64})/stats', [
+            'methods'             => 'GET',
+            'callback'            => [ __CLASS__, 'session_stats' ],
+            'permission_callback' => [ 'InspectPage_Auth', 'require_wp_user' ],
+        ] );
+
         register_rest_route(
             $ns,
             '/share/(?P<id>[A-Za-z0-9_-]{16,64})(?:\.(?P<sig>[A-Za-z0-9_-]{16,43}))?/(?P<slug>index\.html|style\.css|script\.js|preview\.png)',
@@ -304,6 +310,9 @@ final class InspectPage_REST {
         if ( ! file_exists( $row->path ) ) {
             return new WP_Error( InspectPage_ErrorCode::E_SHARE_NOT_FOUND, 'asset missing', [ 'status' => 404 ] );
         }
+
+        // Record a view (throttled per IP+session for 60s).
+        InspectPage_Stats::record_view( (int) $row->id, $kind );
 
         // Serve raw bytes with correct headers.
         header_remove( 'Cache-Control' );
