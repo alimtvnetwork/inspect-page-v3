@@ -30,6 +30,11 @@ interface PickerState {
   badges: HTMLDivElement[]; // [top, right, bottom, left] padding badges
   mBadges: HTMLDivElement[]; // [top, right, bottom, left] margin badges
   tip: HTMLDivElement;
+  guides: HTMLDivElement[];   // [top, right, bottom, left] distance lines
+  gBadges: HTMLDivElement[];  // [top, right, bottom, left] distance labels
+  altDown: boolean;
+  lastX: number;
+  lastY: number;
   prevCursor: string;
   rafScheduled: boolean;
   pendingEvent: PointerEvent | MouseEvent | null;
@@ -75,6 +80,23 @@ const STYLE = `
   font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
   padding: 2px 5px; border-radius: 3px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+  white-space: nowrap;
+}
+.lpe-pk-guide {
+  position: fixed; pointer-events: none;
+  z-index: ${Z_INDEX_PICKER};
+  display: none;
+  background: rgba(124,92,255,0.55);
+}
+.lpe-pk-guide.h { height: 1px; }
+.lpe-pk-guide.v { width: 1px; }
+.lpe-pk-glabel {
+  position: fixed; pointer-events: none;
+  z-index: ${Z_INDEX_PICKER};
+  display: none;
+  background: #7c5cff; color: #ffffff;
+  font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 1px 4px; border-radius: 3px;
   white-space: nowrap;
 }
 .lpe-pk-tip {
