@@ -13,6 +13,8 @@ export interface CropInput {
   windowId: number;
   rect: DomRect;
   dpr: number;
+  /** Viewport CSS px — used to clamp crops for elements larger than the visible area. */
+  viewportCssPx?: { w: number; h: number };
 }
 
 /** Capture the visible tab and crop to rect via the offscreen canvas. */
@@ -28,8 +30,22 @@ export async function captureAndCrop(input: CropInput): Promise<Blob> {
   }
 
   const sessionId = makeRequestId();
-  const w = Math.max(1, Math.round(input.rect.width * input.dpr));
-  const h = Math.max(1, Math.round(input.rect.height * input.dpr));
+  // Clamp the crop rect to the visible viewport. captureVisibleTab only ever
+  // returns viewport pixels, so allocating a canvas the size of the full
+  // element (which can be many thousands of px tall for "large element"
+  // picks) blows past Chromium's canvas limits and produces a mostly-empty
+  // PNG. Intersecting with the viewport keeps the screenshot bounded and
+  // matches what the user actually saw.
+  const vw = input.viewportCssPx?.w ?? input.rect.width;
+  const vh = input.viewportCssPx?.h ?? input.rect.height;
+  const cx = Math.max(0, input.rect.x);
+  const cy = Math.max(0, input.rect.y);
+  const cRight = Math.min(vw, input.rect.x + input.rect.width);
+  const cBottom = Math.min(vh, input.rect.y + input.rect.height);
+  const cWidthCss = Math.max(1, cRight - cx);
+  const cHeightCss = Math.max(1, cBottom - cy);
+  const w = Math.max(1, Math.round(cWidthCss * input.dpr));
+  const h = Math.max(1, Math.round(cHeightCss * input.dpr));
 
   // Reuse offscreen canvas plumbing: init/empty canvas at crop size, draw the
   // captured frame at negative offset to clip, then convertToBlob.
@@ -38,8 +54,8 @@ export async function captureAndCrop(input: CropInput): Promise<Blob> {
     await sendOffscreen<{ dataUrl: string; xPx: number; yPx: number; sessionId: string }>(
       {
         dataUrl, sessionId,
-        xPx: -Math.round(input.rect.x * input.dpr),
-        yPx: -Math.round(input.rect.y * input.dpr),
+        xPx: -Math.round(cx * input.dpr),
+        yPx: -Math.round(cy * input.dpr),
       },
       MessageKind.OffscreenAddFrame,
     );

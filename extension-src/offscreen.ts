@@ -20,7 +20,7 @@ import type {
   OffscreenStitchFinishPayload,
   OffscreenStitchFinishResponse,
 } from "@shared/types";
-import { ISOLATED_LOAD_TIMEOUT_MS } from "@shared/constants";
+import { ISOLATED_LOAD_TIMEOUT_MS, ISOLATED_RENDER_TIMEOUT_MS } from "@shared/constants";
 import { toPng } from "html-to-image";
 
 logger.debug(LogCategory.Offscreen, "Offscreen document loaded");
@@ -104,7 +104,12 @@ router.on<OffscreenRenderIsolatedPayload, OffscreenRenderIsolatedResponse>(
       const idoc = iframe.contentDocument;
       if (!idoc?.body) throw new MessageError(ErrorCode.E_ISOLATED_FAILED, "iframe body missing");
       const dpr = (self as unknown as Window).devicePixelRatio || 1;
-      const dataUrl = await toPng(idoc.body, { pixelRatio: dpr, cacheBust: false });
+      const dataUrl = await withTimeout(
+        toPng(idoc.body, { pixelRatio: dpr, cacheBust: false }),
+        ISOLATED_RENDER_TIMEOUT_MS,
+        ErrorCode.E_ISOLATED_TIMEOUT,
+        "isolated render timeout",
+      );
       return { dataUrl };
     } catch (e) {
       if (e instanceof MessageError) throw e;
@@ -130,6 +135,14 @@ function waitForLoad(iframe: HTMLIFrameElement): Promise<void> {
       clearTimeout(t);
       resolve();
     }, { once: true });
+  });
+}
+
+function withTimeout<T>(p: Promise<T>, ms: number, code: ErrorCode, msg: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new MessageError(code, msg)), ms);
+    p.then((v) => { clearTimeout(t); resolve(v); },
+           (e) => { clearTimeout(t); reject(e); });
   });
 }
 
