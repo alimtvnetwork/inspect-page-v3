@@ -1383,6 +1383,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
                           if (typeof window !== "undefined" && url) {
                             emitBilling("checkout_opened", "settings");
                             window.open(url, "_blank", "noopener,noreferrer");
+                            pollBillingUntilPro({ getShareSettings });
                           }
                         } catch (err) {
                           emitBilling("checkout_failed", "settings", {
