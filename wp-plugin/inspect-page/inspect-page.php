@@ -3,7 +3,7 @@
  * Plugin Name:       Inspect Page
  * Plugin URI:        admin.php?page=inspect-page
  * Description:       Share-Links backend for the Inspect Page Chrome extension. Hosts captured HTML / CSS / image bundles for 24 hours and exposes them via signed public URLs.
- * Version:           2.5.3
+ * Version:           2.5.4
  * Requires at least: 5.6
  * Requires PHP:      7.4
  * Author:            Inspect Page
@@ -14,7 +14,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'INSPECT_PAGE_VERSION', '2.5.3' );
+define( 'INSPECT_PAGE_VERSION', '2.5.4' );
 define( 'INSPECT_PAGE_REST_NS', 'inspect-page/v1' );
 define( 'INSPECT_PAGE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'INSPECT_PAGE_URL', plugin_dir_url( __FILE__ ) );
@@ -50,6 +50,12 @@ add_action( 'inspect_page_cleanup', [ 'InspectPage_Cleanup', 'run' ] );
 InspectPage_Shortcode::register();
 InspectPage_Notify::register();
 InspectPage_Digest::register();
+
+// D3 — load translations from /languages. Sites can drop in
+// inspect-page-{locale}.mo files (compiled from languages/inspect-page.pot).
+add_action( 'plugins_loaded', function () {
+    load_plugin_textdomain( 'inspect-page', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+} );
 
 // Run schema upgrade when the plugin file version is newer than what's stored.
 add_action( 'plugins_loaded', function () {

@@ -4,6 +4,26 @@ All notable changes to **Inspect Page** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [WP 2.5.4 / Extension 2.5.7] — 2026-05-14
+
+### Added — i18n pass (D3)
+
+- WP plugin now loads translations from `wp-plugin/inspect-page/languages/`
+  via `load_plugin_textdomain( 'inspect-page', … )` on `plugins_loaded`.
+- Generated `languages/inspect-page.pot` (145 unique msgids extracted
+  from every `__()` / `esc_html__()` / `esc_attr__()` call site,
+  including the new D1 "Download CSV" button + Recent visitors drawer
+  headers and the D2 "Email digest" panel cadence labels).
+- Extension: locate-color toast strings (`No matches`, `N matches for #abc`,
+  error fallback) moved out of the React component and into
+  `extension-src/shared/copy.ts` (`inspectColorLocateNone`,
+  `inspectColorLocateCount`, `inspectColorLocateCountPlural`,
+  `inspectColorLocateError`) so the panel renders them via
+  `format(COPY.…, { n, value })` like every other label. 181/181
+  extension tests still green.
+- Bumped extension to `2.5.7` and WP plugin to `2.5.4`; repackaged
+  `public/inspect-page.zip` + `public/inspect-page-wp.zip` (+ sha256s).
+
 ## [WP 2.5.3] — 2026-05-14
 
 ### Added — Weekly digest tuning (D2)

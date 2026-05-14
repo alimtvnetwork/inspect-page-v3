@@ -1,0 +1,610 @@
+# Inspect Page — translation template
+msgid ""
+msgstr ""
+"Project-Id-Version: Inspect Page 2.5.4\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: \n"
+"X-Domain: inspect-page\n"
+
+#: includes/class-digest.php:183
+msgid "  …and %d more."
+msgstr ""
+
+#: includes/class-shortcode.php:112
+msgid "/ month"
+msgstr ""
+
+#: includes/class-shortcode.php:90
+msgid "24-hour share-link expiry"
+msgstr ""
+
+#: includes/class-shortcode.php:223
+msgid "Account"
+msgstr ""
+
+#: includes/class-admin.php:292
+msgid "Active share sessions"
+msgstr ""
+
+#: includes/class-shortcode.php:91
+msgid "All export modes — MD, MD + files, ZIP, Smart Share"
+msgstr ""
+
+#: includes/class-admin.php:656
+msgid "Asset"
+msgstr ""
+
+#: includes/class-admin.php:481
+msgid "Billing (Stripe)"
+msgstr ""
+
+#: includes/class-shortcode.php:93
+msgid "Box-model overlay, distance guides (Alt), keyboard nav"
+msgstr ""
+
+#: includes/class-admin.php:682
+msgid "CSV includes up to 200 most recent events per session. Hashes are one-way HMAC; raw IP/UA never leave the database."
+msgstr ""
+
+#: includes/class-admin.php:726
+msgid "Cadence"
+msgstr ""
+
+#: includes/class-shortcode.php:117
+msgid "Cancel anytime via Stripe Customer Portal"
+msgstr ""
+
+#: includes/class-admin.php:285
+msgid "Check REST endpoint"
+msgstr ""
+
+#: includes/class-admin.php:486
+msgid "Checkout cancelled — no charge was made."
+msgstr ""
+
+#: includes/class-admin.php:517
+msgid "Clear stored secret key"
+msgstr ""
+
+#: includes/class-admin.php:532
+msgid "Clear stored webhook secret"
+msgstr ""
+
+#: includes/class-admin.php:282
+msgid "Click “Sign in” in the extension. A WordPress login window will open and pair automatically."
+msgstr ""
+
+#: mu-plugin/inspect-page-branding.php:89
+msgid "Create an account"
+msgstr ""
+
+#: includes/class-admin.php:30
+msgid "Created (UTC)"
+msgstr ""
+
+#: includes/class-admin.php:290
+msgid "Current"
+msgstr ""
+
+#: includes/class-shortcode.php:107
+#: includes/class-shortcode.php:84
+msgid "Current plan"
+msgstr ""
+
+#: includes/class-admin.php:732
+msgid "Daily — Pro only"
+msgstr ""
+
+#: includes/class-admin.php:639
+msgid "Default OFF. When enabled, each visit to one of your Smart Share URLs is recorded as a one-way HMAC hash so you can see how many distinct visitors viewed your share. Raw IP and user-agent never hit the database. Rolling 30-day window — older rows are deleted automatically."
+msgstr ""
+
+#: includes/class-digest.php:204
+msgid "Don't want these? One-click unsubscribe: %s"
+msgstr ""
+
+#: includes/class-admin.php:677
+msgid "Download CSV"
+msgstr ""
+
+#: includes/class-admin.php:566
+msgid "Drop this shortcode on any page to render a Free vs Pro comparison with a one-click Stripe Checkout button:"
+msgstr ""
+
+#: includes/class-admin.php:268
+msgid "Email"
+msgstr ""
+
+#: includes/class-admin.php:346
+msgid "Email + password is built in. Add Google sign-in by installing Nextend Social Login."
+msgstr ""
+
+#: includes/class-admin.php:716
+msgid "Email digest"
+msgstr ""
+
+#: includes/class-shortcode.php:115
+msgid "Everything in Free"
+msgstr ""
+
+#: includes/class-shortcode.php:267
+msgid "Expired"
+msgstr ""
+
+#: includes/class-shortcode.php:252
+msgid "Expires"
+msgstr ""
+
+#: includes/class-admin.php:31
+#: includes/class-admin.php:311
+msgid "Expires (UTC)"
+msgstr ""
+
+#: includes/class-admin.php:658
+msgid "Export"
+msgstr ""
+
+#: includes/class-shortcode.php:86
+msgid "Free"
+msgstr ""
+
+#: includes/class-shortcode.php:236
+msgid "Free plan — %1$d / %2$d lifetime shares used."
+msgstr ""
+
+#: includes/class-admin.php:552
+msgid "Free — 5 lifetime shares"
+msgstr ""
+
+#: includes/class-digest.php:173
+msgid "Hi %1\\$s,\\n\\nIn the last %3\\$d days, %2\\$d Smart Share session(s) on your Inspect Page account expired and are no longer reachable:"
+msgstr ""
+
+#: includes/class-notify.php:39
+msgid "Hi %1\\$s,\\n\\nYou have used %2\\$d of %3\\$d free Smart Share links. Upgrade to Inspect Page Pro for unlimited shares:\\n\\n%4\\$s\\n\\nThanks for using Inspect Page!"
+msgstr ""
+
+#: includes/class-notify.php:63
+msgid "Hi %1\\$s,\\n\\nYour Inspect Page Pro plan is now active. Smart Share is unlimited from your account.\\n\\nEnjoy!"
+msgstr ""
+
+#: includes/class-admin.php:279
+msgid "In the extension Settings → Smart Share, the backend is hard-coded to %s."
+msgstr ""
+
+#: includes/class-admin.php:188
+#: includes/class-admin.php:189
+#: includes/class-admin.php:255
+#: includes/class-shortcode.php:338
+#: mu-plugin/inspect-page-branding.php:75
+msgid "Inspect Page"
+msgstr ""
+
+#: includes/class-admin.php:199
+#: includes/class-admin.php:200
+msgid "Inspect Page Bridge"
+msgstr ""
+
+#: includes/class-admin.php:181
+#: includes/class-admin.php:182
+#: includes/class-admin.php:412
+msgid "Inspect Page Sessions"
+msgstr ""
+
+#: includes/class-admin.php:256
+msgid "Inspect Page Smart Share is the WordPress backend for the Inspect Page Chrome extension. It hosts captured HTML / CSS / JS / preview bundles for 24 hours and exposes them via 4 public URLs you can paste into ChatGPT, Claude, Cursor, or Lovable."
+msgstr ""
+
+#: includes/class-notify.php:60
+msgid "Inspect Page — Pro plan activated"
+msgstr ""
+
+#: includes/class-notify.php:35
+msgid "Inspect Page — free share quota reached"
+msgstr ""
+
+#: includes/class-admin.php:351
+msgid "Install it"
+msgstr ""
+
+#: includes/class-admin.php:276
+msgid "Install the Inspect Page Chrome extension (inspect-page.zip)."
+msgstr ""
+
+#: includes/class-auth.php:38
+msgid "Insufficient capability."
+msgstr ""
+
+#: includes/class-auth.php:31
+msgid "Invalid or missing X-WP-Nonce."
+msgstr ""
+
+#: includes/class-admin.php:27
+#: includes/class-admin.php:309
+#: includes/class-shortcode.php:250
+msgid "Kind"
+msgstr ""
+
+#: includes/class-admin.php:741
+msgid "Last cron run (UTC)"
+msgstr ""
+
+#: includes/class-admin.php:743
+msgid "Last open (UTC)"
+msgstr ""
+
+#: includes/class-admin.php:290
+msgid "Limit"
+msgstr ""
+
+#: includes/class-admin.php:297
+msgid "Limits are stored in wp_options keys %1$s and %2$s."
+msgstr ""
+
+#: includes/class-admin.php:509
+msgid "Live"
+msgstr ""
+
+#: includes/class-shortcode.php:201
+msgid "Log in"
+msgstr ""
+
+#: includes/class-shortcode.php:199
+msgid "Log in to manage your Inspect Page shares."
+msgstr ""
+
+#: includes/class-shortcode.php:134
+msgid "Log in to upgrade"
+msgstr ""
+
+#: includes/class-admin.php:636
+msgid "Log per-visit anonymized analytics (hashed IP + user-agent) for 30 days."
+msgstr ""
+
+#: includes/class-auth.php:23
+msgid "Login required."
+msgstr ""
+
+#: includes/class-admin.php:341
+msgid "Manage all sessions →"
+msgstr ""
+
+#: includes/class-admin.php:560
+#: includes/class-shortcode.php:147
+msgid "Manage subscription"
+msgstr ""
+
+#: includes/class-admin.php:290
+msgid "Metric"
+msgstr ""
+
+#: includes/class-admin.php:506
+msgid "Mode"
+msgstr ""
+
+#: mu-plugin/inspect-page-branding.php:88
+msgid "New to Inspect Page?"
+msgstr ""
+
+#: includes/class-admin.php:165
+#: includes/class-admin.php:305
+msgid "No share sessions yet — capture a page from the Inspect Page Chrome extension to create one."
+msgstr ""
+
+#: includes/class-shortcode.php:244
+msgid "No shares yet."
+msgstr ""
+
+#: includes/class-admin.php:651
+msgid "No visits recorded yet in the last 30 days."
+msgstr ""
+
+#: includes/class-digest.php:55
+msgid "Once Weekly"
+msgstr ""
+
+#: includes/class-admin.php:539
+msgid "Only site administrators can configure Stripe credentials."
+msgstr ""
+
+#: includes/class-admin.php:261
+msgid "Open Permalinks"
+msgstr ""
+
+#: includes/class-admin.php:745
+msgid "Opens (last 7 days)"
+msgstr ""
+
+#: includes/class-admin.php:748
+msgid "Opens are counted via a 1×1 transparent pixel embedded in the digest email. Some clients block remote images, so this is a lower bound."
+msgstr ""
+
+#: includes/class-admin.php:274
+msgid "Pair the Chrome extension"
+msgstr ""
+
+#: includes/class-admin.php:495
+msgid "Paste your Stripe credentials below to enable Pro upgrades."
+msgstr ""
+
+#: includes/class-shortcode.php:92
+msgid "Pick Element with full DOM/CSS inspector"
+msgstr ""
+
+#: includes/class-admin.php:511
+msgid "Pick the mode that matches the keys you\\'re pasting below."
+msgstr ""
+
+#: includes/class-admin.php:549
+#: includes/class-shortcode.php:228
+msgid "Plan"
+msgstr ""
+
+#: includes/class-admin.php:259
+msgid "Pretty permalinks are disabled."
+msgstr ""
+
+#: includes/class-admin.php:520
+msgid "Price ID"
+msgstr ""
+
+#: includes/class-shortcode.php:116
+msgid "Priority Smart Share queueing"
+msgstr ""
+
+#: includes/class-admin.php:628
+msgid "Privacy — visitor analytics"
+msgstr ""
+
+#: includes/class-shortcode.php:111
+msgid "Pro"
+msgstr ""
+
+#: includes/class-admin.php:551
+#: includes/class-shortcode.php:230
+msgid "Pro — unlimited shares"
+msgstr ""
+
+#: includes/class-admin.php:313
+#: includes/class-admin.php:33
+msgid "Public URLs"
+msgstr ""
+
+#: includes/class-admin.php:565
+msgid "Public pricing page"
+msgstr ""
+
+#: includes/class-admin.php:303
+msgid "Recent share sessions"
+msgstr ""
+
+#: includes/class-shortcode.php:242
+msgid "Recent shares"
+msgstr ""
+
+#: includes/class-admin.php:649
+msgid "Recent visitors"
+msgstr ""
+
+#: includes/class-shortcode.php:109
+msgid "Recommended"
+msgstr ""
+
+#: includes/class-admin.php:102
+#: includes/class-admin.php:95
+#: includes/class-shortcode.php:278
+msgid "Revoke"
+msgstr ""
+
+#: includes/class-admin.php:536
+msgid "Save Stripe credentials"
+msgstr ""
+
+#: includes/class-admin.php:737
+msgid "Save digest settings"
+msgstr ""
+
+#: includes/class-admin.php:644
+msgid "Save privacy settings"
+msgstr ""
+
+#: includes/class-admin.php:514
+msgid "Secret key"
+msgstr ""
+
+#: includes/class-admin.php:25
+#: includes/class-admin.php:308
+#: includes/class-admin.php:655
+msgid "Session"
+msgstr ""
+
+#: includes/class-admin.php:294
+msgid "Share lifetime"
+msgstr ""
+
+#: includes/class-admin.php:270
+msgid "Sign out"
+msgstr ""
+
+#: includes/class-admin.php:270
+msgid "Sign out of WordPress"
+msgstr ""
+
+#: includes/class-admin.php:345
+msgid "Sign-in providers"
+msgstr ""
+
+#: includes/class-admin.php:267
+msgid "Signed in as"
+msgstr ""
+
+#: includes/class-shortcode.php:249
+msgid "Source"
+msgstr ""
+
+#: includes/class-admin.php:29
+msgid "Source URL"
+msgstr ""
+
+#: includes/class-admin.php:28
+#: includes/class-admin.php:310
+#: includes/class-shortcode.php:251
+msgid "Status"
+msgstr ""
+
+#: includes/class-admin.php:723
+msgid "Stop sending me the digest."
+msgstr ""
+
+#: includes/class-admin.php:516
+msgid "Stripe Dashboard → Developers → API keys → <code>sk_test_…</code> or <code>sk_live_…</code>. Stored encrypted-at-rest by your DB; never sent to the browser."
+msgstr ""
+
+#: includes/class-admin.php:528
+msgid "Stripe Dashboard → Developers → Webhooks → Add endpoint. Endpoint URL: "
+msgstr ""
+
+#: includes/class-admin.php:522
+msgid "Stripe Dashboard → Products → create a recurring $5/mo product → copy its <code>price_…</code> ID."
+msgstr ""
+
+#: includes/class-admin.php:491
+msgid "Stripe connected"
+msgstr ""
+
+#: includes/class-admin.php:487
+msgid "Stripe credentials saved."
+msgstr ""
+
+#: includes/class-shortcode.php:138
+msgid "Stripe is not configured on this site yet."
+msgstr ""
+
+#: includes/class-admin.php:494
+msgid "Stripe not configured."
+msgstr ""
+
+#: includes/class-admin.php:530
+msgid "Subscribe to: checkout.session.completed, invoice.paid, invoice.payment_failed, customer.subscription.updated, customer.subscription.deleted."
+msgstr ""
+
+#: includes/class-admin.php:485
+msgid "Subscription confirmed. License unlocked."
+msgstr ""
+
+#: includes/class-admin.php:508
+msgid "Test (sandbox)"
+msgstr ""
+
+#: includes/class-admin.php:284
+msgid "Test pairing bridge"
+msgstr ""
+
+#: includes/class-admin.php:260
+msgid "The REST API needs them. Go to Settings → Permalinks and pick anything other than “Plain”."
+msgstr ""
+
+#: includes/class-admin.php:568
+msgid "There is also <code>[inspect_page_account]</code> for a logged-in \"My Inspect Page\" panel (license status, recent shares, revoke buttons)."
+msgstr ""
+
+#: includes/class-shortcode.php:114
+msgid "Unlimited Smart Shares"
+msgstr ""
+
+#: includes/class-shortcode.php:337
+msgid "Unsubscribe link is no longer valid."
+msgstr ""
+
+#: includes/class-shortcode.php:148
+msgid "Upgrade to Pro"
+msgstr ""
+
+#: includes/class-admin.php:642
+msgid "Upgrade to Pro to enable this."
+msgstr ""
+
+#: includes/class-admin.php:735
+msgid "Upgrade to Pro to switch to a daily cadence."
+msgstr ""
+
+#: includes/class-admin.php:557
+msgid "Upgrade to Pro — $5/month"
+msgstr ""
+
+#: includes/class-admin.php:293
+msgid "Uploads in the last hour"
+msgstr ""
+
+#: includes/class-admin.php:26
+msgid "User"
+msgstr ""
+
+#: includes/class-admin.php:312
+#: includes/class-admin.php:32
+msgid "Views"
+msgstr ""
+
+#: includes/class-admin.php:657
+msgid "Visitor (hashed)"
+msgstr ""
+
+#: includes/class-admin.php:269
+msgid "WP user ID"
+msgstr ""
+
+#: includes/class-admin.php:525
+msgid "Webhook secret"
+msgstr ""
+
+#: includes/class-admin.php:729
+msgid "Weekly (default)"
+msgstr ""
+
+#: includes/class-admin.php:654
+msgid "When (UTC)"
+msgstr ""
+
+#: includes/class-shortcode.php:336
+msgid "You have been unsubscribed from Inspect Page weekly digest emails."
+msgstr ""
+
+#: includes/class-shortcode.php:99
+msgid "You have used %1$d of %2$d free Smart Shares."
+msgstr ""
+
+#: includes/class-digest.php:190
+msgid "You're on Inspect Page Pro — Smart Share is unlimited. Manage subscription: https://inspectpage.app/account"
+msgstr ""
+
+#: includes/class-shortcode.php:78
+msgid "You're on Pro — thanks for supporting Inspect Page!"
+msgstr ""
+
+#: includes/class-digest.php:194
+msgid "You've used %1\\$d of %2\\$d free Smart Share links. Upgrade to Pro for unlimited shares: https://inspectpage.app/#pricing"
+msgstr ""
+
+#: includes/class-digest.php:210
+msgid "Your Inspect Page weekly digest — %d session(s) expired"
+msgstr ""
+
+#: includes/class-admin.php:265
+msgid "Your account"
+msgstr ""
+
+#: includes/class-admin.php:547
+msgid "Your subscription"
+msgstr ""
+
+#: includes/class-admin.php:288
+msgid "Your usage"
+msgstr ""
+
+#: includes/class-admin.php:58
+msgid "expired"
+msgstr ""
+
+#: includes/class-shortcode.php:87
+msgid "forever"
+msgstr ""
