@@ -249,6 +249,25 @@ export function enterPicker(handlers: PickerHandlers): void {
       state.altDown = true;
       updateOverlay(state.lastX, state.lastY);
     }
+    if (!state) return;
+    const navKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"];
+    if (!navKeys.includes(e.key)) return;
+    const t = e.target as Element | null;
+    if (t?.closest?.("#inspect-page-panel-host")) return;
+    e.preventDefault(); e.stopPropagation();
+    const current = state.navTarget ?? pickTarget(state.lastX, state.lastY);
+    if (!current) return;
+    if (e.key === "Enter") {
+      const rect = current.getBoundingClientRect();
+      void Promise.resolve(handlers.onSelect({ element: current, rect })).catch((err) => {
+        logger.warn(LogCategory.Picker, "SELECT_FAIL", "select handler threw", err);
+      });
+      return;
+    }
+    const next = walkDom(current, e.key as "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight");
+    if (!next) return;
+    state.navTarget = next;
+    showTarget(next);
   };
   const onKeyUp = (e: KeyboardEvent): void => {
     if (e.key === "Alt" && state && state.altDown) {
