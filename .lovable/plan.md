@@ -1,65 +1,64 @@
-# Inspect Page v2.5 — Pick Element Rich Inspector
+## Goal
 
-Adapt the rich inspector UX shown in your reference screenshots (overlay chip with margin/padding rulers, Inspector panel with element id/classes, Text properties, Selection colors + contrast verdict, Code preview tabs with Layout/Style/Pseudo-classes) into the **Pick Element** flow of Inspect Page.
+Make the panel feel as polished as CSS Peeper. First view = only the three tabs + the active tab's primary action. Settings hides behind the ≡ icon (top-left). Smart Share becomes a secondary action button inside Export and Pick tabs (not Inspect). Minimize / pop-out / close buttons must actually work. Refresh the dark color palette so contrast and depth read cleanly.
 
-Today Pick Element ends in an export-mode toolbar. v2.5 inserts a full **Element Detail** view (same visual language as the existing Inspect tab) before/after the export toolbar, so picking an element on the page opens a dedicated inspector for that single element with copy buttons everywhere.
+## Phases (atomic — execute one per `next`)
 
-Driven by `next` — one phase per turn.
+### Phase 1 — Strip the first view down to 3 tabs + primary action
+- Remove the always-visible **Idle** status block, the **Settings** disclosure, and the **Smart Share** disclosure from the default Export/Pick view.
+- Status text only renders when `status !== Idle` (busy / success / error).
+- No layout shift when status appears (reserve space via min-height, not by always rendering "Idle").
+- Acceptance: opening the popup shows header + tabs + one big primary CTA. Nothing else.
 
-## Phases
+### Phase 2 — Convert ≡ into a real Settings menu button
+- Replace the decorative `≡` span (left of "Inspect Page") with a `<button>` that opens a Settings popover/sheet.
+- Move the entire current Settings panel content into that popover (image format, JPEG quality, redact, computed/matched, filenames, reset).
+- Keep keyboard support: Esc closes; focus returns to the ≡ button.
+- Remove the inline `▸ Settings` disclosure entirely.
+- Acceptance: ≡ icon toggles a settings panel; old inline settings section is gone.
 
-### C1 — Picker chip overlay + box-model rulers
-- Build the shadow-DOM overlay from `extension-src/picker/` (closes deferred B1).
-- Floating chip near hovered element shows tag + `#id` + first 3 classes + `WxH` size badge.
-- Dashed margin/padding rulers around the hovered element with px badges on all four sides (matches screenshot 1).
-- Light/dark parity using existing CSS variables. Pure presentational; selection logic stays in `picker.ts`.
+### Phase 3 — Smart Share becomes a per-tab secondary button
+- Remove the standalone `▸ Smart Share` disclosure from the body.
+- In **Export** tab: render `[ Export Full Page ]` (primary) + `[ Smart Share ]` (secondary) stacked.
+- In **Pick** tab: render `[ Pick Element ]` (primary) + `[ Smart Share ]` (secondary) stacked.
+- In **Inspect** tab: no Smart Share button.
+- Smart Share button behavior:
+  - If user not signed in → button shows "Sign in to share" and opens the WP sign-in flow (existing handler).
+  - If signed in but no artifacts yet → tooltip "Run export first" and disabled state.
+  - If signed in and artifacts present → triggers `onShare` and opens existing Share dialog.
+- Acceptance: Smart Share is reachable from both Export and Pick, never from Inspect, and the old standalone section is gone.
 
-### C2 — Element snapshot collector
-- New `extension-src/element/collectElementSnapshot.ts`: given the picked element, returns a serializable `ElementSnapshot` with:
-  - identity (tag, id, classList, selector path, role)
-  - rect + box-model (margin/padding/border per side, content w×h)
-  - text properties (font-family stack, size, line-height, weight, letter-spacing, color)
-  - selection colors (fg, bg resolved against ancestors)
-  - matched CSS rules grouped by `:hover / :focus / :active / :disabled`
-  - computed style diff vs. browser defaults, grouped (Layout, Typography, Background, Border, Effects)
-- Reuses existing `matchedCss.ts`, `computedDiff.ts`, `contrast.ts`, `selectorPath.ts`.
+### Phase 4 — Make header action buttons actually work
+- Audit `onPopOut`, `onMinimize`, `onClose` wiring in `mountFloatingPanel.tsx` and the popup entry.
+- Ensure: minimize collapses to a 1-row pill (re-expandable), pop-out opens detached window, close fully unmounts the shadow host.
+- Verify each button has a visible focus ring + aria-label and works via keyboard.
+- Acceptance: all three header buttons behave as labeled in both popup and floating surfaces.
 
-### C3 — Inspector panel (header + box-model + text properties)
-- New `extension-src/panel/element/ElementInspector.tsx` rendered when a Pick Element selection completes.
-- Header: back arrow, "Inspector" title, "Show code" button (matches screenshot 2).
-- Element identity card: `Button` label + colored `button.relative` selector chip.
-- "Context menu while hovering" toggle (re-arms picker without leaving inspector).
-- Box-model diagram (margin / border / padding / content) with live numbers.
-- Text properties block: Font Family, Size, Line Height, Weight, Letter Spacing, Text color swatch + copy (matches screenshot 3).
+### Phase 5 — Color & surface refresh (CSS Peeper-grade)
+- Rework `extension-src/panel/styles.css` dark tokens:
+  - Background: layered `#0E1116` (root) / `#151A22` (surface) / `#1C232E` (raised) instead of flat near-black.
+  - Border: `#262E3B` hairlines (1px, 60% opacity).
+  - Text: `#E6EAF2` primary, `#9AA4B2` secondary, `#5E6878` muted.
+  - Accent: keep blue family but shift to `#3B82F6` → `#2563EB` (hover) for better contrast on the new surface.
+  - Active tab underline: 2px accent + subtle glow.
+  - Buttons: 10px radius, soft inner highlight, 150ms ease transitions.
+- Light theme gets a parallel pass (`#FAFBFC` / `#F1F3F7` / `#E5E8EE`).
+- All colors via existing CSS custom properties — no hardcoded hex inside components.
+- Acceptance: side-by-side with CSS Peeper, the panel reads as a peer (clear hierarchy, depth, breathing room).
 
-### C4 — Selection colors + contrast verdict
-- "Selection colors" section: Text + Background swatches with copy buttons.
-- Contrast card: large ratio number, verdict label (Excellent/Good/Poor/Fail) with the same green pill style used today, plus AA / AAA rows for normal + large text (matches screenshot 4).
-- Reuses `contrast.ts` `verdict()` helper unchanged.
+### Phase 6 — Tests + repackage
+- Update/extend Vitest specs that snapshot the panel structure (tab list, hidden settings, per-tab Smart Share presence).
+- Run full extension test suite, fix any breakages from removed DOM nodes.
+- Repackage `public/inspect-page.zip` + sha256, bump extension version to `2.5.3`, update CHANGELOG.
 
-### C5 — Code preview drawer
-- "Show code" opens a slide-in `ElementCodeDrawer.tsx`.
-- Tabs/sections: **Layout**, **Style**, **Pseudo-classes** (`:hover`, `:focus`, `:active`), each with its own copy button (matches screenshots 5, 6, 7).
-- Syntax highlight via the existing lightweight tokenizer used in Show Code today (no new dep).
-- "Copy all" copies a single CSS block with section comments.
+## Out of scope
+- WP plugin changes (none needed for this UI pass).
+- Inspect view internals (untouched).
+- Billing / pricing card (separate Option C thread).
 
-### C6 — Wire export modes to the new inspector
-- The existing four export-mode buttons (MD / MD+files / ZIP / Smart Share) move into a footer of the inspector view, so the user can inspect first, then export — single screen, no double back-step.
-- Snapshot data is included in `prompt.md` for Smart Share (extra "Inspector summary" section) and in MD/ZIP outputs.
+## Open questions (please confirm before Phase 1)
+1. **Settings surface**: popover anchored to ≡ (compact, in-panel) or a slide-in sheet from the left? I'd default to **popover** for popup parity.
+2. **Smart Share label**: keep "Smart Share" or rename to "Share Links" (matches spec §24)? I'd default to **"Share Links"**.
+3. **Minimize behavior**: collapse to header-only pill in place, or dock to bottom-right corner? I'd default to **header-only pill in place**.
 
-### C7 — Tests, docs, packaging
-- Unit tests for `collectElementSnapshot` (jsdom) and the contrast/box-model formatters.
-- `docs/QA-CHECKLIST.md` rows AC-PICK-INSP-1…N.
-- CHANGELOG entry, version bump to 2.5.0, rebuild `inspect-page.zip` + `.sha256`.
-
-## Out of scope for v2.5
-- Editing styles in the panel (read-only inspector only).
-- Cross-origin iframe drill-down (still treats iframe as a single target).
-- Picker-mode keyboard navigation (stays parked in v2.4 B4).
-
-## Remaining tasks (carryover)
-1. **v2.4 plan** B1–B7 in `docs/V2.4-PLAN.md` — superseded in part by C1; remaining items (B3 distance guides, B4 keyboard nav, B5 billing telemetry, B6 pricing polish) still open.
-2. **Phase 6 manual launch** — pen-tests, prod WP URL, Stripe config, Pricing polish, AC-BILL-1…5, Web Store upload, tag `v2.3.0`.
-3. **v2.5 (this plan)** — C1 → C7 driven by `next`.
-
-Send `next` to start **C1 — Picker chip overlay + box-model rulers**.
+Send `next` to start Phase 1 (or answer the questions first and I'll incorporate).
