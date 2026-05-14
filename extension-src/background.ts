@@ -226,6 +226,138 @@ router.on<RunElementExportPayload, RunElementExportResponse>(
 
 router.attach();
 
+interface ThumbnailCropRect { x: number; y: number; w: number; h: number; dpr: number }
+
+async function captureInspectThumbnail(tabId: number): Promise<string> {
+  let thumbnailDataUrl = "";
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    if (tab.windowId === undefined) return "";
+
+    const [prep] = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: preparePageForInspectThumbnail,
+    }).catch(() => [] as chrome.scripting.InjectionResult<ThumbnailCropRect | null>[]);
+
+    await new Promise((r) => setTimeout(r, 120));
+    thumbnailDataUrl = await chrome.tabs.captureVisibleTab(
+      tab.windowId, { format: "jpeg", quality: 70 },
+    );
+
+    const crop = prep?.result ?? null;
+    if (crop) thumbnailDataUrl = await cropThumbnailDataUrl(thumbnailDataUrl, crop);
+  } catch (e) {
+    logger.warn(LogCategory.Capture, ErrorCode.E_CAPTURE_FAILED, "inspect thumbnail capture failed", e);
+  } finally {
+    try {
+      await chrome.scripting.executeScript({ target: { tabId }, func: restorePageAfterInspectThumbnail });
+    } catch { /* ignore restore failure */ }
+  }
+  return thumbnailDataUrl;
+}
+
+function preparePageForInspectThumbnail(): ThumbnailCropRect | null {
+  const hostSelector = "#inspect-page-panel-host,#inspect-page-picker-host,[id^='inspect-page-'][id$='-host']";
+  const saved: Array<{ el: HTMLElement; visibility: string; display: string; pointerEvents: string }> = [];
+  for (const el of Array.from(document.querySelectorAll<HTMLElement>(hostSelector))) {
+    saved.push({
+      el,
+      visibility: el.style.visibility,
+      display: el.style.display,
+      pointerEvents: el.style.pointerEvents,
+    });
+    el.style.visibility = "hidden";
+    el.style.display = "none";
+    el.style.pointerEvents = "none";
+  }
+  (window as unknown as { __ipThumbHidden?: typeof saved }).__ipThumbHidden = saved;
+
+  const vw = window.innerWidth || 0;
+  const vh = window.innerHeight || 0;
+  if (vw <= 0 || vh <= 0) return null;
+
+  let best: { rect: DOMRect; score: number } | null = null;
+  for (const iframe of Array.from(document.querySelectorAll<HTMLIFrameElement>("iframe"))) {
+    const style = window.getComputedStyle(iframe);
+    if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0") continue;
+    const rect = iframe.getBoundingClientRect();
+    const w = Math.max(0, Math.min(rect.right, vw) - Math.max(rect.left, 0));
+    const h = Math.max(0, Math.min(rect.bottom, vh) - Math.max(rect.top, 0));
+    if (w < 320 || h < 240) continue;
+    const area = w * h;
+    const label = `${iframe.src} ${iframe.title} ${iframe.id} ${iframe.className}`.toLowerCase();
+    const previewBonus = /preview|sandbox|app|canvas|lovable/.test(label) ? vw * vh : 0;
+    const score = area + previewBonus;
+    if (!best || score > best.score) best = { rect, score };
+  }
+
+  if (!best) return null;
+  const x = Math.max(0, Math.round(best.rect.left));
+  const y = Math.max(0, Math.round(best.rect.top));
+  const w = Math.min(vw - x, Math.round(best.rect.width));
+  const h = Math.min(vh - y, Math.round(best.rect.height));
+  const areaRatio = (w * h) / (vw * vh);
+  if (areaRatio < 0.3 || w < vw * 0.35 || h < vh * 0.35) return null;
+  if (areaRatio > 0.92 && x < 8 && y < 8) return null;
+  return { x, y, w, h, dpr: window.devicePixelRatio || 1 };
+}
+
+function restorePageAfterInspectThumbnail(): void {
+  const w = window as unknown as {
+    __ipThumbHidden?: Array<{ el: HTMLElement; visibility: string; display: string; pointerEvents: string }>;
+  };
+  for (const item of w.__ipThumbHidden ?? []) {
+    item.el.style.visibility = item.visibility;
+    item.el.style.display = item.display;
+    item.el.style.pointerEvents = item.pointerEvents;
+  }
+  delete w.__ipThumbHidden;
+}
+
+async function cropThumbnailDataUrl(dataUrl: string, rect: ThumbnailCropRect): Promise<string> {
+  const sessionId = makeRequestId();
+  await ensureOffscreen();
+  await sendOffscreen<{ widthPx: number; heightPx: number; sessionId: string }, unknown>(
+    MessageKind.OffscreenInit,
+    { widthPx: Math.max(1, Math.round(rect.w * rect.dpr)), heightPx: Math.max(1, Math.round(rect.h * rect.dpr)), sessionId },
+  );
+  try {
+    await sendOffscreen<{ dataUrl: string; xPx: number; yPx: number; sessionId: string }, unknown>(
+      MessageKind.OffscreenAddFrame,
+      { dataUrl, xPx: -Math.round(rect.x * rect.dpr), yPx: -Math.round(rect.y * rect.dpr), sessionId },
+    );
+    const stitch = await sendOffscreen<
+      { format: "jpeg"; quality: number; sessionId: string },
+      { blobUrl: string }
+    >(MessageKind.OffscreenStitchFinish, { format: "jpeg", quality: 70, sessionId });
+    const blob = await (await fetch(stitch.blobUrl)).blob();
+    return blobToDataUrl(blob);
+  } finally {
+    await sendOffscreen<{ sessionId: string }, unknown>(MessageKind.OffscreenDispose, { sessionId })
+      .catch(() => undefined);
+  }
+}
+
+async function sendOffscreen<P, R>(kind: MessageKind, payload: P): Promise<R> {
+  const res = (await chrome.runtime.sendMessage({ kind, requestId: makeRequestId(), payload })) as
+    | { ok: true; data: R }
+    | { ok: false; error: { code: ErrorCode; message: string; detail?: string } };
+  if (!res || res.ok !== true) {
+    const err = res?.error ?? { code: ErrorCode.E_STITCH_FAILED, message: "no offscreen reply" };
+    throw new MessageError(err.code, err.message, err.detail);
+  }
+  return res.data;
+}
+
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return `data:${blob.type || "image/jpeg"};base64,${btoa(binary)}`;
+}
+
 /**
  * Ensure the content script is alive in the target tab. The manifest
  * `content_scripts` entry only injects on navigation — tabs already open
