@@ -23,7 +23,7 @@ export interface ElementInspectorProps {
 
 export function ElementInspector(props: ElementInspectorProps): JSX.Element {
   const { snapshot, onShowCode, onBack, onTogglePickerLock, pickerLocked } = props;
-  const { identity, box, text } = snapshot;
+  const { identity, text, selection } = snapshot;
 
   const copy = useCallback(async (v: string) => {
     try { await navigator.clipboard.writeText(v); } catch { /* ignore */ }
@@ -83,6 +83,8 @@ export function ElementInspector(props: ElementInspectorProps): JSX.Element {
           onCopy={() => copy(text.color)}
         />
       </section>
+
+      <SelectionContrast selection={selection} onCopy={copy} />
     </div>
   );
 }
@@ -152,5 +154,50 @@ function BoxModel({ snapshot }: { snapshot: ElementSnapshot }): JSX.Element {
         </div>
       </div>
     </div>
+  );
+}
+
+interface SelectionContrastProps {
+  selection: ElementSnapshot["selection"];
+  onCopy: (v: string) => void;
+}
+function SelectionContrast({ selection, onCopy }: SelectionContrastProps): JSX.Element {
+  const { fg, bg, contrast } = selection;
+  const ratio = contrast.ratio.toFixed(2);
+  const v = contrast.verdict;
+  const verdictClass =
+    v.label === "Excellent" ? "is-excellent"
+    : v.label === "Good" ? "is-good"
+    : v.label === "Poor" ? "is-poor"
+    : "is-fail";
+  return (
+    <section className="lpe-eli-section" aria-label="Selection colors and contrast">
+      <h4 className="lpe-eli-h4">Selection colors</h4>
+      <Row label="Foreground" value={fg} swatch={fg} onCopy={() => onCopy(fg)} />
+      <Row label="Background" value={bg} swatch={bg} onCopy={() => onCopy(bg)} />
+      <div className="lpe-eli-row">
+        <span className="lpe-eli-rowlabel">Contrast</span>
+        <span className="lpe-eli-rowvalue">
+          <span className="lpe-eli-sample" style={{ color: fg, background: bg }}>Aa</span>
+          <span className="lpe-eli-rowtext">{ratio}:1</span>
+          <span className={`lpe-eli-verdict ${verdictClass}`}>{v.label}</span>
+        </span>
+      </div>
+      <div className="lpe-eli-wcag" aria-label="WCAG conformance">
+        <Tag ok={contrast.isLarge ? v.largeAA : v.normalAA}>AA</Tag>
+        <Tag ok={contrast.isLarge ? v.largeAAA : v.normalAAA}>AAA</Tag>
+        <span className="lpe-eli-wcag-note">
+          {contrast.isLarge ? "Large text" : "Normal text"}
+        </span>
+      </div>
+    </section>
+  );
+}
+
+function Tag({ ok, children }: { ok: boolean; children: React.ReactNode }): JSX.Element {
+  return (
+    <span className={`lpe-eli-tagpill ${ok ? "is-pass" : "is-fail"}`}>
+      {ok ? "✓" : "×"} {children}
+    </span>
   );
 }
