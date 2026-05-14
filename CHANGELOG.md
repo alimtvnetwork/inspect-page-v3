@@ -4,6 +4,26 @@ All notable changes to **Inspect Page** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [WP 2.5.2] — 2026-05-14
+
+### Added — CSV export of share-link visitor events (Pro)
+
+- New REST route `GET /inspect-page/v1/sessions/{id}/events.csv`
+  (cookie + `X-WP-Nonce`). Streams up to 200 most-recent anonymized
+  events for a single session as a CSV with columns
+  `created_at_utc, kind, ip_hash, ua_hash`.
+- Pro-gated: returns `402 E_PRO_REQUIRED` when the owner is on Free
+  or has not opted into the visitor log; `403 E_SHARE_FORBIDDEN`
+  when the requester is not the owner; `404 E_SHARE_NOT_FOUND`
+  for unknown ids.
+- "Recent visitors" drawer in the WP plugin Privacy section now
+  shows a per-session "Download CSV" button next to the first row
+  for each session.
+- New `InspectPage_Stats::events_for_session()` + 5 unit tests
+  (`tests/test-stats.php`) covering 404/403/402/Pro-no-opt-in/
+  Pro+opt-in success paths.
+- Bumped WP plugin to `2.5.2`; repackaged `public/inspect-page-wp.zip`.
+
 ## [WP 2.5.1 / Extension 2.5.5] — 2026-05-14
 
 ## [Extension 2.5.6] — 2026-05-14
