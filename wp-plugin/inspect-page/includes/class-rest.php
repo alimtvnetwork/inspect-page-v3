@@ -344,6 +344,16 @@ final class InspectPage_REST {
     }
 
     // ----------------------------------------------------------------------
+    // GET /sessions/{id}/stats
+    // ----------------------------------------------------------------------
+    public static function session_stats( WP_REST_Request $req ) {
+        $user_id = InspectPage_Auth::current_user_id();
+        $out     = InspectPage_Stats::get_stats( $req['id'], $user_id );
+        if ( is_wp_error( $out ) ) { return $out; }
+        return new WP_REST_Response( $out, 200 );
+    }
+
+    // ----------------------------------------------------------------------
     // helpers
     // ----------------------------------------------------------------------
     private static function asset_urls( $session_id ) {
