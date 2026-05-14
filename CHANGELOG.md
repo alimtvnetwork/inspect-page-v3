@@ -4,6 +4,32 @@ All notable changes to **Inspect Page** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Extension 2.5.0] — 2026-05-14
+
+### Added — Pick Element rich inspector (v2.5)
+
+- **Picker overlay**: dashed orange margin / dashed green padding rulers
+  with per-side px badges, plus a `W × H` size chip and a richer info
+  tip (tag, id, classes, role) — modeled after the Argument-style
+  inspector requested by the user.
+- **Element snapshot collector** (`collectElementSnapshot`): identity,
+  full box-model, text properties, selection foreground/background +
+  WCAG contrast verdict, matched CSS split by `:base/:hover/:focus/
+  :active/:disabled`, and a grouped computed-style diff (Layout,
+  Typography, Background, Border, Effects, Other).
+- **Element Inspector panel**: identity row, "Context menu while
+  hovering" lock toggle, box-model diagram, text properties (font
+  family / size / line-height / weight / letter-spacing / color with
+  swatch + copy), and a Selection-colors block with foreground/
+  background swatches, `Aa` preview, contrast ratio, Excellent / Good
+  / Poor / Fail verdict pill, and AA / AAA pass-fail tags that respect
+  the WCAG large-text rule.
+- **Code drawer**: tabbed view of matched CSS by pseudo-state and
+  computed-style overrides by group, each with a one-click copy.
+- **Export modes docked under the inspector**: MD single, MD + files,
+  ZIP + prompt, and Smart Share — same four modes as Export Page so
+  Pick Element produces identical AI-ready bundles.
+
 ## [Extension 2.3.0] — 2026-05-13
 
 ### Added — Stripe billing (in-extension)
