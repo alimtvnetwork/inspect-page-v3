@@ -41,6 +41,7 @@ import { listShareSessions, type ShareSessionSummary } from "../share/listShareS
 import { startBillingCheckout } from "../share/startBillingCheckout";
 import { startBillingPortal } from "../share/startBillingPortal";
 import { getBillingStatus, type BillingStatus } from "../share/getBillingStatus";
+import { pollBillingUntilPro, BILLING_CHANGED_EVENT } from "../share/pollBillingUntilPro";
 import { emitBilling } from "../share/billingTelemetry";
 import { revokeShareSession } from "../share/revokeShareSession";
 import { InspectShell } from "./inspect/InspectShell";
@@ -596,6 +597,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                       if (typeof window !== "undefined" && url) {
                         emitBilling("checkout_opened", "inline_quota_error");
                         window.open(url, "_blank", "noopener,noreferrer");
+                        pollBillingUntilPro({ getShareSettings });
                       }
                     } catch (err) {
                       emitBilling("checkout_failed", "inline_quota_error", {
@@ -1141,8 +1143,14 @@ function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
     void refresh();
     if (typeof window === "undefined") return () => { cancelled = true; };
     const onFocus = () => { void refresh(); };
+    const onChanged = () => { void refresh(); };
     window.addEventListener("focus", onFocus);
-    return () => { cancelled = true; window.removeEventListener("focus", onFocus); };
+    window.addEventListener(BILLING_CHANGED_EVENT, onChanged);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener(BILLING_CHANGED_EVENT, onChanged);
+    };
   }, [signedIn]);
   if (!status) return null;
   const isPro = status.plan === "pro";
@@ -1270,12 +1278,15 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
     if (typeof document !== "undefined") {
       document.addEventListener("visibilitychange", onVisibility);
     }
+    const onBillingChanged = () => { void refresh(); };
+    window.addEventListener(BILLING_CHANGED_EVENT, onBillingChanged);
     return () => {
       cancelled = true;
       window.removeEventListener("focus", onFocus);
       if (typeof document !== "undefined") {
         document.removeEventListener("visibilitychange", onVisibility);
       }
+      window.removeEventListener(BILLING_CHANGED_EVENT, onBillingChanged);
     };
   }, [signedIn]);
 
@@ -1372,6 +1383,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
                           if (typeof window !== "undefined" && url) {
                             emitBilling("checkout_opened", "settings");
                             window.open(url, "_blank", "noopener,noreferrer");
+                            pollBillingUntilPro({ getShareSettings });
                           }
                         } catch (err) {
                           emitBilling("checkout_failed", "settings", {
