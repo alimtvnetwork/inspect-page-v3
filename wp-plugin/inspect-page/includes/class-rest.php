@@ -61,6 +61,12 @@ final class InspectPage_REST {
             'permission_callback' => [ 'InspectPage_Auth', 'require_wp_user' ],
         ] );
 
+        register_rest_route( $ns, '/sessions/(?P<id>[A-Za-z0-9_-]{16,64})/events.csv', [
+            'methods'             => 'GET',
+            'callback'            => [ __CLASS__, 'session_events_csv' ],
+            'permission_callback' => [ 'InspectPage_Auth', 'require_wp_user' ],
+        ] );
+
         register_rest_route(
             $ns,
             '/share/(?P<id>[A-Za-z0-9_-]{16,64})(?:\.(?P<sig>[A-Za-z0-9_-]{16,43}))?/(?P<slug>index\.html|style\.css|script\.js|preview\.png)',
@@ -363,6 +369,35 @@ final class InspectPage_REST {
         $out     = InspectPage_Stats::get_stats( $req['id'], $user_id );
         if ( is_wp_error( $out ) ) { return $out; }
         return new WP_REST_Response( $out, 200 );
+    }
+
+    // ----------------------------------------------------------------------
+    // GET /sessions/{id}/events.csv  (Pro + opt-in only)
+    // ----------------------------------------------------------------------
+    public static function session_events_csv( WP_REST_Request $req ) {
+        $user_id = InspectPage_Auth::current_user_id();
+        $sid     = (string) $req['id'];
+        $rows    = InspectPage_Stats::events_for_session( $sid, $user_id, 200 );
+        if ( is_wp_error( $rows ) ) { return $rows; }
+
+        $filename = 'inspect-page-events-' . preg_replace( '/[^A-Za-z0-9_-]/', '', $sid ) . '.csv';
+        header_remove( 'Cache-Control' );
+        header( 'Content-Type: text/csv; charset=utf-8' );
+        header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+        header( 'X-Content-Type-Options: nosniff' );
+        header( 'Cache-Control: private, no-store' );
+        $fh = fopen( 'php://output', 'w' );
+        fputcsv( $fh, [ 'created_at_utc', 'kind', 'ip_hash', 'ua_hash' ] );
+        foreach ( $rows as $r ) {
+            fputcsv( $fh, [
+                (string) ( $r['created_at'] ?? '' ),
+                (string) ( $r['kind'] ?? '' ),
+                (string) ( $r['ip_hash'] ?? '' ),
+                (string) ( $r['ua_hash'] ?? '' ),
+            ] );
+        }
+        fclose( $fh );
+        exit;
     }
 
     // ----------------------------------------------------------------------

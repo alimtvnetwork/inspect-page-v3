@@ -163,6 +163,44 @@ final class InspectPage_Stats {
         return is_array( $rows ) ? $rows : [];
     }
 
+    /**
+     * Per-session anonymized event log (Pro + opt-in only). Returns an
+     * array of rows or a WP_Error (404 not-found, 403 forbidden, 402 if
+     * the owner is not on Pro / hasn't opted in). Used by the CSV export.
+     */
+    public static function events_for_session( $session_id, $user_id, $limit = 200 ) {
+        global $wpdb;
+        $p   = $wpdb->prefix . 'pp_';
+        $row = $wpdb->get_row( $wpdb->prepare(
+            "SELECT id, user_id FROM {$p}share_sessions WHERE session_id = %s",
+            (string) $session_id
+        ), ARRAY_A );
+        if ( ! $row ) {
+            return new WP_Error( InspectPage_ErrorCode::E_SHARE_NOT_FOUND, 'not found', [ 'status' => 404 ] );
+        }
+        if ( (int) $row['user_id'] !== (int) $user_id ) {
+            return new WP_Error( InspectPage_ErrorCode::E_SHARE_FORBIDDEN, 'forbidden', [ 'status' => 403 ] );
+        }
+        if ( ! class_exists( 'InspectPage_License' ) || ! InspectPage_License::has_license( (int) $user_id ) ) {
+            return new WP_Error( InspectPage_ErrorCode::E_PRO_REQUIRED, 'Pro required', [ 'status' => 402 ] );
+        }
+        $optin = get_user_meta( (int) $user_id, self::OPTIN_META, true );
+        if ( $optin !== '1' && $optin !== 1 && $optin !== true ) {
+            return new WP_Error( InspectPage_ErrorCode::E_PRO_REQUIRED, 'visitor log opt-in required', [ 'status' => 402 ] );
+        }
+        $limit = max( 1, min( 200, (int) $limit ) );
+        $rows  = $wpdb->get_results( $wpdb->prepare(
+            "SELECT e.created_at, e.ip_hash, e.ua_hash, t.name AS kind
+               FROM {$p}share_events e
+               JOIN {$p}share_asset_types t ON t.id = e.asset_type_id
+              WHERE e.session_id = %d
+              ORDER BY e.created_at DESC
+              LIMIT %d",
+            (int) $row['id'], $limit
+        ), ARRAY_A );
+        return is_array( $rows ) ? $rows : [];
+    }
+
     /** Hourly cleanup hook calls this. Returns rows deleted. */
     public static function purge_old_events() {
         global $wpdb;

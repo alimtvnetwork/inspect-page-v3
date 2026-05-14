@@ -651,16 +651,31 @@ final class InspectPage_Admin {
                 echo '<th>' . esc_html__( 'Session', 'inspect-page' ) . '</th>';
                 echo '<th>' . esc_html__( 'Asset', 'inspect-page' ) . '</th>';
                 echo '<th>' . esc_html__( 'Visitor (hashed)', 'inspect-page' ) . '</th>';
+                echo '<th>' . esc_html__( 'Export', 'inspect-page' ) . '</th>';
                 echo '</tr></thead><tbody>';
+                $nonce = wp_create_nonce( 'wp_rest' );
+                $seen  = [];
                 foreach ( $events as $e ) {
                     echo '<tr>';
                     echo '<td>' . esc_html( (string) $e['created_at'] ) . '</td>';
                     echo '<td><code>' . esc_html( substr( (string) $e['session_id'], 0, 12 ) ) . '…</code></td>';
                     echo '<td>' . esc_html( (string) $e['kind'] ) . '</td>';
                     echo '<td><code>' . esc_html( substr( (string) $e['ip_hash'], 0, 12 ) ) . '…</code></td>';
+                    $sid = (string) $e['session_id'];
+                    if ( isset( $seen[ $sid ] ) ) {
+                        echo '<td></td>';
+                    } else {
+                        $seen[ $sid ] = true;
+                        $url = esc_url( add_query_arg( '_wpnonce', $nonce,
+                            rest_url( INSPECT_PAGE_REST_NS . '/sessions/' . rawurlencode( $sid ) . '/events.csv' )
+                        ) );
+                        echo '<td><a class="button button-small" href="' . $url . '">'
+                            . esc_html__( 'Download CSV', 'inspect-page' ) . '</a></td>';
+                    }
                     echo '</tr>';
                 }
                 echo '</tbody></table>';
+                echo '<p class="description">' . esc_html__( 'CSV includes up to 200 most recent events per session. Hashes are one-way HMAC; raw IP/UA never leave the database.', 'inspect-page' ) . '</p>';
             }
         }
     }

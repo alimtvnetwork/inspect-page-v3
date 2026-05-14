@@ -41,6 +41,7 @@ class InspectPage_AssetType {
 class InspectPage_ErrorCode {
     const E_SHARE_NOT_FOUND = 'E_SHARE_NOT_FOUND';
     const E_SHARE_FORBIDDEN = 'E_SHARE_FORBIDDEN';
+    const E_PRO_REQUIRED    = 'E_PRO_REQUIRED';
 }
 
 // License + user-meta shims for the event-log path.
@@ -103,8 +104,9 @@ class FakeWpdb {
         return 1;
     }
     public function get_results( $q, $type = 0 ) {
-        // recent_events_for_user query
-        if ( strpos( $q, 'FROM wp_pp_share_events' ) !== false ) {
+        // recent_events_for_user / events_for_session queries both start with
+        // "FROM wp_pp_share_events" (with optional alias `e`).
+        if ( strpos( $q, 'wp_pp_share_events' ) !== false ) {
             $out = [];
             foreach ( array_reverse( $this->events ) as $e ) {
                 $out[] = [
@@ -234,5 +236,33 @@ echo "Stats: purge_old_events clears the table\n";
 $n = InspectPage_Stats::purge_old_events();
 assert_eq( $n, count( $rows ), 'purged equals previous count' );
 assert_eq( count( $GLOBALS['wpdb']->events ), 0, 'events table empty' );
+
+// ---- D1: events_for_session (per-session CSV source) -------------------
+echo "Stats: events_for_session 404 for unknown session\n";
+$err = InspectPage_Stats::events_for_session( 'nope-nope-nope-nope', 8 );
+assert_eq( is_wp_error( $err ), true, 'unknown returns WP_Error' );
+assert_eq( $err->code, 'E_SHARE_NOT_FOUND', '404 code' );
+
+echo "Stats: events_for_session 403 for non-owner\n";
+$err = InspectPage_Stats::events_for_session( 'sess-bbbbbbbbbbbbbbbb', 7 );
+assert_eq( $err->code, 'E_SHARE_FORBIDDEN', '403 code' );
+
+echo "Stats: events_for_session 402 when owner is free\n";
+$GLOBALS['_pp_pro_users'][8] = false;
+$err = InspectPage_Stats::events_for_session( 'sess-bbbbbbbbbbbbbbbb', 8 );
+assert_eq( $err->code, 'E_PRO_REQUIRED', '402 code free user' );
+
+echo "Stats: events_for_session 402 when Pro but no opt-in\n";
+$GLOBALS['_pp_pro_users'][8] = true;
+update_user_meta( 8, 'inspect_page_event_log_optin', '' );
+$err = InspectPage_Stats::events_for_session( 'sess-bbbbbbbbbbbbbbbb', 8 );
+assert_eq( $err->code, 'E_PRO_REQUIRED', '402 code no opt-in' );
+
+echo "Stats: events_for_session returns rows for Pro + opt-in owner\n";
+update_user_meta( 8, 'inspect_page_event_log_optin', '1' );
+InspectPage_Stats::record_view( 2, 'html', '5.5.5.5' );
+$rows2 = InspectPage_Stats::events_for_session( 'sess-bbbbbbbbbbbbbbbb', 8, 200 );
+assert_eq( is_array( $rows2 ), true, 'returns array' );
+assert_eq( count( $rows2 ) >= 1, true, 'has rows' );
 
 echo "\nAll Stats tests passed.\n";
