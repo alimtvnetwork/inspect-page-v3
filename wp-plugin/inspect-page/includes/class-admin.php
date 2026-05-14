@@ -356,6 +356,9 @@ final class InspectPage_Admin {
         // ── Privacy / event log ────────────────────────────────
         self::render_privacy_section( $uid );
 
+        // ── Email digest cadence + open rate (D2) ──────────────
+        self::render_digest_section( $uid );
+
         echo '</div>';
     }
 
