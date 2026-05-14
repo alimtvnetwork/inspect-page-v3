@@ -498,24 +498,48 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         ) : (
           <>
             {mode === "export" && (
-              <button
-                type="button"
-                className="lpe-btn lpe-btn-primary"
-                onClick={onFullPage}
-                disabled={busy || settings === null}
-              >
-                {COPY.btnFullPage}
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="lpe-btn lpe-btn-primary"
+                  onClick={onFullPage}
+                  disabled={busy || settings === null}
+                >
+                  {COPY.btnFullPage}
+                </button>
+                <ShareLinksButton
+                  shareSettings={shareSettings}
+                  hasArtifacts={!!state.fullPageArtifacts}
+                  busy={busy}
+                  artifacts={state.fullPageArtifacts
+                    ? buildFullPageArtifacts(state.fullPageArtifacts, activeUrl)
+                    : null}
+                  onShare={onShare}
+                  onOpenSettings={() => setSettingsOpen(true)}
+                />
+              </>
             )}
             {mode === "pick" && (
-              <button
-                type="button"
-                className="lpe-btn lpe-btn-primary"
-                onClick={onPick}
-                disabled={busy || settings === null}
-              >
-                {COPY.btnPick}
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="lpe-btn lpe-btn-primary"
+                  onClick={onPick}
+                  disabled={busy || settings === null}
+                >
+                  {COPY.btnPick}
+                </button>
+                <ShareLinksButton
+                  shareSettings={shareSettings}
+                  hasArtifacts={!!state.debugPreview}
+                  busy={busy}
+                  artifacts={state.debugPreview
+                    ? buildElementArtifacts(state.debugPreview, activeUrl)
+                    : null}
+                  onShare={onShare}
+                  onOpenSettings={() => setSettingsOpen(true)}
+                />
+              </>
             )}
             {surface === "popup" && (
               <button
@@ -905,6 +929,7 @@ function DebugPreview({ preview, activeUrl, shareEnabled, onShare, onClear }: De
 }
 
 function deriveDomain(url: string | undefined): string {
+  // (helper stays below)
   if (!url) return "page";
   try {
     return new URL(url).hostname.replace(/^www\./, "");
@@ -1569,5 +1594,43 @@ function ElementInspectorWithCode(
         </div>
       )}
     </>
+  );
+}
+
+interface ShareLinksButtonProps {
+  shareSettings: ShareSettings | null;
+  hasArtifacts: boolean;
+  busy: boolean;
+  artifacts: ExportArtifacts | null;
+  onShare: (artifacts: ExportArtifacts) => Promise<void>;
+  onOpenSettings: () => void;
+}
+
+function ShareLinksButton(props: ShareLinksButtonProps): JSX.Element {
+  const { shareSettings, hasArtifacts, busy, artifacts, onShare, onOpenSettings } = props;
+  const signedIn = !!shareSettings && !!shareSettings.nonce && !!shareSettings.siteUrl;
+  if (!signedIn) {
+    return (
+      <button
+        type="button"
+        className="lpe-btn"
+        onClick={onOpenSettings}
+        disabled={busy}
+        title={COPY.exportModeShareDisabledTip}
+      >
+        {COPY.shareSignInBtn} — {COPY.exportModeShare}
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className="lpe-btn"
+      onClick={() => { if (artifacts) void onShare(artifacts); }}
+      disabled={busy || !hasArtifacts || !artifacts}
+      title={hasArtifacts ? COPY.exportModeShare : "Run export first"}
+    >
+      {COPY.exportModeShare}
+    </button>
   );
 }
