@@ -168,7 +168,11 @@ final class InspectPage_Shortcode {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-WP-Nonce': btn.dataset.nonce },
-                body: JSON.stringify({ success_url: window.location.href, cancel_url: window.location.href, return_url: window.location.href })
+              body: JSON.stringify({
+                success_url: (function(){ var u=new URL(window.location.href); u.searchParams.set('inspect_page_upgraded','1'); return u.toString(); })(),
+                cancel_url: window.location.href,
+                return_url: window.location.href
+              })
               }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
               .then(function(o){
                 if (o.ok && o.j && o.j.url) { window.location.href = o.j.url; return; }
