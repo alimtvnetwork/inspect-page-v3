@@ -1489,6 +1489,20 @@ function RecentSharesList(): JSX.Element {
             try { host = new URL(r.sourceUrl).hostname.replace(/^www\./, ""); } catch { /* keep */ }
             return (
               <li key={r.sessionId} className="lpe-recent-row">
+                {r.urls.image ? (
+                  <img
+                    src={r.urls.image}
+                    alt=""
+                    loading="lazy"
+                    className="lpe-share-thumb"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <span className="lpe-share-thumb lpe-share-thumb-empty" aria-hidden="true">{r.kind?.[0]?.toUpperCase() ?? "?"}</span>
+                )}
                 <div className="lpe-recent-meta">
                   <span className="lpe-recent-host" title={r.sourceUrl}>{host}</span>
                   <span className="lpe-recent-kind">{r.kind}</span>
