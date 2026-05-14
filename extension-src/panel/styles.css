@@ -1076,3 +1076,37 @@
 }
 .lpe-eli-tagpill.is-pass { color: #16a34a; border-color: rgba(22,163,74,0.5); background: rgba(22,163,74,0.10); }
 .lpe-eli-tagpill.is-fail { color: #dc2626; border-color: rgba(220,38,38,0.5); background: rgba(220,38,38,0.10); }
+
+/* ---- C5: Code drawer ---- */
+.lpe-cdr {
+  display: flex; flex-direction: column; gap: 10px;
+  background: var(--lpe-surface, rgba(255,255,255,0.03));
+  border: 1px solid var(--lpe-border);
+  border-radius: 10px; padding: 10px;
+}
+.lpe-cdr-header { display: flex; align-items: center; gap: 8px; }
+.lpe-cdr-title { font-weight: 600; font-size: 14px; }
+.lpe-cdr-section { display: flex; flex-direction: column; gap: 6px; }
+.lpe-cdr-tabs { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.lpe-cdr-tab {
+  font-size: 11px; text-transform: capitalize; padding: 3px 8px;
+  border-radius: 4px; border: 1px solid var(--lpe-border);
+  background: transparent; color: var(--lpe-muted); cursor: pointer;
+}
+.lpe-cdr-tab.is-active {
+  background: var(--lpe-fg); color: var(--lpe-bg); border-color: var(--lpe-fg);
+}
+.lpe-cdr-copy {
+  font-size: 11px; padding: 3px 8px; border-radius: 4px;
+  border: 1px solid var(--lpe-border); background: transparent;
+  color: var(--lpe-fg); cursor: pointer;
+}
+.lpe-cdr-pre {
+  margin: 0; padding: 8px 10px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--lpe-border); border-radius: 6px;
+  font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--lpe-fg);
+  max-height: 240px; overflow: auto; white-space: pre;
+}
+.lpe-root[data-lpe-theme="light"] .lpe-cdr-pre { background: rgba(0,0,0,0.04); }
