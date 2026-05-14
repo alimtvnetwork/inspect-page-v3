@@ -4,6 +4,7 @@
  * Run: php tests/test-stats.php
  */
 if ( ! defined( 'ABSPATH' ) ) { define( 'ABSPATH', __DIR__ . '/' ); }
+if ( ! defined( 'ARRAY_A' ) ) { define( 'ARRAY_A', 'ARRAY_A' ); }
 
 // ---- WP shims -----------------------------------------------------------
 $GLOBALS['_pp_options']    = [ 'inspect_page_url_secret' => 'unit-secret' ];
