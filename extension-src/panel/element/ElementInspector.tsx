@@ -23,7 +23,7 @@ export interface ElementInspectorProps {
 
 export function ElementInspector(props: ElementInspectorProps): JSX.Element {
   const { snapshot, onShowCode, onBack, onTogglePickerLock, pickerLocked } = props;
-  const { identity, box, text } = snapshot;
+  const { identity, text, selection } = snapshot;
 
   const copy = useCallback(async (v: string) => {
     try { await navigator.clipboard.writeText(v); } catch { /* ignore */ }
@@ -83,6 +83,8 @@ export function ElementInspector(props: ElementInspectorProps): JSX.Element {
           onCopy={() => copy(text.color)}
         />
       </section>
+
+      <SelectionContrast selection={selection} onCopy={copy} />
     </div>
   );
 }
