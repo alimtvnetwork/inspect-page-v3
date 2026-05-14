@@ -234,6 +234,12 @@ export interface StatusUpdatePayload {
     js: string;
   };
   /**
+   * C3 — rich element snapshot for the new Pick Element Inspector view.
+   * Typed as unknown here to avoid a shared→element import cycle; the panel
+   * casts to `ElementSnapshot` at the use site.
+   */
+  elementSnapshot?: unknown;
+  /**
    * Full-page artifacts may be attached to the terminal Success broadcast so
    * floating panels receive the rich post-export actions before the top-level
    * background response returns.
