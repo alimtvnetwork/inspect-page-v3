@@ -125,6 +125,12 @@ final class InspectPage_Activator {
             wp_schedule_event( time() + DAY_IN_SECONDS, 'weekly', InspectPage_Digest::HOOK );
         }
 
+        // D2 — daily digest cron for Pro users on `daily` cadence.
+        // Idempotent: re-activations leave existing schedule alone.
+        if ( ! wp_next_scheduled( InspectPage_Digest::HOOK_DAILY ) ) {
+            wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', InspectPage_Digest::HOOK_DAILY );
+        }
+
         // Unschedule legacy cron hook if still present.
         $legacy_cron = wp_next_scheduled( 'pageport_cleanup' );
         if ( $legacy_cron ) { wp_unschedule_event( $legacy_cron, 'pageport_cleanup' ); }
