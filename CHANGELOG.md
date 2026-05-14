@@ -4,6 +4,39 @@ All notable changes to **Inspect Page** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Extension 2.5.3] — 2026-05-14
+
+### Changed — Panel UI overhaul
+
+- **First view simplified**: opening the popup or floating panel now
+  shows just the three tabs (Export / Pick / Inspect) and the active
+  tab's primary CTA. The always-on Idle status, the inline Settings
+  disclosure, and the standalone Smart Share section are gone.
+- **Settings popover**: the `≡` icon left of "Inspect Page" is now a
+  real button. It toggles a settings popover anchored under the header
+  containing Settings + Smart Share account. Esc closes and returns
+  focus to the button.
+- **Share Links is per-tab**: a secondary **Share Links** button now
+  appears below the primary CTA in the Export and Pick tabs (not in
+  Inspect). Signed-out → opens the settings popover. Signed-in but no
+  artifacts yet → disabled with "Run export first". Signed-in with
+  artifacts → triggers the share session and opens the existing share
+  dialog.
+- **Header buttons fixed**: minimize now leaves a small restore pill
+  bottom-right of the page; pop-out migrates to a detached window and
+  tears down the in-page panel; close fully unmounts.
+- **Palette refresh** (CSS Peeper-grade): layered dark surfaces
+  (`#0E1116` / `#151A22` / `#1C232E`), hairline borders (`#262E3B`),
+  text hierarchy (`#E6EAF2 / #9AA4B2 / #5E6878`), accent shifted to
+  `#3B82F6 → #2563EB` hover. Buttons get 10px radius, soft inner
+  highlight and 150ms transitions; active tab gets a 2px accent
+  underline with subtle glow. Light theme gets a parallel pass.
+
+### Internal
+
+- 88/88 extension tests still pass.
+- Repackaged `public/inspect-page.zip` (186K).
+
 ## [Extension 2.5.1] — 2026-05-14
 
 ### Added — Picker chip in-page action icons
