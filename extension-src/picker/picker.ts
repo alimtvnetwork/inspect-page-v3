@@ -310,6 +310,7 @@ function pickTarget(x: number, y: number): Element | null {
 
 function updateOverlay(x: number, y: number): void {
   if (!state) return;
+  state.lastX = x; state.lastY = y;
   const target = pickTarget(x, y);
   if (!target) {
     hideAll();
@@ -385,6 +386,28 @@ function updateOverlay(x: number, y: number): void {
   if (ty + tipRect.height > window.innerHeight) ty = y - 12 - tipRect.height;
   state.tip.style.left = `${Math.max(0, tx)}px`;
   state.tip.style.top = `${Math.max(0, ty)}px`;
+
+  // ---- B3: distance guides (Alt held) — distance to viewport edges ----
+  if (state.altDown) {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    // top guide: vertical line from element top to y=0
+    setGuide(state.guides[0]!, "v", cx, 0, r.top, "v");
+    setGLabel(state.gBadges[0]!, Math.round(r.top), cx + 6, r.top / 2);
+    // right guide: horizontal line from r.right to vw
+    setGuide(state.guides[1]!, "h", r.right, cy, vw - r.right, "h");
+    setGLabel(state.gBadges[1]!, Math.round(vw - r.right), (r.right + vw) / 2, cy - 14);
+    // bottom guide: vertical line from r.bottom to vh
+    setGuide(state.guides[2]!, "v", cx, r.bottom, vh - r.bottom, "v");
+    setGLabel(state.gBadges[2]!, Math.round(vh - r.bottom), cx + 6, (r.bottom + vh) / 2);
+    // left guide: horizontal line from x=0 to r.left
+    setGuide(state.guides[3]!, "h", 0, cy, r.left, "h");
+    setGLabel(state.gBadges[3]!, Math.round(r.left), r.left / 2, cy - 14);
+  } else {
+    for (const g of state.guides) g.style.display = "none";
+    for (const b of state.gBadges) b.style.display = "none";
+  }
 }
 
 function hideAll(): void {
@@ -396,6 +419,40 @@ function hideAll(): void {
   state.size.style.display = "none";
   for (const b of state.badges) b.style.display = "none";
   for (const b of state.mBadges) b.style.display = "none";
+  for (const g of state.guides) g.style.display = "none";
+  for (const b of state.gBadges) b.style.display = "none";
+}
+
+function setGuide(
+  el: HTMLDivElement,
+  orient: "h" | "v",
+  x: number,
+  y: number,
+  length: number,
+  _kind: "h" | "v",
+): void {
+  if (length < 1) { el.style.display = "none"; return; }
+  el.style.display = "block";
+  if (orient === "v") {
+    el.style.left = `${Math.round(x)}px`;
+    el.style.top = `${Math.round(y)}px`;
+    el.style.height = `${Math.round(length)}px`;
+    el.style.width = "1px";
+  } else {
+    el.style.left = `${Math.round(x)}px`;
+    el.style.top = `${Math.round(y)}px`;
+    el.style.width = `${Math.round(length)}px`;
+    el.style.height = "1px";
+  }
+}
+
+function setGLabel(el: HTMLDivElement, value: number, cx: number, cy: number): void {
+  if (value < 1) { el.style.display = "none"; return; }
+  el.textContent = `${value}px`;
+  el.style.display = "block";
+  const rect = el.getBoundingClientRect();
+  el.style.left = `${Math.max(0, Math.round(cx - rect.width / 2))}px`;
+  el.style.top = `${Math.max(0, Math.round(cy - rect.height / 2))}px`;
 }
 
 function positionBadge(el: HTMLDivElement, value: number, cx: number, cy: number, _anchor: string): void {
