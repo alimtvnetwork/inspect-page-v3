@@ -3,7 +3,7 @@
  * Plugin Name:       Inspect Page
  * Plugin URI:        admin.php?page=inspect-page
  * Description:       Share-Links backend for the Inspect Page Chrome extension. Hosts captured HTML / CSS / image bundles for 24 hours and exposes them via signed public URLs.
- * Version:           2.4.0
+ * Version:           2.5.0
  * Requires at least: 5.6
  * Requires PHP:      7.4
  * Author:            Inspect Page
@@ -14,7 +14,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'INSPECT_PAGE_VERSION', '2.4.0' );
+define( 'INSPECT_PAGE_VERSION', '2.5.0' );
 define( 'INSPECT_PAGE_REST_NS', 'inspect-page/v1' );
 define( 'INSPECT_PAGE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'INSPECT_PAGE_URL', plugin_dir_url( __FILE__ ) );
@@ -30,6 +30,7 @@ require_once INSPECT_PAGE_DIR . 'includes/class-rest.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-cleanup.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-shortcode.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-notify.php';
+require_once INSPECT_PAGE_DIR . 'includes/class-digest.php';
 if ( is_admin() ) {
     require_once INSPECT_PAGE_DIR . 'includes/class-admin.php';
 }
@@ -47,6 +48,7 @@ add_filter( 'rest_pre_serve_request', [ 'InspectPage_Auth', 'send_cors_headers' 
 add_action( 'inspect_page_cleanup', [ 'InspectPage_Cleanup', 'run' ] );
 InspectPage_Shortcode::register();
 InspectPage_Notify::register();
+InspectPage_Digest::register();
 
 // Run schema upgrade when the plugin file version is newer than what's stored.
 add_action( 'plugins_loaded', function () {

@@ -115,6 +115,33 @@ project adheres to [Semantic Versioning](https://semver.org/).
 ## [WP plugin 2.2.1] — 2026-05-12
 ## [WP plugin 2.3.0] — 2026-05-13
 
+## [WP plugin 2.5.0] — 2026-05-14
+
+### Added — Weekly digest of expired Smart Share sessions
+
+- New `InspectPage_Digest` class. WP-Cron event
+  `inspect_page_weekly_digest` (registered with a `weekly` interval) runs
+  once a week, finds every WP user who had ≥1 Smart Share session expire
+  in the last 7 days, and emails them a per-user summary listing source
+  URL + expiry timestamp for each session (capped at 50 rows with an
+  "…and N more" overflow line).
+- Footer adapts to license: Pro users see "Smart Share is unlimited.
+  Manage subscription" with the account URL; Free users see
+  "X of Y free Smart Share links used. Upgrade to Pro" with the pricing
+  URL.
+- One-click unsubscribe via per-user 32-char token in `inspect_page_digest_token`
+  user meta. Token-based (not nonce) so the link survives email-client
+  redirection and works without an active WP login. Hits
+  `?inspect_page_digest_unsubscribe=<token>` on any front-end page;
+  handler flips `inspect_page_digest_optout` and shows a confirmation.
+- Activator now schedules the weekly cron with a 1-day initial offset so
+  freshly-installed sites don't email immediately.
+- 21 new PHPUnit-style assertions in `tests/test-digest.php` covering
+  per-user grouping, opt-out skip, Pro vs Free footer, token round-trip,
+  empty-result no-op, and `last_run` option update.
+- Plugin version bumped to **2.5.0** (`inspect-page.php` header +
+  `INSPECT_PAGE_VERSION` constant).
+
 ### Added — Lifetime free-share quota + license gate
 
 - New `InspectPage_License` helper: every Smart Share upload now passes

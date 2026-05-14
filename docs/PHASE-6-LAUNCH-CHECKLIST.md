@@ -111,8 +111,8 @@ a fresh Chrome profile. Check:
 
 ## 6. Post-launch (out of scope, tracked here)
 
-- Stripe Checkout subscription wiring (currently manual `wp user meta update`).
-- Signed (HMAC) share URLs — current scheme is unguessable IDs only.
-- Email digest of expired sessions.
+- ~~Stripe Checkout subscription wiring~~ — **shipped in v2.4.0** (admin-pasted secret/price/webhook, license meta auto-flipped).
+- ~~Signed (HMAC) share URLs~~ — **already shipped** (`class-rest.php::sign_session_id`, `inspect_page_url_secret` option, default-on `inspect_page_require_signed_urls`, `.{sig}` URL segment, covered by `tests/test-sign-url.php`).
+- Email digest of expired sessions — **in progress** (see WP plugin v2.5.0).
 - ~~Picker-chip action-icon UX (deferred since v2.3.0)~~ — **shipped in
   v2.5.1**: in-page chip with ✓ Select / ⧉ Copy selector / ✕ Cancel.
