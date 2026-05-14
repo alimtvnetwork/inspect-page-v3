@@ -10,7 +10,7 @@
  *     handlers for RunFullPageExport / EnterPickerMode arrive in later stages.
  *     For now, clicking them shows an Error if the handler is missing — by design.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COPY } from "@shared/copy";
 import {
   INSPECT_PAGE_WP_SITE_URL,
@@ -133,6 +133,8 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const [shareResult, setShareResult] = useState<CreateShareSessionResponse | null>(null);
   const [onboardingDismissed, setOnboardingDismissed] = useState<boolean>(true);
   const [mode, setMode] = useState<PanelMode>("export");
+  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
+  const settingsBtnRef = useRef<HTMLButtonElement | null>(null);
   const [theme, setTheme] = useState<PanelTheme>(() => {
     try {
       const v = globalThis.localStorage?.getItem(THEME_STORAGE_KEY);
@@ -147,6 +149,22 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       return next;
     });
   }, []);
+
+  const onToggleSettings = useCallback(() => {
+    setSettingsOpen((v) => !v);
+  }, []);
+  const onCloseSettings = useCallback(() => {
+    setSettingsOpen(false);
+    settingsBtnRef.current?.focus();
+  }, []);
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); onCloseSettings(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [settingsOpen, onCloseSettings]);
 
   const disabled = isDisabledUrl(activeUrl);
 
@@ -378,7 +396,16 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         data-draggable={surface === "floating" ? "true" : "false"}
         data-drag-handle={surface === "floating" ? "true" : undefined}
       >
-        <span aria-hidden="true">≡</span>
+        <button
+          ref={settingsBtnRef}
+          type="button"
+          className="lpe-header-btn"
+          onClick={onToggleSettings}
+          aria-label={COPY.settingsHeader}
+          aria-expanded={settingsOpen}
+          aria-haspopup="dialog"
+          title={COPY.settingsHeader}
+        >≡</button>
         <span className="lpe-header-title">{COPY.appName}</span>
         <button
           type="button"
