@@ -4,7 +4,7 @@ Tags: ai, share, export
 Requires at least: 5.6
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 2.5.3
+Stable tag: 2.5.4
 License: MIT
 
 Backend for the Inspect Page Chrome extension. Hosts captured HTML / CSS / JS / image bundles for 24 hours behind public URLs so an LLM can read them.

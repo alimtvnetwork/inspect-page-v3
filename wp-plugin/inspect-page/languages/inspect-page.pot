@@ -1,7 +1,7 @@
 # Inspect Page — translation template
 msgid ""
 msgstr ""
-"Project-Id-Version: Inspect Page 2.5.3\n"
+"Project-Id-Version: Inspect Page 2.5.4\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Language: \n"
 "X-Domain: inspect-page\n"
