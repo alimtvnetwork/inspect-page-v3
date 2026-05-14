@@ -74,6 +74,7 @@ export function mountFloatingPanel(): void {
     if (!pos) return;
     if (pos.minimized) {
       host.style.display = "none";
+      showRestorePill();
       return;
     }
     if (typeof pos.wPx === "number") {
