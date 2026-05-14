@@ -80,6 +80,21 @@ final class InspectPage_Activator {
             KEY user_created (user_id, created_at)
         ) {$charset};";
 
+        // Per-visit event log (Option A — Phase 5). Default OFF; only
+        // populated when the session owner is on Pro AND has opted in via
+        // user meta `inspect_page_event_log_optin`. Rolling 30-day window
+        // pruned by the hourly cleanup cron.
+        $sql[] = "CREATE TABLE {$p}share_events (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            session_id BIGINT UNSIGNED NOT NULL,
+            asset_type_id TINYINT UNSIGNED NOT NULL,
+            created_at DATETIME NOT NULL,
+            ip_hash CHAR(40) NOT NULL,
+            ua_hash CHAR(40) NOT NULL,
+            PRIMARY KEY (id),
+            KEY session_created (session_id, created_at)
+        ) {$charset};";
+
         foreach ( $sql as $stmt ) { dbDelta( $stmt ); }
 
         self::seed_enum( "{$p}share_session_statuses", InspectPage_SessionStatus::all() );
