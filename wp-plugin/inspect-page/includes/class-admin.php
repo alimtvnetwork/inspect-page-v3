@@ -102,12 +102,27 @@ final class InspectPage_Sessions_Table extends WP_List_Table {
         return [ 'revoke' => __( 'Revoke', 'inspect-page' ) ];
     }
 
+    protected function get_sortable_columns() {
+        return [
+            'views'      => [ 'views', true ],
+            'created_at' => [ 'created_at', false ],
+            'expires_at' => [ 'expires_at', false ],
+        ];
+    }
+
     public function prepare_items() {
         global $wpdb;
         $p = $wpdb->prefix . 'pp_';
         $per_page = 25;
         $page     = max( 1, $this->get_pagenum() );
         $offset   = ( $page - 1 ) * $per_page;
+
+        // Whitelist orderby/order to safely interpolate into the SQL.
+        $orderby_in = isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : 'created_at';
+        $order_in   = isset( $_GET['order'] )   ? strtoupper( sanitize_key( wp_unslash( $_GET['order'] ) ) ) : 'DESC';
+        $allowed    = [ 'views' => 's.views', 'created_at' => 's.created_at', 'expires_at' => 's.expires_at' ];
+        $orderby    = $allowed[ $orderby_in ] ?? 's.created_at';
+        $order      = ( $order_in === 'ASC' ) ? 'ASC' : 'DESC';
 
         $where = '';
         $args  = [];
@@ -137,7 +152,7 @@ final class InspectPage_Sessions_Table extends WP_List_Table {
             unset( $r['user_login'] );
         }
 
-        $this->_column_headers = [ $this->get_columns(), [], [] ];
+        $this->_column_headers = [ $this->get_columns(), [], $this->get_sortable_columns() ];
         $this->items = $rows;
         $this->set_pagination_args( [
             'total_items' => $total,
