@@ -24,23 +24,25 @@
 
 /* ---------- Theme tokens (Phase A1) ---------- */
 .lpe-root[data-lpe-theme="light"] {
-  --lpe-bg: #ffffff;
-  --lpe-fg: #1f2328;
-  --lpe-muted: #57606a;
-  --lpe-surface: #f6f8fa;
-  --lpe-surface-2: #eaeef2;
-  --lpe-border: #d0d7de;
-  --lpe-accent: #0969da;
+  --lpe-bg: #FAFBFC;
+  --lpe-fg: #1B2230;
+  --lpe-muted: #5E6878;
+  --lpe-surface: #F1F3F7;
+  --lpe-surface-2: #E5E8EE;
+  --lpe-border: #D8DEE6;
+  --lpe-accent: #2563EB;
+  --lpe-accent-hover: #1D4ED8;
   --lpe-accent-fg: #ffffff;
 }
 .lpe-root[data-lpe-theme="dark"] {
-  --lpe-bg: #0d1117;
-  --lpe-fg: #e6edf3;
-  --lpe-muted: #8b949e;
-  --lpe-surface: #161b22;
-  --lpe-surface-2: #1f242c;
-  --lpe-border: #30363d;
-  --lpe-accent: #2f81f7;
+  --lpe-bg: #0E1116;
+  --lpe-fg: #E6EAF2;
+  --lpe-muted: #9AA4B2;
+  --lpe-surface: #151A22;
+  --lpe-surface-2: #1C232E;
+  --lpe-border: #262E3B;
+  --lpe-accent: #3B82F6;
+  --lpe-accent-hover: #2563EB;
   --lpe-accent-fg: #ffffff;
 }
 
@@ -1167,3 +1169,41 @@
 .lpe-settings-popover .lpe-settings { border-top: none; }
 .lpe-settings-popover .lpe-settings summary { display: none; }
 .lpe-settings-popover .lpe-settings-body { padding-top: 8px; }
+
+/* Phase 5 — palette refresh: route hardcoded surfaces through tokens + add depth */
+.lpe-root { box-shadow: 0 10px 30px rgba(0,0,0,0.18); border-radius: 10px; }
+.lpe-root[data-lpe-theme="dark"] { box-shadow: 0 14px 40px rgba(0,0,0,0.55); }
+
+.lpe-btn {
+  border-radius: 10px;
+  transition: background 150ms ease, border-color 150ms ease, transform 80ms ease;
+}
+.lpe-btn:active:not([disabled]) { transform: translateY(1px); }
+.lpe-btn-primary { box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 6px 16px rgba(37, 99, 235, 0.28); }
+.lpe-root[data-lpe-theme="dark"] .lpe-btn-primary { box-shadow: 0 1px 0 rgba(255,255,255,0.10) inset, 0 6px 16px rgba(59,130,246,0.35); }
+.lpe-btn-primary:hover:not([disabled]) { background: var(--lpe-accent-hover) !important; border-color: var(--lpe-accent-hover) !important; }
+
+/* Tabs polish — active tab gets 2px accent underline + soft glow */
+.lpe-tab[data-active="true"] {
+  position: relative;
+  color: var(--lpe-fg);
+}
+.lpe-tab[data-active="true"]::after {
+  content: "";
+  position: absolute;
+  left: 12%; right: 12%; bottom: 0;
+  height: 2px;
+  background: var(--lpe-accent);
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--lpe-accent);
+}
+
+/* Header */
+.lpe-header { background: var(--lpe-surface); border-bottom: 1px solid var(--lpe-border); }
+.lpe-header-btn { color: var(--lpe-muted); border-radius: 8px; transition: background 120ms ease, color 120ms ease; }
+.lpe-header-btn:hover { background: var(--lpe-surface-2); color: var(--lpe-fg); }
+
+/* Settings popover — re-skin to tokens */
+.lpe-settings-popover { background: var(--lpe-surface); border-color: var(--lpe-border); }
+.lpe-root[data-lpe-theme="dark"] .lpe-settings-popover { background: var(--lpe-surface); border-color: var(--lpe-border); }
+.lpe-settings-popover-head { border-bottom-color: var(--lpe-border); color: var(--lpe-fg); background: var(--lpe-surface-2); }
