@@ -317,4 +317,24 @@ final class InspectPage_Shortcode {
         wp_safe_redirect( remove_query_arg( [ 'inspect_page_revoke', '_wpnonce' ] ) );
         exit;
     }
+
+    /**
+     * Handles `?inspect_page_digest_unsubscribe=<token>` from digest emails.
+     * Token-based (not nonce-based) so it survives email-client redirection
+     * and works without an active WP login. The token is per-user and
+     * stored in `inspect_page_digest_token` user meta.
+     */
+    public static function maybe_handle_digest_unsubscribe() {
+        if ( empty( $_GET['inspect_page_digest_unsubscribe'] ) ) return;
+        if ( ! class_exists( 'InspectPage_Digest' ) ) return;
+        $tok = sanitize_text_field( wp_unslash( $_GET['inspect_page_digest_unsubscribe'] ) );
+        $uid = InspectPage_Digest::user_id_for_token( $tok );
+        if ( $uid > 0 ) {
+            InspectPage_Digest::set_optout( $uid, true );
+        }
+        $msg = $uid > 0
+            ? __( 'You have been unsubscribed from Inspect Page weekly digest emails.', 'inspect-page' )
+            : __( 'Unsubscribe link is no longer valid.', 'inspect-page' );
+        wp_die( esc_html( $msg ), esc_html__( 'Inspect Page', 'inspect-page' ), [ 'response' => 200 ] );
+    }
 }
