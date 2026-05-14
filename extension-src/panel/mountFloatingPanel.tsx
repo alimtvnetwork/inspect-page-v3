@@ -74,6 +74,7 @@ export function mountFloatingPanel(): void {
     if (!pos) return;
     if (pos.minimized) {
       host.style.display = "none";
+      showRestorePill();
       return;
     }
     if (typeof pos.wPx === "number") {
@@ -88,29 +89,63 @@ export function mountFloatingPanel(): void {
     wrapper.style.top = `${clamp(pos.yPx, 0, window.innerHeight - h)}px`;
   }).catch(() => undefined);
 
+  let pillEl: HTMLDivElement | null = null;
+  const showRestorePill = (): void => {
+    if (pillEl) return;
+    pillEl = document.createElement("div");
+    pillEl.id = "inspect-page-restore-pill";
+    pillEl.style.cssText = [
+      "position: fixed",
+      "bottom: 16px",
+      "right: 16px",
+      `z-index: ${Z_INDEX_PANEL}`,
+      "background: #1f6feb",
+      "color: #fff",
+      "font: 600 12px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+      "padding: 8px 12px",
+      "border-radius: 999px",
+      "box-shadow: 0 4px 14px rgba(0,0,0,0.25)",
+      "cursor: pointer",
+      "user-select: none",
+    ].join(";");
+    pillEl.textContent = "Inspect Page";
+    pillEl.setAttribute("role", "button");
+    pillEl.setAttribute("aria-label", "Restore Inspect Page panel");
+    pillEl.addEventListener("click", () => {
+      host.style.display = "block";
+      void persistPosition({ minimized: false }).catch(() => undefined);
+      pillEl?.remove();
+      pillEl = null;
+    });
+    document.documentElement.appendChild(pillEl);
+  };
+
   const close = (): void => {
     try { root.unmount(); } catch { /* ignore */ }
     cleanup();
     cleanupResize();
     host.remove();
+    pillEl?.remove();
+    pillEl = null;
     mounted = null;
     void persistPosition({ minimized: false }).catch(() => undefined);
   };
 
   const minimize = (): void => {
     host.style.display = "none";
+    showRestorePill();
     void persistPosition({ minimized: true }).catch(() => undefined);
   };
 
   const popOut = (): void => {
-    // Open the extension's popup as a detached browser window so the panel
-    // survives page navigations. Falls back silently if the API is missing.
     try {
       const url = chrome.runtime?.getURL?.("popup/index.html");
       if (!url) return;
       void chrome.windows?.create?.({
         url, type: "popup", width: 420, height: 720, focused: true,
       });
+      // Migrate to detached window — tear down in-page panel so we don't keep two surfaces.
+      close();
     } catch { /* ignore */ }
   };
 
