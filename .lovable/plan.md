@@ -1,125 +1,65 @@
-# Inspect Mode — CSS-Peeper-class inspector for Inspect Page (v3)
+# Inspect Page v2.5 — Pick Element Rich Inspector
 
-A new third mode in the floating panel, alongside **Export Page** and **Pick Element**. All free, no sign-in required. Light theme mirrors CSS Peeper; dark theme keeps Inspect Page brand. Driven by `next` — one phase per turn.
+Adapt the rich inspector UX shown in your reference screenshots (overlay chip with margin/padding rulers, Inspector panel with element id/classes, Text properties, Selection colors + contrast verdict, Code preview tabs with Layout/Style/Pseudo-classes) into the **Pick Element** flow of Inspect Page.
 
-## Reference screenshots (folded into phases below)
+Today Pick Element ends in an export-mode toolbar. v2.5 inserts a full **Element Detail** view (same visual language as the existing Inspect tab) before/after the export toolbar, so picking an element on the page opens a dedicated inspector for that single element with copy buttons everywhere.
 
-**Overview / sections (round 1)**
-- Header with Inspect Mode toggle, Overview, page thumbnail, title + URL → A1 / A3
-- Typography: Headings + Body cards, family + generic chip, "N weights · N text styles" → A4
-- Color Palette swatch row + Show all → A5
-- Contrast Scanner row with count badge → A6
-- CSS Information (Style Rules, CSS file size) → A7
+Driven by `next` — one phase per turn.
 
-**Contrast detail / list (round 2)**
-- Pair card: ratio + verdict, "N instances", Text/Background swatches + hex, Normal/Large × AA/AAA badges, Hide/Show details accordion → A6
-- "← Contrast Scanner" detail screen with Failing/Passing segmented tabs + counts → A6
+## Phases
 
-**Colors deep-dive (round 2)**
-- "Colors {N}" header + Export All button → A5 / A11
-- Palette / Categories tabs, "Background colors 17", "Text colors", "Border colors", per-row Locate + Copy, transparent = checkerboard → A5b
-- Gradient Details drawer: back-arrow, Show code, swatch + "Linear Gradient" + N instances, Properties (stop track 0/50/100%, per-stop hex + copy), Instances list → A10
-- Color instance row expanded: Category / Token-Class / Value / Contrast → A10
-- Solid color drill-in: Category=Text color, Value=#FFFFFF + swatch, Contrast=16.47 Excellent → A10
+### C1 — Picker chip overlay + box-model rulers
+- Build the shadow-DOM overlay from `extension-src/picker/` (closes deferred B1).
+- Floating chip near hovered element shows tag + `#id` + first 3 classes + `WxH` size badge.
+- Dashed margin/padding rulers around the hovered element with px badges on all four sides (matches screenshot 1).
+- Light/dark parity using existing CSS variables. Pure presentational; selection logic stays in `picker.ts`.
 
-**Picker overlay (round 2)**
-- Floating selector chip "button.relative" under cursor + tooltip + small action icon → A8
-- Distance guides between selected + hovered: dashed lines, px badges (61px / 45px / 13px / 418px) → A8b
+### C2 — Element snapshot collector
+- New `extension-src/element/collectElementSnapshot.ts`: given the picked element, returns a serializable `ElementSnapshot` with:
+  - identity (tag, id, classList, selector path, role)
+  - rect + box-model (margin/padding/border per side, content w×h)
+  - text properties (font-family stack, size, line-height, weight, letter-spacing, color)
+  - selection colors (fg, bg resolved against ancestors)
+  - matched CSS rules grouped by `:hover / :focus / :active / :disabled`
+  - computed style diff vs. browser defaults, grouped (Layout, Typography, Background, Border, Effects)
+- Reuses existing `matchedCss.ts`, `computedDiff.ts`, `contrast.ts`, `selectorPath.ts`.
 
-**Inspector right pane (round 3 — NEW)**
-- Inspector header: back-arrow + "Inspector" title + Show code button → **A8**
-- Element label block: tagName "Button" + selector "button.relative" (highlighted token) → **A8**
-- "Context menu while hovering" toggle (when on, right-click pages context menu still works while picker active) → **A8 (new control)**
-- Box-model diagram (CSS Peeper style): nested margin → border → padding → content rectangles, numbers in each gap edge ("1", "1", "-", "-") and inner content size pill (`28 X 28`); `-` means 0/auto → **A8**
-- Text properties block: rows for Font Family (ellipsis-truncated, copy-all on click), Font Size, Line Height, Font Weight ("Regular (400)"), Letter Spacing, Text color (swatch + hex + copy), Contrast (ratio + verdict badge) → **A8**
-- Selection colors block (separate from Text properties): Text card + Background card (hex + copy), then Contrast card showing big ratio + verdict + Normal/Large × AA/AAA grid → **A8**
+### C3 — Inspector panel (header + box-model + text properties)
+- New `extension-src/panel/element/ElementInspector.tsx` rendered when a Pick Element selection completes.
+- Header: back arrow, "Inspector" title, "Show code" button (matches screenshot 2).
+- Element identity card: `Button` label + colored `button.relative` selector chip.
+- "Context menu while hovering" toggle (re-arms picker without leaving inspector).
+- Box-model diagram (margin / border / padding / content) with live numbers.
+- Text properties block: Font Family, Size, Line Height, Weight, Letter Spacing, Text color swatch + copy (matches screenshot 3).
 
-**Show Code drawer (round 3 — NEW)**
-- Header: back-arrow + "Code preview" title → **A9**
-- Subsection cards each with title + copy-all icon and syntax-highlighted CSS body. Confirmed subsections:
-  - **Layout** (positioning, box, flex/grid, sizing, padding/margin) → A9
-  - **Style** (full computed style dump, scrollable) → A9
-  - **PSEUDO-CLASSES** group → cards labeled `:hover (Style)`, `:focus (Style)`, `:active (Style)`, each with its own copy → **A9 (rename pseudo tab → expandable group)**
-- Syntax highlighting: property = blue, value-keyword = white, function/var = orange, punctuation = white. Use a tiny built-in tokenizer (no Prism dep) to keep extension bundle small.
+### C4 — Selection colors + contrast verdict
+- "Selection colors" section: Text + Background swatches with copy buttons.
+- Contrast card: large ratio number, verdict label (Excellent/Good/Poor/Fail) with the same green pill style used today, plus AA / AAA rows for normal + large text (matches screenshot 4).
+- Reuses `contrast.ts` `verdict()` helper unchanged.
 
-## Updated phase list (atomic, one per `next`)
+### C5 — Code preview drawer
+- "Show code" opens a slide-in `ElementCodeDrawer.tsx`.
+- Tabs/sections: **Layout**, **Style**, **Pseudo-classes** (`:hover`, `:focus`, `:active`), each with its own copy button (matches screenshots 5, 6, 7).
+- Syntax highlight via the existing lightweight tokenizer used in Show Code today (no new dep).
+- "Copy all" copies a single CSS block with section comments.
 
-### A1 — Mode scaffolding & theme toggle
-Three-tab header (Export · Pick · Inspect), `<InspectShell>` placeholders, light/dark toggle via `[data-lpe-theme]` tokens, scrollable body fix.
+### C6 — Wire export modes to the new inspector
+- The existing four export-mode buttons (MD / MD+files / ZIP / Smart Share) move into a footer of the inspector view, so the user can inspect first, then export — single screen, no double back-step.
+- Snapshot data is included in `prompt.md` for Smart Share (extra "Inspector summary" section) and in MD/ZIP outputs.
 
-### A2 — Page snapshot collector
-`inspect/collectSnapshot.ts` → `{ pageInfo, fonts[], colors[], cssStats, computedSamples[], textNodes[] }`. Cached per-tab.
+### C7 — Tests, docs, packaging
+- Unit tests for `collectElementSnapshot` (jsdom) and the contrast/box-model formatters.
+- `docs/QA-CHECKLIST.md` rows AC-PICK-INSP-1…N.
+- CHANGELOG entry, version bump to 2.5.0, rebuild `inspect-page.zip` + `.sha256`.
 
-### A3 — Overview section
-Hero thumbnail (single `captureVisibleTab`), title, URL. CTA = "Open docs".
+## Out of scope for v2.5
+- Editing styles in the panel (read-only inspector only).
+- Cross-origin iframe drill-down (still treats iframe as a single target).
+- Picker-mode keyboard navigation (stays parked in v2.4 B4).
 
-### A4 — Typography section
-Heading vs Body grouping, family + generic-fallback chip, "N weights · N text styles", Show all modal.
+## Remaining tasks (carryover)
+1. **v2.4 plan** B1–B7 in `docs/V2.4-PLAN.md` — superseded in part by C1; remaining items (B3 distance guides, B4 keyboard nav, B5 billing telemetry, B6 pricing polish) still open.
+2. **Phase 6 manual launch** — pen-tests, prod WP URL, Stripe config, Pricing polish, AC-BILL-1…5, Web Store upload, tag `v2.3.0`.
+3. **v2.5 (this plan)** — C1 → C7 driven by `next`.
 
-### A5 — Colors · Palette tab
-"Colors {N}" header + Export All. Dedup'd swatch grid; transparent = checkerboard; row Locate + Copy.
-
-### A5b — Colors · Categories tab
-Tabs Palette / Categories. Sections: Background, Text, Border, Fill/Stroke, Gradient. Each header has count chip; rows reuse Locate/Copy.
-
-### A6 — Contrast Scanner
-Inspect-home row with worst pairs + Show all. Detail screen: back-arrow + Failing/Passing tabs. Pair card: ratio, verdict, instances, Show details → Text/Background swatches + Normal/Large × AA/AAA grid.
-
-### A7 — CSS Information
-Style-rule count, total CSS bytes, inline `<style>` count, unreachable sheet count.
-
-### A8 — Element Inspector right pane *(expanded)*
-Click-to-inspect toggle inside Inspect Mode. On select, panel switches to Inspector view with:
-- Header: back-arrow + "Inspector" + **Show code** button
-- Element label: `tagName` + selector chip (purple token = tag, white = class/id)
-- **"Context menu while hovering"** toggle (default OFF; ON re-enables native right-click while picker active)
-- **Box-model diagram** SVG (margin/border/padding/content nested rects + inline numbers + center size pill)
-- **Text properties** rows (only rendered when element has direct text)
-- **Selection colors** (Text + Background swatches + Contrast card with full AA/AAA grid)
-Reuses `selectorPath.ts`, `computedDiff.ts`. New helper `boxModelDiagram.tsx`.
-
-### A8b — Distance guides
-Selected + hovered → dashed measurement lines + px badges (top/right/bottom/left + corner offsets). DOM overlay only.
-
-### A9 — Show Code drawer *(expanded)*
-Opens from Show code button. Header: back-arrow + "Code preview". Subsection cards in this order:
-1. **Layout** — position/display/sizing/spacing/flex/grid only (curated subset)
-2. **Style** — full computed style dump (scrollable, monospace)
-3. **PSEUDO-CLASSES** group: `:hover (Style)`, `:focus (Style)`, `:active (Style)` — each its own card with copy-all
-Each card: title left, copy-all icon right, syntax-highlighted CSS body. Built-in mini tokenizer (props blue, vars/functions orange, values white). Reuses `matchedCss.ts` for matched-rule data.
-
-### A10 — Color detail drawer (Locate + Gradient + Instance drill-in)
-Solid: swatch + hex + N instances + Properties + expandable Instance rows (Category / Token-Class / Value / Contrast). Gradient: back-arrow + "Gradient Details" + Show code + stop track + per-stop hex/copy + Instances drill-in.
-
-### A11 — Export All hardening
-Single `exportAll(dataset, format)` for Colors, Typography, Contrast (CSV + JSON). Vitest: exported rows === dataset.length on ≥3 fixtures.
-
-### A12 — Draggable panel + detached-window pop-out
-Header grab handle, drag clamped; Pop-out → `chrome.windows.create({type:'popup'})` so it can sit over Chrome's chrome.
-
-### A13 — Footer & a11y polish
-Semantic-token text ≥4.5:1 both themes, aria-labels on icon buttons, `role="tablist"` for tabs.
-
-### A14 — Tests, docs, packaging
-Vitest: snapshot, contrast math, color dedupe, exportAll completeness, distance-guide math, box-model math. Update QA checklist. Rebuild `public/inspect-page.zip` + sha256.
-
-## Technical notes
-
-- All new code under `extension-src/inspect/` (logic) and `extension-src/panel/inspect/` (UI).
-- New shared types: `InspectSnapshot`, `ColorUsage` (with `category`, `instances`), `FontUsage`, `ContrastPair` (with `instances`, AA/AAA flags), `GradientStop`, `BoxModel`, `DistanceGuide`.
-- Built-in CSS syntax highlighter (~80 LoC, no Prism) — colors driven by theme tokens.
-- Tokens added to `extension-src/panel/styles.css` under `[data-lpe-theme="light|dark"]`.
-- No new permissions.
-
-## Out of scope
-
-Sign-in · Stripe · Premium gating · cloud sync · Figma export · changes to Smart Share / Export ZIP beyond keeping their tabs working.
-
----
-
-**Remaining tasks**
-- Inspect Mode phases A1 → A14 (A1 next)
-- Carryover Phase 6 manual: pen-test 4 cases, prod acceptance, `bash scripts/release.sh`, Web Store upload, set `INSPECT_PAGE_WP_SITE_URL`
-- Deferred: Stripe Checkout → auto-flip `inspect_page_license`
-
-Send `next` to start **Phase A1**.
+Send `next` to start **C1 — Picker chip overlay + box-model rulers**.
