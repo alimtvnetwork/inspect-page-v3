@@ -1468,3 +1468,19 @@ function formatRemaining(ms: number): string {
   const pad = (n: number): string => n.toString().padStart(2, "0");
   return h > 0 ? `${h}h ${pad(m)}m ${pad(s)}s` : `${m}m ${pad(s)}s`;
 }
+
+function ElementInspectorWithCode(
+  { snapshot, onBack }: { snapshot: ElementSnapshot; onBack: () => void },
+): JSX.Element {
+  const [showCode, setShowCode] = useState(false);
+  return (
+    <>
+      <ElementInspector
+        snapshot={snapshot}
+        onBack={onBack}
+        onShowCode={() => setShowCode(true)}
+      />
+      {showCode && <CodeDrawer snapshot={snapshot} onClose={() => setShowCode(false)} />}
+    </>
+  );
+}
