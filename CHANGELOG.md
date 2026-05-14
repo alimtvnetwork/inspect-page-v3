@@ -4,6 +4,32 @@ All notable changes to **Inspect Page** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Extension 2.5.1] — 2026-05-14
+
+### Added — Picker chip in-page action icons
+
+- The `W × H` size badge is now part of a clickable chip group with
+  three icon buttons rendered directly on the page while the picker is
+  active: **✓ Select element**, **⧉ Copy selector**, **✕ Cancel
+  picker**. Right-click and Enter still work as redundant Select
+  shortcuts.
+- Hovering the chip suppresses overlay re-targeting so the highlighted
+  element stays stable while you aim for an action button. Chip flips
+  above the element near the viewport bottom edge.
+- Copy flashes a "Copied" tag inside the chip and emits a
+  `LogCategory.Picker` info log with the copied selector.
+- Bumped extension manifest + package to 2.5.1.
+
+### Fixed — Inspector action buttons styling
+
+- Removed a duplicate `.lpe-link` rule in `panel/styles.css` (lines
+  701–704) that was clobbering the Inspector's Copy / Anchor / Show
+  Code buttons with underlined-link styling.
+- Wrapped those three buttons in a new `.lpe-inspector-actions`
+  toolbar (horizontal flex, top border, themed bordered buttons) so
+  they no longer stack as a stray vertical column under the styles
+  table.
+
 ## [Extension 2.5.0] — 2026-05-14
 
 ### Added — Pick Element rich inspector (v2.5)

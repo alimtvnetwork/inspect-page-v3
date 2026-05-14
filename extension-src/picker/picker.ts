@@ -26,7 +26,14 @@ interface PickerState {
   box: HTMLDivElement;
   marginBox: HTMLDivElement;
   paddingBox: HTMLDivElement;
-  size: HTMLDivElement;
+  size: HTMLDivElement;       // size text inside chip
+  chip: HTMLDivElement;       // P1: chip group with size + action icons
+  chipBtnSelect: HTMLButtonElement;
+  chipBtnCopy: HTMLButtonElement;
+  chipBtnCancel: HTMLButtonElement;
+  chipFlash: HTMLSpanElement; // ephemeral "Copied" tag
+  chipHover: boolean;         // suppress overlay updates while pointer is on chip
+  currentTarget: Element | null; // last highlighted element (used by chip buttons)
   badges: HTMLDivElement[]; // [top, right, bottom, left] padding badges
   mBadges: HTMLDivElement[]; // [top, right, bottom, left] margin badges
   tip: HTMLDivElement;
@@ -74,14 +81,37 @@ const STYLE = `
   white-space: nowrap;
 }
 .lpe-pk-size {
-  position: fixed; pointer-events: none;
-  z-index: ${Z_INDEX_PICKER};
-  display: none;
   background: #7c5cff; color: #ffffff;
   font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
-  padding: 2px 5px; border-radius: 3px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+  padding: 2px 6px; border-radius: 3px;
   white-space: nowrap;
+}
+/* P1: chip group with size + action icons (clickable) */
+.lpe-pk-chip {
+  position: fixed; z-index: ${Z_INDEX_PICKER};
+  display: none; align-items: center; gap: 4px;
+  padding: 3px; border-radius: 5px;
+  background: rgba(13,17,23,0.92); color: #f6f8fa;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.08);
+  pointer-events: auto;
+  font: 11px ui-sans-serif, system-ui, sans-serif;
+}
+.lpe-pk-chip-btn {
+  all: unset; box-sizing: border-box;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 4px;
+  cursor: pointer; color: #f6f8fa;
+  font: 12px ui-sans-serif, system-ui, sans-serif;
+}
+.lpe-pk-chip-btn:hover { background: rgba(255,255,255,0.12); }
+.lpe-pk-chip-btn:focus-visible { outline: 2px solid #7c5cff; outline-offset: 1px; }
+.lpe-pk-chip-btn[data-variant="select"]:hover { background: rgba(60,200,140,0.25); color: #6dffb0; }
+.lpe-pk-chip-btn[data-variant="cancel"]:hover { background: rgba(255,90,90,0.25); color: #ffb4b4; }
+.lpe-pk-chip-flash {
+  display: none; padding: 0 6px; border-radius: 3px;
+  background: rgba(60,200,140,0.25); color: #6dffb0;
+  font-size: 10px;
 }
 .lpe-pk-guide {
   position: fixed; pointer-events: none;
@@ -146,7 +176,31 @@ export function enterPicker(handlers: PickerHandlers): void {
 
   const size = document.createElement("div");
   size.className = "lpe-pk-size";
-  shadow.appendChild(size);
+  // (size now lives inside the chip group below)
+
+  // P1: chip group — size badge + action icons (Select / Copy / Cancel)
+  const chip = document.createElement("div");
+  chip.className = "lpe-pk-chip";
+  chip.appendChild(size);
+
+  const mkChipBtn = (label: string, glyph: string, variant: string): HTMLButtonElement => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "lpe-pk-chip-btn";
+    b.dataset.variant = variant;
+    b.setAttribute("aria-label", label);
+    b.title = label;
+    b.textContent = glyph;
+    return b;
+  };
+  const chipBtnSelect = mkChipBtn("Select element", "✓", "select");
+  const chipBtnCopy = mkChipBtn("Copy selector", "⧉", "copy");
+  const chipBtnCancel = mkChipBtn("Cancel picker", "✕", "cancel");
+  const chipFlash = document.createElement("span");
+  chipFlash.className = "lpe-pk-chip-flash";
+  chipFlash.textContent = "Copied";
+  chip.append(chipBtnSelect, chipBtnCopy, chipBtnCancel, chipFlash);
+  shadow.appendChild(chip);
 
   const mkBadge = (): HTMLDivElement => {
     const b = document.createElement("div");
@@ -183,6 +237,9 @@ export function enterPicker(handlers: PickerHandlers): void {
   // ---- listeners ----
   const onMove = (e: PointerEvent | MouseEvent): void => {
     if (!state) return;
+    // Don't re-target while pointer is over our chip — keeps chip stable
+    // and prevents the highlighted element from changing under the cursor.
+    if (state.chipHover) return;
     // Cursor moved → resume cursor-driven highlight, clear keyboard lock.
     if (state.navTarget) state.navTarget = null;
     state.pendingEvent = e;
@@ -212,6 +269,8 @@ export function enterPicker(handlers: PickerHandlers): void {
     // interact with Cancel / Close / Minimize while picker is active.
     const t = e.target as Element | null;
     if (t?.closest?.("#inspect-page-panel-host")) return;
+    // Don't hijack right-clicks on our chip either.
+    if (e.composedPath().includes(chip)) return;
     e.preventDefault(); e.stopPropagation();
     const target = pickTarget(e.clientX, e.clientY);
     if (!target) return;
@@ -227,6 +286,8 @@ export function enterPicker(handlers: PickerHandlers): void {
     // the page doesn't navigate while the picker is active.
     const t = e.target as Element | null;
     if (t?.closest?.("#inspect-page-panel-host")) return;
+    // Let chip-button clicks through to their own handlers.
+    if (e.composedPath().includes(chip)) return;
     e.preventDefault(); e.stopPropagation();
     // Treat a left-click as a selection too (in addition to right-click)
     // so the picker is discoverable without needing the context menu.
@@ -237,6 +298,45 @@ export function enterPicker(handlers: PickerHandlers): void {
       logger.warn(LogCategory.Picker, "SELECT_FAIL", "select handler threw", err);
     });
   };
+
+  // P1: short-circuit overlay re-targeting while pointer is on the chip
+  const onChipEnter = (): void => { if (state) state.chipHover = true; };
+  const onChipLeave = (): void => { if (state) state.chipHover = false; };
+  chip.addEventListener("pointerenter", onChipEnter);
+  chip.addEventListener("pointerleave", onChipLeave);
+
+  // P2: chip button handlers — operate on the last highlighted target.
+  const fireSelect = (e: Event): void => {
+    e.preventDefault(); e.stopPropagation();
+    const t = state?.currentTarget ?? null;
+    if (!t) return;
+    const rect = t.getBoundingClientRect();
+    void Promise.resolve(handlers.onSelect({ element: t, rect })).catch((err) => {
+      logger.warn(LogCategory.Picker, "SELECT_FAIL", "select handler threw", err);
+    });
+  };
+  const fireCopy = async (e: Event): Promise<void> => {
+    e.preventDefault(); e.stopPropagation();
+    const t = state?.currentTarget ?? null;
+    if (!t) return;
+    const sel = chipShortSelector(t);
+    try { await navigator.clipboard.writeText(sel); } catch { /* ignore */ }
+    if (state) {
+      state.chipFlash.style.display = "inline-block";
+      window.setTimeout(() => {
+        if (state) state.chipFlash.style.display = "none";
+      }, 1100);
+    }
+    logger.info(LogCategory.Picker, "Copied selector via chip", sel);
+  };
+  const fireCancel = (e: Event): void => {
+    e.preventDefault(); e.stopPropagation();
+    handlers.onCancel();
+    exitPicker();
+  };
+  chipBtnSelect.addEventListener("click", fireSelect);
+  chipBtnCopy.addEventListener("click", (e) => { void fireCopy(e); });
+  chipBtnCancel.addEventListener("click", fireCancel);
 
   const onKeyDown = (e: KeyboardEvent): void => {
     if (e.key === "Escape") {
@@ -290,10 +390,15 @@ export function enterPicker(handlers: PickerHandlers): void {
     window.removeEventListener("click", onClick, true);
     window.removeEventListener("keydown", onKeyDown, true);
     window.removeEventListener("keyup", onKeyUp, true);
+    chip.removeEventListener("pointerenter", onChipEnter);
+    chip.removeEventListener("pointerleave", onChipLeave);
   };
 
   state = {
-    host, shadow, box, marginBox, paddingBox, size, badges, mBadges, tip,
+    host, shadow, box, marginBox, paddingBox, size,
+    chip, chipBtnSelect, chipBtnCopy, chipBtnCancel, chipFlash,
+    chipHover: false, currentTarget: null,
+    badges, mBadges, tip,
     guides, gBadges, altDown: false, lastX: -1, lastY: -1, navTarget: null,
     prevCursor,
     rafScheduled: false,
@@ -343,6 +448,7 @@ function updateOverlay(x: number, y: number): void {
     hideAll();
     return;
   }
+  state.currentTarget = target;
   state.box.style.left = `${r.left}px`;
   state.box.style.top = `${r.top}px`;
   state.box.style.width = `${r.width}px`;
@@ -391,11 +497,20 @@ function updateOverlay(x: number, y: number): void {
   positionBadge(state.mBadges[2]!, mb, r.left + r.width / 2, r.bottom + mb / 2, "cx");
   positionBadge(state.mBadges[3]!, ml, r.left - ml / 2, r.top + r.height / 2, "cx");
 
-  // Size chip — bottom-right of the element
+  // Chip — size badge + action icons, anchored bottom-right of element with
+  // viewport-edge collision flips so it never overlaps the highlighted box.
   state.size.textContent = `${Math.round(r.width)} × ${Math.round(r.height)}`;
-  state.size.style.left = `${Math.max(0, r.right - 60)}px`;
-  state.size.style.top = `${Math.min(window.innerHeight - 18, r.bottom + 4)}px`;
-  state.size.style.display = "block";
+  state.chip.style.display = "inline-flex";
+  // Measure first to flip cleanly
+  const cw = state.chip.offsetWidth || 120;
+  const ch = state.chip.offsetHeight || 28;
+  let chipLeft = Math.min(window.innerWidth - cw - 4, Math.max(4, r.right - cw));
+  let chipTop = r.bottom + 6;
+  if (chipTop + ch > window.innerHeight) chipTop = Math.max(4, r.top - ch - 6);
+  // Avoid covering the element if it's tall and chip would land inside it.
+  if (chipTop > r.top && chipTop < r.bottom) chipTop = r.bottom + 6;
+  state.chip.style.left = `${chipLeft}px`;
+  state.chip.style.top = `${chipTop}px`;
 
   // Tooltip — tag + id + classes (rich markup)
   state.tip.innerHTML = describeRich(target);
@@ -438,7 +553,8 @@ function hideAll(): void {
   state.tip.style.display = "none";
   state.marginBox.style.display = "none";
   state.paddingBox.style.display = "none";
-  state.size.style.display = "none";
+  state.chip.style.display = "none";
+  state.currentTarget = null;
   for (const b of state.badges) b.style.display = "none";
   for (const b of state.mBadges) b.style.display = "none";
   for (const g of state.guides) g.style.display = "none";
@@ -539,4 +655,14 @@ export function describe(el: Element): string {
   const id = el.id ? `#${el.id}` : "";
   const cls = Array.from(el.classList).slice(0, 3).map((c) => `.${c}`).join("");
   return `${tag}${id}${cls}`.slice(0, PICKER_TOOLTIP_MAX_CHARS);
+}
+
+/** P2: short selector for chip Copy action. Mirrors inspect/collectSnapshot. */
+function chipShortSelector(el: Element): string {
+  const tag = el.tagName.toLowerCase();
+  if (el.id) return `${tag}#${el.id}`;
+  const cls = (typeof el.className === "string")
+    ? el.className.trim().split(/\s+/).filter(Boolean).slice(0, 2).join(".")
+    : "";
+  return cls ? `${tag}.${cls}` : tag;
 }
