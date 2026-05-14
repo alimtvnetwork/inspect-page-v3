@@ -228,7 +228,7 @@ final class InspectPage_REST {
         $user_id = InspectPage_Auth::current_user_id();
         $rows = $wpdb->get_results( $wpdb->prepare(
             "SELECT s.session_id, k.name AS kind, st.name AS status, s.source_url, s.prompt,
-                    s.created_at, s.expires_at
+                    s.created_at, s.expires_at, s.views, s.views_per_file, s.last_viewed_at
              FROM {$p}share_sessions s
              JOIN {$p}share_session_kinds k    ON k.id  = s.kind_id
              JOIN {$p}share_session_statuses st ON st.id = s.status_id
@@ -238,6 +238,18 @@ final class InspectPage_REST {
         ), ARRAY_A );
         foreach ( $rows as &$r ) {
             $r['urls'] = self::asset_urls( $r['session_id'] );
+            $r['views'] = isset( $r['views'] ) ? (int) $r['views'] : 0;
+            $per = isset( $r['views_per_file'] ) ? json_decode( (string) $r['views_per_file'], true ) : null;
+            $r['per_file'] = [
+                'html'  => is_array( $per ) && isset( $per['html'] )  ? (int) $per['html']  : 0,
+                'css'   => is_array( $per ) && isset( $per['css'] )   ? (int) $per['css']   : 0,
+                'js'    => is_array( $per ) && isset( $per['js'] )    ? (int) $per['js']    : 0,
+                'image' => is_array( $per ) && isset( $per['image'] ) ? (int) $per['image'] : 0,
+            ];
+            unset( $r['views_per_file'] );
+            $r['last_viewed_at'] = ! empty( $r['last_viewed_at'] )
+                ? gmdate( 'c', strtotime( $r['last_viewed_at'] . ' UTC' ) )
+                : null;
         }
         return new WP_REST_Response( $rows, 200 );
     }

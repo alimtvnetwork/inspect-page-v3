@@ -17,6 +17,9 @@ export interface ShareSessionSummary {
   createdAtIso: string;
   expiresAtIso: string;
   urls: { html: string; css: string; js: string; image: string };
+  views: number;
+  lastViewedAtIso: string | null;
+  perFile: { html: number; css: number; js: number; image: number };
 }
 
 export interface ListShareSessionsDeps {
@@ -63,7 +66,10 @@ export async function listShareSessions(
     );
   }
   const raw = (await res.json()) as Array<Record<string, unknown>>;
-  return raw.map((r) => ({
+  return raw.map((r) => {
+    const per = (r.per_file as Record<string, unknown>) ?? {};
+    const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+    return {
     sessionId: String(r.session_id ?? ""),
     kind: String(r.kind ?? ""),
     status: String(r.status ?? ""),
@@ -74,5 +80,11 @@ export async function listShareSessions(
     urls: (r.urls as ShareSessionSummary["urls"]) ?? {
       html: "", css: "", js: "", image: "",
     },
-  }));
+      views: num(r.views),
+      lastViewedAtIso: typeof r.last_viewed_at === "string" ? r.last_viewed_at : null,
+      perFile: {
+        html: num(per.html), css: num(per.css), js: num(per.js), image: num(per.image),
+      },
+    };
+  });
 }
