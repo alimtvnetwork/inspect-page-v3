@@ -111,27 +111,29 @@ export function InspectInspector({ snapshot }: InspectInspectorProps): JSX.Eleme
                       {anchor && isAnchor && (
                         <p className="lpe-inspector-dist-self">{COPY.inspectInspectorDistSelf}</p>
                       )}
-                      <button
-                        type="button"
-                        className="lpe-link"
-                        onClick={() => void copySelector(i, s.selector)}
-                      >
-                        {copied === i ? COPY.inspectInspectorCopied : COPY.inspectInspectorCopySelector}
-                      </button>
-                      <button
-                        type="button"
-                        className="lpe-link"
-                        onClick={() => setAnchorIdx(isAnchor ? null : i)}
-                      >
-                        {isAnchor ? COPY.inspectInspectorClearAnchor : COPY.inspectInspectorAnchor}
-                      </button>
-                      <button
-                        type="button"
-                        className="lpe-link"
-                        onClick={() => setCodeIdx(i)}
-                      >
-                        {COPY.inspectInspectorShowCode}
-                      </button>
+                      <div className="lpe-inspector-actions">
+                        <button
+                          type="button"
+                          className="lpe-link"
+                          onClick={() => void copySelector(i, s.selector)}
+                        >
+                          {copied === i ? COPY.inspectInspectorCopied : COPY.inspectInspectorCopySelector}
+                        </button>
+                        <button
+                          type="button"
+                          className="lpe-link"
+                          onClick={() => setAnchorIdx(isAnchor ? null : i)}
+                        >
+                          {isAnchor ? COPY.inspectInspectorClearAnchor : COPY.inspectInspectorAnchor}
+                        </button>
+                        <button
+                          type="button"
+                          className="lpe-link"
+                          onClick={() => setCodeIdx(i)}
+                        >
+                          {COPY.inspectInspectorShowCode}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </li>
