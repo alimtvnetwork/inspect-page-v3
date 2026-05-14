@@ -49,9 +49,12 @@ export function InspectColors({ snapshot }: InspectColorsProps): JSX.Element {
         { count: number }
       >(MessageKind.LocateColor, { tabId: -1, target: value });
       const n = res.count;
-      setLocateMsg(n === 0 ? `No matches for ${value}` : `${n} match${n === 1 ? "" : "es"} for ${value}`);
+      const tpl = n === 0
+        ? COPY.inspectColorLocateNone
+        : (n === 1 ? COPY.inspectColorLocateCount : COPY.inspectColorLocateCountPlural);
+      setLocateMsg(format(tpl, { n, value }));
     } catch {
-      setLocateMsg(`Couldn't locate ${value}`);
+      setLocateMsg(format(COPY.inspectColorLocateError, { value }));
     }
     window.setTimeout(() => setLocateMsg((m) => (m && m.includes(value) ? null : m)), 2000);
   };
