@@ -541,6 +541,10 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         {state.elementSnapshot && (
           <ElementInspectorWithCode
             snapshot={state.elementSnapshot}
+            preview={state.debugPreview}
+            activeUrl={activeUrl}
+            shareEnabled={!!shareSettings && !!shareSettings.nonce && !!shareSettings.siteUrl}
+            onShare={onShare}
             onBack={() => setState((s) => ({ ...s, elementSnapshot: undefined, debugPreview: undefined, status: PanelStatus.Idle }))}
           />
         )}
@@ -1470,9 +1474,19 @@ function formatRemaining(ms: number): string {
 }
 
 function ElementInspectorWithCode(
-  { snapshot, onBack }: { snapshot: ElementSnapshot; onBack: () => void },
+  {
+    snapshot, onBack, preview, activeUrl, shareEnabled, onShare,
+  }: {
+    snapshot: ElementSnapshot;
+    onBack: () => void;
+    preview?: StatusUpdatePayload["debugPreview"];
+    activeUrl?: string;
+    shareEnabled?: boolean;
+    onShare?: (artifacts: ExportArtifacts) => Promise<ShareResult> | ShareResult;
+  },
 ): JSX.Element {
   const [showCode, setShowCode] = useState(false);
+  const artifacts = preview ? buildElementArtifacts(preview, activeUrl) : null;
   return (
     <>
       <ElementInspector
@@ -1481,6 +1495,15 @@ function ElementInspectorWithCode(
         onShowCode={() => setShowCode(true)}
       />
       {showCode && <CodeDrawer snapshot={snapshot} onClose={() => setShowCode(false)} />}
+      {artifacts && (
+        <div className="lpe-eli-export">
+          <ExportModes
+            artifacts={artifacts}
+            shareEnabled={shareEnabled}
+            onShare={onShare}
+          />
+        </div>
+      )}
     </>
   );
 }
