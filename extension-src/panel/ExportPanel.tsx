@@ -40,6 +40,7 @@ import { getShareSettings, setShareSettings } from "@shared/shareSettings";
 import { listShareSessions, type ShareSessionSummary } from "../share/listShareSessions";
 import { startBillingCheckout } from "../share/startBillingCheckout";
 import { startBillingPortal } from "../share/startBillingPortal";
+import { emitBilling } from "../share/billingTelemetry";
 import { revokeShareSession } from "../share/revokeShareSession";
 import { InspectShell } from "./inspect/InspectShell";
 import { ElementInspector } from "./element/ElementInspector";
@@ -507,12 +508,17 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                   type="button"
                   className="lpe-btn lpe-btn-primary"
                   onClick={async () => {
+                    emitBilling("upgrade_clicked", "inline_quota_error");
                     try {
                       const { url } = await startBillingCheckout({ getShareSettings });
                       if (typeof window !== "undefined" && url) {
+                        emitBilling("checkout_opened", "inline_quota_error");
                         window.open(url, "_blank", "noopener,noreferrer");
                       }
-                    } catch {
+                    } catch (err) {
+                      emitBilling("checkout_failed", "inline_quota_error", {
+                        reason: err instanceof Error ? err.message : String(err),
+                      });
                       if (typeof window !== "undefined") {
                         window.open(INSPECT_PAGE_PRICING_URL, "_blank", "noopener,noreferrer");
                       }
@@ -1195,12 +1201,17 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
                       type="button"
                       className="lpe-btn"
                       onClick={async () => {
+                        emitBilling("portal_clicked", "settings");
                         try {
                           const { url } = await startBillingPortal({ getShareSettings });
                           if (typeof window !== "undefined" && url) {
+                            emitBilling("portal_opened", "settings");
                             window.open(url, "_blank", "noopener,noreferrer");
                           }
-                        } catch {
+                        } catch (err) {
+                          emitBilling("portal_failed", "settings", {
+                            reason: err instanceof Error ? err.message : String(err),
+                          });
                           if (typeof window !== "undefined") {
                             window.open(
                               INSPECT_PAGE_PRICING_URL,
@@ -1222,12 +1233,20 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
                       type="button"
                       className="lpe-btn lpe-btn-primary"
                       onClick={async () => {
+                        emitBilling("upgrade_clicked", "settings", {
+                          freeUsed: quota.lifetimeUsed,
+                          freeLimit: quota.freeLimit,
+                        });
                         try {
                           const { url } = await startBillingCheckout({ getShareSettings });
                           if (typeof window !== "undefined" && url) {
+                            emitBilling("checkout_opened", "settings");
                             window.open(url, "_blank", "noopener,noreferrer");
                           }
-                        } catch {
+                        } catch (err) {
+                          emitBilling("checkout_failed", "settings", {
+                            reason: err instanceof Error ? err.message : String(err),
+                          });
                           // Fall back to the static pricing page if checkout
                           // is not configured / network fails.
                           if (typeof window !== "undefined") {
