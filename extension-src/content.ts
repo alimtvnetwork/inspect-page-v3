@@ -30,6 +30,7 @@ import type {
 import { collectElement } from "@element/collectElement";
 import { collectElementSnapshot } from "@element/collectElementSnapshot";
 import { collectSnapshot } from "./inspect/collectSnapshot";
+import { locateColor } from "./inspect/locateColor";
 
 logger.debug(LogCategory.Lifecycle, "Content script loaded");
 
@@ -90,6 +91,13 @@ router.on<BeginScrollCapturePayload, BeginScrollCaptureResponse>(
 router.on<{ tabId: number }, { snapshot: unknown }>(
   MessageKind.CollectInspectSnapshot,
   () => ({ snapshot: collectSnapshot() }),
+);
+
+// Phase A8b: Locate — find DOM elements whose computed colors match `target`,
+// scroll the first one into view, and flash a ring around every match.
+router.on<{ target: string }, { count: number }>(
+  MessageKind.LocateColor,
+  ({ target }) => locateColor(target),
 );
 
 router.on<RestoreAfterCapturePayload, RestoreAfterCaptureResponse>(
