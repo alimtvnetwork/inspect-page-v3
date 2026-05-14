@@ -35,6 +35,7 @@ interface PickerState {
   altDown: boolean;
   lastX: number;
   lastY: number;
+  navTarget: Element | null;  // B4: keyboard-navigated element (overrides cursor)
   prevCursor: string;
   rafScheduled: boolean;
   pendingEvent: PointerEvent | MouseEvent | null;
