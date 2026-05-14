@@ -24,6 +24,11 @@ interface PickerState {
   host: HTMLDivElement;
   shadow: ShadowRoot;
   box: HTMLDivElement;
+  marginBox: HTMLDivElement;
+  paddingBox: HTMLDivElement;
+  size: HTMLDivElement;
+  badges: HTMLDivElement[]; // [top, right, bottom, left] padding badges
+  mBadges: HTMLDivElement[]; // [top, right, bottom, left] margin badges
   tip: HTMLDivElement;
   prevCursor: string;
   rafScheduled: boolean;
@@ -38,22 +43,53 @@ const STYLE = `
 :host { all: initial; }
 .lpe-pk-box {
   position: fixed; pointer-events: none;
-  outline: 2px solid #0969da;
-  background: rgba(9,105,218,0.12);
+  outline: 2px solid #7c5cff;
+  background: rgba(124,92,255,0.12);
   z-index: ${Z_INDEX_PICKER};
   transition: none;
   display: none;
+}
+.lpe-pk-margin, .lpe-pk-padding {
+  position: fixed; pointer-events: none;
+  z-index: ${Z_INDEX_PICKER};
+  display: none;
+  box-sizing: border-box;
+}
+.lpe-pk-margin { outline: 1px dashed rgba(255,165,0,0.55); background: rgba(255,165,0,0.07); }
+.lpe-pk-padding { outline: 1px dashed rgba(60,200,140,0.6); background: rgba(60,200,140,0.07); }
+.lpe-pk-badge {
+  position: fixed; pointer-events: none;
+  z-index: ${Z_INDEX_PICKER};
+  display: none;
+  background: #1c1c1c; color: #f0f0f0;
+  font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 1px 4px; border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+  white-space: nowrap;
+}
+.lpe-pk-size {
+  position: fixed; pointer-events: none;
+  z-index: ${Z_INDEX_PICKER};
+  display: none;
+  background: #7c5cff; color: #ffffff;
+  font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 2px 5px; border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+  white-space: nowrap;
 }
 .lpe-pk-tip {
   position: fixed; pointer-events: none;
   background: #0d1117; color: #f6f8fa;
   font: 12px ui-sans-serif, system-ui, sans-serif;
-  padding: 4px 6px; border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  padding: 4px 8px; border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.32);
+  border: 1px solid rgba(255,255,255,0.08);
   z-index: ${Z_INDEX_PICKER};
   white-space: nowrap; max-width: 80vw; overflow: hidden;
   display: none;
 }
+.lpe-pk-tip b { color: #c4b5fd; font-weight: 600; }
+.lpe-pk-tip i { color: #9ca3af; font-style: normal; margin-left: 6px; }
 `;
 
 export function isPickerActive(): boolean {
@@ -76,6 +112,27 @@ export function enterPicker(handlers: PickerHandlers): void {
   const box = document.createElement("div");
   box.className = "lpe-pk-box";
   shadow.appendChild(box);
+
+  const marginBox = document.createElement("div");
+  marginBox.className = "lpe-pk-margin";
+  shadow.appendChild(marginBox);
+
+  const paddingBox = document.createElement("div");
+  paddingBox.className = "lpe-pk-padding";
+  shadow.appendChild(paddingBox);
+
+  const size = document.createElement("div");
+  size.className = "lpe-pk-size";
+  shadow.appendChild(size);
+
+  const mkBadge = (): HTMLDivElement => {
+    const b = document.createElement("div");
+    b.className = "lpe-pk-badge";
+    shadow.appendChild(b);
+    return b;
+  };
+  const badges = [mkBadge(), mkBadge(), mkBadge(), mkBadge()];
+  const mBadges = [mkBadge(), mkBadge(), mkBadge(), mkBadge()];
 
   const tip = document.createElement("div");
   tip.className = "lpe-pk-tip";
@@ -162,7 +219,7 @@ export function enterPicker(handlers: PickerHandlers): void {
   };
 
   state = {
-    host, shadow, box, tip,
+    host, shadow, box, marginBox, paddingBox, size, badges, mBadges, tip,
     prevCursor,
     rafScheduled: false,
     pendingEvent: null,
@@ -202,14 +259,12 @@ function updateOverlay(x: number, y: number): void {
   if (!state) return;
   const target = pickTarget(x, y);
   if (!target) {
-    state.box.style.display = "none";
-    state.tip.style.display = "none";
+    hideAll();
     return;
   }
   const r = target.getBoundingClientRect();
   if (r.width === 0 && r.height === 0) {
-    state.box.style.display = "none";
-    state.tip.style.display = "none";
+    hideAll();
     return;
   }
   state.box.style.left = `${r.left}px`;
@@ -218,7 +273,56 @@ function updateOverlay(x: number, y: number): void {
   state.box.style.height = `${r.height}px`;
   state.box.style.display = "block";
 
-  state.tip.textContent = describe(target);
+  // Box-model rulers (margin + padding)
+  let cs: CSSStyleDeclaration | null = null;
+  try { cs = getComputedStyle(target); } catch { cs = null; }
+  const num = (v: string | undefined): number => {
+    const n = parseFloat(v ?? "0");
+    return Number.isFinite(n) ? n : 0;
+  };
+  const mt = num(cs?.marginTop), mr = num(cs?.marginRight),
+        mb = num(cs?.marginBottom), ml = num(cs?.marginLeft);
+  const pt = num(cs?.paddingTop), pr = num(cs?.paddingRight),
+        pb = num(cs?.paddingBottom), pl = num(cs?.paddingLeft);
+
+  if (mt || mr || mb || ml) {
+    state.marginBox.style.left = `${r.left - ml}px`;
+    state.marginBox.style.top = `${r.top - mt}px`;
+    state.marginBox.style.width = `${r.width + ml + mr}px`;
+    state.marginBox.style.height = `${r.height + mt + mb}px`;
+    state.marginBox.style.display = "block";
+  } else {
+    state.marginBox.style.display = "none";
+  }
+
+  if (pt || pr || pb || pl) {
+    state.paddingBox.style.left = `${r.left + pl}px`;
+    state.paddingBox.style.top = `${r.top + pt}px`;
+    state.paddingBox.style.width = `${Math.max(0, r.width - pl - pr)}px`;
+    state.paddingBox.style.height = `${Math.max(0, r.height - pt - pb)}px`;
+    state.paddingBox.style.display = "block";
+  } else {
+    state.paddingBox.style.display = "none";
+  }
+
+  positionBadge(state.badges[0]!, pt, r.left + r.width / 2, r.top + 2, "cx");
+  positionBadge(state.badges[1]!, pr, r.right - 2, r.top + r.height / 2, "rx");
+  positionBadge(state.badges[2]!, pb, r.left + r.width / 2, r.bottom - 2, "cx");
+  positionBadge(state.badges[3]!, pl, r.left + 2, r.top + r.height / 2, "lx");
+
+  positionBadge(state.mBadges[0]!, mt, r.left + r.width / 2, r.top - mt / 2, "cx");
+  positionBadge(state.mBadges[1]!, mr, r.right + mr / 2, r.top + r.height / 2, "cx");
+  positionBadge(state.mBadges[2]!, mb, r.left + r.width / 2, r.bottom + mb / 2, "cx");
+  positionBadge(state.mBadges[3]!, ml, r.left - ml / 2, r.top + r.height / 2, "cx");
+
+  // Size chip — bottom-right of the element
+  state.size.textContent = `${Math.round(r.width)} × ${Math.round(r.height)}`;
+  state.size.style.left = `${Math.max(0, r.right - 60)}px`;
+  state.size.style.top = `${Math.min(window.innerHeight - 18, r.bottom + 4)}px`;
+  state.size.style.display = "block";
+
+  // Tooltip — tag + id + classes (rich markup)
+  state.tip.innerHTML = describeRich(target);
   state.tip.style.display = "block";
   // Position: prefer cursor + (12,12), flip if overflows.
   const tipRect = state.tip.getBoundingClientRect();
@@ -228,6 +332,46 @@ function updateOverlay(x: number, y: number): void {
   if (ty + tipRect.height > window.innerHeight) ty = y - 12 - tipRect.height;
   state.tip.style.left = `${Math.max(0, tx)}px`;
   state.tip.style.top = `${Math.max(0, ty)}px`;
+}
+
+function hideAll(): void {
+  if (!state) return;
+  state.box.style.display = "none";
+  state.tip.style.display = "none";
+  state.marginBox.style.display = "none";
+  state.paddingBox.style.display = "none";
+  state.size.style.display = "none";
+  for (const b of state.badges) b.style.display = "none";
+  for (const b of state.mBadges) b.style.display = "none";
+}
+
+function positionBadge(el: HTMLDivElement, value: number, cx: number, cy: number, _anchor: string): void {
+  if (!value || value < 1) { el.style.display = "none"; return; }
+  el.textContent = `${Math.round(value)}px`;
+  el.style.display = "block";
+  // measure + center
+  const rect = el.getBoundingClientRect();
+  el.style.left = `${Math.max(0, cx - rect.width / 2)}px`;
+  el.style.top = `${Math.max(0, cy - rect.height / 2)}px`;
+}
+
+function describeRich(el: Element): string {
+  const tag = el.tagName.toLowerCase();
+  const id = el.id ? `#${escapeHtml(el.id)}` : "";
+  const cls = Array.from(el.classList).slice(0, 3).map((c) => `.${escapeHtml(c)}`).join("");
+  const role = (el as HTMLElement).getAttribute?.("role");
+  const roleHtml = role ? `<i>${escapeHtml(role)}</i>` : "";
+  const text = `<b>${tag}</b>${id}${cls}`.slice(0, PICKER_TOOLTIP_MAX_CHARS + 32);
+  return `${text}${roleHtml}`;
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => (
+    c === "&" ? "&amp;" :
+    c === "<" ? "&lt;" :
+    c === ">" ? "&gt;" :
+    c === '"' ? "&quot;" : "&#39;"
+  ));
 }
 
 export function describe(el: Element): string {
