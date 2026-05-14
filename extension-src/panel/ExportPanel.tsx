@@ -512,7 +512,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                   hasArtifacts={!!state.fullPageArtifacts}
                   busy={busy}
                   artifacts={state.fullPageArtifacts
-                    ? buildFullPageArtifactsForShare(state.fullPageArtifacts, activeUrl)
+                    ? buildFullPageArtifacts(state.fullPageArtifacts, activeUrl)
                     : null}
                   onShare={onShare}
                   onOpenSettings={() => setSettingsOpen(true)}
