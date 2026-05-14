@@ -4,6 +4,36 @@ All notable changes to **Inspect Page** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [WP 2.5.1 / Extension 2.5.5] — 2026-05-14
+
+### Added — Share-link analytics (Option A)
+
+- **Aggregate counters**: every Smart Share asset fetch increments a
+  per-session `views` counter and a `views_per_file` JSON map (`html`,
+  `css`, `js`, `image`) plus `last_viewed_at`. Cron + REST writes are
+  guarded by a small `Stats` class so failures never break the asset
+  response.
+- **REST**: `list_sessions` now returns `views`, `views_per_file`, and
+  `last_viewed_at` (ISO UTC). New `GET /sessions/{id}/stats` returns
+  the same payload for a single session, with full error mapping
+  (`E_SHARE_AUTH`, `E_SHARE_NOT_FOUND`, `E_SHARE_NETWORK`,
+  `E_SHARE_BAD_INPUT`).
+- **Recent Shares badge**: each row in the Settings popover now shows a
+  `👁 N` pill that expands into a per-file breakdown
+  (`html N · css N · js N · image N`) plus the last-viewed timestamp.
+  The list auto-refreshes on `window.focus`.
+- **Opt-in event log (Pro only)**: when an admin enables the
+  "Recent visitors" privacy toggle, Pro accounts record up to 30 days
+  of `pp_share_events` rows (hashed IP, hashed UA, file kind, ts).
+  Admin → Inspect Page → Sessions exposes a "Recent visitors" drawer
+  with anonymised counts. Free plans never write events. Hashing uses
+  `inspect_page_url_secret` so raw IPs/UAs are never stored.
+- **Tests**: 175/175 extension vitest cases green; new WP unit tests
+  cover the stats counters, events table, and privacy toggle.
+- **Repackaged**: `public/inspect-page.zip` and
+  `public/inspect-page-wp.zip` (sha256s in
+  `*.zip.sha256`).
+
 ## [Extension 2.5.4] — 2026-05-14
 
 ### Added — In-extension billing UI (Option C)
