@@ -597,6 +597,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                       if (typeof window !== "undefined" && url) {
                         emitBilling("checkout_opened", "inline_quota_error");
                         window.open(url, "_blank", "noopener,noreferrer");
+                        pollBillingUntilPro({ getShareSettings });
                       }
                     } catch (err) {
                       emitBilling("checkout_failed", "inline_quota_error", {
