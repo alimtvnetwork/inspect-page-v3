@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { enterPicker, exitPicker, isPickerActive } from "../picker";
 
