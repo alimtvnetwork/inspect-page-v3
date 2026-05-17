@@ -33,6 +33,13 @@
   display: flex;
   flex-direction: column;
 }
+.lpe-root[data-lpe-surface="floating"] {
+  width: 420px;
+  height: min(720px, calc(100vh - 32px));
+  min-height: min(560px, calc(100vh - 32px));
+  display: flex;
+  flex-direction: column;
+}
 
 /* ---------- Theme tokens (Phase A1) ---------- */
 .lpe-root[data-lpe-theme="light"] {
