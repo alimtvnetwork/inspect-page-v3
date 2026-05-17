@@ -35,6 +35,21 @@ const ITEMS = [
 
 export const Faq = (): JSX.Element => (
   <section aria-labelledby="faq" className="space-y-6">
+    <script
+      type="application/ld+json"
+      // eslint-disable-next-line react/no-danger
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: ITEMS.map(({ q, a }) => ({
+            "@type": "Question",
+            name: q,
+            acceptedAnswer: { "@type": "Answer", text: a },
+          })),
+        }),
+      }}
+    />
     <div className="flex items-center gap-2">
       <HelpCircle className="h-5 w-5 text-primary" aria-hidden />
       <h2 id="faq" className="text-2xl font-semibold tracking-tight">
