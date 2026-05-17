@@ -8,6 +8,7 @@ import { collectHtml } from "./collectHtml";
 import { collectCss } from "./collectCss";
 import { collectJs } from "./collectJs";
 import { buildExportMeta } from "./buildExportMeta";
+import { collectInjectedOverlays } from "../inspect/overlayFilter";
 
 export interface CollectArtifactsOptions {
   redactPasswordFields: boolean;
@@ -17,17 +18,41 @@ export interface CollectArtifactsOptions {
 export async function collectArtifacts(
   opts: CollectArtifactsOptions,
 ): Promise<CollectPageArtifactsResponse> {
-  const html = collectHtml({ redactPasswordFields: opts.redactPasswordFields });
-  const { css, counts: cssCounts } = await collectCss();
-  const { js, counts: jsCounts } = await collectJs();
-  warnIfCustomElementsPresent();
+  // Temporarily detach foreign-extension overlay nodes (and Inspect Page's
+  // own hosts) so they don't end up in the exported HTML. Re-attach in
+  // finally regardless of success.
+  const detached: Array<{ node: HTMLElement; parent: Node; next: Node | null }> = [];
+  try {
+    for (const node of collectInjectedOverlays(document, window)) {
+      const parent = node.parentNode;
+      if (!parent) continue;
+      detached.push({ node, parent, next: node.nextSibling });
+      parent.removeChild(node);
+    }
+  } catch { /* best-effort */ }
+
+  let html: string;
+  let css: Awaited<ReturnType<typeof collectCss>>;
+  let js: Awaited<ReturnType<typeof collectJs>>;
+  try {
+    html = collectHtml({ redactPasswordFields: opts.redactPasswordFields });
+    css = await collectCss();
+    js = await collectJs();
+    warnIfCustomElementsPresent();
+  } finally {
+    for (const d of detached) {
+      try { d.parent.insertBefore(d.node, d.next); } catch { /* ignore */ }
+    }
+  }
+  const cssCounts = css.counts;
+  const jsCounts = js.counts;
   const meta = buildExportMeta({
     css: cssCounts,
     js: jsCounts,
     captureFrames: 0, // populated by SW after stitch.
     extensionVersion: opts.extensionVersion,
   });
-  return { html, css, js, meta };
+  return { html, css: css.css, js: js.js, meta };
 }
 
 /**
