@@ -520,7 +520,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             <span>{COPY.onboardingBody}</span>
           </div>
           <div className="lpe-onboarding-actions">
-            <button type="button" className="lpe-btn lpe-btn-primary" onClick={onDismissOnboarding}>
+            <button type="button" className="lpe-btn lpe-btn-primary" onClick={() => void onSignIn()}>
               {COPY.onboardingSignIn}
             </button>
             <button type="button" className="lpe-btn" onClick={onDismissOnboarding}>
@@ -555,7 +555,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                     ? buildFullPageArtifacts(state.fullPageArtifacts, activeUrl)
                     : null}
                   onShare={onShare}
-                  onOpenSettings={() => setSettingsOpen(true)}
+                  onSignIn={() => void onSignIn()}
                 />
               </>
             )}
@@ -577,7 +577,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                     ? buildElementArtifacts(state.debugPreview, activeUrl)
                     : null}
                   onShare={onShare}
-                  onOpenSettings={() => setSettingsOpen(true)}
+                  onSignIn={() => void onSignIn()}
                 />
               </>
             )}
