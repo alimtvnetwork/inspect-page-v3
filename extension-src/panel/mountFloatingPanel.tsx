@@ -20,8 +20,8 @@ import { clamp } from "./clamp";
 export { clamp } from "./clamp";
 
 const HOST_ID = "inspect-page-panel-host";
-const MIN_PANEL_W = 320;
-const MIN_PANEL_H = 240;
+const MIN_PANEL_W = 380;
+const MIN_PANEL_H = 560;
 const MAX_PANEL_W = 720;
 const MAX_PANEL_H = 900;
 
@@ -181,8 +181,8 @@ export function unmountFloatingPanel(): void {
 // the viewport. The pointerup persists via SetSettings (debounced upstream).
 
 function installDrag(wrapper: HTMLElement): () => void {
-  // Initial position: top-right with 16px gutter; size estimated at 320 wide.
-  const PANEL_W = 320;
+  // Initial position: top-right with 16px gutter; size estimated at the minimum readable width.
+  const PANEL_W = MIN_PANEL_W;
   const startX = Math.max(0, window.innerWidth - PANEL_W - 16);
   wrapper.style.top = `16px`;
   wrapper.style.left = `${startX}px`;
