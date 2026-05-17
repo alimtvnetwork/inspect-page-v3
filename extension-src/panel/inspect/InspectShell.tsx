@@ -3,7 +3,7 @@
  * Typography (A4), Colors (A5/A5b), Contrast Scanner (A6), CSS Information
  * (A7), Element Inspector (A8), Distance guides (A8b) and Show Code (A9).
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { COPY } from "@shared/copy";
 import { format } from "../format";
 import { INSPECT_PAGE_DOCS_URL } from "@shared/constants";
@@ -26,26 +26,70 @@ interface SnapshotState {
   error?: string;
 }
 
-export function InspectShell(): JSX.Element {
-  const [state, setState] = useState<SnapshotState>({ status: "idle" });
+/**
+ * Module-scoped cache: keeps the most recent snapshot so re-opening the
+ * Inspect tab paints instantly. Keyed by tabId (or "_" when unknown).
+ * Bounded to a single entry — we only ever care about the current tab.
+ */
+const snapshotCache: { key: string; data: CollectInspectSnapshotResponse } | null = null;
+let cache: typeof snapshotCache = snapshotCache;
 
-  const load = useCallback(async () => {
+function scheduleIdle(fn: () => void): void {
+  const ric = (globalThis as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+  if (typeof ric === "function") {
+    ric(fn, { timeout: 200 });
+  } else {
+    setTimeout(fn, 0);
+  }
+}
+
+export function InspectShell(): JSX.Element {
+  // Seed from module cache so re-opening the tab paints immediately.
+  const [state, setState] = useState<SnapshotState>(() => {
+    if (cache) {
+      return {
+        status: "ready",
+        snapshot: cache.data.snapshot as InspectSnapshot,
+        thumbnailDataUrl: cache.data.thumbnailDataUrl,
+      };
+    }
+    return { status: "loading" };
+  });
+  const aliveRef = useRef(true);
+
+  const load = useCallback(async (force = false) => {
+    if (!force && cache) {
+      setState({
+        status: "ready",
+        snapshot: cache.data.snapshot as InspectSnapshot,
+        thumbnailDataUrl: cache.data.thumbnailDataUrl,
+      });
+      return;
+    }
     setState({ status: "loading" });
     try {
       const res = await sendToBackground<{ tabId: number }, CollectInspectSnapshotResponse>(
         MessageKind.CollectInspectSnapshot, { tabId: -1 },
       );
+      cache = { key: "_", data: res };
+      if (!aliveRef.current) return;
       setState({
         status: "ready",
         snapshot: res.snapshot as InspectSnapshot,
         thumbnailDataUrl: res.thumbnailDataUrl,
       });
     } catch (e) {
+      if (!aliveRef.current) return;
       setState({ status: "error", error: e instanceof Error ? e.message : String(e) });
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    aliveRef.current = true;
+    // Defer the heavy snapshot collection so the skeleton paints first.
+    if (!cache) scheduleIdle(() => { void load(); });
+    return () => { aliveRef.current = false; };
+  }, [load]);
 
   const onOpenDocs = useCallback(() => {
     try { window.open(INSPECT_PAGE_DOCS_URL, "_blank", "noopener,noreferrer"); } catch { /* ignore */ }
@@ -56,16 +100,30 @@ export function InspectShell(): JSX.Element {
       {state.status === "ready" && state.snapshot && (
         <header className="lpe-inspect-shell-header">
           <ExportMenu snapshot={state.snapshot} />
+          <button
+            type="button"
+            className="lpe-btn"
+            onClick={() => void load(true)}
+            title={COPY.inspectRetry}
+            style={{ width: "auto", padding: "4px 10px", fontSize: 12 }}
+          >↻</button>
         </header>
       )}
       {state.status === "loading" && (
-        <div className="lpe-inspect-empty"><span>{COPY.inspectLoading}</span></div>
+        <div className="lpe-inspect-skeleton" aria-busy="true" aria-live="polite">
+          <span className="lpe-inspect-skeleton-label">{COPY.inspectLoading}</span>
+          <div className="lpe-skel lpe-skel-block" />
+          <div className="lpe-skel lpe-skel-line" style={{ width: "70%" }} />
+          <div className="lpe-skel lpe-skel-line" style={{ width: "55%" }} />
+          <div className="lpe-skel lpe-skel-block" />
+          <div className="lpe-skel lpe-skel-line" style={{ width: "80%" }} />
+        </div>
       )}
       {state.status === "error" && (
         <div className="lpe-inspect-empty">
           <strong>{COPY.inspectError}</strong>
           <span>{state.error}</span>
-          <button type="button" className="lpe-btn" onClick={() => void load()}>
+          <button type="button" className="lpe-btn" onClick={() => void load(true)}>
             {COPY.inspectRetry}
           </button>
         </div>
