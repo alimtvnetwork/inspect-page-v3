@@ -22,7 +22,7 @@ export { clamp } from "./clamp";
 const HOST_ID = "inspect-page-panel-host";
 const DEFAULT_PANEL_W = 520;
 const DEFAULT_PANEL_H = 720;
-const MIN_PANEL_W = 480;
+const MIN_PANEL_W = 520;
 const MIN_PANEL_H = 640;
 const MAX_PANEL_W = 720;
 const MAX_PANEL_H = 900;
