@@ -1169,13 +1169,24 @@ interface ShareSettingsSectionProps {
  */
 function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
   const [status, setStatus] = useState<BillingStatus | null>(null);
+  const [justFlippedPro, setJustFlippedPro] = useState(false);
   useEffect(() => {
     if (!signedIn) { setStatus(null); return; }
     let cancelled = false;
+    let prevPlan: string | null = null;
     const refresh = async () => {
       try {
         const s = await getBillingStatus({ getShareSettings });
-        if (!cancelled) setStatus(s);
+        if (!cancelled) {
+          if (prevPlan && prevPlan !== "pro" && s.plan === "pro") {
+            setJustFlippedPro(true);
+            if (typeof window !== "undefined") {
+              window.setTimeout(() => setJustFlippedPro(false), 6000);
+            }
+          }
+          prevPlan = s.plan;
+          setStatus(s);
+        }
       } catch { if (!cancelled) setStatus(null); }
     };
     void refresh();
@@ -1215,7 +1226,20 @@ function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
         </div>
       )}
       {!isPro && (
-        <div className="lpe-billing-tagline">{COPY.billingPriceTagline}</div>
+        <>
+          <div className="lpe-billing-tagline">{COPY.billingPriceTagline}</div>
+          <ul className="lpe-billing-features" aria-label="Pro features">
+            <li>{COPY.billingFeatureUnlimited}</li>
+            <li>{COPY.billingFeaturePriority}</li>
+            <li>{COPY.billingFeatureVisitors}</li>
+            <li>{COPY.billingFeatureSupport}</li>
+          </ul>
+        </>
+      )}
+      {justFlippedPro && (
+        <div className="lpe-billing-toast" role="status" aria-live="polite">
+          {COPY.billingProToast}
+        </div>
       )}
     </div>
   );
