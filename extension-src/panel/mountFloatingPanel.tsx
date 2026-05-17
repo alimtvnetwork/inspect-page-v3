@@ -20,10 +20,13 @@ import { clamp } from "./clamp";
 export { clamp } from "./clamp";
 
 const HOST_ID = "inspect-page-panel-host";
-const MIN_PANEL_W = 380;
-const MIN_PANEL_H = 560;
+const DEFAULT_PANEL_W = 520;
+const DEFAULT_PANEL_H = 720;
+const MIN_PANEL_W = 520;
+const MIN_PANEL_H = 640;
 const MAX_PANEL_W = 720;
 const MAX_PANEL_H = 900;
+const PANEL_GUTTER = 16;
 
 interface MountedPanel {
   host: HTMLElement;
@@ -60,7 +63,14 @@ export function mountFloatingPanel(): void {
   shadow.appendChild(styleEl);
 
   const wrapper = document.createElement("div");
-  wrapper.style.cssText = "position: fixed; pointer-events: auto;";
+  const initialW = clamp(DEFAULT_PANEL_W, 320, Math.max(320, window.innerWidth - PANEL_GUTTER * 2));
+  const initialH = clamp(DEFAULT_PANEL_H, 420, Math.max(420, window.innerHeight - PANEL_GUTTER * 2));
+  wrapper.style.cssText = [
+    "position: fixed",
+    "pointer-events: auto",
+    `width: ${initialW}px`,
+    `height: ${initialH}px`,
+  ].join(";");
   shadow.appendChild(wrapper);
 
   const root = createRoot(wrapper);
@@ -77,11 +87,15 @@ export function mountFloatingPanel(): void {
       showRestorePill();
       return;
     }
+    const maxW = Math.min(MAX_PANEL_W, Math.max(320, window.innerWidth - PANEL_GUTTER * 2));
+    const maxH = Math.min(MAX_PANEL_H, Math.max(420, window.innerHeight - PANEL_GUTTER * 2));
+    const minW = Math.min(MIN_PANEL_W, maxW);
+    const minH = Math.min(MIN_PANEL_H, maxH);
     if (typeof pos.wPx === "number") {
-      wrapper.style.width = `${clamp(pos.wPx, MIN_PANEL_W, MAX_PANEL_W)}px`;
+      wrapper.style.width = `${clamp(pos.wPx, minW, maxW)}px`;
     }
     if (typeof pos.hPx === "number") {
-      wrapper.style.height = `${clamp(pos.hPx, MIN_PANEL_H, MAX_PANEL_H)}px`;
+      wrapper.style.height = `${clamp(pos.hPx, minH, maxH)}px`;
     }
     const w = wrapper.getBoundingClientRect().width || 320;
     const h = wrapper.getBoundingClientRect().height || 240;
@@ -142,7 +156,7 @@ export function mountFloatingPanel(): void {
       const url = chrome.runtime?.getURL?.("popup/index.html");
       if (!url) return;
       void chrome.windows?.create?.({
-        url, type: "popup", width: 420, height: 720, focused: true,
+        url, type: "popup", width: 540, height: 760, focused: true,
       });
       // Migrate to detached window — tear down in-page panel so we don't keep two surfaces.
       close();
@@ -181,10 +195,10 @@ export function unmountFloatingPanel(): void {
 // the viewport. The pointerup persists via SetSettings (debounced upstream).
 
 function installDrag(wrapper: HTMLElement): () => void {
-  // Initial position: top-right with 16px gutter; size estimated at the minimum readable width.
-  const PANEL_W = MIN_PANEL_W;
-  const startX = Math.max(0, window.innerWidth - PANEL_W - 16);
-  wrapper.style.top = `16px`;
+  // Initial position: top-right with 16px gutter; size estimated at the readable default width.
+  const startW = wrapper.getBoundingClientRect().width || DEFAULT_PANEL_W;
+  const startX = Math.max(0, window.innerWidth - startW - PANEL_GUTTER);
+  wrapper.style.top = `${PANEL_GUTTER}px`;
   wrapper.style.left = `${startX}px`;
 
   let dragging = false;
@@ -307,10 +321,12 @@ function installResize(wrapper: HTMLElement): () => void {
     if (!resizing) return;
     const left = parseFloat(wrapper.style.left || "0");
     const top = parseFloat(wrapper.style.top || "0");
-    const maxW = Math.min(MAX_PANEL_W, window.innerWidth - left);
-    const maxH = Math.min(MAX_PANEL_H, window.innerHeight - top);
-    const w = clamp(startW + (e.clientX - startX), MIN_PANEL_W, Math.max(MIN_PANEL_W, maxW));
-    const h = clamp(startH + (e.clientY - startY), MIN_PANEL_H, Math.max(MIN_PANEL_H, maxH));
+    const maxW = Math.min(MAX_PANEL_W, Math.max(320, window.innerWidth - left));
+    const maxH = Math.min(MAX_PANEL_H, Math.max(420, window.innerHeight - top));
+    const minW = Math.min(MIN_PANEL_W, maxW);
+    const minH = Math.min(MIN_PANEL_H, maxH);
+    const w = clamp(startW + (e.clientX - startX), minW, maxW);
+    const h = clamp(startH + (e.clientY - startY), minH, maxH);
     wrapper.style.width = `${w}px`;
     wrapper.style.height = `${h}px`;
   };

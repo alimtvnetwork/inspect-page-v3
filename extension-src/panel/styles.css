@@ -24,9 +24,9 @@
 /* Popup surface uses the full practical MV3 footprint so Settings / Inspect
    overlays have enough width and vertical reading room. */
 .lpe-root[data-lpe-surface="popup"] {
-  width: 420px;
-  height: 600px;
-  min-height: 600px;
+  width: 520px;
+  height: 720px;
+  min-height: 720px;
   border: none;
   border-radius: 0;
   box-shadow: none;
@@ -34,9 +34,10 @@
   flex-direction: column;
 }
 .lpe-root[data-lpe-surface="floating"] {
-  width: 420px;
-  height: min(720px, calc(100vh - 32px));
-  min-height: min(560px, calc(100vh - 32px));
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -390,6 +391,11 @@
   overscroll-behavior: contain;
 }
 .lpe-root[data-lpe-surface="popup"] .lpe-body {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-body {
   flex: 1;
   min-height: 0;
   max-height: none;
@@ -1240,10 +1246,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 44px;
-  padding: 6px 12px;
+  min-height: 58px;
+  padding: 10px 16px;
   border-bottom: 1px solid #d0d7de;
-  font-size: 13px;
+  font-size: 18px;
   flex-shrink: 0;
 }
 .lpe-root[data-lpe-theme="dark"] .lpe-settings-popover-head {
@@ -1251,7 +1257,7 @@
   color: #e6edf3;
 }
 .lpe-settings-popover-body {
-  padding: 10px 14px 18px;
+  padding: 18px 22px 28px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -1259,7 +1265,24 @@
 }
 .lpe-settings-popover .lpe-settings { border-top: none; }
 .lpe-settings-popover .lpe-settings summary { display: none; }
-.lpe-settings-popover .lpe-settings-body { padding-top: 8px; }
+.lpe-settings-popover .lpe-settings-body { gap: 16px; padding-top: 10px; }
+.lpe-settings-popover .lpe-field { gap: 8px; }
+.lpe-settings-popover .lpe-field > label { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; }
+.lpe-settings-popover .lpe-input,
+.lpe-settings-popover .lpe-select {
+  min-height: 52px;
+  padding: 12px 16px;
+  font-size: 18px;
+  border-radius: 10px;
+}
+.lpe-settings-popover .lpe-select { padding-right: 42px; background-position: right 16px center; }
+.lpe-settings-popover .lpe-field-row {
+  min-height: 52px;
+  padding: 12px 16px;
+  border-radius: 10px;
+}
+.lpe-settings-popover .lpe-field-row > span { font-size: 15px; }
+.lpe-settings-popover .lpe-field-row input[type="checkbox"] { width: 22px; height: 22px; }
 
 /* Phase 5 — palette refresh: route hardcoded surfaces through tokens + add depth */
 .lpe-root { box-shadow: 0 10px 30px rgba(0,0,0,0.18); border-radius: 10px; }
