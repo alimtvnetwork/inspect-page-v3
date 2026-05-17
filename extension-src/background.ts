@@ -278,8 +278,9 @@ async function captureInspectThumbnail(tabId: number): Promise<string> {
 
 function preparePageForInspectThumbnail(): ThumbnailCropRect | null {
   const hostSelector = "#inspect-page-panel-host,#inspect-page-picker-host,[id^='inspect-page-'][id$='-host']";
+  const HIGH_Z = 2147480000;
   const saved: Array<{ el: HTMLElement; visibility: string; display: string; pointerEvents: string }> = [];
-  for (const el of Array.from(document.querySelectorAll<HTMLElement>(hostSelector))) {
+  const hide = (el: HTMLElement): void => {
     saved.push({
       el,
       visibility: el.style.visibility,
@@ -289,6 +290,36 @@ function preparePageForInspectThumbnail(): ThumbnailCropRect | null {
     el.style.visibility = "hidden";
     el.style.display = "none";
     el.style.pointerEvents = "none";
+  };
+  // 1) Inspect Page's own hosts.
+  for (const el of Array.from(document.querySelectorAll<HTMLElement>(hostSelector))) hide(el);
+  // 2) Foreign extension overlays injected at <html>/<body> root.
+  const roots: Element[] = [];
+  if (document.body) roots.push(...Array.from(document.body.children));
+  if (document.documentElement) {
+    for (const c of Array.from(document.documentElement.children)) {
+      if (c !== document.body) roots.push(c);
+    }
+  }
+  for (const node of roots) {
+    const el = node as HTMLElement;
+    if (!el || el.nodeType !== 1) continue;
+    if (saved.some((s) => s.el === el)) continue;
+    const tag = el.tagName;
+    let injected = false;
+    if (tag.includes("-")) injected = true; // custom element at root
+    if (!injected) {
+      let cs: CSSStyleDeclaration | null = null;
+      try { cs = window.getComputedStyle(el); } catch { cs = null; }
+      const pos = cs?.position ?? "";
+      const fixedish = pos === "fixed" || pos === "sticky";
+      if (fixedish && el.shadowRoot) injected = true;
+      if (!injected && fixedish) {
+        const z = Number(cs?.zIndex);
+        if (Number.isFinite(z) && z >= HIGH_Z) injected = true;
+      }
+    }
+    if (injected) hide(el);
   }
   (window as unknown as { __ipThumbHidden?: typeof saved }).__ipThumbHidden = saved;
 

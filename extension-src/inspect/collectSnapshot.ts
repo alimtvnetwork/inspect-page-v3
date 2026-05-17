@@ -24,6 +24,7 @@ import type {
   PageInfo,
   TextNodeSample,
 } from "./types";
+import { isInjectedOverlay } from "./overlayFilter";
 
 const MAX_ELEMENTS = 6000;
 const MAX_COMPUTED_SAMPLES = 400;
@@ -126,7 +127,28 @@ export function collectSnapshot(opts: CollectOptions = {}): InspectSnapshot {
   };
 
   // ---- Walk elements ----
-  const all = Array.from(doc.querySelectorAll<HTMLElement>("*")).slice(0, MAX_ELEMENTS);
+  // Pre-compute the set of injected-overlay roots (Inspect Page hosts +
+  // foreign extension UI) so we can skip them and their descendants. This
+  // keeps third-party widgets (debug HUDs, dev overlays, etc.) out of the
+  // Overview / Typography / Colors stats.
+  const overlayRoots: HTMLElement[] = [];
+  if (doc.body) {
+    for (const child of Array.from(doc.body.children)) {
+      if (isInjectedOverlay(child, win)) overlayRoots.push(child as HTMLElement);
+    }
+  }
+  if (doc.documentElement) {
+    for (const child of Array.from(doc.documentElement.children)) {
+      if (child !== doc.body && isInjectedOverlay(child, win)) overlayRoots.push(child as HTMLElement);
+    }
+  }
+  const inOverlay = (el: Element): boolean => {
+    for (const root of overlayRoots) if (root === el || root.contains(el)) return true;
+    return false;
+  };
+  const all = Array.from(doc.querySelectorAll<HTMLElement>("*"))
+    .filter((el) => !inOverlay(el))
+    .slice(0, MAX_ELEMENTS);
 
   const colorCounts = new Map<string, { cat: ColorCategory; count: number; transparent: boolean }>();
   const fontMap = new Map<string, {
