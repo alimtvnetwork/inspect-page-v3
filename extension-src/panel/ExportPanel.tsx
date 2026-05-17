@@ -401,7 +401,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       setState({
         status: PanelStatus.Error,
         message: COPY.shareNotConfiguredMsg,
-        errorCode: ErrorCode.E_INTERNAL,
+        errorCode: ErrorCode.E_SHARE_AUTH,
       });
       return;
     }
@@ -422,7 +422,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       setState({
         status: PanelStatus.Error,
         message: me?.message ?? (err instanceof Error ? err.message : String(err)),
-        errorCode: me?.code ?? ErrorCode.E_INTERNAL,
+        errorCode: me?.code ?? ErrorCode.E_SHARE_AUTH,
       });
     }
   }, [onboardingDismissed]);
