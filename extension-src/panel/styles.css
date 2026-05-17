@@ -1219,7 +1219,7 @@
 /* Phase 2 — Settings popover anchored under header */
 .lpe-settings-popover {
   position: absolute;
-  top: 38px;
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
