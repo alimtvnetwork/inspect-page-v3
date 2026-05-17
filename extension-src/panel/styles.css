@@ -394,11 +394,13 @@
   flex: 1;
   min-height: 0;
   max-height: none;
+  overflow-y: auto;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-body {
   flex: 1;
   min-height: 0;
   max-height: none;
+  overflow-y: auto;
 }
 .lpe-btn {
   display: block; width: 100%;
