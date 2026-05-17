@@ -41,6 +41,7 @@ import { listShareSessions, type ShareSessionSummary } from "../share/listShareS
 import { startBillingCheckout } from "../share/startBillingCheckout";
 import { startBillingPortal } from "../share/startBillingPortal";
 import { getBillingStatus, type BillingStatus } from "../share/getBillingStatus";
+import { detectProFlip } from "../share/detectProFlip";
 import { pollBillingUntilPro, BILLING_CHANGED_EVENT } from "../share/pollBillingUntilPro";
 import { emitBilling } from "../share/billingTelemetry";
 import { revokeShareSession } from "../share/revokeShareSession";
@@ -1178,7 +1179,7 @@ function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
       try {
         const s = await getBillingStatus({ getShareSettings });
         if (!cancelled) {
-          if (prevPlan && prevPlan !== "pro" && s.plan === "pro") {
+          if (detectProFlip(prevPlan, s.plan)) {
             setJustFlippedPro(true);
             if (typeof window !== "undefined") {
               window.setTimeout(() => setJustFlippedPro(false), 6000);
