@@ -76,4 +76,23 @@ describe("collectSnapshot", () => {
     const b = getOrCollectSnapshot("k1");
     expect(a).toBe(b);
   });
+
+  it("excludes injected foreign-extension overlays from samples", () => {
+    document.body.innerHTML = `
+      <h1 style="color: rgb(0,0,0); font-family: 'Inter', sans-serif; font-size: 32px;">Hello</h1>
+      <p style="color: rgb(51,51,51); font-family: 'Inter', sans-serif; font-size: 16px;">Body</p>
+    `;
+    // Simulate another extension injecting a custom-element overlay at body root.
+    const overlay = document.createElement("dev-overlay-widget");
+    overlay.innerHTML = `<span style="color: rgb(255,0,128); font-family: 'Comic Sans MS', cursive; font-size: 11px;">v2.194.0 [+] [x]</span>`;
+    document.body.appendChild(overlay);
+
+    const snap = collectSnapshot();
+    const families = snap.fonts.map((f) => f.family.toLowerCase());
+    expect(families.some((f) => f.includes("comic"))).toBe(false);
+    const colors = snap.colors.map((c) => c.value);
+    expect(colors).not.toContain("#ff0080");
+    const selectors = snap.computedSamples.map((s) => s.selector);
+    expect(selectors.some((s) => s.startsWith("dev-overlay-widget") || s.includes("span"))).toBe(false);
+  });
 });
