@@ -26,6 +26,7 @@ const MIN_PANEL_W = 480;
 const MIN_PANEL_H = 640;
 const MAX_PANEL_W = 720;
 const MAX_PANEL_H = 900;
+const PANEL_GUTTER = 16;
 
 interface MountedPanel {
   host: HTMLElement;
@@ -62,11 +63,13 @@ export function mountFloatingPanel(): void {
   shadow.appendChild(styleEl);
 
   const wrapper = document.createElement("div");
+  const initialW = clamp(DEFAULT_PANEL_W, 320, Math.max(320, window.innerWidth - PANEL_GUTTER * 2));
+  const initialH = clamp(DEFAULT_PANEL_H, 420, Math.max(420, window.innerHeight - PANEL_GUTTER * 2));
   wrapper.style.cssText = [
     "position: fixed",
     "pointer-events: auto",
-    `width: ${Math.min(DEFAULT_PANEL_W, Math.max(MIN_PANEL_W, window.innerWidth - 32))}px`,
-    `height: ${Math.min(DEFAULT_PANEL_H, Math.max(MIN_PANEL_H, window.innerHeight - 32))}px`,
+    `width: ${initialW}px`,
+    `height: ${initialH}px`,
   ].join(";");
   shadow.appendChild(wrapper);
 
@@ -190,8 +193,8 @@ export function unmountFloatingPanel(): void {
 function installDrag(wrapper: HTMLElement): () => void {
   // Initial position: top-right with 16px gutter; size estimated at the readable default width.
   const PANEL_W = DEFAULT_PANEL_W;
-  const startX = Math.max(0, window.innerWidth - PANEL_W - 16);
-  wrapper.style.top = `16px`;
+  const startX = Math.max(0, window.innerWidth - PANEL_W - PANEL_GUTTER);
+  wrapper.style.top = `${PANEL_GUTTER}px`;
   wrapper.style.left = `${startX}px`;
 
   let dragging = false;
