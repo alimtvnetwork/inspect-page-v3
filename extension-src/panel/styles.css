@@ -80,6 +80,33 @@
 }
 .lpe-inspect-empty strong { color: var(--lpe-fg); font-size: 14px; }
 
+/* B2 — Inspect skeleton (paints instantly while the snapshot is collected) */
+.lpe-inspect-skeleton {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px; border-radius: 8px;
+  background: var(--lpe-surface);
+  border: 1px solid var(--lpe-border);
+}
+.lpe-inspect-skeleton-label {
+  font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--lpe-muted); margin-bottom: 4px;
+}
+.lpe-skel {
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--lpe-surface-2) 0%, var(--lpe-border) 50%, var(--lpe-surface-2) 100%);
+  background-size: 200% 100%;
+  animation: lpe-skel-shimmer 1.2s ease-in-out infinite;
+}
+.lpe-skel-block { height: 56px; }
+.lpe-skel-line  { height: 12px; }
+@keyframes lpe-skel-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lpe-skel { animation: none; }
+}
+
 /* ---------- Overview (Phase A3) ---------- */
 .lpe-overview { display: flex; flex-direction: column; gap: 10px; }
 .lpe-overview-header { display: flex; align-items: center; }
