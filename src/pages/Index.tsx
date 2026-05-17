@@ -18,7 +18,7 @@ const ZIP_URL = "/inspect-page.zip";
 
 const Index = (): JSX.Element => {
   const [meta, setMeta] = useState<{ version: string; sizeKb: number | null }>({
-    version: "2.0.0",
+    version: "2.6.0",
     sizeKb: null,
   });
 
