@@ -21,6 +21,19 @@
   overflow: hidden;
   position: relative;
 }
+/* 2.5.10: popup surface gets a comfortable fixed footprint so the
+   absolute-positioned Settings / Inspect overlays have vertical room.
+   Chrome MV3 caps popups at 800x600; we use 380x580. The floating
+   surface keeps its content-sized height. */
+.lpe-root[data-lpe-surface="popup"] {
+  width: 380px;
+  min-height: 580px;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+}
 
 /* ---------- Theme tokens (Phase A1) ---------- */
 .lpe-root[data-lpe-theme="light"] {

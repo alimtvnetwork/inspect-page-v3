@@ -1,5 +1,16 @@
 # Changelog
 
+## [Extension 2.5.10] — 2026-05-17
+
+- **Popup sizing fix.** Chrome was sizing the popup window to whatever
+  the export panel's natural content height was, which meant the new
+  full-overlay Settings (and Inspect skeleton) collapsed to ~190 px tall
+  and the body had a forced scrollbar after only one field. Popup
+  surface now declares an explicit 380×580 footprint via inline
+  `popup/index.html` styles + a `.lpe-root[data-lpe-surface="popup"]`
+  rule. Floating surface keeps its content-sized height.
+- Repackaged `inspect-page.zip` + sha256. 181/181 vitest green.
+
 All notable changes to **Inspect Page** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).

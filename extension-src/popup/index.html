@@ -3,6 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <title>Inspect Page</title>
+    <style>
+      /* Force Chrome's popup window to a comfortable size so Settings,
+         Inspect and Recent Shares have vertical room. Chrome MV3 caps
+         popups at 800x600 — we sit just under that. */
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 380px;
+        min-height: 580px;
+        background: transparent;
+      }
+      #root { width: 380px; min-height: 580px; }
+    </style>
   </head>
   <body>
     <div id="root"></div>
