@@ -20,8 +20,10 @@ import { clamp } from "./clamp";
 export { clamp } from "./clamp";
 
 const HOST_ID = "inspect-page-panel-host";
-const MIN_PANEL_W = 380;
-const MIN_PANEL_H = 560;
+const DEFAULT_PANEL_W = 520;
+const DEFAULT_PANEL_H = 720;
+const MIN_PANEL_W = 480;
+const MIN_PANEL_H = 640;
 const MAX_PANEL_W = 720;
 const MAX_PANEL_H = 900;
 
@@ -60,7 +62,12 @@ export function mountFloatingPanel(): void {
   shadow.appendChild(styleEl);
 
   const wrapper = document.createElement("div");
-  wrapper.style.cssText = "position: fixed; pointer-events: auto;";
+  wrapper.style.cssText = [
+    "position: fixed",
+    "pointer-events: auto",
+    `width: ${Math.min(DEFAULT_PANEL_W, Math.max(MIN_PANEL_W, window.innerWidth - 32))}px`,
+    `height: ${Math.min(DEFAULT_PANEL_H, Math.max(MIN_PANEL_H, window.innerHeight - 32))}px`,
+  ].join(";");
   shadow.appendChild(wrapper);
 
   const root = createRoot(wrapper);
@@ -142,7 +149,7 @@ export function mountFloatingPanel(): void {
       const url = chrome.runtime?.getURL?.("popup/index.html");
       if (!url) return;
       void chrome.windows?.create?.({
-        url, type: "popup", width: 420, height: 720, focused: true,
+        url, type: "popup", width: 540, height: 760, focused: true,
       });
       // Migrate to detached window — tear down in-page panel so we don't keep two surfaces.
       close();
@@ -181,8 +188,8 @@ export function unmountFloatingPanel(): void {
 // the viewport. The pointerup persists via SetSettings (debounced upstream).
 
 function installDrag(wrapper: HTMLElement): () => void {
-  // Initial position: top-right with 16px gutter; size estimated at the minimum readable width.
-  const PANEL_W = MIN_PANEL_W;
+  // Initial position: top-right with 16px gutter; size estimated at the readable default width.
+  const PANEL_W = DEFAULT_PANEL_W;
   const startX = Math.max(0, window.innerWidth - PANEL_W - 16);
   wrapper.style.top = `16px`;
   wrapper.style.left = `${startX}px`;
