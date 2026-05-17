@@ -28,11 +28,10 @@ interface SnapshotState {
 
 /**
  * Module-scoped cache: keeps the most recent snapshot so re-opening the
- * Inspect tab paints instantly. Keyed by tabId (or "_" when unknown).
- * Bounded to a single entry — we only ever care about the current tab.
+ * Inspect tab paints instantly. Bounded to a single entry — we only ever
+ * care about the active tab.
  */
-const snapshotCache: { key: string; data: CollectInspectSnapshotResponse } | null = null;
-let cache: typeof snapshotCache = snapshotCache;
+let cache: { key: string; data: CollectInspectSnapshotResponse } | null = null;
 
 function scheduleIdle(fn: () => void): void {
   const ric = (globalThis as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
