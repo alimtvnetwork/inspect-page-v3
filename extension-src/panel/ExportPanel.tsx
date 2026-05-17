@@ -389,6 +389,44 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     }
   }, [activeTabId]);
 
+  /**
+   * B3 — Direct sign-in trigger. Both the onboarding "Sign in" button and
+   * the signed-out Share Links button call this so the user is taken
+   * straight to the WP login tab instead of being dumped into Settings.
+   * On success we surface a short hint in the status region.
+   */
+  const onSignIn = useCallback(async () => {
+    const siteUrl = INSPECT_PAGE_WP_SITE_URL;
+    if (!siteUrl) {
+      setState({
+        status: PanelStatus.Error,
+        message: COPY.shareNotConfiguredMsg,
+        errorCode: ErrorCode.E_SHARE_AUTH,
+      });
+      return;
+    }
+    try {
+      await sendToBackground<{ siteUrl: string }, void>(MK.OpenLoginPopup, { siteUrl });
+      setState((s) => ({
+        ...s,
+        status: PanelStatus.Success,
+        successFilename: COPY.shareLoginOpenedMsg,
+      }));
+      // Mark onboarding as dismissed so the banner doesn't keep nagging.
+      if (!onboardingDismissed) {
+        setOnboardingDismissed(true);
+        try { await dismissOnboarding(); } catch { /* ignore */ }
+      }
+    } catch (err) {
+      const me = err instanceof MessageError ? err : null;
+      setState({
+        status: PanelStatus.Error,
+        message: me?.message ?? (err instanceof Error ? err.message : String(err)),
+        errorCode: me?.code ?? ErrorCode.E_SHARE_AUTH,
+      });
+    }
+  }, [onboardingDismissed]);
+
   const busy = useMemo(() => BUSY_STATUSES.has(state.status), [state.status]);
 
   return (
@@ -482,7 +520,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             <span>{COPY.onboardingBody}</span>
           </div>
           <div className="lpe-onboarding-actions">
-            <button type="button" className="lpe-btn lpe-btn-primary" onClick={onDismissOnboarding}>
+            <button type="button" className="lpe-btn lpe-btn-primary" onClick={() => void onSignIn()}>
               {COPY.onboardingSignIn}
             </button>
             <button type="button" className="lpe-btn" onClick={onDismissOnboarding}>
@@ -517,7 +555,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                     ? buildFullPageArtifacts(state.fullPageArtifacts, activeUrl)
                     : null}
                   onShare={onShare}
-                  onOpenSettings={() => setSettingsOpen(true)}
+                  onSignIn={() => void onSignIn()}
                 />
               </>
             )}
@@ -539,7 +577,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                     ? buildElementArtifacts(state.debugPreview, activeUrl)
                     : null}
                   onShare={onShare}
-                  onOpenSettings={() => setSettingsOpen(true)}
+                  onSignIn={() => void onSignIn()}
                 />
               </>
             )}
@@ -1720,20 +1758,20 @@ interface ShareLinksButtonProps {
   busy: boolean;
   artifacts: ExportArtifacts | null;
   onShare: (artifacts: ExportArtifacts) => Promise<void>;
-  onOpenSettings: () => void;
+  onSignIn: () => void;
 }
 
 function ShareLinksButton(props: ShareLinksButtonProps): JSX.Element {
-  const { shareSettings, hasArtifacts, busy, artifacts, onShare, onOpenSettings } = props;
+  const { shareSettings, hasArtifacts, busy, artifacts, onShare, onSignIn } = props;
   const signedIn = !!shareSettings && !!shareSettings.nonce && !!shareSettings.siteUrl;
   if (!signedIn) {
     return (
       <button
         type="button"
         className="lpe-btn"
-        onClick={onOpenSettings}
+        onClick={onSignIn}
         disabled={busy}
-        title={COPY.exportModeShareDisabledTip}
+        title={COPY.shareSignInBtn}
       >
         {COPY.shareSignInBtn} — {COPY.exportModeShare}
       </button>
