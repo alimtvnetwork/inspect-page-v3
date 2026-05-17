@@ -4,6 +4,39 @@ All notable changes to **Inspect Page** are recorded here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Extension 2.5.9] — 2026-05-17
+
+### Fixed — Settings popover, Inspect performance, Sign-in UX
+
+- **Settings popover layout (B1).** The popover used `max-height: 70vh`
+  inside the fixed-height popup, so the bottom of the body was always
+  clipped and a vertical scrollbar was always visible. Reworked to a
+  full overlay (`top:40px; bottom:0`) with an internal scrollable
+  body — content fits without a phantom scrollbar.
+- **Dark `<select>` chevron tiling (B1).** The dark-mode `.lpe-select`
+  used the `background:` shorthand which reset `background-repeat`,
+  causing the chevron SVG to tile across the entire control (visible
+  as a "checker pattern" on the PNG row in the screenshot). Switched
+  to `background-color:` and re-asserted `background-repeat: no-repeat`
+  + `background-position`.
+- **Inspect tab perceived slowness (B2).** `InspectShell` started in an
+  `idle` state that rendered nothing while it kicked off the heavy
+  `CollectInspectSnapshot` round-trip, so the panel looked frozen.
+  Now: initial state is `loading` with an animated shimmer skeleton
+  that paints synchronously on first commit, the snapshot collection
+  is deferred via `requestIdleCallback`, and a module-scoped cache
+  keeps the last snapshot so re-opening the tab is instant. A small
+  ↻ button in the Inspect header forces a re-collect.
+- **Sign in / Share Links no longer detour through Settings (B3).** Both
+  the onboarding "Sign in" button and the signed-out Share Links
+  button used to open the Settings popover. They now trigger the WP
+  sign-in tab directly via `MK.OpenLoginPopup` (the same flow already
+  used inside Settings), surface a "WP login tab opened" hint in the
+  status region, and auto-dismiss the onboarding banner on success.
+- No new permissions, no REST changes, no schema changes — pure
+  extension UI fixes. WP plugin v2.5.4 is unchanged. Zips + sha256
+  refreshed.
+
 ## [WP 2.5.4 / Extension 2.5.7] — 2026-05-14
 ## [Extension 2.5.8] — 2026-05-14
 
