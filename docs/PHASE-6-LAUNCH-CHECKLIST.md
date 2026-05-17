@@ -1,6 +1,6 @@
 # Phase 6 — Hardening + Chrome Web Store launch checklist
 
-Last updated: 14 May 2026 · Status: in progress · Targets **extension v2.5.1** + **WP plugin v2.4.0**
+Last updated: 17 May 2026 · Status: in progress · Targets **extension v2.5.9** + **WP plugin v2.5.4**
 
 This is the final gate before flipping the listing to **Public** on the Chrome
 Web Store. Everything below must be checked off (or explicitly waived) before
@@ -94,20 +94,48 @@ a fresh Chrome profile. Check:
       `PORTAL_OPENED`, with the correct `surface` (`settings` vs
       `inline_quota_error`) in the props bag.
 
+### AC-ANALYTICS — Share-link analytics (ACCEPTANCE §9)
+
+- [ ] **AC-ANALYTICS-1** Create a Smart Share session, `curl` each of the
+      4 URLs twice. Settings → Recent Shares row shows `👁 8`; click
+      expands to `html 2 · css 2 · js 2 · image 2` + last-viewed ts
+      (±1 min of now).
+- [ ] **AC-ANALYTICS-2** Pro account: WP admin → Sessions → toggle
+      **Recent visitors** ON. Hit any asset URL → drawer lists 1
+      anonymised visitor (hashed IP/UA, file kind, ts).
+- [ ] **AC-ANALYTICS-3** Free account: same toggle is disabled with
+      "Pro only" hint; no `inspect_page_visitors` rows are written.
+
+### AC-UI-259 — 2.5.9 popup UX fixes
+
+- [ ] **AC-UI-259-1 (B1)** Click the ⚙ Settings header button → overlay
+      covers the entire popup body (no peeking export UI underneath),
+      ESC closes, Smart Share `<select>` chevron renders once with no
+      tiled-arrow artifact in dark mode.
+- [ ] **AC-UI-259-2 (B2)** Switch to **Inspect** tab on a heavy page →
+      shimmer skeleton paints within ~1 frame (no blank flash); full
+      snapshot fills in async. Reopen Inspect tab → paints instantly
+      from cache. Click the ↻ button → re-collects.
+- [ ] **AC-UI-259-3 (B3)** Signed out: onboarding **Sign in** button and
+      the **Share Links** button both open the WP bridge tab directly
+      (no detour through Settings); status region shows
+      "WP login tab opened — sign in there and come back".
+
 ## 5. Submit
 
-- [x] Bump `extension/manifest.json` + `extension/package.json` to `2.5.1`.
-- [x] Bump `wp-plugin/inspect-page/inspect-page.php` to `2.4.0`.
+- [x] Bump `extension/manifest.json` + `extension/package.json` to `2.5.9`.
+- [x] Bump `wp-plugin/inspect-page/inspect-page.php` to `2.5.4`.
 - [x] `bash scripts/release.sh` → `public/inspect-page.zip` (extension)
       and `public/inspect-page-wp.zip` (WP plugin) regenerated with fresh
       `.sha256` files.
 - [ ] Upload `inspect-page.zip` to Chrome Web Store dashboard; pick
-      `store-assets/listing-2.5.1.md` for the listing copy and the
+      `store-assets/listing-2.5.9.md` (or latest) for the listing copy and the
       "Recent changes" field.
 - [ ] Refresh the WP plugin download link on the landing page to
       `inspect-page-wp.zip` (already in `public/`).
-- [ ] Tag release `v2.5.1` and publish `docs/RELEASE-NOTES-v2.5.1.md`
-      alongside the CHANGELOG entry above.
+- [ ] Tag releases `ext-v2.5.9` and `wp-v2.5.4` and publish the
+      matching `docs/RELEASE-NOTES-*.md` (or use the `[Extension 2.5.9]`
+      CHANGELOG entry) alongside the upload.
 
 ## 6. Post-launch (out of scope, tracked here)
 
@@ -116,3 +144,7 @@ a fresh Chrome profile. Check:
 - Email digest of expired sessions — **in progress** (see WP plugin v2.5.0).
 - ~~Picker-chip action-icon UX (deferred since v2.3.0)~~ — **shipped in
   v2.5.1**: in-page chip with ✓ Select / ⧉ Copy selector / ✕ Cancel.
+- ~~Settings popover overflow / Inspect tab slowness / sign-in detour~~ —
+  **shipped in Extension v2.5.9** (B1 / B2 / B3).
+- **Team workspaces** — deferred; 4-phase plan drafted (workspaces schema +
+  REST → invite flow + admin UI → extension surfacing → tests/docs/release).
