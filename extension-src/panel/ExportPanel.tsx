@@ -389,6 +389,44 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     }
   }, [activeTabId]);
 
+  /**
+   * B3 — Direct sign-in trigger. Both the onboarding "Sign in" button and
+   * the signed-out Share Links button call this so the user is taken
+   * straight to the WP login tab instead of being dumped into Settings.
+   * On success we surface a short hint in the status region.
+   */
+  const onSignIn = useCallback(async () => {
+    const siteUrl = INSPECT_PAGE_WP_SITE_URL;
+    if (!siteUrl) {
+      setState({
+        status: PanelStatus.Error,
+        message: COPY.shareNotConfiguredMsg,
+        errorCode: ErrorCode.E_INTERNAL,
+      });
+      return;
+    }
+    try {
+      await sendToBackground<{ siteUrl: string }, void>(MK.OpenLoginPopup, { siteUrl });
+      setState((s) => ({
+        ...s,
+        status: PanelStatus.Success,
+        successFilename: COPY.shareLoginOpenedMsg,
+      }));
+      // Mark onboarding as dismissed so the banner doesn't keep nagging.
+      if (!onboardingDismissed) {
+        setOnboardingDismissed(true);
+        try { await dismissOnboarding(); } catch { /* ignore */ }
+      }
+    } catch (err) {
+      const me = err instanceof MessageError ? err : null;
+      setState({
+        status: PanelStatus.Error,
+        message: me?.message ?? (err instanceof Error ? err.message : String(err)),
+        errorCode: me?.code ?? ErrorCode.E_INTERNAL,
+      });
+    }
+  }, [onboardingDismissed]);
+
   const busy = useMemo(() => BUSY_STATUSES.has(state.status), [state.status]);
 
   return (
