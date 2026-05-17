@@ -224,6 +224,13 @@ export const COPY = {
   billingPriceTagline: "$5 / month — unlimited Smart Shares",
   billingUpgradeAlwaysHint: "Tip: Pro removes the 5-share lifetime cap.",
   shareQuotaFreeReachedMsg: "Free quota reached. Upgrade to Inspect Page Pro to keep sharing.",
+  /** 2.6.0 — Pricing card bullets shown on Free plan. */
+  billingFeatureUnlimited: "Unlimited Smart Shares (no 5-share cap)",
+  billingFeaturePriority: "Priority share-link delivery",
+  billingFeatureVisitors: "Recent visitors drawer in WP admin",
+  billingFeatureSupport: "Email support from the maintainer",
+  /** 2.6.0 — success toast after Stripe Checkout flips license to Pro. */
+  billingProToast: "You're Pro 🎉 — unlimited Smart Shares unlocked.",
 } as const;
 
 export type CopyKey = keyof typeof COPY;

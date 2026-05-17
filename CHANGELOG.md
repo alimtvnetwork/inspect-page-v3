@@ -1,5 +1,19 @@
 # Changelog
 
+## [Extension 2.6.0] — 2026-05-17
+
+- **Pricing card polish (Option C2/C3).** Free-plan `BillingPanel` in
+  Settings now lists 4 Pro features (unlimited Smart Shares, priority
+  delivery, recent-visitors drawer, email support) below the price
+  tagline instead of just the lone tagline.
+- **Post-checkout success toast (Option C3).** When `pollBillingUntilPro`
+  flips the WP license to `active`, `BillingPanel` detects the
+  free → pro transition and shows a 6-second "You're Pro 🎉" toast
+  (animated, respects `prefers-reduced-motion`). Existing
+  `BILLING_CHANGED_EVENT` listener already refreshes the quota row, so
+  the popup updates without a manual reload.
+- 181/181 vitest green. Repackaged `inspect-page.zip` + sha256.
+
 ## [Extension 2.5.10] — 2026-05-17
 
 - **Popup sizing fix.** Chrome was sizing the popup window to whatever
