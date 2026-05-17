@@ -1087,7 +1087,6 @@
 
 /* ============ C3 — Pick Element Inspector ============ */
 .lpe-eli {
-  margin-top: 10px;
   border: 1px solid var(--lpe-border);
   border-radius: 8px;
   background: var(--lpe-surface);
