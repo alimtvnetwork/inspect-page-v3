@@ -23,7 +23,7 @@ const HOST_ID = "inspect-page-panel-host";
 const DEFAULT_PANEL_W = 520;
 const DEFAULT_PANEL_H = 720;
 const MIN_PANEL_W = 480;
-const MIN_PANEL_H = 640;
+const MIN_PANEL_H = 560;
 const MAX_PANEL_W = 720;
 const MAX_PANEL_H = 900;
 const PANEL_GUTTER = 16;
@@ -192,8 +192,8 @@ export function unmountFloatingPanel(): void {
 
 function installDrag(wrapper: HTMLElement): () => void {
   // Initial position: top-right with 16px gutter; size estimated at the readable default width.
-  const PANEL_W = DEFAULT_PANEL_W;
-  const startX = Math.max(0, window.innerWidth - PANEL_W - PANEL_GUTTER);
+  const startW = wrapper.getBoundingClientRect().width || DEFAULT_PANEL_W;
+  const startX = Math.max(0, window.innerWidth - startW - PANEL_GUTTER);
   wrapper.style.top = `${PANEL_GUTTER}px`;
   wrapper.style.left = `${startX}px`;
 
