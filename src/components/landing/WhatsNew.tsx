@@ -1,6 +1,6 @@
 /**
  * "What's new in v2.6" block — surfaces the latest Stripe billing,
- * popup-UX and Inspect-tab polish on top of the v2.2 Smart Share base.
+ * popup-UX and Inspect-tab polish on top of the original Smart Share base.
  */
 import { CreditCard, Sparkles, Gauge, LayoutPanelTop, PartyPopper, ShieldCheck } from "lucide-react";
 
