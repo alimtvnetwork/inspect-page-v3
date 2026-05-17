@@ -1330,6 +1330,32 @@
   font-size: 11px;
   color: var(--lpe-muted);
 }
+/* 2.6.0 — Pricing card feature bullets + post-checkout success toast. */
+.lpe-billing-features {
+  margin: 4px 0 0;
+  padding: 0 0 0 16px;
+  font-size: 11px;
+  color: var(--lpe-fg);
+  line-height: 1.5;
+}
+.lpe-billing-features li { margin: 0; padding: 0; }
+.lpe-billing-toast {
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--lpe-accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  animation: lpe-billing-toast-in 200ms ease-out;
+}
+@keyframes lpe-billing-toast-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lpe-billing-toast { animation: none; }
+}
 
 /* Phase A8b — Locate toast (color match feedback) */
 .lpe-locate-toast {
