@@ -430,7 +430,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const busy = useMemo(() => BUSY_STATUSES.has(state.status), [state.status]);
 
   return (
-    <div className="lpe-root" data-lpe-theme={theme} role="region" aria-label={COPY.appName}>
+    <div className="lpe-root" data-lpe-theme={theme} data-lpe-surface={surface} role="region" aria-label={COPY.appName}>
       <header
         className="lpe-header"
         data-draggable={surface === "floating" ? "true" : "false"}
