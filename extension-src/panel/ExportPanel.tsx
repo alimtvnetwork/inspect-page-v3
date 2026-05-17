@@ -667,7 +667,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           />
         )}
 
-        {state.elementSnapshot && (
+        {state.elementSnapshot && !busy && (
           <ElementInspectorWithCode
             snapshot={state.elementSnapshot}
             preview={state.debugPreview}
@@ -678,7 +678,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           />
         )}
 
-        {state.debugPreview && (
+        {state.debugPreview && !busy && (
           <DebugPreview
             preview={state.debugPreview}
             activeUrl={activeUrl}
