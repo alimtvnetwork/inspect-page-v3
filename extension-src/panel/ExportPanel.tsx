@@ -1758,20 +1758,20 @@ interface ShareLinksButtonProps {
   busy: boolean;
   artifacts: ExportArtifacts | null;
   onShare: (artifacts: ExportArtifacts) => Promise<void>;
-  onOpenSettings: () => void;
+  onSignIn: () => void;
 }
 
 function ShareLinksButton(props: ShareLinksButtonProps): JSX.Element {
-  const { shareSettings, hasArtifacts, busy, artifacts, onShare, onOpenSettings } = props;
+  const { shareSettings, hasArtifacts, busy, artifacts, onShare, onSignIn } = props;
   const signedIn = !!shareSettings && !!shareSettings.nonce && !!shareSettings.siteUrl;
   if (!signedIn) {
     return (
       <button
         type="button"
         className="lpe-btn"
-        onClick={onOpenSettings}
+        onClick={onSignIn}
         disabled={busy}
-        title={COPY.exportModeShareDisabledTip}
+        title={COPY.shareSignInBtn}
       >
         {COPY.shareSignInBtn} — {COPY.exportModeShare}
       </button>
