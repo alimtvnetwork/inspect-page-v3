@@ -468,7 +468,7 @@
   padding-right: 28px;
 }
 .lpe-root[data-lpe-theme="dark"] .lpe-input, .lpe-root[data-lpe-theme="dark"] .lpe-select {
-  background: #0d1117; border-color: #30363d; color: #e6edf3;
+  background-color: #0d1117; border-color: #30363d; color: #e6edf3;
 }
 .lpe-root[data-lpe-theme="dark"] .lpe-input:focus, .lpe-root[data-lpe-theme="dark"] .lpe-select:focus {
   border-color: var(--lpe-accent);
@@ -476,6 +476,8 @@
 }
 .lpe-root[data-lpe-theme="dark"] .lpe-select {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='none' stroke='%238b949e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M1 1l4 4 4-4'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
 }
 .lpe-field input[type="range"] {
   width: 100%; accent-color: #0969da;
