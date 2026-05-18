@@ -682,6 +682,15 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             activeUrl={activeUrl}
             shareEnabled={!!shareSettings && !!shareSettings.nonce && !!shareSettings.siteUrl}
             onShare={onShare}
+            pickerLocked={state.status === PanelStatus.PickerActive}
+            onTogglePickerLock={(next) => {
+              // ON  → re-arm the picker so user can hover/pick another element.
+              // OFF → exit picker mode but keep the current Inspector view.
+              if (next) void runAction("pick");
+              else void sendToBackground<{ tabId: number }, void>(
+                MessageKind.ExitPickerMode, { tabId: activeTabId ?? -1 },
+              ).catch(() => undefined);
+            }}
             onBack={() => setState((s) => ({ ...s, elementSnapshot: undefined, debugPreview: undefined, status: PanelStatus.Idle }))}
           />
         )}
