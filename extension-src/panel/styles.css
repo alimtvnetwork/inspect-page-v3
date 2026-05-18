@@ -1533,3 +1533,183 @@
 .lpe-decor--sm { width: 28px;  height: 28px;  opacity: 0.70; }
 .lpe-decor--md { width: 64px;  height: 64px;  opacity: 0.18; }
 .lpe-decor--lg { width: 120px; height: 120px; opacity: 0.10; }
+
+/* ============================================================
+   Blueprint repaint — popup surface (extension v2.6.3 / Phase B)
+   CSS-only overrides scoped to the popup. Re-skins the existing
+   .lpe-btn/.lpe-header/.lpe-status/.lpe-typo-card/.lpe-progress
+   to match the wireframe-blueprint reference (white cards, soft
+   shadows, pill CTAs, mint-soft fills) — no JSX changes.
+   ============================================================ */
+.lpe-root[data-lpe-surface="popup"] {
+  color: var(--ext-fg);
+}
+
+/* Decorative floating circles (top-right cluster + bottom-left) */
+.lpe-root[data-lpe-surface="popup"]::before,
+.lpe-root[data-lpe-surface="popup"]::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  background: var(--ext-mint);
+  pointer-events: none;
+  z-index: 0;
+}
+.lpe-root[data-lpe-surface="popup"]::before {
+  top: -36px; right: -28px;
+  width: 120px; height: 120px;
+  opacity: 0.10;
+}
+.lpe-root[data-lpe-surface="popup"]::after {
+  bottom: -40px; left: -32px;
+  width: 100px; height: 100px;
+  opacity: 0.08;
+}
+
+/* Push real content above the decoration */
+.lpe-root[data-lpe-surface="popup"] > * { position: relative; z-index: 1; }
+
+/* Header → flat white strip with mint brand dot */
+.lpe-root[data-lpe-surface="popup"] .lpe-header {
+  background: var(--ext-card);
+  border-bottom: 1px solid var(--ext-border);
+  padding: 12px 16px;
+  gap: 10px;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-header-title {
+  color: var(--ext-fg);
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-header-title::before {
+  content: "";
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--ext-mint);
+  margin-right: 8px;
+  vertical-align: middle;
+  box-shadow: 0 0 0 4px var(--ext-mint-soft);
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-header-btn {
+  color: var(--ext-muted);
+  border-radius: 999px;
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-header-btn:hover {
+  background: var(--ext-mint-soft);
+  color: var(--ext-fg);
+}
+
+/* Tabs → soft pill row */
+.lpe-root[data-lpe-surface="popup"] .lpe-tabs {
+  background: var(--ext-card);
+  border-bottom: 1px solid var(--ext-border);
+  padding: 6px 12px;
+  gap: 4px;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-tab {
+  border-radius: 999px;
+  border-bottom: none;
+  padding: 8px 14px;
+  font-weight: 600;
+  color: var(--ext-muted);
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-tab:hover { background: var(--ext-mint-soft); color: var(--ext-fg); }
+.lpe-root[data-lpe-surface="popup"] .lpe-tab[aria-selected="true"],
+.lpe-root[data-lpe-surface="popup"] .lpe-tab.is-active {
+  background: var(--ext-mint);
+  color: #FFFFFF;
+}
+
+/* Body → padded gutter on the blueprint canvas */
+.lpe-root[data-lpe-surface="popup"] .lpe-body {
+  padding: 16px;
+  gap: 14px;
+  background: var(--ext-bg);
+}
+
+/* Primary buttons → mint pill */
+.lpe-root[data-lpe-surface="popup"] .lpe-btn {
+  background: var(--ext-card);
+  border: 1px solid var(--ext-border);
+  color: var(--ext-fg);
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-btn:hover:not([disabled]) {
+  background: var(--ext-mint-soft);
+  border-color: var(--ext-mint);
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-btn-primary {
+  background: var(--ext-mint);
+  color: #FFFFFF;
+  border-color: var(--ext-mint);
+  box-shadow: 0 6px 16px -8px rgba(45, 212, 168, 0.55);
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-btn-primary:hover:not([disabled]) {
+  background: var(--ext-mint-hover);
+  border-color: var(--ext-mint-hover);
+  filter: none;
+  transform: translateY(-1px);
+}
+
+/* Status panel → soft white card */
+.lpe-root[data-lpe-surface="popup"] .lpe-status {
+  background: var(--ext-card);
+  border: 1px solid var(--ext-border);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-status[data-status="Success"] {
+  background: var(--ext-mint-soft);
+  border-color: var(--ext-mint);
+  color: var(--ext-fg);
+}
+
+/* Progress bar → mint pill */
+.lpe-root[data-lpe-surface="popup"] .lpe-progress {
+  background: var(--ext-mint-soft);
+  border-radius: 999px;
+  height: 6px;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-progress-bar {
+  background: var(--ext-mint);
+}
+
+/* Inline cards (typography preview, contrast cards, etc.) → white card */
+.lpe-root[data-lpe-surface="popup"] .lpe-typo-card {
+  background: var(--ext-card);
+  border: 1px solid var(--ext-border);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 8px 22px -18px rgba(17, 23, 20, 0.18);
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-typo-chip {
+  background: var(--ext-mint-soft);
+  color: var(--ext-fg);
+  border: none;
+}
+
+/* Section title — uppercase muted label, blueprint style */
+.lpe-root[data-lpe-surface="popup"] .lpe-section-title {
+  color: var(--ext-muted);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+/* Settings disclosure */
+.lpe-root[data-lpe-surface="popup"] .lpe-settings {
+  border-top: 1px solid var(--ext-border);
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-settings summary {
+  color: var(--ext-fg);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-settings summary:hover {
+  background: var(--ext-mint-soft);
+}
