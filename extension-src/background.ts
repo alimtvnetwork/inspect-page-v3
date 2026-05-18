@@ -478,26 +478,8 @@ chrome.commands?.onCommand?.addListener(async (command) => {
   }
 });
 
-// Toolbar icon click — open a detached Chrome popup window.
-// No default_popup is registered in the manifest; otherwise onClicked would not fire.
-chrome.action?.onClicked?.addListener(async (tab) => {
-  try {
-    await openPopupWindow(tab?.id);
-  } catch (e) {
-    logger.error(
-      LogCategory.Lifecycle, "ACTION_CLICK_FAIL",
-      "Failed to open Inspect Page popup window", e,
-    );
-    // Fallback: try mounting the in-page floating panel.
-    if (tab?.id) {
-      try {
-        await ensureContentScript(tab.id);
-        await sendToTab<{ tabId: number }, void>(
-          tab.id, MessageKind.MountFloatingPanel, { tabId: tab.id },
-        );
-      } catch { /* ignore */ }
-    }
-  }
+// Toolbar icon now uses manifest `default_popup`, which anchors the popup to
+// the current tab (toolbar dropdown) instead of a detached window.
 });
 
 // ---- Stage 9: SW keep-alive during exports (E20) ----
