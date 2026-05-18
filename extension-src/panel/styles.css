@@ -30,10 +30,7 @@
   border: none;
   border-radius: 0;
   box-shadow: none;
-  background:
-    radial-gradient(120% 80% at 20% 0%, rgba(45, 212, 168, 0.10) 0%, transparent 55%),
-    radial-gradient(120% 80% at 100% 100%, rgba(92, 225, 230, 0.08) 0%, transparent 55%),
-    #0B0F0E;
+  background: var(--ext-bg, #F5F7F6);
   display: flex;
   flex-direction: column;
 }
@@ -49,16 +46,30 @@
 /* ---------- Theme tokens (Phase A1) ---------- */
 .lpe-root[data-lpe-theme="light"],
 .lpe-root[data-lpe-theme="dark"] {
-  --lpe-bg: #0B0F0E;
-  --lpe-fg: #F5FFFA;
-  --lpe-muted: #94A3B8;
-  --lpe-surface: #111715;
-  --lpe-surface-2: #161E1B;
-  --lpe-border: rgba(255, 255, 255, 0.06);
-  --lpe-accent: #2DD4A8;
-  --lpe-accent-hover: #73FFB8;
-  --lpe-accent-fg: #06241C;
-  --lpe-accent-glow: 0 0 0 1px rgba(45, 212, 168, 0.35), 0 8px 24px -8px rgba(45, 212, 168, 0.55);
+  /* Blueprint light-mint theme (extension v2.6.3) */
+  --ext-bg: #F5F7F6;
+  --ext-card: #FFFFFF;
+  --ext-fg: #111714;
+  --ext-muted: #5B6B66;
+  --ext-border: #E4ECE9;
+  --ext-mint: #2DD4A8;
+  --ext-mint-hover: #1FB892;
+  --ext-mint-soft: rgba(45, 212, 168, 0.14);
+  --ext-mint-fg: #06241C;
+  --ext-shadow-card: 0 12px 28px -16px rgba(17, 23, 20, 0.18);
+  --ext-shadow-glow: 0 0 0 3px rgba(45, 212, 168, 0.25);
+
+  /* Legacy token aliases — keep existing components working */
+  --lpe-bg: var(--ext-bg);
+  --lpe-fg: var(--ext-fg);
+  --lpe-muted: var(--ext-muted);
+  --lpe-surface: var(--ext-card);
+  --lpe-surface-2: #F0F4F2;
+  --lpe-border: var(--ext-border);
+  --lpe-accent: var(--ext-mint);
+  --lpe-accent-hover: var(--ext-mint-hover);
+  --lpe-accent-fg: #FFFFFF;
+  --lpe-accent-glow: 0 0 0 1px rgba(45, 212, 168, 0.35), 0 8px 24px -8px rgba(45, 212, 168, 0.45);
 }
 
 /* ---------- Tabs (Phase A1) ---------- */
@@ -1418,3 +1429,107 @@
   pointer-events: none;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
+
+/* ============================================================
+   Blueprint primitives (extension v2.6.3)
+   Reusable surface/card/button/chip classes that mirror the
+   wireframe-style reference (light surface, white cards, soft
+   mint fills, full-pill CTAs, decorative floating circles).
+   ============================================================ */
+
+.lpe-surface { background: var(--ext-bg); }
+
+.lpe-card {
+  background: var(--ext-card);
+  border: 1px solid var(--ext-border);
+  border-radius: 18px;
+  box-shadow: var(--ext-shadow-card);
+  padding: 18px;
+  position: relative;
+}
+.lpe-card + .lpe-card { margin-top: 12px; }
+
+.lpe-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 999px;
+  background: var(--ext-mint);
+  color: #FFFFFF;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s ease, box-shadow .15s ease, transform .05s ease;
+}
+.lpe-pill-btn:hover { background: var(--ext-mint-hover); }
+.lpe-pill-btn:active { transform: translateY(1px); }
+.lpe-pill-btn:focus-visible { outline: none; box-shadow: var(--ext-shadow-glow); }
+.lpe-pill-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.lpe-pill-btn--ghost {
+  background: transparent;
+  color: var(--ext-mint);
+  border: 1.5px solid var(--ext-mint);
+}
+.lpe-pill-btn--ghost:hover { background: var(--ext-mint-soft); }
+
+.lpe-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--ext-mint-soft);
+  color: var(--ext-fg);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+.lpe-chip--solid { background: var(--ext-mint); color: #FFFFFF; }
+
+.lpe-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 14px;
+  background: var(--ext-card);
+  border: 1px solid var(--ext-border);
+  border-radius: 12px;
+  font: inherit;
+  color: var(--ext-fg);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.lpe-input:focus { outline: none; border-color: var(--ext-mint); border-width: 2px; padding: 0 13px; }
+
+.lpe-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--ext-mint-soft);
+  border: 1px solid var(--ext-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.lpe-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Decorative floating circles — purely visual, never interactive. */
+.lpe-decor {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--ext-mint);
+  pointer-events: none;
+  z-index: 0;
+}
+.lpe-decor--xs { width: 12px;  height: 12px;  opacity: 0.85; }
+.lpe-decor--sm { width: 28px;  height: 28px;  opacity: 0.70; }
+.lpe-decor--md { width: 64px;  height: 64px;  opacity: 0.18; }
+.lpe-decor--lg { width: 120px; height: 120px; opacity: 0.10; }
