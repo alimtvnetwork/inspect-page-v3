@@ -8,43 +8,42 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Lovable-inspired dark aurora theme */
-    --background: 240 18% 6%;
-    --foreground: 0 0% 98%;
+    /* Neon-mint on near-black — inspired by the cyber dashboard reference */
+    --background: 180 10% 6%;
+    --foreground: 160 30% 96%;
 
-    --card: 240 16% 9%;
-    --card-foreground: 0 0% 98%;
+    --card: 180 12% 9%;
+    --card-foreground: 160 30% 96%;
 
-    --popover: 240 16% 9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 180 12% 9%;
+    --popover-foreground: 160 30% 96%;
 
-    --primary: 262 83% 62%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 280 90% 70%;
+    --primary: 162 95% 55%;
+    --primary-foreground: 180 25% 8%;
+    --primary-glow: 160 90% 65%;
 
-    --secondary: 240 14% 14%;
-    --secondary-foreground: 0 0% 96%;
+    --secondary: 180 14% 12%;
+    --secondary-foreground: 160 25% 92%;
 
-    --muted: 240 12% 14%;
-    --muted-foreground: 240 5% 70%;
+    --muted: 180 12% 12%;
+    --muted-foreground: 170 12% 65%;
 
-    --accent: 322 90% 62%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 162 95% 55%;
+    --accent-foreground: 180 25% 8%;
 
     --destructive: 0 75% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 14% 18%;
-    --input: 240 14% 18%;
-    --ring: 262 83% 62%;
+    --border: 180 14% 16%;
+    --input: 180 14% 14%;
+    --ring: 162 95% 55%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    --gradient-aurora: radial-gradient(ellipse at 50% 0%, hsl(262 83% 62% / 0.45), transparent 60%),
-      radial-gradient(ellipse at 80% 20%, hsl(322 90% 62% / 0.35), transparent 55%),
-      radial-gradient(ellipse at 20% 30%, hsl(18 95% 60% / 0.30), transparent 55%);
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 62%), hsl(322 90% 62%) 55%, hsl(18 95% 60%));
-    --shadow-glow: 0 20px 60px -20px hsl(262 83% 62% / 0.55);
+    --gradient-aurora: radial-gradient(ellipse at 50% 0%, hsl(162 95% 45% / 0.35), transparent 60%),
+      radial-gradient(ellipse at 80% 25%, hsl(180 90% 50% / 0.25), transparent 55%);
+    --gradient-primary: linear-gradient(135deg, hsl(162 95% 55%), hsl(180 90% 60%));
+    --shadow-glow: 0 18px 50px -12px hsl(162 95% 50% / 0.55);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
