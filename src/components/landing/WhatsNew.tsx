@@ -1,16 +1,16 @@
 /**
- * "What's new in v2.6" block — surfaces the latest Stripe billing,
- * popup-UX and Inspect-tab polish on top of the original Smart Share base.
+ * "What's new in v2.7" block — surfaces Team Workspaces on top of the
+ * v2.6 Stripe billing + popup-UX foundation.
  */
-import { CreditCard, Sparkles, Gauge, LayoutPanelTop, PartyPopper, ShieldCheck } from "lucide-react";
+import { Users, Mail, KeyRound, CreditCard, LayoutPanelTop, ShieldCheck } from "lucide-react";
 
 const ITEMS = [
-  { icon: CreditCard, title: "Stripe billing", body: "Upgrade to Pro from the popup — Stripe Checkout + Customer Portal wired end-to-end, license flips via signed webhook." },
-  { icon: PartyPopper, title: "Pricing card + Pro toast", body: "Settings shows a pricing card with 4 Pro feature bullets, and a \u201cYou\u2019re Pro \ud83c\udf89\u201d toast pops the moment Checkout completes." },
-  { icon: LayoutPanelTop, title: "Full-overlay Settings", body: "Settings now covers the popup edge-to-edge in a fixed 380\u00d7580 window \u2014 no peeking export UI, no clipped scrollbars." },
-  { icon: Gauge, title: "Instant Inspect tab", body: "Shimmer skeleton paints on the first frame, heavy snapshot work runs in requestIdleCallback, and reopening the tab paints instantly from cache." },
-  { icon: Sparkles, title: "Recent-visitors drawer", body: "Pro accounts get an opt-in drawer in WP admin showing per-asset views with anonymised IP/UA hashes \u2014 useful for share-link analytics." },
-  { icon: ShieldCheck, title: "Direct sign-in", body: "Onboarding and signed-out Share Links now open the WP login bridge directly \u2014 no detour through Settings." },
+  { icon: Users, title: "Team Workspaces", body: "Create shared workspaces with owner / admin / member roles \u2014 one Pro license covers every member, share quotas pool together." },
+  { icon: Mail, title: "Email invites", body: "Owners and admins invite teammates by email; single-use 7-day tokens land in their inbox and drop them straight into the workspace on accept." },
+  { icon: CreditCard, title: "Per-workspace billing", body: "Stripe Checkout and the Customer Portal now attach to the active workspace \u2014 switch workspace, switch subscription." },
+  { icon: LayoutPanelTop, title: "Workspace picker in popup", body: "Tap the workspace chip in the popup header to switch workspaces, see role + license badges, or jump to WP admin to manage members." },
+  { icon: KeyRound, title: "Transfer ownership", body: "Owners can hand the keys to another admin without losing history \u2014 the new owner inherits the Stripe customer and member list." },
+  { icon: ShieldCheck, title: "Backwards-compatible", body: "Existing solo users are auto-migrated into a personal workspace on plugin update \u2014 nothing to reconnect, every old share link keeps working." },
 ];
 
 export const WhatsNew = (): JSX.Element => (
@@ -21,9 +21,9 @@ export const WhatsNew = (): JSX.Element => (
       </h2>
       <span
         className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
-        aria-label="Version 2.6"
+        aria-label="Version 2.7"
       >
-        v2.6
+        v2.7
       </span>
     </div>
     <div className="grid gap-3 sm:grid-cols-2">
