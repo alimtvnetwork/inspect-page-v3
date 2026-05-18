@@ -1410,7 +1410,24 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
               {COPY.shareSignedInAsPrefix}{" "}
               <strong>{settings.displayName || settings.email}</strong>
             </div>
-            <BillingPanel signedIn={signedIn} />
+            {workspaces.length > 1 && (
+              <label className="lpe-field" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <span className="lpe-billing-label">{COPY.workspaceLabel}</span>
+                <select
+                  className="lpe-input"
+                  value={workspaceId ?? workspaces[0]?.id ?? ""}
+                  onChange={(e) => setWorkspaceId(Number(e.currentTarget.value))}
+                  aria-label={COPY.workspaceLabel}
+                >
+                  {workspaces.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name || `#${w.id}`} ({w.role})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <BillingPanel signedIn={signedIn} workspaceId={workspaceId} />
             {quota && (
               <div className="lpe-debug-note" role="status">
                 {quota.hasLicense
