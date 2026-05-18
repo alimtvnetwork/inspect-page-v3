@@ -42,6 +42,7 @@ import { startBillingCheckout } from "../share/startBillingCheckout";
 import { startBillingPortal } from "../share/startBillingPortal";
 import { getBillingStatus, type BillingStatus } from "../share/getBillingStatus";
 import { listWorkspaces, type WorkspaceListItem } from "../share/listWorkspaces";
+import { WorkspacePicker } from "./WorkspacePicker";
 import { formatBillingPriceTagline } from "../share/formatPrice";
 import { detectProFlip } from "../share/detectProFlip";
 import { pollBillingUntilPro, BILLING_CHANGED_EVENT } from "../share/pollBillingUntilPro";
