@@ -717,4 +717,58 @@ final class InspectPage_Workspaces {
         $res = self::accept_invite( (string) $req->get_param( 'token' ), $uid );
         return is_wp_error( $res ) ? $res : rest_ensure_response( $res );
     }
+
+    // ----------------------------------------------------------------------
+    // Billing helpers (W4) — used by InspectPage_Billing
+    // ----------------------------------------------------------------------
+
+    /** Updates one or more billing columns on a workspace row. */
+    public static function update_billing( $workspace_id, array $fields ) {
+        global $wpdb;
+        $p       = $wpdb->prefix . 'pp_';
+        $allowed = [ 'license_status', 'stripe_customer_id', 'stripe_subscription_id' ];
+        $data    = [];
+        $format  = [];
+        foreach ( $fields as $k => $v ) {
+            if ( ! in_array( $k, $allowed, true ) ) { continue; }
+            $data[ $k ] = $v;
+            $format[]   = '%s';
+        }
+        if ( ! $data ) { return 0; }
+        return (int) $wpdb->update( "{$p}workspaces", $data, [ 'id' => (int) $workspace_id ], $format, [ '%d' ] );
+    }
+
+    /** Looks up a workspace id by stripe_customer_id, or 0. */
+    public static function find_by_stripe_customer( $customer_id ) {
+        global $wpdb;
+        $p = $wpdb->prefix . 'pp_';
+        $customer_id = is_string( $customer_id ) ? trim( $customer_id ) : '';
+        if ( $customer_id === '' ) { return 0; }
+        return (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT id FROM {$p}workspaces WHERE stripe_customer_id = %s LIMIT 1",
+            $customer_id
+        ) );
+    }
+
+    /**
+     * Picks a default workspace id for $user_id when none is supplied to a
+     * billing call. Prefers a workspace the user owns; falls back to one
+     * they admin; finally any membership. Returns 0 when none.
+     */
+    public static function default_for_user( $user_id ) {
+        $list = self::list_for_user( $user_id );
+        if ( ! $list ) { return 0; }
+        foreach ( [ self::ROLE_OWNER, self::ROLE_ADMIN, self::ROLE_MEMBER ] as $r ) {
+            foreach ( $list as $w ) {
+                if ( $w['role'] === $r ) { return (int) $w['id']; }
+            }
+        }
+        return 0;
+    }
+
+    /** Returns true when a workspace's license_status is `active`. */
+    public static function has_active_license( $workspace_id ) {
+        $ws = self::get( $workspace_id );
+        return $ws && $ws['license_status'] === self::LICENSE_ACTIVE;
+    }
 }
