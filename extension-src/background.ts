@@ -139,6 +139,13 @@ router.on<MountFloatingPanelPayload, MountFloatingPanelResponse>(
   },
 );
 
+async function mountPanelInActiveTab(): Promise<void> {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) return;
+  await ensureContentScript(tab.id);
+  await sendToTab<{ tabId: number }, void>(tab.id, MessageKind.MountFloatingPanel, { tabId: tab.id });
+}
+
 router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
   MessageKind.RunFullPageExport,
   async ({ tabId, settings }, sender) => {
@@ -448,8 +455,11 @@ chrome.commands?.onCommand?.addListener(async (command) => {
   }
 });
 
-// Toolbar icon now uses manifest `default_popup`, which anchors the popup to
-// the current tab (toolbar dropdown) instead of a detached window.
+chrome.action?.onClicked?.addListener(() => {
+  mountPanelInActiveTab().catch((e) => {
+    logger.error(LogCategory.Lifecycle, "ACTION_PANEL_FAIL", "Could not open panel on current page", e);
+  });
+});
 
 // ---- Stage 9: SW keep-alive during exports (E20) ----
 let keepAliveTimer: ReturnType<typeof setInterval> | null = null;
