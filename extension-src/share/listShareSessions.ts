@@ -25,6 +25,12 @@ export interface ShareSessionSummary {
 export interface ListShareSessionsDeps {
   getShareSettings: () => Promise<ShareSettings>;
   fetchImpl?: typeof fetch;
+  /**
+   * Optional workspace id (Team Workspaces). When provided and > 0, the
+   * request is scoped to that workspace via `?workspace_id=N`. When omitted
+   * the WP plugin falls back to the caller's primary workspace.
+   */
+  workspaceId?: number;
 }
 
 export async function listShareSessions(
@@ -37,7 +43,10 @@ export async function listShareSessions(
       "Sign in to your WordPress site in Settings → Smart Share.",
     );
   }
-  const url = `${normalizeBaseUrl(cfg.siteUrl)}/wp-json/inspect-page/v1/sessions`;
+  const base = `${normalizeBaseUrl(cfg.siteUrl)}/wp-json/inspect-page/v1/sessions`;
+  const url = deps.workspaceId && deps.workspaceId > 0
+    ? `${base}?workspace_id=${encodeURIComponent(String(deps.workspaceId))}`
+    : base;
   const fetchFn = deps.fetchImpl ?? fetch;
   let res: Response;
   try {

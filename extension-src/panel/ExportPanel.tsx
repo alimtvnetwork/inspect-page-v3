@@ -1548,13 +1548,13 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
             <strong>{activeWorkspace.name || `#${activeWorkspace.id}`}</strong>
           </div>
         )}
-        {signedIn && <RecentSharesList />}
+        {signedIn && <RecentSharesList workspaceId={workspaceId} />}
       </div>
     </details>
   );
 }
 
-function RecentSharesList(): JSX.Element {
+function RecentSharesList({ workspaceId }: { workspaceId?: number }): JSX.Element {
   const [items, setItems] = useState<ShareSessionSummary[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -1564,12 +1564,12 @@ function RecentSharesList(): JSX.Element {
   const refresh = useCallback(async () => {
     setBusy(true); setErr("");
     try {
-      const rows = await listShareSessions({ getShareSettings });
+      const rows = await listShareSessions({ getShareSettings, workspaceId });
       setItems(rows);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally { setBusy(false); }
-  }, []);
+  }, [workspaceId]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 
