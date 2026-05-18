@@ -24,12 +24,16 @@
 /* Popup surface uses the full practical MV3 footprint so Settings / Inspect
    overlays have enough width and vertical reading room. */
 .lpe-root[data-lpe-surface="popup"] {
-  width: 520px;
-  height: 720px;
-  min-height: 720px;
+  width: 600px;
+  height: 600px;
+  min-height: 600px;
   border: none;
   border-radius: 0;
   box-shadow: none;
+  background:
+    radial-gradient(120% 80% at 20% 0%, rgba(45, 212, 168, 0.10) 0%, transparent 55%),
+    radial-gradient(120% 80% at 100% 100%, rgba(92, 225, 230, 0.08) 0%, transparent 55%),
+    #0B0F0E;
   display: flex;
   flex-direction: column;
 }
@@ -43,27 +47,18 @@
 }
 
 /* ---------- Theme tokens (Phase A1) ---------- */
-.lpe-root[data-lpe-theme="light"] {
-  --lpe-bg: #FAFBFC;
-  --lpe-fg: #1B2230;
-  --lpe-muted: #5E6878;
-  --lpe-surface: #F1F3F7;
-  --lpe-surface-2: #E5E8EE;
-  --lpe-border: #D8DEE6;
-  --lpe-accent: #2563EB;
-  --lpe-accent-hover: #1D4ED8;
-  --lpe-accent-fg: #ffffff;
-}
+.lpe-root[data-lpe-theme="light"],
 .lpe-root[data-lpe-theme="dark"] {
-  --lpe-bg: #0E1116;
-  --lpe-fg: #E6EAF2;
-  --lpe-muted: #9AA4B2;
-  --lpe-surface: #151A22;
-  --lpe-surface-2: #1C232E;
-  --lpe-border: #262E3B;
-  --lpe-accent: #3B82F6;
-  --lpe-accent-hover: #2563EB;
-  --lpe-accent-fg: #ffffff;
+  --lpe-bg: #0B0F0E;
+  --lpe-fg: #F5FFFA;
+  --lpe-muted: #94A3B8;
+  --lpe-surface: #111715;
+  --lpe-surface-2: #161E1B;
+  --lpe-border: rgba(255, 255, 255, 0.06);
+  --lpe-accent: #2DD4A8;
+  --lpe-accent-hover: #73FFB8;
+  --lpe-accent-fg: #06241C;
+  --lpe-accent-glow: 0 0 0 1px rgba(45, 212, 168, 0.35), 0 8px 24px -8px rgba(45, 212, 168, 0.55);
 }
 
 /* ---------- Tabs (Phase A1) ---------- */
