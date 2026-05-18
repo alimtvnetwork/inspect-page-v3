@@ -15,6 +15,9 @@ export interface StartBillingCheckoutDeps {
   fetchImpl?: typeof fetch;
   successUrl?: string;
   cancelUrl?: string;
+  /** Workspace to upgrade (W4+). When omitted, the WP plugin picks the
+   * user's primary workspace. */
+  workspaceId?: number;
 }
 
 export interface BillingCheckoutResult {
@@ -37,6 +40,9 @@ export async function startBillingCheckout(
   const body: Record<string, string> = {};
   if (deps.successUrl) body.success_url = deps.successUrl;
   if (deps.cancelUrl) body.cancel_url = deps.cancelUrl;
+  if (deps.workspaceId && deps.workspaceId > 0) {
+    body.workspace_id = String(deps.workspaceId);
+  }
   let res: Response;
   try {
     res = await fetchFn(url, {
