@@ -374,21 +374,6 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     return;
   }, [activeUrl]);
 
-  const onOpenFloating = useCallback(async () => {
-    if (activeTabId === undefined) return;
-    try {
-      await sendToBackground<{ tabId: number }, void>(MessageKind.MountFloatingPanel, { tabId: activeTabId });
-      window.close();
-    } catch (err) {
-      const me = err instanceof MessageError ? err : null;
-      setState({
-        status: PanelStatus.Error,
-        message: me?.message ?? (err instanceof Error ? err.message : String(err)),
-        errorCode: me?.code,
-      });
-    }
-  }, [activeTabId]);
-
   /**
    * B3 — Direct sign-in trigger. Both the onboarding "Sign in" button and
    * the signed-out Share Links button call this so the user is taken
@@ -447,15 +432,6 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           title={COPY.settingsHeader}
         >≡</button>
         <span className="lpe-header-title">{COPY.appName}</span>
-        <button
-          type="button"
-          className="lpe-header-btn"
-          onClick={onToggleTheme}
-          aria-label={theme === "light" ? COPY.btnThemeDark : COPY.btnThemeLight}
-          title={theme === "light" ? COPY.btnThemeDark : COPY.btnThemeLight}
-        >
-          {theme === "light" ? "☾" : "☀"}
-        </button>
         {surface === "floating" && (
           <>
             <button type="button" className="lpe-header-btn" onClick={onMinimize} aria-label={COPY.btnMinimize}>─</button>
@@ -576,16 +552,6 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                   onSignIn={() => void onSignIn()}
                 />
               </>
-            )}
-            {surface === "popup" && (
-              <button
-                type="button"
-                className="lpe-btn"
-                onClick={onOpenFloating}
-                disabled={busy}
-              >
-                {COPY.btnOpenPanel}
-              </button>
             )}
           </>
         )}

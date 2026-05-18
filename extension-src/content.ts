@@ -17,7 +17,6 @@ import type {
   RestoreAfterCaptureResponse,
   Settings,
 } from "@shared/types";
-import { mountFloatingPanel } from "@panel/mountFloatingPanel";
 import { collectArtifacts } from "@capture/collectArtifacts";
 import { beginScrollCapture, restoreAfterCapture } from "@capture/scrollCapture";
 import { describe, enterPicker, exitPicker } from "@picker/picker";
@@ -57,10 +56,6 @@ const router = new MessageRouter();
 router.on<PingPayload, PingResponse>(MessageKind.Ping, (payload) => {
   logger.debug(LogCategory.Messaging, `CS Ping rtt=${Date.now() - payload.sentAtMs}ms`);
   return { extensionVersion: __EXT_VERSION__, receivedAtMs: Date.now() };
-});
-
-router.on<{ tabId: number }, void>(MessageKind.MountFloatingPanel, () => {
-  mountFloatingPanel();
 });
 
 router.on<CollectPageArtifactsPayload, CollectPageArtifactsResponse>(

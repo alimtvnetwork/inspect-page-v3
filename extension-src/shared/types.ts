@@ -260,9 +260,6 @@ export type GetPanelPositionResponse = PanelPosition;
 export type SetPanelPositionPayload = Partial<PanelPosition>;
 export type SetPanelPositionResponse = PanelPosition;
 
-export interface MountFloatingPanelPayload { tabId: number }
-export type MountFloatingPanelResponse = void;
-
 // ---- v2.2 Smart Share (WP plugin backend, cookie + nonce auth) ----
 export interface ShareSettings {
   /** WP base URL the user typed (no trailing slash). */

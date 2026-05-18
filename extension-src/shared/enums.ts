@@ -9,7 +9,6 @@ export enum MessageKind {
   RunElementExport = "RunElementExport",
   EnterPickerMode = "EnterPickerMode",
   ExitPickerMode = "ExitPickerMode",
-  MountFloatingPanel = "MountFloatingPanel",
   CollectPageArtifacts = "CollectPageArtifacts",
   BeginScrollCapture = "BeginScrollCapture",
   RestoreAfterCapture = "RestoreAfterCapture",

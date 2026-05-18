@@ -34,8 +34,6 @@ import type {
   GetPanelPositionResponse,
   SetPanelPositionPayload,
   SetPanelPositionResponse,
-  MountFloatingPanelPayload,
-  MountFloatingPanelResponse,
   PingPayload,
   PingResponse,
   RunElementExportPayload,
@@ -117,22 +115,6 @@ router.on<OpenLoginPopupPayload, OpenLoginPopupResponse>(
       throw new MessageError(
         ErrorCode.E_SHARE_NETWORK,
         "Could not open WordPress login tab",
-        e instanceof Error ? e.message : String(e),
-      );
-    }
-  },
-);
-
-router.on<MountFloatingPanelPayload, MountFloatingPanelResponse>(
-  MessageKind.MountFloatingPanel,
-  async ({ tabId }) => {
-    try {
-      await ensureContentScript(tabId);
-      await sendToTab<{ tabId: number }, void>(tabId, MessageKind.MountFloatingPanel, { tabId });
-    } catch (e) {
-      throw new MessageError(
-        ErrorCode.E_NOT_AVAILABLE_HERE,
-        "Cannot mount panel on this page",
         e instanceof Error ? e.message : String(e),
       );
     }
