@@ -668,13 +668,29 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           />
         )}
 
-        {state.elementSnapshot && !busy && (
+        {/*
+         * Show the rich Inspector view (identity + box-model + text props +
+         * selection colors/contrast) as soon as a snapshot is available.
+         * Previous guard `!busy` hid it during PanelStatus.Selecting, so users
+         * saw "nothing" after picking until/unless the export download
+         * completed. Only hide while the picker is still active.
+         */}
+        {state.elementSnapshot && state.status !== PanelStatus.PickerActive && (
           <ElementInspectorWithCode
             snapshot={state.elementSnapshot}
             preview={state.debugPreview}
             activeUrl={activeUrl}
             shareEnabled={!!shareSettings && !!shareSettings.nonce && !!shareSettings.siteUrl}
             onShare={onShare}
+            pickerLocked={state.status === PanelStatus.PickerActive}
+            onTogglePickerLock={(next) => {
+              // ON  → re-arm the picker so user can hover/pick another element.
+              // OFF → exit picker mode but keep the current Inspector view.
+              if (next) void runAction("pick");
+              else void sendToBackground<{ tabId: number }, void>(
+                MessageKind.ExitPickerMode, { tabId: activeTabId ?? -1 },
+              ).catch(() => undefined);
+            }}
             onBack={() => setState((s) => ({ ...s, elementSnapshot: undefined, debugPreview: undefined, status: PanelStatus.Idle }))}
           />
         )}
@@ -1747,7 +1763,7 @@ function formatRemaining(ms: number): string {
 
 function ElementInspectorWithCode(
   {
-    snapshot, onBack, preview, activeUrl, shareEnabled, onShare,
+    snapshot, onBack, preview, activeUrl, shareEnabled, onShare, onTogglePickerLock, pickerLocked,
   }: {
     snapshot: ElementSnapshot;
     onBack: () => void;
@@ -1755,6 +1771,8 @@ function ElementInspectorWithCode(
     activeUrl?: string;
     shareEnabled?: boolean;
     onShare?: (artifacts: ExportArtifacts) => Promise<void>;
+    onTogglePickerLock?: (next: boolean) => void;
+    pickerLocked?: boolean;
   },
 ): JSX.Element {
   const [showCode, setShowCode] = useState(false);
@@ -1765,6 +1783,8 @@ function ElementInspectorWithCode(
         snapshot={snapshot}
         onBack={onBack}
         onShowCode={() => setShowCode(true)}
+        onTogglePickerLock={onTogglePickerLock}
+        pickerLocked={pickerLocked}
       />
       {showCode && <CodeDrawer snapshot={snapshot} onClose={() => setShowCode(false)} />}
       {artifacts && (
