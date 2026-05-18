@@ -5,7 +5,7 @@
   "description": "Export any web page (or one element) for your LLM.",
   "type": "module",
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && cp -r ../extension-src/icons dist/extension/icons",
     "build:watch": "vite build --watch",
     "package": "bash scripts/package.sh",
     "test": "vitest run",
