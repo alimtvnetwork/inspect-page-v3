@@ -41,6 +41,7 @@ import { listShareSessions, type ShareSessionSummary } from "../share/listShareS
 import { startBillingCheckout } from "../share/startBillingCheckout";
 import { startBillingPortal } from "../share/startBillingPortal";
 import { getBillingStatus, type BillingStatus } from "../share/getBillingStatus";
+import { formatBillingPriceTagline } from "../share/formatPrice";
 import { detectProFlip } from "../share/detectProFlip";
 import { pollBillingUntilPro, BILLING_CHANGED_EVENT } from "../share/pollBillingUntilPro";
 import { emitBilling } from "../share/billingTelemetry";
@@ -1228,7 +1229,9 @@ function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
       )}
       {!isPro && (
         <>
-          <div className="lpe-billing-tagline">{COPY.billingPriceTagline}</div>
+          <div className="lpe-billing-tagline">
+            {formatBillingPriceTagline(status.price, COPY.billingPriceTagline)}
+          </div>
           <ul className="lpe-billing-features" aria-label="Pro features">
             <li>{COPY.billingFeatureUnlimited}</li>
             <li>{COPY.billingFeaturePriority}</li>
