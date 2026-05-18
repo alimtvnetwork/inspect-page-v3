@@ -1275,9 +1275,13 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
   const [quota, setQuota] = useState<{
     lifetimeUsed: number; freeLimit: number; hasLicense: boolean;
   } | null>(null);
+  const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
+  const [workspaceId, setWorkspaceId] = useState<number | undefined>(undefined);
   const siteUrl = INSPECT_PAGE_WP_SITE_URL;
   const configured = !!siteUrl;
   const signedIn = configured && !!settings.nonce && !!settings.userId;
+  const activeWorkspace = workspaces.find((w) => w.id === workspaceId)
+    ?? workspaces[0];
 
   const onSignIn = async (): Promise<void> => {
     if (!configured) { setErr(COPY.shareNotConfiguredMsg); return; }
