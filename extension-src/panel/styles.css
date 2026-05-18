@@ -457,14 +457,14 @@
 .lpe-settings summary {
   cursor: pointer; font-weight: 600; padding: 6px 2px;
   list-style: none; display: flex; align-items: center; gap: 6px;
-  color: #1f2328; font-size: 13px;
+  color: var(--lpe-fg); font-size: 13px;
   border-radius: 6px;
 }
-.lpe-settings summary:hover { background: #f6f8fa; }
+.lpe-settings summary:hover { background: var(--lpe-surface-2); }
 .lpe-settings summary::-webkit-details-marker { display: none; }
 .lpe-settings summary::before {
   content: ""; width: 6px; height: 6px;
-  border-right: 1.5px solid #57606a; border-bottom: 1.5px solid #57606a;
+  border-right: 1.5px solid var(--lpe-muted); border-bottom: 1.5px solid var(--lpe-muted);
   transform: rotate(-45deg); transition: transform 150ms ease;
   margin-left: 4px;
 }
