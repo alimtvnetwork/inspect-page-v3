@@ -1467,7 +1467,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
                       onClick={async () => {
                         emitBilling("portal_clicked", "settings");
                         try {
-                          const { url } = await startBillingPortal({ getShareSettings });
+                          const { url } = await startBillingPortal({ getShareSettings, workspaceId });
                           if (typeof window !== "undefined" && url) {
                             emitBilling("portal_opened", "settings");
                             window.open(url, "_blank", "noopener,noreferrer");
@@ -1502,7 +1502,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
                           freeLimit: quota.freeLimit,
                         });
                         try {
-                          const { url } = await startBillingCheckout({ getShareSettings });
+                          const { url } = await startBillingCheckout({ getShareSettings, workspaceId });
                           if (typeof window !== "undefined" && url) {
                             emitBilling("checkout_opened", "settings");
                             window.open(url, "_blank", "noopener,noreferrer");
