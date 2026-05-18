@@ -545,11 +545,16 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
               <>
                 <button
                   type="button"
-                  className="lpe-btn lpe-btn-primary"
+                  className="lpe-btn lpe-btn-primary lpe-btn-hero"
                   onClick={onFullPage}
                   disabled={busy || settings === null}
                 >
-                  {COPY.btnFullPage}
+                  <svg className="lpe-btn-ico" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <rect x="2.5" y="3.5" width="15" height="13" rx="2.5" stroke="currentColor" strokeWidth="1.6"/>
+                    <path d="M6 8h8M6 11h8M6 14h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                  </svg>
+                  <span>{COPY.btnFullPage}</span>
+                  <span className="lpe-btn-kbd" aria-hidden="true">⌥⇧E</span>
                 </button>
                 <ShareLinksButton
                   shareSettings={shareSettings}
