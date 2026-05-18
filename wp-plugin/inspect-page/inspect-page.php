@@ -3,7 +3,7 @@
  * Plugin Name:       Inspect Page
  * Plugin URI:        admin.php?page=inspect-page
  * Description:       Share-Links backend for the Inspect Page Chrome extension. Hosts captured HTML / CSS / image bundles for 24 hours and exposes them via signed public URLs.
- * Version:           2.5.5
+ * Version:           2.6.0-dev
  * Requires at least: 5.6
  * Requires PHP:      7.4
  * Author:            Inspect Page
@@ -14,7 +14,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'INSPECT_PAGE_VERSION', '2.5.5' );
+define( 'INSPECT_PAGE_VERSION', '2.6.0-dev' );
 define( 'INSPECT_PAGE_REST_NS', 'inspect-page/v1' );
 define( 'INSPECT_PAGE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'INSPECT_PAGE_URL', plugin_dir_url( __FILE__ ) );
@@ -26,6 +26,7 @@ require_once INSPECT_PAGE_DIR . 'includes/class-storage.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-auth.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-license.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-billing.php';
+require_once INSPECT_PAGE_DIR . 'includes/class-workspaces.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-rest.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-cleanup.php';
 require_once INSPECT_PAGE_DIR . 'includes/class-shortcode.php';
