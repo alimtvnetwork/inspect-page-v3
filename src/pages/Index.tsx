@@ -63,7 +63,7 @@ const Index = (): JSX.Element => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <div
-        className="relative w-full max-w-[440px] aspect-square sm:aspect-square overflow-hidden rounded-[2rem] border border-border bg-background shadow-[0_30px_80px_-20px_hsl(162_95%_45%/0.25)]"
+        className="relative w-full max-w-[420px] overflow-hidden rounded-[2.25rem] border border-border bg-background shadow-[0_30px_80px_-20px_hsl(162_95%_45%/0.25)]"
         style={{ aspectRatio: "9 / 16" }}
       >
         <main className="h-full w-full overflow-y-auto px-5 py-8 space-y-14 scrollbar-thin">
