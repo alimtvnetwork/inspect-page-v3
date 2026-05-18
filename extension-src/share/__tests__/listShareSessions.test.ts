@@ -116,4 +116,26 @@ describe("listShareSessions", () => {
     const [url] = fetchImpl.mock.calls[0] as [string];
     expect(url).toBe("https://example.com/wp-json/inspect-page/v1/sessions");
   });
+
+  it("appends ?workspace_id=N when provided", async () => {
+    const fetchImpl = vi.fn(async () => jsonRes([]));
+    await listShareSessions({
+      getShareSettings: async () => validCfg,
+      fetchImpl,
+      workspaceId: 7,
+    });
+    const [url] = fetchImpl.mock.calls[0] as [string];
+    expect(url).toBe("https://example.com/wp-json/inspect-page/v1/sessions?workspace_id=7");
+  });
+
+  it("omits workspace_id when 0 or undefined", async () => {
+    const fetchImpl = vi.fn(async () => jsonRes([]));
+    await listShareSessions({
+      getShareSettings: async () => validCfg,
+      fetchImpl,
+      workspaceId: 0,
+    });
+    const [url] = fetchImpl.mock.calls[0] as [string];
+    expect(url).toBe("https://example.com/wp-json/inspect-page/v1/sessions");
+  });
 });
