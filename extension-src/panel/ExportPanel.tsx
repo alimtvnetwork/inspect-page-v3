@@ -1754,7 +1754,7 @@ function formatRemaining(ms: number): string {
 
 function ElementInspectorWithCode(
   {
-    snapshot, onBack, preview, activeUrl, shareEnabled, onShare,
+    snapshot, onBack, preview, activeUrl, shareEnabled, onShare, onTogglePickerLock, pickerLocked,
   }: {
     snapshot: ElementSnapshot;
     onBack: () => void;
@@ -1762,6 +1762,8 @@ function ElementInspectorWithCode(
     activeUrl?: string;
     shareEnabled?: boolean;
     onShare?: (artifacts: ExportArtifacts) => Promise<void>;
+    onTogglePickerLock?: (next: boolean) => void;
+    pickerLocked?: boolean;
   },
 ): JSX.Element {
   const [showCode, setShowCode] = useState(false);
@@ -1772,6 +1774,8 @@ function ElementInspectorWithCode(
         snapshot={snapshot}
         onBack={onBack}
         onShowCode={() => setShowCode(true)}
+        onTogglePickerLock={onTogglePickerLock}
+        pickerLocked={pickerLocked}
       />
       {showCode && <CodeDrawer snapshot={snapshot} onClose={() => setShowCode(false)} />}
       {artifacts && (
