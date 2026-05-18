@@ -13,6 +13,11 @@ logger.debug(LogCategory.Lifecycle, "Popup loaded");
 
 async function getActiveTab(): Promise<{ url?: string; id?: number }> {
   try {
+    const tabId = new URLSearchParams(window.location.search).get("tabId");
+    if (tabId && /^\d+$/.test(tabId)) {
+      const tab = await chrome.tabs.get(Number(tabId));
+      return { url: tab?.url, id: tab?.id };
+    }
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     return { url: tab?.url, id: tab?.id };
   } catch (e) {
