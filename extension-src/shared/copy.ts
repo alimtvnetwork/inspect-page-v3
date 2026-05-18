@@ -11,7 +11,6 @@ export const COPY = {
   btnRetry: "Retry",
   btnCopyDetails: "Copy details",
   btnResetSettings: "Reset to defaults",
-  btnOpenPanel: "Open panel on page",
   btnMinimize: "Minimize",
   btnClose: "Close",
   lblResizePanel: "Resize panel",
