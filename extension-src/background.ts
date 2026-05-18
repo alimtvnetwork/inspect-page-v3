@@ -71,15 +71,16 @@ async function openPopupWindow(sourceTabId?: number): Promise<void> {
     ? activeWindow.left + Math.max(0, activeWindow.width - POPUP_WIDTH)
     : undefined;
   const top = typeof activeWindow?.top === "number" ? activeWindow.top : undefined;
-  await chrome.windows.create({
+  const createData: chrome.windows.CreateData = {
     url: sourceTabId ? `${url}?tabId=${sourceTabId}` : url,
     type: "popup",
     width: POPUP_WIDTH,
     height: POPUP_HEIGHT,
-    left,
-    top,
     focused: true,
-  });
+  };
+  if (typeof left === "number") createData.left = left;
+  if (typeof top === "number") createData.top = top;
+  await chrome.windows.create(createData);
 }
 
 router.on<PingPayload, PingResponse>(MessageKind.Ping, (payload) => {
