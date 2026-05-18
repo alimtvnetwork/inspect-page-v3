@@ -1170,7 +1170,7 @@ interface ShareSettingsSectionProps {
  * above the existing quota block, which still drives the per-share
  * progress bar from `/auth-status`.
  */
-function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
+function BillingPanel({ signedIn, workspaceId }: { signedIn: boolean; workspaceId?: number }): JSX.Element | null {
   const [status, setStatus] = useState<BillingStatus | null>(null);
   const [justFlippedPro, setJustFlippedPro] = useState(false);
   useEffect(() => {
@@ -1179,7 +1179,7 @@ function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
     let prevPlan: string | null = null;
     const refresh = async () => {
       try {
-        const s = await getBillingStatus({ getShareSettings });
+        const s = await getBillingStatus({ getShareSettings, workspaceId });
         if (!cancelled) {
           if (detectProFlip(prevPlan, s.plan)) {
             setJustFlippedPro(true);
@@ -1203,12 +1203,21 @@ function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
       window.removeEventListener("focus", onFocus);
       window.removeEventListener(BILLING_CHANGED_EVENT, onChanged);
     };
-  }, [signedIn]);
+  }, [signedIn, workspaceId]);
   if (!status) return null;
   const isPro = status.plan === "pro";
   const sub = status.subscription
     ? `${status.subscription.slice(0, 8)}…${status.subscription.slice(-4)}`
     : "";
+  const ws = status.workspace;
+  const wsRoleCopy = ws?.role === "owner"
+    ? COPY.workspaceRoleOwner
+    : ws?.role === "admin" ? COPY.workspaceRoleAdmin : COPY.workspaceRoleMember;
+  const wsLicCopy = ws?.licenseStatus === "active"
+    ? COPY.workspaceLicenseActive
+    : ws?.licenseStatus === "past_due" ? COPY.workspaceLicensePastDue
+    : ws?.licenseStatus === "canceled" ? COPY.workspaceLicenseCanceled
+    : COPY.workspaceLicenseFree;
   return (
     <div
       className="lpe-billing-panel"
@@ -1216,6 +1225,14 @@ function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
       role="group"
       aria-label={COPY.billingPlanLabel}
     >
+      {ws && (
+        <div className="lpe-billing-row" data-workspace-id={ws.id}>
+          <span className="lpe-billing-label">{COPY.workspaceLabel}</span>
+          <span className="lpe-billing-sub" title={`role: ${wsRoleCopy}`}>
+            {ws.name || `#${ws.id}`} · {wsRoleCopy} · {wsLicCopy}
+          </span>
+        </div>
+      )}
       <div className="lpe-billing-row">
         <span className="lpe-billing-label">{COPY.billingPlanLabel}</span>
         <span className="lpe-billing-badge" data-plan={status.plan}>
