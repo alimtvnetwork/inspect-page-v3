@@ -480,7 +480,6 @@ chrome.commands?.onCommand?.addListener(async (command) => {
 
 // Toolbar icon now uses manifest `default_popup`, which anchors the popup to
 // the current tab (toolbar dropdown) instead of a detached window.
-});
 
 // ---- Stage 9: SW keep-alive during exports (E20) ----
 let keepAliveTimer: ReturnType<typeof setInterval> | null = null;
