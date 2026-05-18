@@ -36,7 +36,9 @@ export default defineConfig({
     react(),
     webExtension({
       manifest: path.resolve(srcRoot, "manifest.json"),
-      additionalInputs: ["offscreen.html", "popup/index.html"],
+      additionalInputs: {
+        html: ["popup/index.html"],
+      },
     }),
   ],
 });
