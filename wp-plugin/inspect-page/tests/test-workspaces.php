@@ -20,6 +20,26 @@ if ( ! function_exists( 'get_user_meta' ) ) {
 }
 $GLOBALS['_pp_usermeta'] = [];
 
+if ( ! function_exists( 'is_email' ) ) {
+    function is_email( $e ) { return filter_var( $e, FILTER_VALIDATE_EMAIL ) ? $e : false; }
+}
+if ( ! function_exists( 'get_user_by' ) ) {
+    function get_user_by( $field, $value ) {
+        if ( $field !== 'email' ) { return false; }
+        foreach ( $GLOBALS['wpdb']->rows['users'] as $u ) {
+            if ( strtolower( $u->user_email ) === strtolower( (string) $value ) ) {
+                return (object) [ 'ID' => (int) $u->id, 'user_email' => $u->user_email ];
+            }
+        }
+        return false;
+    }
+}
+if ( ! function_exists( 'get_userdata' ) ) {
+    function get_userdata( $uid ) {
+        return $GLOBALS['wpdb']->rows['users'][ (int) $uid ] ?? null;
+    }
+}
+
 if ( ! class_exists( 'WP_REST_Request' ) ) {
     class WP_REST_Request {
         private $params = [];
@@ -101,6 +121,16 @@ class TestWPDB {
     }
 
     public function get_var( $sql ) {
+        if ( preg_match( "/SELECT id FROM \S+workspace_invites\s+WHERE workspace_id = (\d+) AND email = '([^']+)' AND accepted_at IS NULL AND expires_at > '([^']+)'/s", $sql, $m ) ) {
+            foreach ( $this->rows['invites'] as $r ) {
+                if ( (int) $r['workspace_id'] !== (int) $m[1] ) { continue; }
+                if ( strtolower( $r['email'] ) !== strtolower( $m[2] ) ) { continue; }
+                if ( ! empty( $r['accepted_at'] ) ) { continue; }
+                if ( strcmp( $r['expires_at'], $m[3] ) <= 0 ) { continue; }
+                return (string) $r['id'];
+            }
+            return null;
+        }
         if ( preg_match( '/SELECT COUNT\(\*\) FROM \S+workspace_members WHERE workspace_id = (\d+)/', $sql, $m ) ) {
             $ws = (int) $m[1];
             return (string) count( array_filter( $this->rows['members'], fn( $r ) => (int) $r['workspace_id'] === $ws ) );
@@ -122,10 +152,28 @@ class TestWPDB {
                 if ( (int) $r['id'] === (int) $m[1] ) { return (object) $r; }
             }
         }
+        if ( preg_match( "/FROM \S+workspace_invites WHERE token = '([^']+)'/", $sql, $m ) ) {
+            foreach ( $this->rows['invites'] as $r ) {
+                if ( (string) $r['token'] === (string) $m[1] ) { return (object) $r; }
+            }
+        }
         return null;
     }
 
     public function get_results( $sql ) {
+        // list_invites
+        if ( preg_match( "/FROM \S+workspace_invites\s+WHERE workspace_id = (\d+) AND accepted_at IS NULL AND expires_at > '([^']+)'/s", $sql, $m ) ) {
+            $ws_id = (int) $m[1];
+            $now   = $m[2];
+            $out = [];
+            foreach ( $this->rows['invites'] as $r ) {
+                if ( (int) $r['workspace_id'] !== $ws_id ) { continue; }
+                if ( ! empty( $r['accepted_at'] ) ) { continue; }
+                if ( strcmp( $r['expires_at'], $now ) <= 0 ) { continue; }
+                $out[] = (object) $r;
+            }
+            return $out;
+        }
         // list_for_user: JOIN by user_id
         if ( preg_match( '/FROM \S+workspace_members m\s+JOIN \S+workspaces w.+WHERE m\.user_id = (\d+)/s', $sql, $m ) ) {
             $uid = (int) $m[1];
