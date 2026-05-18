@@ -263,6 +263,9 @@ export type SetPanelPositionResponse = PanelPosition;
 export interface MountFloatingPanelPayload { tabId: number }
 export type MountFloatingPanelResponse = void;
 
+export interface OpenPopupWindowPayload { tabId?: number }
+export type OpenPopupWindowResponse = void;
+
 // ---- v2.2 Smart Share (WP plugin backend, cookie + nonce auth) ----
 export interface ShareSettings {
   /** WP base URL the user typed (no trailing slash). */
