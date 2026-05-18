@@ -163,6 +163,11 @@ router.on<MountFloatingPanelPayload, MountFloatingPanelResponse>(
   },
 );
 
+router.on<OpenPopupWindowPayload, OpenPopupWindowResponse>(
+  MessageKind.OpenPopupWindow,
+  async ({ tabId }) => openPopupWindow(tabId),
+);
+
 router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
   MessageKind.RunFullPageExport,
   async ({ tabId, settings }, sender) => {
