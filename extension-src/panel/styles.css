@@ -2137,6 +2137,8 @@
   gap: 10px !important;
   width: 100% !important;
   min-height: 48px !important;
+  max-height: 56px !important;
+  flex: 0 0 auto !important;
   padding: 0 18px !important;
   border-radius: 12px !important;
   font-size: 14px !important;
@@ -2146,7 +2148,8 @@
   transition: transform 140ms cubic-bezier(.2,.7,.3,1), box-shadow 140ms, background 140ms, border-color 140ms, color 140ms !important;
 }
 .lpe-root[data-lpe-surface="popup"] .lpe-btn-hero .lpe-btn-ico {
-  width: 18px; height: 18px; flex: 0 0 18px;
+  width: 18px !important; height: 18px !important; flex: 0 0 18px !important;
+  max-width: 18px !important; max-height: 18px !important;
 }
 .lpe-root[data-lpe-surface="popup"] .lpe-btn-hero .lpe-btn-kbd {
   margin-left: auto;
