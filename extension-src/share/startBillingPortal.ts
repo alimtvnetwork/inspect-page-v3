@@ -13,6 +13,8 @@ export interface StartBillingPortalDeps {
   getShareSettings: () => Promise<ShareSettings>;
   fetchImpl?: typeof fetch;
   returnUrl?: string;
+  /** Manage subscription for this workspace (W4+). */
+  workspaceId?: number;
 }
 
 export interface BillingPortalResult { url: string }
@@ -31,6 +33,9 @@ export async function startBillingPortal(
   const fetchFn = deps.fetchImpl ?? fetch;
   const body: Record<string, string> = {};
   if (deps.returnUrl) body.return_url = deps.returnUrl;
+  if (deps.workspaceId && deps.workspaceId > 0) {
+    body.workspace_id = String(deps.workspaceId);
+  }
   let res: Response;
   try {
     res = await fetchFn(url, {

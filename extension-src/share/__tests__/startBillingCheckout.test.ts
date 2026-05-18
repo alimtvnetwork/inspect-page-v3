@@ -84,4 +84,11 @@ describe("startBillingCheckout", () => {
       ErrorCode.E_SHARE_NETWORK,
     );
   });
+
+  it("includes workspace_id in body when provided (W4+)", async () => {
+    const fetchImpl = vi.fn(async () => jsonRes({ url: "https://checkout", id: "cs_1" }));
+    await startBillingCheckout({ getShareSettings: async () => validCfg, fetchImpl, workspaceId: 7 });
+    const init = fetchImpl.mock.calls[0][1] as RequestInit;
+    expect(JSON.parse(String(init.body))).toMatchObject({ workspace_id: "7" });
+  });
 });
