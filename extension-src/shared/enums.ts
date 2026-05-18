@@ -24,7 +24,6 @@ export enum MessageKind {
   SetSettings = "SetSettings",
   GetPanelPosition = "GetPanelPosition",
   SetPanelPosition = "SetPanelPosition",
-  OpenPopupWindow = "OpenPopupWindow",
   GetShareSettings = "GetShareSettings",
   SetShareSettings = "SetShareSettings",
   CreateShareSession = "CreateShareSession",

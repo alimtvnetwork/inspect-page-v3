@@ -151,14 +151,6 @@ export function mountFloatingPanel(): void {
     void persistPosition({ minimized: true }).catch(() => undefined);
   };
 
-  const popOut = (): void => {
-    try {
-      void sendToBackground<{ tabId?: number }, void>(MessageKind.OpenPopupWindow, {});
-      // Migrate to detached window — tear down in-page panel so we don't keep two surfaces.
-      close();
-    } catch { /* ignore */ }
-  };
-
   root.render(
     <StrictMode>
       <ExportPanel
@@ -166,7 +158,6 @@ export function mountFloatingPanel(): void {
         activeUrl={location.href}
         onMinimize={minimize}
         onClose={close}
-        onPopOut={popOut}
       />
     </StrictMode>,
   );
