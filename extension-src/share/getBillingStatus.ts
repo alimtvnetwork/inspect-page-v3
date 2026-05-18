@@ -20,6 +20,21 @@ export interface BillingStatus {
   freeLimit: number;
   /** null when on Pro (unlimited); otherwise free quota remaining. */
   remaining: number | null;
+  /**
+   * Stripe price metadata enrichment (WP plugin v2.5.5+).
+   * Absent when the WP plugin can't (or won't) fetch the price —
+   * callers must gracefully fall back to the static $5/mo copy.
+   */
+  price?: {
+    id: string;
+    /** Smallest currency unit (e.g. cents). */
+    unitAmount: number | null;
+    /** Uppercase ISO 4217, e.g. "USD". */
+    currency: string | null;
+    /** Stripe recurring interval, e.g. "month". */
+    interval: string | null;
+    nickname: string | null;
+  };
 }
 
 export interface GetBillingStatusDeps {
@@ -75,7 +90,7 @@ export async function getBillingStatus(
   const remaining = o.remaining === null
     ? null
     : (typeof o.remaining === "number" ? o.remaining : Math.max(0, freeLimit - lifetimeUsed));
-  return {
+  const result: BillingStatus = {
     hasLicense,
     plan,
     configured: Boolean(o.configured),
@@ -84,4 +99,18 @@ export async function getBillingStatus(
     freeLimit,
     remaining: hasLicense ? null : remaining,
   };
+  const rawPrice = o.price;
+  if (rawPrice && typeof rawPrice === "object") {
+    const p = rawPrice as Record<string, unknown>;
+    if (typeof p.id === "string" && p.id) {
+      result.price = {
+        id: p.id,
+        unitAmount: typeof p.unit_amount === "number" ? p.unit_amount : null,
+        currency: typeof p.currency === "string" ? p.currency : null,
+        interval: typeof p.interval === "string" ? p.interval : null,
+        nickname: typeof p.nickname === "string" ? p.nickname : null,
+      };
+    }
+  }
+  return result;
 }
