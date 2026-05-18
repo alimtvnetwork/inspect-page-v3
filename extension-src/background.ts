@@ -196,7 +196,15 @@ router.on<ExitPickerModePayload, ExitPickerModeResponse>(
 router.on<CollectInspectSnapshotPayload, CollectInspectSnapshotResponse>(
   MessageKind.CollectInspectSnapshot,
   async ({ tabId }, sender) => {
-    const tid = tabId > 0 ? tabId : sender.tab?.id;
+    let tid = tabId > 0 ? tabId : sender.tab?.id;
+    if (tid === undefined) {
+      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      tid = tab?.id;
+    }
+    if (tid === undefined) {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      tid = tab?.id;
+    }
     if (tid === undefined) {
       throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, "Cannot resolve tab for inspect");
     }
