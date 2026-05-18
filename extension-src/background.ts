@@ -451,17 +451,28 @@ chrome.commands?.onCommand?.addListener(async (command) => {
 // Toolbar icon click — mount the floating panel on the active tab directly.
 // (No popup is registered in the manifest, so onClicked fires.)
 chrome.action?.onClicked?.addListener(async (tab) => {
-  if (!tab?.id) return;
+  // Open the UI as a detached chrome.windows.create popup pinned to the
+  // Samsung Galaxy S20 Ultra viewport (412 × 915). Unlike default_popup
+  // (which Chrome caps at ~800×600), windows.create honors the exact size.
   try {
-    await ensureContentScript(tab.id);
-    await sendToTab<{ tabId: number }, void>(
-      tab.id, MessageKind.MountFloatingPanel, { tabId: tab.id },
-    );
+    const url = chrome.runtime.getURL("popup/index.html");
+    await chrome.windows.create({
+      url, type: "popup", width: 412, height: 915, focused: true,
+    });
   } catch (e) {
     logger.error(
       LogCategory.Lifecycle, "ACTION_CLICK_FAIL",
-      "Failed to mount floating panel from toolbar click", e,
+      "Failed to open Inspect Page popup window", e,
     );
+    // Fallback: try mounting the in-page floating panel.
+    if (tab?.id) {
+      try {
+        await ensureContentScript(tab.id);
+        await sendToTab<{ tabId: number }, void>(
+          tab.id, MessageKind.MountFloatingPanel, { tabId: tab.id },
+        );
+      } catch { /* ignore */ }
+    }
   }
 });
 
