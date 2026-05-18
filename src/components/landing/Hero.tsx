@@ -41,12 +41,21 @@ export const Hero = ({ zipUrl, version, sizeKb }: HeroProps): JSX.Element => {
   };
 
   return (
-    <header className="space-y-6">
-      <span className="inline-flex items-center rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
+    <header className="relative space-y-6 isolate">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -inset-x-20 -top-32 -z-10 h-[420px] blur-3xl opacity-80"
+        style={{ background: "var(--gradient-aurora)" }}
+      />
+      <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-foreground backdrop-blur">
+        <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_hsl(var(--accent))]" />
         v2.6 · Smart Share · Stripe billing · WordPress backend
       </span>
-      <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight text-foreground">
-        Export any web page for your LLM
+      <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight">
+        <span className="bg-clip-text text-transparent" style={{ backgroundImage: "var(--gradient-primary)" }}>
+          Export any web page
+        </span>{" "}
+        <span className="text-foreground">for your LLM</span>
       </h1>
       <p className="text-lg text-muted-foreground max-w-xl">
         HTML, CSS, JavaScript and a full-page screenshot — bundled in one ZIP.
@@ -57,7 +66,8 @@ export const Hero = ({ zipUrl, version, sizeKb }: HeroProps): JSX.Element => {
           size="lg"
           onClick={handleDownload}
           disabled={loading}
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto text-primary-foreground border-0 shadow-[var(--shadow-glow)] hover:opacity-95 transition"
+          style={{ backgroundImage: "var(--gradient-primary)" }}
           aria-label="Download extension ZIP"
         >
           {loading ? (
