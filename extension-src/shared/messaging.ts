@@ -136,7 +136,28 @@ export async function sendToTab<P, R>(
   payload: P,
 ): Promise<R> {
   const env = makeEnvelope(kind, payload);
-  const res = (await chrome.tabs.sendMessage(tabId, env)) as WireResponse<R>;
+  let res: WireResponse<R>;
+  try {
+    res = (await chrome.tabs.sendMessage(tabId, env)) as WireResponse<R>;
+  } catch (e) {
+    // chrome.tabs.sendMessage rejects when the target frame is gone or the
+    // content script is not reachable. Common Chromium phrases:
+    //   "Could not establish connection. Receiving end does not exist."
+    //   "The page failed to load."
+    //   "The tab was closed."
+    //   "Frame with ID 0 was removed."
+    // Translate these into a single, user-actionable MessageError instead
+    // of letting the raw string surface as a generic E_PERMISSION_DENIED.
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/page failed to load|receiving end does not exist|could not establish connection|tab was closed|frame .* removed|the message port closed/i.test(msg)) {
+      throw new MessageError(
+        ErrorCode.E_NOT_AVAILABLE_HERE,
+        "This page can't be exported right now. Reload the tab and try again, or open a different page.",
+        msg,
+      );
+    }
+    throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, msg, msg);
+  }
   if (!res || res.ok !== true) {
     const e = res?.error ?? { code: ErrorCode.E_PERMISSION_DENIED, message: "no response" };
     throw new MessageError(e.code, e.message, e.detail);
