@@ -477,17 +477,11 @@ chrome.commands?.onCommand?.addListener(async (command) => {
   }
 });
 
-// Toolbar icon click — mount the floating panel on the active tab directly.
-// (No popup is registered in the manifest, so onClicked fires.)
+// Toolbar icon click — open a detached Chrome popup window.
+// No default_popup is registered in the manifest; otherwise onClicked would not fire.
 chrome.action?.onClicked?.addListener(async (tab) => {
-  // Open the UI as a detached chrome.windows.create popup pinned to the
-  // Samsung Galaxy S20 Ultra viewport (412 × 915). Unlike default_popup
-  // (which Chrome caps at ~800×600), windows.create honors the exact size.
   try {
-    const url = chrome.runtime.getURL("popup/index.html");
-    await chrome.windows.create({
-      url, type: "popup", width: 412, height: 915, focused: true,
-    });
+    await openPopupWindow(tab?.id);
   } catch (e) {
     logger.error(
       LogCategory.Lifecycle, "ACTION_CLICK_FAIL",
