@@ -22,6 +22,8 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          glow: "hsl(var(--primary-glow))",
+          soft: "hsl(var(--primary-soft))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -62,6 +64,14 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      backgroundImage: {
+        "gradient-blueprint": "var(--gradient-blueprint)",
+        "gradient-primary": "var(--gradient-primary)",
+      },
+      boxShadow: {
+        blueprint: "var(--shadow-blueprint)",
+        glow: "var(--shadow-glow)",
       },
       keyframes: {
         "accordion-down": {

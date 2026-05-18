@@ -15,11 +15,18 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        blueprint:
+          "rounded-full bg-primary text-primary-foreground shadow-blueprint hover:bg-primary/90 hover:shadow-glow transition-shadow",
+        blueprintOutline:
+          "rounded-full border-[1.5px] border-primary bg-transparent text-primary hover:bg-accent hover:text-accent-foreground",
+        blueprintGhost:
+          "rounded-full bg-transparent text-primary hover:bg-accent hover:text-accent-foreground",
       },
       size: {
         default: "h-10 px-4 py-2",
         sm: "h-9 rounded-md px-3",
         lg: "h-11 rounded-md px-8",
+        pill: "h-12 rounded-full px-7 text-base",
         icon: "h-10 w-10",
       },
     },

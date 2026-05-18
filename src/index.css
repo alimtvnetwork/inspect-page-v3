@@ -8,43 +8,43 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Lovable-inspired dark aurora theme */
-    --background: 240 18% 6%;
-    --foreground: 0 0% 98%;
+    /* Blueprint theme — bright royal blue on white */
+    --background: 0 0% 98%;
+    --foreground: 222 15% 12%;
 
-    --card: 240 16% 9%;
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 15% 12%;
 
-    --popover: 240 16% 9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 15% 12%;
 
-    --primary: 262 83% 62%;
+    --primary: 221 100% 59%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 280 90% 70%;
+    --primary-glow: 221 100% 70%;
+    --primary-soft: 221 100% 92%;
 
-    --secondary: 240 14% 14%;
-    --secondary-foreground: 0 0% 96%;
+    --secondary: 220 30% 96%;
+    --secondary-foreground: 222 15% 12%;
 
-    --muted: 240 12% 14%;
-    --muted-foreground: 240 5% 70%;
+    --muted: 220 30% 96%;
+    --muted-foreground: 222 10% 40%;
 
-    --accent: 322 90% 62%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 221 100% 92%;
+    --accent-foreground: 221 80% 30%;
 
-    --destructive: 0 75% 60%;
+    --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 14% 18%;
-    --input: 240 14% 18%;
-    --ring: 262 83% 62%;
+    --border: 220 20% 90%;
+    --input: 220 20% 90%;
+    --ring: 221 100% 59%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    --gradient-aurora: radial-gradient(ellipse at 50% 0%, hsl(262 83% 62% / 0.45), transparent 60%),
-      radial-gradient(ellipse at 80% 20%, hsl(322 90% 62% / 0.35), transparent 55%),
-      radial-gradient(ellipse at 20% 30%, hsl(18 95% 60% / 0.30), transparent 55%);
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 62%), hsl(322 90% 62%) 55%, hsl(18 95% 60%));
-    --shadow-glow: 0 20px 60px -20px hsl(262 83% 62% / 0.55);
+    --gradient-blueprint: linear-gradient(135deg, hsl(221 100% 59%), hsl(221 100% 70%));
+    --gradient-primary: linear-gradient(135deg, hsl(221 100% 59%), hsl(221 100% 70%));
+    --shadow-blueprint: 0 18px 40px -20px hsl(221 100% 59% / 0.35);
+    --shadow-glow: 0 18px 40px -20px hsl(221 100% 59% / 0.35);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -57,33 +57,35 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 222 60% 9%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 222 50% 12%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 222 50% 12%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 221 100% 65%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 221 100% 75%;
+    --primary-soft: 221 60% 25%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 222 40% 16%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 222 40% 16%;
+    --muted-foreground: 215 20% 70%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 222 40% 20%;
+    --accent-foreground: 221 100% 85%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62.8% 50%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 222 40% 20%;
+    --input: 222 40% 20%;
+    --ring: 221 100% 65%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
