@@ -150,7 +150,40 @@ final class InspectPage_Billing {
             'lifetime_used' => $lifetime_used,
             'free_limit'    => $free_limit,
             'remaining'     => $remaining,
+            'price'         => self::price_info(),
         ];
+    }
+
+    /**
+     * Fetch Stripe price metadata (unit_amount, currency, interval) so the
+     * extension can render "Upgrade — $5/mo" without hard-coding the amount.
+     * Cached in a 12h transient keyed by price id; safe to call on every
+     * /billing/status hit. Returns null when not configured or on error.
+     */
+    private static function price_info() {
+        $price_id = self::price();
+        $secret   = self::secret();
+        if ( ! $price_id || ! $secret ) return null;
+        $cache_key = 'inspect_page_price_' . md5( $price_id );
+        $cached    = get_transient( $cache_key );
+        if ( is_array( $cached ) ) return $cached;
+        $res = wp_remote_get( 'https://api.stripe.com/v1/prices/' . rawurlencode( $price_id ), [
+            'headers' => [ 'Authorization' => 'Bearer ' . $secret ],
+            'timeout' => 8,
+        ] );
+        if ( is_wp_error( $res ) ) return null;
+        $code = wp_remote_retrieve_response_code( $res );
+        $json = json_decode( wp_remote_retrieve_body( $res ), true );
+        if ( $code >= 400 || ! is_array( $json ) || empty( $json['id'] ) ) return null;
+        $info = [
+            'id'          => (string) $json['id'],
+            'unit_amount' => isset( $json['unit_amount'] ) ? (int) $json['unit_amount'] : null,
+            'currency'    => isset( $json['currency'] ) ? strtoupper( (string) $json['currency'] ) : null,
+            'interval'    => $json['recurring']['interval'] ?? null,
+            'nickname'    => isset( $json['nickname'] ) ? (string) $json['nickname'] : null,
+        ];
+        set_transient( $cache_key, $info, 12 * HOUR_IN_SECONDS );
+        return $info;
     }
 
     public static function rest_webhook( WP_REST_Request $req ) {
