@@ -153,14 +153,7 @@ export function mountFloatingPanel(): void {
 
   const popOut = (): void => {
     try {
-      const url = chrome.runtime?.getURL?.("popup/index.html");
-      if (!url) return;
-      // Samsung Galaxy S20 Ultra viewport (412 × 915 CSS px). chrome.windows.create
-      // (unlike the toolbar default_popup) honors the requested size, so this is
-      // the only way to get a true fixed S20 Ultra surface.
-      void chrome.windows?.create?.({
-        url, type: "popup", width: 412, height: 915, focused: true,
-      });
+      void sendToBackground<{ tabId?: number }, void>(MessageKind.OpenPopupWindow, {});
       // Migrate to detached window — tear down in-page panel so we don't keep two surfaces.
       close();
     } catch { /* ignore */ }
