@@ -1,118 +1,86 @@
+## Goal
 
-# Plan — Team Workspaces (WP plugin v2.6.0 + extension v2.7.0)
+Redesign the extension popup (`ExportPanel` in `popup` surface) to match the reference visual language — clean white card, sectioned layout with `#F9FAFB` panels, `#E5E7EB` borders, `#1F2937` / `#6B7280` text, blue-accent active states, pill toggle group, footer toggles — while preserving every existing feature.
 
-Goal: let a Pro user invite teammates so they share one workspace's billing, quota, and Recent Shares list. Today every WP user is their own quota silo — teams have no shared upgrade path.
+## Scope (visual only)
 
-## 1. Data model (WP plugin)
+- Only touch `extension-src/panel/styles.css`, `extension-src/popup/index.html`, and the popup-surface render branches of `extension-src/panel/ExportPanel.tsx`. No business logic, no message contracts, no telemetry changes.
+- Floating in-page panel (`surface="floating"`) keeps its current chrome — out of scope.
 
-New tables (prefix `{$wpdb->prefix}inspect_page_`):
+## Width / chrome
 
-- `workspaces` — `id`, `name`, `owner_user_id`, `license_status enum('free','active','past_due','canceled')`, `stripe_customer_id`, `stripe_subscription_id`, `created_at`.
-- `workspace_members` — `workspace_id`, `user_id`, `role enum('owner','admin','member')`, `joined_at`, PK `(workspace_id, user_id)`.
-- `workspace_invites` — `id`, `workspace_id`, `email`, `role`, `token` (32-byte hex), `invited_by_user_id`, `expires_at` (7 days), `accepted_at NULL`.
+- Popup container: `640px × 640px` (was 600×600), white bg, 16px outer padding, rounded 14px sections, 1px `#E5E7EB` borders. Update both `popup/index.html` sizes and `styles.css` `.panel--popup` rules.
 
-Schema migration in `class-activator.php` via `dbDelta`. Backfill on activate: every existing user gets a solo workspace (`name = "{display_name}'s workspace"`, role `owner`, `license_status` copied from their `inspect_page_license` user-meta).
+## Top tab bar (replaces today's "Inspect / Export / Pick" header buttons)
 
-Sessions/shares keep `user_id` (for audit) and gain `workspace_id` (indexed). Quota counters move from per-user to per-workspace.
+Two tabs, equal width, divided by a 1px rule:
 
-## 2. REST surface (`inspect-page/v1`)
+- **Capture** (was Inspect) — camera icon, dark gray, light-gray inactive bg.
+- **Record** (was Export) — currently active by default, filled black icon, white bg, bold.
+Keep underlying state keys (`inspect` / `export`) — only labels + styling change. "Pick Element" stays a primary action under Capture.
 
-All routes cookie+nonce-authed and scoped to the caller's current workspace.
+## Sections (Record tab — primary view)
 
-- `GET  /workspaces` — list workspaces the user belongs to + role.
-- `POST /workspaces` — create (free tier defaults).
-- `GET  /workspaces/{id}` — detail (members + invites if admin).
-- `POST /workspaces/{id}/invites` — admin/owner only; emails token-link.
-- `POST /workspaces/accept` — `{token}` → adds caller as member, marks invite accepted.
-- `DELETE /workspaces/{id}/members/{user_id}` — admin/owner only; owner cannot be removed.
-- `POST /workspaces/{id}/transfer-owner` — owner → other admin.
-- `GET  /billing/status` — extended to `{workspace, license, price, quota}` (workspace block: `{id, name, role, member_count}`).
-- `POST /billing/checkout` + `/billing/portal` — now keyed off `workspace_id` (Stripe `client_reference_id = workspace:{id}`); webhook flips `workspaces.license_status` instead of user meta.
-- All quota gates (`sessions`, `uploads`, share-count → `402 E_SHARE_QUOTA_FREE`) read from `workspaces.license_status` of the caller's active workspace.
+Stacked, each = labeled card with `#F9FAFB` bg, `#E5E7EB` border, 18px padding:
 
-Backward compat: legacy user-meta `inspect_page_license` kept as read-only mirror so older extension builds keep working until 2.7.0 ships.
+1. **Export Source** — 2×2 grid of cards (Full Page, Element, Selection, Visible Area). Each card: icon top-left, bold label, status dot (green = ready, gray = needs picker). Active card: blue left border + soft blue tint.
+2. **Share Mode** — 2×2 grid (MD Single, MD + Files, ZIP, Smart Share). Same icon-label-dot pattern.
+3. **Quality / Format** — single-row pill toggle: `MD`, `MD+Files`, `ZIP`, `Smart Share`, `Auto`. Active pill: black bg, white text, rounded full. Inactive: transparent, gray border. (Reuses existing format selector state.)
+4. **Workspace** — 2-column grid of workspace cards (active workspace = blue left border). "Manage workspaces" link bottom-right.
+5. **Action row** — two equal buttons:
+  - Left: **Cancel / Stop** (red `#DC2626`, white text, square icon) — visible during in-progress export, otherwise hidden.
+  - Right: **Start Export** (black bg, white text, play triangle).
+6. **Footer toggles** — compact 13–14px row with two switches:
+  - "Open share link after export" (red off / green on)
+  - "Show preview before download"
+   Backed by existing settings keys; no new persistence.
 
-## 3. Admin UI (WP plugin)
+## Capture tab
 
-New top-level tab in the existing plugin dashboard: **Workspace**.
+Same visual grammar reused:
 
-- Header: workspace name (inline editable, owner only), plan chip (Free / Pro), member count.
-- Members table: avatar, display name, email, role, "joined" date, row actions (change role, remove, transfer ownership).
-- Invites panel: pending invites with copy-link + revoke; "Invite teammate" form (email + role).
-- Billing card: re-uses existing Stripe Checkout / Customer Portal buttons but now upgrades the *workspace*.
-- Workspace switcher in the top-right of every plugin admin page when the user belongs to >1 workspace.
-- All capability checks via `current_user_can('read')` + workspace-role check helper `inspect_page_user_role_in($workspace_id, $user_id)`.
+- **Pick Element** primary card (active blue border when picker is armed).
+- **Inspector mode** toggle group (Element / Color / Spacing) as pill row.
+- **Recent inspections** list reused unchanged inside a section card.
 
-## 4. Extension surfacing (v2.7.0)
+## Status / billing
 
-- Settings → Smart Share now reads `billing.workspace` and renders the workspace name + role under the Sign in/Sign out row.
-- "Free shares used: X / 5" copy becomes "{workspace_name} — Free X / 5" or "{workspace_name} — Pro · unlimited".
-- New `WorkspacePicker` modal triggered from the workspace chip when the user has >1 workspace; POSTs to `/billing/status?workspace_id=…` and stores the selected workspace id in `chrome.storage.local`.
-- "Upgrade to Pro" button now reads "Upgrade workspace to Pro" and the Stripe Checkout `client_reference_id` carries the workspace id.
-- Recent Shares list filters server-side by active workspace.
-- All new copy uses the Blueprint primitives (`.lpe-card`, `.lpe-pill-btn`, `.lpe-chip`) — no design changes needed.
+- Quota readout ("Free shares 3 / 5" or "Pro · unlimited") moved to a slim chip above the action row, not its own section.
+- Error / success banners reuse existing copy but restyled as a top sticky strip with the new tokens.
 
-## 5. Invite email + accept flow
+## Tokens (added to `styles.css`, scoped to `.panel--popup`)
 
-- Invite email is sent via `wp_mail()` with a templated body containing the accept URL `https://{wp_site}/wp-admin/admin.php?page=inspect-page-workspace-accept&token={token}`.
-- The accept page is a tiny admin screen that auto-calls `POST /workspaces/accept`, then redirects to the workspace dashboard.
-- If the invitee is not yet a WP user, they hit the WP registration screen first (open registration is already ON per memory), then are bounced back through the accept URL.
-- Tokens are single-use, scoped by email match (case-insensitive), and expire after 7 days.
+```
+--ip-bg: #FFFFFF;
+--ip-section-bg: #F9FAFB;
+--ip-border: #E5E7EB;
+--ip-text: #1F2937;
+--ip-text-muted: #6B7280;
+--ip-accent: #2563EB;
+--ip-accent-soft: #EFF6FF;
+--ip-danger: #DC2626;
+--ip-success: #16A34A;
+--ip-radius: 14px;
+```
 
-## 6. Quota math changes
+Floating panel keeps its existing tokens.
 
-| Item | v2.5.x (per-user) | v2.6.0 (per-workspace) |
-|------|-------------------|------------------------|
-| Lifetime free shares | 5 | 5 (shared across all members) |
-| Active sessions | 30 | 30 × workspace plan multiplier (1 free, 5 pro) |
-| Uploads / hour | 60 | 60 × multiplier |
-| License flip | user meta `inspect_page_license` | `workspaces.license_status` |
+## Out of scope
 
-Quota errors gain `workspace_id` + `workspace_role` in the JSON body so the extension can render "Ask {owner_display_name} to upgrade".
+- Workspace switcher modal redesign (already shipped).
+- Floating-panel chrome, content-script overlays, picker chip.
+- Any change to message contracts, REST calls, share-link logic, or settings keys.
+- Renaming the product or REST namespace (memory rule: stays "Inspect Page").
 
-## 7. Tests
+## Acceptance
 
-- `tests/test-workspaces.php` — schema migration, backfill, role checks.
-- `tests/test-invites.php` — invite create / accept / expire / revoke / wrong-email.
-- `tests/test-billing-workspace.php` — Stripe webhook flips workspace, not user.
-- `tests/test-quota-workspace.php` — quota counters sum across members.
-- Extension: `WorkspacePicker.test.tsx`, `BillingPanel.workspace.test.tsx`, update `formatBillingPriceTagline.test.ts` for workspace-name interpolation.
+- All 201 vitest specs still green (no logic touched).
+- Popup at 640×640 renders without scroll on the default Record tab in idle state.
+- Every existing action reachable; nothing removed, only restyled / regrouped.
+- New tokens only used inside `.panel--popup` scope so floating panel is unaffected.
 
-Target: keep WP PHPUnit green and lift extension vitest from 194 → ~210.
+Reply `go` to implement, or tell me which sections to drop / rename.  
+  
+if after the output i dont like it, and if i say to revert then you have to revart back in current from
 
-## 8. Phases
-
-- **W1 — Schema + backfill + REST `/workspaces*`** (WP only, no UI). Includes activator migration, role-check helper, PHPUnit tests.
-- **W2 — Invite flow** (REST + accept admin page + wp_mail template + tests).
-- **W3 — Admin UI tab** (Workspace dashboard + switcher + member/invite tables).
-- **W4 — Billing port to workspaces** (`/billing/*` keyed off workspace_id, webhook flips workspace, `/billing/status` returns workspace block).
-- **W5 — Extension v2.7.0** (`WorkspacePicker`, `BillingPanel` updates, copy changes, Recent Shares filter).
-- **W6 — QA + release** (PHPUnit + vitest green, repackage both zips + sha256, `docs/RELEASE-NOTES-v2.7.0.md` for extension and `wp-v2.6.0` for plugin, update memory).
-
-Each phase is independently shippable behind a `inspect_page_feature_workspaces` option (default ON after W4 lands so older extensions don't break).
-
-## 9. Out of scope
-
-- SSO / SAML / SCIM — workspaces use plain WP users.
-- Per-workspace branding / custom domains.
-- Workspace-level audit log (logged separately via existing telemetry).
-- Migration of historical sessions to a non-owner workspace — sessions stay attributed to their original user; the workspace_id column lets us filter forward only.
-
-## 10. Risks
-
-- Backfill on activate must be idempotent (re-run after plugin update should not duplicate workspaces).
-- Stripe subscription objects created under the old per-user model need a one-shot migration script (`scripts/migrate-stripe-subscriptions-to-workspaces.php`) — runs after W4, requires Stripe API key.
-- `client_reference_id` change on Checkout means in-flight checkout sessions started before the upgrade will still credit the user; we accept that and document it in the release notes.
-
-## Remaining tasks (carry-over, post-Blueprint)
-
-1. ⏳ Prod `INSPECT_PAGE_WP_SITE_URL` (needs URL)
-2. Stripe live keys + price + webhook secret
-3. Pen-tests
-4. AC-BILL-1…5 + AC-ANALYTICS + AC-UI-259 manual walk
-5. Chrome Web Store upload of v2.6.3 zip
-6. Re-shoot CWS screenshots (Blueprint light-mint theme)
-7. Git tags `ext-v2.6.3` + `wp-v2.5.5`
-8. Team Workspaces — phases W1–W6 above (this plan)
-
-Reply `next` to execute Phase W1 (schema + backfill + `/workspaces*` REST + PHPUnit). Or pick a different carry-over item.
+  
