@@ -30,10 +30,7 @@
   border: none;
   border-radius: 0;
   box-shadow: none;
-  background:
-    radial-gradient(120% 80% at 20% 0%, rgba(45, 212, 168, 0.10) 0%, transparent 55%),
-    radial-gradient(120% 80% at 100% 100%, rgba(92, 225, 230, 0.08) 0%, transparent 55%),
-    #0B0F0E;
+  background: var(--ext-bg, #F5F7F6);
   display: flex;
   flex-direction: column;
 }
@@ -49,16 +46,30 @@
 /* ---------- Theme tokens (Phase A1) ---------- */
 .lpe-root[data-lpe-theme="light"],
 .lpe-root[data-lpe-theme="dark"] {
-  --lpe-bg: #0B0F0E;
-  --lpe-fg: #F5FFFA;
-  --lpe-muted: #94A3B8;
-  --lpe-surface: #111715;
-  --lpe-surface-2: #161E1B;
-  --lpe-border: rgba(255, 255, 255, 0.06);
-  --lpe-accent: #2DD4A8;
-  --lpe-accent-hover: #73FFB8;
-  --lpe-accent-fg: #06241C;
-  --lpe-accent-glow: 0 0 0 1px rgba(45, 212, 168, 0.35), 0 8px 24px -8px rgba(45, 212, 168, 0.55);
+  /* Blueprint light-mint theme (extension v2.6.3) */
+  --ext-bg: #F5F7F6;
+  --ext-card: #FFFFFF;
+  --ext-fg: #111714;
+  --ext-muted: #5B6B66;
+  --ext-border: #E4ECE9;
+  --ext-mint: #2DD4A8;
+  --ext-mint-hover: #1FB892;
+  --ext-mint-soft: rgba(45, 212, 168, 0.14);
+  --ext-mint-fg: #06241C;
+  --ext-shadow-card: 0 12px 28px -16px rgba(17, 23, 20, 0.18);
+  --ext-shadow-glow: 0 0 0 3px rgba(45, 212, 168, 0.25);
+
+  /* Legacy token aliases — keep existing components working */
+  --lpe-bg: var(--ext-bg);
+  --lpe-fg: var(--ext-fg);
+  --lpe-muted: var(--ext-muted);
+  --lpe-surface: var(--ext-card);
+  --lpe-surface-2: #F0F4F2;
+  --lpe-border: var(--ext-border);
+  --lpe-accent: var(--ext-mint);
+  --lpe-accent-hover: var(--ext-mint-hover);
+  --lpe-accent-fg: #FFFFFF;
+  --lpe-accent-glow: 0 0 0 1px rgba(45, 212, 168, 0.35), 0 8px 24px -8px rgba(45, 212, 168, 0.45);
 }
 
 /* ---------- Tabs (Phase A1) ---------- */
