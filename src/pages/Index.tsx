@@ -56,24 +56,29 @@ const Index = (): JSX.Element => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen w-full bg-[radial-gradient(circle_at_30%_20%,hsl(180_14%_14%),hsl(180_10%_4%))] text-foreground flex items-start sm:items-center justify-center p-4 sm:p-8">
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <main className="mx-auto w-full max-w-[720px] px-5 py-12 sm:py-16 space-y-20">
-        <Hero zipUrl={ZIP_URL} version={meta.version} sizeKb={meta.sizeKb} />
-        <HowItWorks />
-        <InstallSteps />
-        <WhatYouGet />
-        <WhatsNew />
-        <WpPlugin />
-        <Pricing />
-        <Faq />
-        <Privacy />
-      </main>
-      <Footer version={meta.version} />
+      <div
+        className="relative w-full max-w-[440px] aspect-square sm:aspect-square overflow-hidden rounded-[2rem] border border-border bg-background shadow-[0_30px_80px_-20px_hsl(162_95%_45%/0.25)]"
+        style={{ aspectRatio: "9 / 16" }}
+      >
+        <main className="h-full w-full overflow-y-auto px-5 py-8 space-y-14 scrollbar-thin">
+          <Hero zipUrl={ZIP_URL} version={meta.version} sizeKb={meta.sizeKb} />
+          <HowItWorks />
+          <InstallSteps />
+          <WhatYouGet />
+          <WhatsNew />
+          <WpPlugin />
+          <Pricing />
+          <Faq />
+          <Privacy />
+          <Footer version={meta.version} />
+        </main>
+      </div>
     </div>
   );
 };
