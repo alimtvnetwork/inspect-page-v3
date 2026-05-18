@@ -36,6 +36,8 @@ import type {
   SetPanelPositionResponse,
   MountFloatingPanelPayload,
   MountFloatingPanelResponse,
+  OpenPopupWindowPayload,
+  OpenPopupWindowResponse,
   PingPayload,
   PingResponse,
   RunElementExportPayload,
@@ -57,6 +59,28 @@ import { runElementExport } from "@element/runElementExport";
 logger.info(LogCategory.Lifecycle, `Service worker booted v${__EXT_VERSION__}`);
 
 const router = new MessageRouter();
+
+const POPUP_WIDTH = 412;
+const POPUP_HEIGHT = 915;
+const POPUP_URL = "popup/index.html";
+
+async function openPopupWindow(sourceTabId?: number): Promise<void> {
+  const url = chrome.runtime.getURL(POPUP_URL);
+  const activeWindow = await chrome.windows.getCurrent().catch(() => undefined);
+  const left = typeof activeWindow?.left === "number" && typeof activeWindow?.width === "number"
+    ? activeWindow.left + Math.max(0, activeWindow.width - POPUP_WIDTH)
+    : undefined;
+  const top = typeof activeWindow?.top === "number" ? activeWindow.top : undefined;
+  await chrome.windows.create({
+    url: sourceTabId ? `${url}?tabId=${sourceTabId}` : url,
+    type: "popup",
+    width: POPUP_WIDTH,
+    height: POPUP_HEIGHT,
+    left,
+    top,
+    focused: true,
+  });
+}
 
 router.on<PingPayload, PingResponse>(MessageKind.Ping, (payload) => {
   logger.debug(LogCategory.Messaging, `Ping rtt=${Date.now() - payload.sentAtMs}ms`);
