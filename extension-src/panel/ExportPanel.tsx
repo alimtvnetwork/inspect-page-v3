@@ -41,6 +41,7 @@ import { listShareSessions, type ShareSessionSummary } from "../share/listShareS
 import { startBillingCheckout } from "../share/startBillingCheckout";
 import { startBillingPortal } from "../share/startBillingPortal";
 import { getBillingStatus, type BillingStatus } from "../share/getBillingStatus";
+import { listWorkspaces, type WorkspaceListItem } from "../share/listWorkspaces";
 import { formatBillingPriceTagline } from "../share/formatPrice";
 import { detectProFlip } from "../share/detectProFlip";
 import { pollBillingUntilPro, BILLING_CHANGED_EVENT } from "../share/pollBillingUntilPro";
@@ -1169,7 +1170,7 @@ interface ShareSettingsSectionProps {
  * above the existing quota block, which still drives the per-share
  * progress bar from `/auth-status`.
  */
-function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
+function BillingPanel({ signedIn, workspaceId }: { signedIn: boolean; workspaceId?: number }): JSX.Element | null {
   const [status, setStatus] = useState<BillingStatus | null>(null);
   const [justFlippedPro, setJustFlippedPro] = useState(false);
   useEffect(() => {
@@ -1178,7 +1179,7 @@ function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
     let prevPlan: string | null = null;
     const refresh = async () => {
       try {
-        const s = await getBillingStatus({ getShareSettings });
+        const s = await getBillingStatus({ getShareSettings, workspaceId });
         if (!cancelled) {
           if (detectProFlip(prevPlan, s.plan)) {
             setJustFlippedPro(true);
@@ -1202,12 +1203,21 @@ function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
       window.removeEventListener("focus", onFocus);
       window.removeEventListener(BILLING_CHANGED_EVENT, onChanged);
     };
-  }, [signedIn]);
+  }, [signedIn, workspaceId]);
   if (!status) return null;
   const isPro = status.plan === "pro";
   const sub = status.subscription
     ? `${status.subscription.slice(0, 8)}…${status.subscription.slice(-4)}`
     : "";
+  const ws = status.workspace;
+  const wsRoleCopy = ws?.role === "owner"
+    ? COPY.workspaceRoleOwner
+    : ws?.role === "admin" ? COPY.workspaceRoleAdmin : COPY.workspaceRoleMember;
+  const wsLicCopy = ws?.licenseStatus === "active"
+    ? COPY.workspaceLicenseActive
+    : ws?.licenseStatus === "past_due" ? COPY.workspaceLicensePastDue
+    : ws?.licenseStatus === "canceled" ? COPY.workspaceLicenseCanceled
+    : COPY.workspaceLicenseFree;
   return (
     <div
       className="lpe-billing-panel"
@@ -1215,6 +1225,14 @@ function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
       role="group"
       aria-label={COPY.billingPlanLabel}
     >
+      {ws && (
+        <div className="lpe-billing-row" data-workspace-id={ws.id}>
+          <span className="lpe-billing-label">{COPY.workspaceLabel}</span>
+          <span className="lpe-billing-sub" title={`role: ${wsRoleCopy}`}>
+            {ws.name || `#${ws.id}`} · {wsRoleCopy} · {wsLicCopy}
+          </span>
+        </div>
+      )}
       <div className="lpe-billing-row">
         <span className="lpe-billing-label">{COPY.billingPlanLabel}</span>
         <span className="lpe-billing-badge" data-plan={status.plan}>
@@ -1257,9 +1275,13 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
   const [quota, setQuota] = useState<{
     lifetimeUsed: number; freeLimit: number; hasLicense: boolean;
   } | null>(null);
+  const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
+  const [workspaceId, setWorkspaceId] = useState<number | undefined>(undefined);
   const siteUrl = INSPECT_PAGE_WP_SITE_URL;
   const configured = !!siteUrl;
   const signedIn = configured && !!settings.nonce && !!settings.userId;
+  const activeWorkspace = workspaces.find((w) => w.id === workspaceId)
+    ?? workspaces[0];
 
   const onSignIn = async (): Promise<void> => {
     if (!configured) { setErr(COPY.shareNotConfiguredMsg); return; }
@@ -1356,6 +1378,24 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
     };
   }, [signedIn]);
 
+  // Phase W5/W6 — fetch the user's workspaces so we can render a picker
+  // and forward `workspaceId` to billing calls. Gracefully no-ops on
+  // plugins < v2.6.0 (listWorkspaces returns []) — the UI then hides
+  // the picker and falls back to the legacy single-workspace flow.
+  useEffect(() => {
+    if (!signedIn) { setWorkspaces([]); setWorkspaceId(undefined); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const ws = await listWorkspaces({ getShareSettings });
+        if (cancelled) return;
+        setWorkspaces(ws);
+        if (ws.length && workspaceId === undefined) setWorkspaceId(ws[0].id);
+      } catch { if (!cancelled) setWorkspaces([]); }
+    })();
+    return () => { cancelled = true; };
+  }, [signedIn]);
+
   return (
     <details className="lpe-settings" open>
       <summary>{COPY.shareSettingsHeader}</summary>
@@ -1370,7 +1410,24 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
               {COPY.shareSignedInAsPrefix}{" "}
               <strong>{settings.displayName || settings.email}</strong>
             </div>
-            <BillingPanel signedIn={signedIn} />
+            {workspaces.length > 1 && (
+              <label className="lpe-field" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <span className="lpe-billing-label">{COPY.workspaceLabel}</span>
+                <select
+                  className="lpe-input"
+                  value={workspaceId ?? workspaces[0]?.id ?? ""}
+                  onChange={(e) => setWorkspaceId(Number(e.currentTarget.value))}
+                  aria-label={COPY.workspaceLabel}
+                >
+                  {workspaces.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name || `#${w.id}`} ({w.role})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <BillingPanel signedIn={signedIn} workspaceId={workspaceId} />
             {quota && (
               <div className="lpe-debug-note" role="status">
                 {quota.hasLicense
@@ -1410,7 +1467,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
                       onClick={async () => {
                         emitBilling("portal_clicked", "settings");
                         try {
-                          const { url } = await startBillingPortal({ getShareSettings });
+                          const { url } = await startBillingPortal({ getShareSettings, workspaceId });
                           if (typeof window !== "undefined" && url) {
                             emitBilling("portal_opened", "settings");
                             window.open(url, "_blank", "noopener,noreferrer");
@@ -1445,7 +1502,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
                           freeLimit: quota.freeLimit,
                         });
                         try {
-                          const { url } = await startBillingCheckout({ getShareSettings });
+                          const { url } = await startBillingCheckout({ getShareSettings, workspaceId });
                           if (typeof window !== "undefined" && url) {
                             emitBilling("checkout_opened", "settings");
                             window.open(url, "_blank", "noopener,noreferrer");
@@ -1490,6 +1547,12 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
         {hint && <div className="lpe-debug-note">{hint}</div>}
         {err && <div className="lpe-debug-note" role="alert">{err}</div>}
         <div className="lpe-debug-note">{COPY.shareHelp}</div>
+        {signedIn && activeWorkspace && (
+          <div className="lpe-debug-note" role="status">
+            {COPY.workspaceRecentLabel}{" "}
+            <strong>{activeWorkspace.name || `#${activeWorkspace.id}`}</strong>
+          </div>
+        )}
         {signedIn && <RecentSharesList />}
       </div>
     </details>

@@ -231,6 +231,18 @@ export const COPY = {
   billingFeatureSupport: "Email support from the maintainer",
   /** 2.6.0 — success toast after Stripe Checkout flips license to Pro. */
   billingProToast: "You're Pro 🎉 — unlimited Smart Shares unlocked.",
+  /** 2.7.0 — Team Workspaces UI surfaces. */
+  workspaceLabel: "Workspace",
+  workspaceRoleOwner: "Owner",
+  workspaceRoleAdmin: "Admin",
+  workspaceRoleMember: "Member",
+  workspaceLicenseFree: "Free",
+  workspaceLicenseActive: "Pro",
+  workspaceLicensePastDue: "Past due",
+  workspaceLicenseCanceled: "Canceled",
+  workspaceLoadingMsg: "Loading workspaces…",
+  workspaceNoneMsg: "No workspace selected.",
+  workspaceRecentLabel: "Showing recent shares for",
 } as const;
 
 export type CopyKey = keyof typeof COPY;
