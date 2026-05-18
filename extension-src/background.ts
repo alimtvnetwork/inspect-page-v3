@@ -165,7 +165,7 @@ router.on<MountFloatingPanelPayload, MountFloatingPanelResponse>(
 
 router.on<OpenPopupWindowPayload, OpenPopupWindowResponse>(
   MessageKind.OpenPopupWindow,
-  async ({ tabId }) => openPopupWindow(tabId),
+  async ({ tabId }, sender) => openPopupWindow(tabId ?? sender.tab?.id),
 );
 
 router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
