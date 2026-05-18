@@ -1547,6 +1547,12 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
         {hint && <div className="lpe-debug-note">{hint}</div>}
         {err && <div className="lpe-debug-note" role="alert">{err}</div>}
         <div className="lpe-debug-note">{COPY.shareHelp}</div>
+        {signedIn && activeWorkspace && (
+          <div className="lpe-debug-note" role="status">
+            {COPY.workspaceRecentLabel}{" "}
+            <strong>{activeWorkspace.name || `#${activeWorkspace.id}`}</strong>
+          </div>
+        )}
         {signedIn && <RecentSharesList />}
       </div>
     </details>
