@@ -216,8 +216,8 @@ final class InspectPage_Workspaces {
             'name'                   => (string) $row->name,
             'owner_user_id'          => (int) $row->owner_user_id,
             'license_status'         => (string) $row->license_status,
-            'stripe_customer_id'     => $row->stripe_customer_id,
-            'stripe_subscription_id' => $row->stripe_subscription_id,
+            'stripe_customer_id'     => $row->stripe_customer_id     ?? null,
+            'stripe_subscription_id' => $row->stripe_subscription_id ?? null,
             'created_at'             => (string) $row->created_at,
             'member_count'           => self::member_count( (int) $row->id ),
         ];
