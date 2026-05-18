@@ -149,11 +149,7 @@ async function mountPanelInActiveTab(): Promise<void> {
 router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
   MessageKind.RunFullPageExport,
   async ({ tabId, settings }, sender) => {
-    let tid = tabId > 0 ? tabId : sender.tab?.id;
-    if (tid === undefined) {
-      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-      tid = tab?.id;
-    }
+    const tid = tabId > 0 ? tabId : sender.tab?.id;
     if (tid === undefined) {
       throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, "Cannot resolve tab for export");
     }
@@ -165,11 +161,7 @@ router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
 router.on<EnterPickerModePayload, EnterPickerModeResponse>(
   MessageKind.EnterPickerMode,
   async ({ tabId }, sender) => {
-    let tid = tabId > 0 ? tabId : sender.tab?.id;
-    if (tid === undefined) {
-      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-      tid = tab?.id;
-    }
+    const tid = tabId > 0 ? tabId : sender.tab?.id;
     if (tid === undefined) {
       throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, "Cannot resolve tab for picker");
     }
@@ -204,15 +196,7 @@ router.on<ExitPickerModePayload, ExitPickerModeResponse>(
 router.on<CollectInspectSnapshotPayload, CollectInspectSnapshotResponse>(
   MessageKind.CollectInspectSnapshot,
   async ({ tabId }, sender) => {
-    let tid = tabId > 0 ? tabId : sender.tab?.id;
-    if (tid === undefined) {
-      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-      tid = tab?.id;
-    }
-    if (tid === undefined) {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      tid = tab?.id;
-    }
+    const tid = tabId > 0 ? tabId : sender.tab?.id;
     if (tid === undefined) {
       throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, "Cannot resolve tab for inspect");
     }
