@@ -2000,3 +2000,244 @@
   height: 6px;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-progress-bar { background: var(--ext-mint); }
+
+/* =====================================================================
+ * Popup reskin — clean white card, blue accents, segmented tabs, pill
+ * groups and section panels (#F9FAFB / #E5E7EB). Scoped to popup surface
+ * only; floating panel keeps the Blueprint mint theme.
+ * ===================================================================== */
+.lpe-root[data-lpe-surface="popup"] {
+  /* override token aliases */
+  --ext-bg: #FFFFFF;
+  --ext-card: #FFFFFF;
+  --ext-fg: #1F2937;
+  --ext-muted: #6B7280;
+  --ext-border: #E5E7EB;
+  --ext-mint: #2563EB;
+  --ext-mint-hover: #1D4ED8;
+  --ext-mint-soft: #EFF6FF;
+  --ext-mint-fg: #1E3A8A;
+  --ext-shadow-card: 0 1px 2px rgba(17, 24, 39, 0.04);
+  --ext-shadow-glow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  --lpe-bg: #FFFFFF;
+  --lpe-fg: #1F2937;
+  --lpe-muted: #6B7280;
+  --lpe-surface: #FFFFFF;
+  --lpe-surface-2: #F9FAFB;
+  --lpe-border: #E5E7EB;
+  --lpe-accent: #2563EB;
+  --lpe-accent-hover: #1D4ED8;
+  --lpe-accent-fg: #FFFFFF;
+  --lpe-accent-glow: 0 0 0 1px rgba(37, 99, 235, 0.25), 0 8px 24px -10px rgba(37, 99, 235, 0.35);
+
+  width: 640px;
+  height: 640px;
+  min-height: 640px;
+  background: #FFFFFF;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: #1F2937;
+}
+
+/* Header (top brand strip) — slim white with bottom rule */
+.lpe-root[data-lpe-surface="popup"] .lpe-header {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E5E7EB !important;
+  padding: 12px 18px !important;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-header-title {
+  color: #1F2937 !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+}
+
+/* Tabs — segmented look: active = white card, inactive = light-gray */
+.lpe-root[data-lpe-surface="popup"] .lpe-tabs {
+  background: #F3F4F6 !important;
+  border-bottom: 1px solid #E5E7EB !important;
+  padding: 8px 18px !important;
+  gap: 0 !important;
+  display: flex !important;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-tab {
+  flex: 1 !important;
+  padding: 10px 14px !important;
+  background: #F3F4F6 !important;
+  color: #6B7280 !important;
+  border: 1px solid #E5E7EB !important;
+  border-bottom: 1px solid #E5E7EB !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  border-radius: 0 !important;
+  border-right-width: 0 !important;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-tab:first-child { border-radius: 10px 0 0 10px !important; }
+.lpe-root[data-lpe-surface="popup"] .lpe-tab:last-child  { border-radius: 0 10px 10px 0 !important; border-right-width: 1px !important; }
+.lpe-root[data-lpe-surface="popup"] .lpe-tab[data-active="true"] {
+  background: #FFFFFF !important;
+  color: #111827 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 2px rgba(17,24,39,0.06);
+}
+
+/* Section / card panels */
+.lpe-root[data-lpe-surface="popup"] .lpe-card,
+.lpe-root[data-lpe-surface="popup"] .lpe-section {
+  background: #F9FAFB !important;
+  border: 1px solid #E5E7EB !important;
+  border-radius: 14px !important;
+  padding: 16px 18px !important;
+  box-shadow: none !important;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-section-title,
+.lpe-root[data-lpe-surface="popup"] .lpe-card-title {
+  color: #1F2937 !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  letter-spacing: 0 !important;
+  margin-bottom: 10px !important;
+}
+
+/* Primary action — black pill (reference) */
+.lpe-root[data-lpe-surface="popup"] .lpe-btn {
+  background: #FFFFFF !important;
+  border: 1px solid #E5E7EB !important;
+  color: #1F2937 !important;
+  border-radius: 12px !important;
+  padding: 10px 16px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  box-shadow: none !important;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-btn:hover:not([disabled]) {
+  background: #F3F4F6 !important;
+  border-color: #D1D5DB !important;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-btn-primary {
+  background: #111827 !important;
+  border-color: #111827 !important;
+  color: #FFFFFF !important;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-btn-primary:hover:not([disabled]) {
+  background: #1F2937 !important;
+  border-color: #1F2937 !important;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-btn-danger,
+.lpe-root[data-lpe-surface="popup"] .lpe-btn[data-variant="danger"] {
+  background: #DC2626 !important;
+  border-color: #DC2626 !important;
+  color: #FFFFFF !important;
+}
+
+/* Pill buttons (mode selectors) — segmented row, dark active */
+.lpe-root[data-lpe-surface="popup"] .lpe-pill-btn {
+  background: transparent !important;
+  border: 1px solid #E5E7EB !important;
+  color: #1F2937 !important;
+  border-radius: 999px !important;
+  padding: 8px 14px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  box-shadow: none !important;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-pill-btn:hover:not(:disabled) {
+  background: #F3F4F6 !important;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-pill-btn[data-active="true"],
+.lpe-root[data-lpe-surface="popup"] .lpe-pill-btn--active {
+  background: #111827 !important;
+  border-color: #111827 !important;
+  color: #FFFFFF !important;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-pill-btn--ghost {
+  background: transparent !important;
+  border: 1px dashed #D1D5DB !important;
+  color: #6B7280 !important;
+}
+
+/* Selectable "card" tiles (mode/source grids) — blue accent when active */
+.lpe-root[data-lpe-surface="popup"] [role="radio"],
+.lpe-root[data-lpe-surface="popup"] .lpe-mode-card,
+.lpe-root[data-lpe-surface="popup"] .lpe-tile {
+  background: #FFFFFF !important;
+  border: 1px solid #E5E7EB !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+}
+.lpe-root[data-lpe-surface="popup"] [role="radio"][aria-checked="true"],
+.lpe-root[data-lpe-surface="popup"] .lpe-mode-card[data-active="true"],
+.lpe-root[data-lpe-surface="popup"] .lpe-tile[data-active="true"] {
+  background: #EFF6FF !important;
+  border-color: #2563EB !important;
+  border-left: 3px solid #2563EB !important;
+  color: #1E3A8A !important;
+}
+
+/* Status / progress */
+.lpe-root[data-lpe-surface="popup"] .lpe-status {
+  background: #F9FAFB !important;
+  border: 1px solid #E5E7EB !important;
+  border-radius: 12px !important;
+  color: #1F2937 !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-status[data-status="Success"] {
+  background: #ECFDF5 !important;
+  border-color: #10B981 !important;
+  color: #065F46 !important;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-status[data-status="Error"] {
+  background: #FEF2F2 !important;
+  border-color: #DC2626 !important;
+  color: #991B1B !important;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-progress {
+  background: #E5E7EB !important;
+  border-radius: 999px !important;
+  height: 6px !important;
+}
+.lpe-root[data-lpe-surface="popup"] .lpe-progress-bar {
+  background: #2563EB !important;
+}
+
+/* Inputs / selects */
+.lpe-root[data-lpe-surface="popup"] input[type="text"],
+.lpe-root[data-lpe-surface="popup"] input[type="number"],
+.lpe-root[data-lpe-surface="popup"] input[type="email"],
+.lpe-root[data-lpe-surface="popup"] select,
+.lpe-root[data-lpe-surface="popup"] textarea {
+  background: #FFFFFF !important;
+  border: 1px solid #E5E7EB !important;
+  border-radius: 10px !important;
+  color: #1F2937 !important;
+  font-size: 13px !important;
+  padding: 8px 10px !important;
+}
+.lpe-root[data-lpe-surface="popup"] input:focus,
+.lpe-root[data-lpe-surface="popup"] select:focus,
+.lpe-root[data-lpe-surface="popup"] textarea:focus {
+  outline: none !important;
+  border-color: #2563EB !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18) !important;
+}
+
+/* Checkboxes — modern square with blue check */
+.lpe-root[data-lpe-surface="popup"] input[type="checkbox"] {
+  accent-color: #2563EB;
+}
+
+/* Footer toggle row */
+.lpe-root[data-lpe-surface="popup"] .lpe-footer,
+.lpe-root[data-lpe-surface="popup"] .lpe-toggle-row {
+  border-top: 1px solid #E5E7EB !important;
+  background: #FFFFFF !important;
+  padding: 12px 18px !important;
+  font-size: 13px !important;
+  color: #6B7280 !important;
+}
+
+/* Scrollbar polish */
+.lpe-root[data-lpe-surface="popup"] *::-webkit-scrollbar { width: 8px; height: 8px; }
+.lpe-root[data-lpe-surface="popup"] *::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 8px; }
+.lpe-root[data-lpe-surface="popup"] *::-webkit-scrollbar-track { background: transparent; }
