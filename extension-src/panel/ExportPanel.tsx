@@ -206,6 +206,41 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     return () => { alive = false; };
   }, []);
 
+  // ---- Step 2 (Pick-into-popup, Option A) ----
+  // On popup mount, hydrate the Pick tab from chrome.storage.session if the
+  // user picked something since the last popup open. Picks live for ~10 min
+  // and are cleared once consumed so they don't haunt unrelated tabs.
+  useEffect(() => {
+    if (surface !== "popup") return;
+    let alive = true;
+    (async () => {
+      try {
+        const r = await chrome.storage.session.get("inspect-page:last-pick");
+        const entry = r["inspect-page:last-pick"] as
+          | { ts: number; pageUrl: string; payload: StatusUpdatePayload }
+          | undefined;
+        if (!alive || !entry) return;
+        const fresh = Date.now() - entry.ts < 10 * 60 * 1000;
+        if (!fresh) {
+          await chrome.storage.session.remove("inspect-page:last-pick");
+          return;
+        }
+        const p = entry.payload;
+        setState((prev) => ({
+          ...prev,
+          status: PanelStatus.Selecting,
+          message: p.message,
+          ...(p.debugPreview ? { debugPreview: p.debugPreview } : {}),
+          ...(p.elementSnapshot ? { elementSnapshot: p.elementSnapshot as ElementSnapshot } : {}),
+          lastAction: "pick",
+        }));
+        setMode("pick");
+        await chrome.storage.session.remove("inspect-page:last-pick");
+      } catch { /* session storage unavailable */ }
+    })();
+    return () => { alive = false; };
+  }, [surface]);
+
   // ---- Listen for StatusUpdate broadcasts from SW (stages 5+) ----
   useEffect(() => {
     const handlePayload = (p: StatusUpdatePayload): void => {
@@ -291,6 +326,12 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           { tabId: tid },
         );
         setState({ status: PanelStatus.PickerActive, lastAction: kind });
+        // Option A — close the popup so the user can click an element on the
+        // page. When they re-open the popup, the mount effect above hydrates
+        // the picked element from chrome.storage.session.
+        if (surface === "popup") {
+          setTimeout(() => { try { window.close(); } catch { /* ignore */ } }, 150);
+        }
       }
     } catch (err) {
       const me = err instanceof MessageError ? err : null;
