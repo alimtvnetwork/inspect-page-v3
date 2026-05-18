@@ -141,6 +141,19 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
             logger.warn(LogCategory.Element, "SNAPSHOT_FAIL", "element snapshot failed", e);
           }
           dispatchStatusLocal(previewPayload);
+          // Step 2 (Pick-into-popup, Option A): persist the latest pick to
+          // chrome.storage.session so the popup can hydrate it when the user
+          // re-opens the toolbar icon after picking (popups close on focus
+          // loss — a hard Chrome limitation).
+          try {
+            await chrome.storage.session.set({
+              "inspect-page:last-pick": {
+                ts: Date.now(),
+                pageUrl: location.href,
+                payload: previewPayload,
+              },
+            });
+          } catch { /* session storage may be unavailable */ }
           try {
             await chrome.runtime.sendMessage({
               kind: MessageKind.StatusUpdate,
