@@ -545,11 +545,16 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
               <>
                 <button
                   type="button"
-                  className="lpe-btn lpe-btn-primary"
+                  className="lpe-btn lpe-btn-primary lpe-btn-hero"
                   onClick={onFullPage}
                   disabled={busy || settings === null}
                 >
-                  {COPY.btnFullPage}
+                  <svg className="lpe-btn-ico" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <rect x="2.5" y="3.5" width="15" height="13" rx="2.5" stroke="currentColor" strokeWidth="1.6"/>
+                    <path d="M6 8h8M6 11h8M6 14h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                  </svg>
+                  <span>{COPY.btnFullPage}</span>
+                  <span className="lpe-btn-kbd" aria-hidden="true">⌥⇧E</span>
                 </button>
                 <ShareLinksButton
                   shareSettings={shareSettings}
@@ -1854,24 +1859,32 @@ function ShareLinksButton(props: ShareLinksButtonProps): JSX.Element {
     return (
       <button
         type="button"
-        className="lpe-btn"
+        className="lpe-btn lpe-btn-hero lpe-btn-secondary"
         onClick={onSignIn}
         disabled={busy}
         title={COPY.shareSignInBtn}
       >
-        {COPY.shareSignInBtn} — {COPY.exportModeShare}
+        <svg className="lpe-btn-ico" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M11 4h4a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 15 16h-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+          <path d="M3 10h9m0 0-3-3m3 3-3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <span>{COPY.shareSignInBtn} — {COPY.exportModeShare}</span>
       </button>
     );
   }
   return (
     <button
       type="button"
-      className="lpe-btn"
+      className="lpe-btn lpe-btn-hero lpe-btn-secondary"
       onClick={() => { if (artifacts) void onShare(artifacts); }}
       disabled={busy || !hasArtifacts || !artifacts}
       title={hasArtifacts ? COPY.exportModeShare : "Run export first"}
     >
-      {COPY.exportModeShare}
+      <svg className="lpe-btn-ico" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4h-6A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16h6a1.5 1.5 0 0 0 1.5-1.5V13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+        <path d="M8 10h9m0 0-3-3m3 3-3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      <span>{COPY.exportModeShare}</span>
     </button>
   );
 }
