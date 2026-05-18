@@ -122,7 +122,13 @@ export async function sendToBackground<P, R>(
   payload: P,
 ): Promise<R> {
   const env = makeEnvelope(kind, payload);
-  const res = (await chrome.runtime.sendMessage(env)) as WireResponse<R>;
+  let res: WireResponse<R>;
+  try {
+    res = (await chrome.runtime.sendMessage(env)) as WireResponse<R>;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, msg, msg);
+  }
   if (!res || res.ok !== true) {
     const e = res?.error ?? { code: ErrorCode.E_PERMISSION_DENIED, message: "no response" };
     throw new MessageError(e.code, e.message, e.detail);
