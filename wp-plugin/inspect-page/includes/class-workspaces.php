@@ -27,6 +27,9 @@ final class InspectPage_Workspaces {
     const LICENSE_PAST_DUE = 'past_due';
     const LICENSE_CANCELED = 'canceled';
 
+    /** Invite token lifetime in seconds (7 days). */
+    const INVITE_TTL = 604800;
+
     /** @return string[] */
     public static function roles() {
         return [ self::ROLE_OWNER, self::ROLE_ADMIN, self::ROLE_MEMBER ];
@@ -60,6 +63,25 @@ final class InspectPage_Workspaces {
             return mb_substr( $name, 0, 80 );
         }
         return substr( $name, 0, 80 );
+    }
+
+    /** Lowercases and validates an email (max 190 chars to fit column). */
+    public static function sanitize_email( $email ) {
+        if ( ! is_string( $email ) ) { return ''; }
+        $email = strtolower( trim( $email ) );
+        if ( $email === '' || strlen( $email ) > 190 ) { return ''; }
+        if ( function_exists( 'is_email' ) ) {
+            return is_email( $email ) ? $email : '';
+        }
+        return filter_var( $email, FILTER_VALIDATE_EMAIL ) ? $email : '';
+    }
+
+    /** 64-char hex token (32 random bytes). */
+    public static function generate_invite_token() {
+        if ( function_exists( 'wp_generate_password' ) && function_exists( 'random_bytes' ) ) {
+            return bin2hex( random_bytes( 32 ) );
+        }
+        return bin2hex( random_bytes( 32 ) );
     }
 
     // ----------------------------------------------------------------------
@@ -333,6 +355,208 @@ final class InspectPage_Workspaces {
     }
 
     // ----------------------------------------------------------------------
+    // Invites (W2)
+    // ----------------------------------------------------------------------
+
+    /** Lists pending (unaccepted, unexpired) invites for a workspace. */
+    public static function list_invites( $workspace_id ) {
+        global $wpdb;
+        $p   = $wpdb->prefix . 'pp_';
+        $now = gmdate( 'Y-m-d H:i:s' );
+        $rows = $wpdb->get_results( $wpdb->prepare(
+            "SELECT id, workspace_id, email, role, invited_by_user_id, created_at, expires_at, accepted_at
+               FROM {$p}workspace_invites
+              WHERE workspace_id = %d AND accepted_at IS NULL AND expires_at > %s
+           ORDER BY created_at DESC",
+            (int) $workspace_id, $now
+        ) );
+        $out = [];
+        foreach ( (array) $rows as $r ) {
+            $out[] = [
+                'id'                 => (int) $r->id,
+                'workspace_id'       => (int) $r->workspace_id,
+                'email'              => (string) $r->email,
+                'role'               => (string) $r->role,
+                'invited_by_user_id' => (int) $r->invited_by_user_id,
+                'created_at'         => (string) $r->created_at,
+                'expires_at'         => (string) $r->expires_at,
+            ];
+        }
+        return $out;
+    }
+
+    /** Fetches an invite by raw token, or null. */
+    public static function get_invite_by_token( $token ) {
+        global $wpdb;
+        $p = $wpdb->prefix . 'pp_';
+        $token = is_string( $token ) ? trim( $token ) : '';
+        if ( $token === '' ) { return null; }
+        $row = $wpdb->get_row( $wpdb->prepare(
+            "SELECT id, workspace_id, email, role, invited_by_user_id, created_at, expires_at, accepted_at
+               FROM {$p}workspace_invites WHERE token = %s",
+            $token
+        ) );
+        if ( ! $row ) { return null; }
+        return [
+            'id'                 => (int) $row->id,
+            'workspace_id'       => (int) $row->workspace_id,
+            'email'              => (string) $row->email,
+            'role'               => (string) $row->role,
+            'invited_by_user_id' => (int) $row->invited_by_user_id,
+            'created_at'         => (string) $row->created_at,
+            'expires_at'         => (string) $row->expires_at,
+            'accepted_at'        => $row->accepted_at ?? null,
+        ];
+    }
+
+    /**
+     * Creates an invite + (best-effort) emails it. Returns the invite row on
+     * success or a WP_Error. Caller must already have confirmed the inviter
+     * is an admin/owner of the workspace.
+     */
+    public static function create_invite( $workspace_id, $inviter_user_id, $email, $role ) {
+        global $wpdb;
+        $p = $wpdb->prefix . 'pp_';
+        $ws = self::get( $workspace_id );
+        if ( ! $ws ) {
+            return new WP_Error( 'inspect_page.workspace.not_found', 'Workspace not found', [ 'status' => 404 ] );
+        }
+        $email = self::sanitize_email( $email );
+        if ( $email === '' ) {
+            return new WP_Error( 'inspect_page.invite.bad_email', 'A valid email is required', [ 'status' => 400 ] );
+        }
+        $role = self::normalize_role( $role );
+        if ( $role === self::ROLE_OWNER ) {
+            return new WP_Error( 'inspect_page.invite.bad_role', 'Cannot invite as owner; transfer ownership instead', [ 'status' => 400 ] );
+        }
+
+        // Already a member?
+        if ( function_exists( 'get_user_by' ) ) {
+            $existing = get_user_by( 'email', $email );
+            if ( $existing && self::role_of( $workspace_id, (int) $existing->ID ) !== '' ) {
+                return new WP_Error( 'inspect_page.invite.already_member', 'That user is already a member', [ 'status' => 409 ] );
+            }
+        }
+
+        // Already an open invite for this email?
+        $now      = gmdate( 'Y-m-d H:i:s' );
+        $existing = $wpdb->get_var( $wpdb->prepare(
+            "SELECT id FROM {$p}workspace_invites
+              WHERE workspace_id = %d AND email = %s AND accepted_at IS NULL AND expires_at > %s",
+            (int) $workspace_id, $email, $now
+        ) );
+        if ( $existing ) {
+            return new WP_Error( 'inspect_page.invite.duplicate', 'A pending invite already exists for that email', [ 'status' => 409 ] );
+        }
+
+        $token   = self::generate_invite_token();
+        $expires = gmdate( 'Y-m-d H:i:s', time() + self::INVITE_TTL );
+        $wpdb->insert( "{$p}workspace_invites", [
+            'workspace_id'       => (int) $workspace_id,
+            'email'              => $email,
+            'role'               => $role,
+            'token'              => $token,
+            'invited_by_user_id' => (int) $inviter_user_id,
+            'created_at'         => $now,
+            'expires_at'         => $expires,
+        ], [ '%d', '%s', '%s', '%s', '%d', '%s', '%s' ] );
+        $invite_id = (int) $wpdb->insert_id;
+        if ( $invite_id <= 0 ) {
+            return new WP_Error( 'inspect_page.invite.create_failed', 'Could not create invite', [ 'status' => 500 ] );
+        }
+
+        // Best-effort email (skipped in tests where wp_mail is not defined).
+        if ( function_exists( 'wp_mail' ) && function_exists( 'admin_url' ) ) {
+            $accept_url = add_query_arg( [
+                'page'  => 'inspect-page-accept',
+                'token' => $token,
+            ], admin_url( 'admin.php' ) );
+            $subject = sprintf( '[Inspect Page] You have been invited to %s', $ws['name'] );
+            $body    = sprintf(
+                "You've been invited to join the \"%s\" workspace on Inspect Page as %s.\n\n" .
+                "Accept the invite (link expires in 7 days):\n%s\n\n" .
+                "If you don't have an account yet, you'll be asked to sign in first.\n",
+                $ws['name'], $role, $accept_url
+            );
+            wp_mail( $email, $subject, $body );
+        }
+
+        return [
+            'id'                 => $invite_id,
+            'workspace_id'       => (int) $workspace_id,
+            'email'              => $email,
+            'role'               => $role,
+            'invited_by_user_id' => (int) $inviter_user_id,
+            'created_at'         => $now,
+            'expires_at'         => $expires,
+            'token'              => $token,
+        ];
+    }
+
+    /** Revokes (deletes) a pending invite. */
+    public static function revoke_invite( $workspace_id, $invite_id ) {
+        global $wpdb;
+        $p = $wpdb->prefix . 'pp_';
+        $n = $wpdb->delete( "{$p}workspace_invites", [
+            'id'           => (int) $invite_id,
+            'workspace_id' => (int) $workspace_id,
+        ], [ '%d', '%d' ] );
+        return [ 'ok' => $n > 0 ];
+    }
+
+    /**
+     * Accepts an invite on behalf of $user_id. The caller MUST be the
+     * logged-in user accepting (the REST layer enforces that).
+     */
+    public static function accept_invite( $token, $user_id ) {
+        global $wpdb;
+        $p   = $wpdb->prefix . 'pp_';
+        $now = gmdate( 'Y-m-d H:i:s' );
+        $inv = self::get_invite_by_token( $token );
+        if ( ! $inv ) {
+            return new WP_Error( 'inspect_page.invite.invalid', 'Invalid or expired invite', [ 'status' => 404 ] );
+        }
+        if ( $inv['accepted_at'] !== null ) {
+            return new WP_Error( 'inspect_page.invite.consumed', 'Invite already used', [ 'status' => 410 ] );
+        }
+        if ( strcmp( $inv['expires_at'], $now ) <= 0 ) {
+            return new WP_Error( 'inspect_page.invite.expired', 'Invite has expired', [ 'status' => 410 ] );
+        }
+
+        // Email match (case-insensitive). Tests stub get_userdata; in WP we
+        // also accept any logged-in user whose primary email matches.
+        if ( function_exists( 'get_userdata' ) ) {
+            $u = get_userdata( (int) $user_id );
+            $u_email = $u && isset( $u->user_email ) ? strtolower( (string) $u->user_email ) : '';
+            if ( $u_email !== '' && $u_email !== strtolower( $inv['email'] ) ) {
+                return new WP_Error( 'inspect_page.invite.email_mismatch', 'Invite was sent to a different email', [ 'status' => 403 ] );
+            }
+        }
+
+        // Already a member? Mark as accepted and return success.
+        $existing_role = self::role_of( (int) $inv['workspace_id'], (int) $user_id );
+        if ( $existing_role === '' ) {
+            $wpdb->insert( "{$p}workspace_members", [
+                'workspace_id' => (int) $inv['workspace_id'],
+                'user_id'      => (int) $user_id,
+                'role'         => $inv['role'],
+                'joined_at'    => $now,
+            ], [ '%d', '%d', '%s', '%s' ] );
+        }
+        $wpdb->update( "{$p}workspace_invites",
+            [ 'accepted_at' => $now ],
+            [ 'id' => (int) $inv['id'] ],
+            [ '%s' ], [ '%d' ]
+        );
+
+        return [
+            'ok'           => true,
+            'workspace_id' => (int) $inv['workspace_id'],
+            'role'         => (string) $inv['role'],
+        ];
+    }
+
+    // ----------------------------------------------------------------------
     // REST
     // ----------------------------------------------------------------------
 
@@ -367,6 +591,31 @@ final class InspectPage_Workspaces {
         register_rest_route( $ns, '/workspaces/(?P<id>\d+)/transfer-owner', [
             'methods'             => 'POST',
             'callback'            => [ __CLASS__, 'rest_transfer_owner' ],
+            'permission_callback' => [ 'InspectPage_Auth', 'require_wp_user' ],
+        ] );
+
+        register_rest_route( $ns, '/workspaces/(?P<id>\d+)/invites', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ __CLASS__, 'rest_list_invites' ],
+                'permission_callback' => [ 'InspectPage_Auth', 'require_wp_user' ],
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [ __CLASS__, 'rest_create_invite' ],
+                'permission_callback' => [ 'InspectPage_Auth', 'require_wp_user' ],
+            ],
+        ] );
+
+        register_rest_route( $ns, '/workspaces/(?P<id>\d+)/invites/(?P<invite_id>\d+)', [
+            'methods'             => 'DELETE',
+            'callback'            => [ __CLASS__, 'rest_revoke_invite' ],
+            'permission_callback' => [ 'InspectPage_Auth', 'require_wp_user' ],
+        ] );
+
+        register_rest_route( $ns, '/workspaces/accept', [
+            'methods'             => 'POST',
+            'callback'            => [ __CLASS__, 'rest_accept_invite' ],
             'permission_callback' => [ 'InspectPage_Auth', 'require_wp_user' ],
         ] );
     }
@@ -422,6 +671,50 @@ final class InspectPage_Workspaces {
             return new WP_Error( 'inspect_page.workspace.forbidden', 'Only the owner can transfer ownership', [ 'status' => 403 ] );
         }
         $res = self::transfer_owner( $id, $tgt );
+        return is_wp_error( $res ) ? $res : rest_ensure_response( $res );
+    }
+
+    public static function rest_list_invites( WP_REST_Request $req ) {
+        $uid  = InspectPage_Auth::current_user_id();
+        $id   = (int) $req['id'];
+        $role = self::role_of( $id, $uid );
+        if ( ! self::role_can_admin( $role ) ) {
+            return new WP_Error( 'inspect_page.workspace.forbidden', 'Admin role required', [ 'status' => 403 ] );
+        }
+        return rest_ensure_response( [ 'invites' => self::list_invites( $id ) ] );
+    }
+
+    public static function rest_create_invite( WP_REST_Request $req ) {
+        $uid  = InspectPage_Auth::current_user_id();
+        $id   = (int) $req['id'];
+        $role = self::role_of( $id, $uid );
+        if ( ! self::role_can_admin( $role ) ) {
+            return new WP_Error( 'inspect_page.workspace.forbidden', 'Admin role required', [ 'status' => 403 ] );
+        }
+        $res = self::create_invite(
+            $id, $uid,
+            (string) $req->get_param( 'email' ),
+            (string) $req->get_param( 'role' )
+        );
+        if ( is_wp_error( $res ) ) { return $res; }
+        // Don't leak the raw token in the list response — only in create.
+        return rest_ensure_response( $res );
+    }
+
+    public static function rest_revoke_invite( WP_REST_Request $req ) {
+        $uid  = InspectPage_Auth::current_user_id();
+        $id   = (int) $req['id'];
+        $iid  = (int) $req['invite_id'];
+        $role = self::role_of( $id, $uid );
+        if ( ! self::role_can_admin( $role ) ) {
+            return new WP_Error( 'inspect_page.workspace.forbidden', 'Admin role required', [ 'status' => 403 ] );
+        }
+        return rest_ensure_response( self::revoke_invite( $id, $iid ) );
+    }
+
+    public static function rest_accept_invite( WP_REST_Request $req ) {
+        $uid = InspectPage_Auth::current_user_id();
+        $res = self::accept_invite( (string) $req->get_param( 'token' ), $uid );
         return is_wp_error( $res ) ? $res : rest_ensure_response( $res );
     }
 }

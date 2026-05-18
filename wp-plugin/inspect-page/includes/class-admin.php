@@ -202,6 +202,44 @@ final class InspectPage_Admin {
             'inspect-page-bridge',
             [ __CLASS__, 'render_bridge' ]
         );
+        // Hidden invite-accept page. Linked from invite emails:
+        //   admin.php?page=inspect-page-accept&token=<64-hex>
+        // If the user is not signed in, WP will bounce them through wp-login
+        // first and back to this page.
+        add_submenu_page(
+            null,
+            __( 'Accept Workspace Invite', 'inspect-page' ),
+            __( 'Accept Workspace Invite', 'inspect-page' ),
+            'read',
+            'inspect-page-accept',
+            [ __CLASS__, 'render_accept' ]
+        );
+    }
+
+    public static function render_accept() {
+        if ( ! is_user_logged_in() ) { wp_die( 'Please sign in to accept this invite.' ); }
+        $token = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
+        if ( $token === '' || ! preg_match( '/^[a-f0-9]{64}$/', $token ) ) {
+            echo '<div class="wrap"><h1>Invalid invite</h1><p>The invite link is missing or malformed.</p></div>';
+            return;
+        }
+        $uid    = get_current_user_id();
+        $result = InspectPage_Workspaces::accept_invite( $token, $uid );
+        echo '<div class="wrap"><h1>' . esc_html__( 'Workspace Invite', 'inspect-page' ) . '</h1>';
+        if ( is_wp_error( $result ) ) {
+            echo '<div class="notice notice-error"><p>' . esc_html( $result->get_error_message() ) . '</p></div>';
+        } else {
+            $ws = InspectPage_Workspaces::get( (int) $result['workspace_id'] );
+            $name = $ws ? $ws['name'] : '#' . (int) $result['workspace_id'];
+            echo '<div class="notice notice-success"><p>' . sprintf(
+                /* translators: 1: workspace name, 2: role */
+                esc_html__( 'You have joined %1$s as %2$s.', 'inspect-page' ),
+                '<strong>' . esc_html( $name ) . '</strong>',
+                '<strong>' . esc_html( $result['role'] ) . '</strong>'
+            ) . '</p></div>';
+            echo '<p><a class="button button-primary" href="' . esc_url( admin_url( 'admin.php?page=inspect-page' ) ) . '">' . esc_html__( 'Go to Inspect Page', 'inspect-page' ) . '</a></p>';
+        }
+        echo '</div>';
     }
 
     public static function render_settings() {
