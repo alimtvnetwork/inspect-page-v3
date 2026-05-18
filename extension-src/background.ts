@@ -54,6 +54,50 @@ import { runElementExport } from "@element/runElementExport";
 
 logger.info(LogCategory.Lifecycle, `Service worker booted v${__EXT_VERSION__}`);
 
+/**
+ * Open the popup UI as a detached popup window instead of using the default
+ * toolbar popup. A detached window does NOT auto-close when the user clicks
+ * outside it, so the Inspect Page UI behaves like a persistent app surface.
+ * Reuses an existing window if one is already open (focuses it instead of
+ * spawning a duplicate).
+ */
+const POPUP_W = 432;   // 412 popup + scrollbar/chrome padding
+const POPUP_H = 960;   // 915 popup + window chrome
+let openPopupWindowId: number | null = null;
+
+chrome.action.onClicked.addListener(async (tab) => {
+  try {
+    if (openPopupWindowId !== null) {
+      try {
+        const win = await chrome.windows.get(openPopupWindowId);
+        if (win) {
+          await chrome.windows.update(openPopupWindowId, { focused: true });
+          return;
+        }
+      } catch {
+        openPopupWindowId = null;
+      }
+    }
+    const url = chrome.runtime.getURL(
+      `popup/index.html${tab?.id ? `?tabId=${tab.id}` : ""}`,
+    );
+    const created = await chrome.windows.create({
+      url,
+      type: "popup",
+      width: POPUP_W,
+      height: POPUP_H,
+      focused: true,
+    });
+    openPopupWindowId = created?.id ?? null;
+  } catch (e) {
+    logger.error(LogCategory.Lifecycle, "POPUP_OPEN_FAILED", "Could not open popup window", e);
+  }
+});
+
+chrome.windows.onRemoved.addListener((winId) => {
+  if (winId === openPopupWindowId) openPopupWindowId = null;
+});
+
 const router = new MessageRouter();
 
 router.on<PingPayload, PingResponse>(MessageKind.Ping, (payload) => {
