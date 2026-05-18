@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.7.0] — 2026-05-18
+
+### Added
+- **Team Workspaces.** Owner / admin / member roles, email invites (7-day single-use tokens), transfer ownership.
+- **Per-workspace billing.** Stripe Checkout + Customer Portal attach to the active workspace. One Pro license covers every member.
+- **Workspace picker in popup.** Chip in the header opens a dialog with role + license badges and a "Manage in WordPress" deep-link.
+- **WP admin → Tools → Inspect Page Workspaces.** Switcher, create workspace, members + invites tables.
+
+### Migration
+- Plugin activation auto-creates a personal workspace for every existing user and copies their Pro license to it. Existing share links are unaffected.
+
+### Internal
+- New tables: `wp_pp_workspaces`, `wp_pp_workspace_members`, `wp_pp_workspace_invites`.
+- New REST: `/workspaces*`, `/workspaces/accept`, admin-only invite CRUD, transfer-owner.
+- `/billing/checkout` and `/billing/portal` accept `workspace_id`.
+- Webhook flips `workspaces.license_status` and keeps legacy user-meta in parallel for back-compat.
+- Popup hero-button regression hotfix: `.lpe-btn-hero` height pinned, `.lpe-btn-ico` size pinned, intrinsic SVG dims.
+- 203/203 vitest, 68/68 PHP assertions.
+
 ## [Extension 2.6.0] — 2026-05-17
 
 - **Pricing card polish (Option C2/C3).** Free-plan `BillingPanel` in
