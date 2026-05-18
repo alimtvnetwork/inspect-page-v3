@@ -67,18 +67,6 @@ final class InspectPage_Billing {
             return new WP_Error( 'E_BILLING_NOT_CONFIGURED', 'Billing is not configured on this site.', [ 'status' => 503 ] );
         }
         $user = wp_get_current_user();
-        // Workspace targeting (W4). Default to the user's primary workspace.
-        // Only owners/admins of a workspace may start checkout for it.
-        $ws_id = (int) ( $req->get_param( 'workspace_id' ) ?: InspectPage_Workspaces::default_for_user( (int) $user->ID ) );
-        if ( $ws_id <= 0 ) {
-            return new WP_Error( 'E_BILLING_NO_WORKSPACE', 'No workspace selected.', [ 'status' => 400 ] );
-        }
-        $ws_role = InspectPage_Workspaces::role_of( $ws_id, (int) $user->ID );
-        if ( ! InspectPage_Workspaces::role_can_admin( $ws_role ) ) {
-            return new WP_Error( 'E_BILLING_FORBIDDEN', 'Admin role required for this workspace.', [ 'status' => 403 ] );
-        }
-        $ws = InspectPage_Workspaces::get( $ws_id );
-
         $success_url = esc_url_raw( $req->get_param( 'success_url' ) ?: admin_url( 'admin.php?page=inspect-page&billing=ok' ) );
         $cancel_url  = esc_url_raw( $req->get_param( 'cancel_url' )  ?: admin_url( 'admin.php?page=inspect-page&billing=cancel' ) );
 
@@ -91,16 +79,10 @@ final class InspectPage_Billing {
             'customer_email'                          => $user->user_email,
             'client_reference_id'                     => (string) $user->ID,
             'metadata[wp_user_id]'                    => (string) $user->ID,
-            'metadata[workspace_id]'                  => (string) $ws_id,
             'subscription_data[metadata][wp_user_id]' => (string) $user->ID,
-            'subscription_data[metadata][workspace_id]' => (string) $ws_id,
             'allow_promotion_codes'                   => 'true',
         ];
-        // Prefer the workspace's own Stripe customer (W4); fall back to the
-        // legacy user-meta customer for back-compat with pre-W4 subscribers.
-        $existing_customer = $ws && ! empty( $ws['stripe_customer_id'] )
-            ? (string) $ws['stripe_customer_id']
-            : (string) get_user_meta( $user->ID, self::META_CUSTOMER, true );
+        $existing_customer = get_user_meta( $user->ID, self::META_CUSTOMER, true );
         if ( $existing_customer ) {
             unset( $body['customer_email'] );
             $body['customer'] = $existing_customer;
@@ -131,22 +113,7 @@ final class InspectPage_Billing {
             return new WP_Error( 'E_BILLING_NOT_CONFIGURED', 'Billing is not configured.', [ 'status' => 503 ] );
         }
         $user = wp_get_current_user();
-        $ws_id = (int) ( $req->get_param( 'workspace_id' ) ?: InspectPage_Workspaces::default_for_user( (int) $user->ID ) );
-        $customer = '';
-        if ( $ws_id > 0 ) {
-            $ws_role = InspectPage_Workspaces::role_of( $ws_id, (int) $user->ID );
-            if ( ! InspectPage_Workspaces::role_can_admin( $ws_role ) ) {
-                return new WP_Error( 'E_BILLING_FORBIDDEN', 'Admin role required for this workspace.', [ 'status' => 403 ] );
-            }
-            $ws = InspectPage_Workspaces::get( $ws_id );
-            if ( $ws && ! empty( $ws['stripe_customer_id'] ) ) {
-                $customer = (string) $ws['stripe_customer_id'];
-            }
-        }
-        if ( ! $customer ) {
-            // Legacy fallback for users who subscribed before W4.
-            $customer = (string) get_user_meta( $user->ID, self::META_CUSTOMER, true );
-        }
+        $customer = get_user_meta( $user->ID, self::META_CUSTOMER, true );
         if ( ! $customer ) {
             return new WP_Error( 'E_BILLING_NO_CUSTOMER', 'No Stripe customer for this user yet.', [ 'status' => 404 ] );
         }
@@ -175,29 +142,6 @@ final class InspectPage_Billing {
         $lifetime_used = InspectPage_License::lifetime_used( $user->ID );
         $free_limit    = InspectPage_License::free_limit();
         $remaining     = $has_license ? null : max( 0, $free_limit - $lifetime_used );
-
-        // W4: include the targeted workspace's billing block. Defaults to the
-        // user's primary workspace. Legacy top-level fields are preserved for
-        // back-compat with extension <= v2.6.x.
-        $ws_id  = (int) ( $req->get_param( 'workspace_id' ) ?: InspectPage_Workspaces::default_for_user( (int) $user->ID ) );
-        $ws_block = null;
-        if ( $ws_id > 0 ) {
-            $ws_role = InspectPage_Workspaces::role_of( $ws_id, (int) $user->ID );
-            $ws      = $ws_role !== '' ? InspectPage_Workspaces::get( $ws_id ) : null;
-            if ( $ws ) {
-                $ws_block = [
-                    'id'                     => (int) $ws['id'],
-                    'name'                   => (string) $ws['name'],
-                    'role'                   => (string) $ws_role,
-                    'license_status'         => (string) $ws['license_status'],
-                    'has_license'            => $ws['license_status'] === InspectPage_Workspaces::LICENSE_ACTIVE,
-                    'stripe_customer_id'     => $ws['stripe_customer_id'] ?? null,
-                    'stripe_subscription_id' => $ws['stripe_subscription_id'] ?? null,
-                    'can_manage'             => InspectPage_Workspaces::role_can_admin( $ws_role ),
-                ];
-            }
-        }
-
         return [
             'has_license'   => $has_license,
             'plan'          => $has_license ? 'pro' : 'free',
@@ -207,7 +151,6 @@ final class InspectPage_Billing {
             'free_limit'    => $free_limit,
             'remaining'     => $remaining,
             'price'         => self::price_info(),
-            'workspace'     => $ws_block,
         ];
     }
 
@@ -285,61 +228,29 @@ final class InspectPage_Billing {
     private static function handle_event( array $event ) {
         $type = $event['type'];
         $obj  = $event['data']['object'] ?? [];
-        $ws_id = self::workspace_id_from_object( $obj );
-        $uid   = self::user_id_from_object( $obj );
-        if ( ! $ws_id && ! $uid ) return;
+        $uid  = self::user_id_from_object( $obj );
+        if ( ! $uid ) return;
 
         switch ( $type ) {
             case 'checkout.session.completed':
-                if ( $ws_id ) {
-                    $fields = [ 'license_status' => InspectPage_Workspaces::LICENSE_ACTIVE ];
-                    if ( ! empty( $obj['customer'] ) )     { $fields['stripe_customer_id']     = (string) $obj['customer']; }
-                    if ( ! empty( $obj['subscription'] ) ) { $fields['stripe_subscription_id'] = (string) $obj['subscription']; }
-                    InspectPage_Workspaces::update_billing( $ws_id, $fields );
-                }
-                if ( $uid ) {
-                    if ( ! empty( $obj['customer'] ) )      update_user_meta( $uid, self::META_CUSTOMER, $obj['customer'] );
-                    if ( ! empty( $obj['subscription'] ) )  update_user_meta( $uid, self::META_SUB, $obj['subscription'] );
-                    self::activate( $uid );
-                }
+                if ( ! empty( $obj['customer'] ) )      update_user_meta( $uid, self::META_CUSTOMER, $obj['customer'] );
+                if ( ! empty( $obj['subscription'] ) )  update_user_meta( $uid, self::META_SUB, $obj['subscription'] );
+                self::activate( $uid );
                 break;
             case 'invoice.paid':
             case 'invoice.payment_succeeded':
-                if ( $ws_id ) InspectPage_Workspaces::update_billing( $ws_id, [ 'license_status' => InspectPage_Workspaces::LICENSE_ACTIVE ] );
-                if ( $uid )   self::activate( $uid );
+                self::activate( $uid );
                 break;
             case 'customer.subscription.deleted':
             case 'invoice.payment_failed':
-                if ( $ws_id ) InspectPage_Workspaces::update_billing( $ws_id, [ 'license_status' => InspectPage_Workspaces::LICENSE_CANCELED ] );
-                if ( $uid )   self::deactivate( $uid );
+                self::deactivate( $uid );
                 break;
             case 'customer.subscription.updated':
                 $status = $obj['status'] ?? '';
-                $active = in_array( $status, [ 'active', 'trialing' ], true );
-                if ( $ws_id ) {
-                    InspectPage_Workspaces::update_billing( $ws_id, [
-                        'license_status' => $active
-                            ? InspectPage_Workspaces::LICENSE_ACTIVE
-                            : ( $status === 'past_due' ? InspectPage_Workspaces::LICENSE_PAST_DUE : InspectPage_Workspaces::LICENSE_CANCELED ),
-                    ] );
-                }
-                if ( $uid ) { $active ? self::activate( $uid ) : self::deactivate( $uid ); }
+                if ( in_array( $status, [ 'active', 'trialing' ], true ) ) self::activate( $uid );
+                else self::deactivate( $uid );
                 break;
         }
-    }
-
-    /**
-     * Resolves a workspace_id from a Stripe event object. Prefers explicit
-     * metadata; falls back to looking up by stored stripe_customer_id.
-     */
-    private static function workspace_id_from_object( $obj ) {
-        if ( ! empty( $obj['metadata']['workspace_id'] ) ) {
-            return (int) $obj['metadata']['workspace_id'];
-        }
-        if ( ! empty( $obj['customer'] ) ) {
-            return (int) InspectPage_Workspaces::find_by_stripe_customer( (string) $obj['customer'] );
-        }
-        return 0;
     }
 
     private static function user_id_from_object( $obj ) {

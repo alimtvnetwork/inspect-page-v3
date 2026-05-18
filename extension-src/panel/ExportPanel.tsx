@@ -41,8 +41,6 @@ import { listShareSessions, type ShareSessionSummary } from "../share/listShareS
 import { startBillingCheckout } from "../share/startBillingCheckout";
 import { startBillingPortal } from "../share/startBillingPortal";
 import { getBillingStatus, type BillingStatus } from "../share/getBillingStatus";
-import { listWorkspaces, type WorkspaceListItem } from "../share/listWorkspaces";
-import { WorkspacePicker } from "./WorkspacePicker";
 import { formatBillingPriceTagline } from "../share/formatPrice";
 import { detectProFlip } from "../share/detectProFlip";
 import { pollBillingUntilPro, BILLING_CHANGED_EVENT } from "../share/pollBillingUntilPro";
@@ -545,16 +543,11 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
               <>
                 <button
                   type="button"
-                  className="lpe-btn lpe-btn-primary lpe-btn-hero"
+                  className="lpe-btn lpe-btn-primary"
                   onClick={onFullPage}
                   disabled={busy || settings === null}
                 >
-                  <svg className="lpe-btn-ico" width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <rect x="2.5" y="3.5" width="15" height="13" rx="2.5" stroke="currentColor" strokeWidth="1.6"/>
-                    <path d="M6 8h8M6 11h8M6 14h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-                  </svg>
-                  <span>{COPY.btnFullPage}</span>
-                  <span className="lpe-btn-kbd" aria-hidden="true">⌥⇧E</span>
+                  {COPY.btnFullPage}
                 </button>
                 <ShareLinksButton
                   shareSettings={shareSettings}
@@ -1176,7 +1169,7 @@ interface ShareSettingsSectionProps {
  * above the existing quota block, which still drives the per-share
  * progress bar from `/auth-status`.
  */
-function BillingPanel({ signedIn, workspaceId }: { signedIn: boolean; workspaceId?: number }): JSX.Element | null {
+function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
   const [status, setStatus] = useState<BillingStatus | null>(null);
   const [justFlippedPro, setJustFlippedPro] = useState(false);
   useEffect(() => {
@@ -1185,7 +1178,7 @@ function BillingPanel({ signedIn, workspaceId }: { signedIn: boolean; workspaceI
     let prevPlan: string | null = null;
     const refresh = async () => {
       try {
-        const s = await getBillingStatus({ getShareSettings, workspaceId });
+        const s = await getBillingStatus({ getShareSettings });
         if (!cancelled) {
           if (detectProFlip(prevPlan, s.plan)) {
             setJustFlippedPro(true);
@@ -1209,21 +1202,12 @@ function BillingPanel({ signedIn, workspaceId }: { signedIn: boolean; workspaceI
       window.removeEventListener("focus", onFocus);
       window.removeEventListener(BILLING_CHANGED_EVENT, onChanged);
     };
-  }, [signedIn, workspaceId]);
+  }, [signedIn]);
   if (!status) return null;
   const isPro = status.plan === "pro";
   const sub = status.subscription
     ? `${status.subscription.slice(0, 8)}…${status.subscription.slice(-4)}`
     : "";
-  const ws = status.workspace;
-  const wsRoleCopy = ws?.role === "owner"
-    ? COPY.workspaceRoleOwner
-    : ws?.role === "admin" ? COPY.workspaceRoleAdmin : COPY.workspaceRoleMember;
-  const wsLicCopy = ws?.licenseStatus === "active"
-    ? COPY.workspaceLicenseActive
-    : ws?.licenseStatus === "past_due" ? COPY.workspaceLicensePastDue
-    : ws?.licenseStatus === "canceled" ? COPY.workspaceLicenseCanceled
-    : COPY.workspaceLicenseFree;
   return (
     <div
       className="lpe-billing-panel"
@@ -1231,14 +1215,6 @@ function BillingPanel({ signedIn, workspaceId }: { signedIn: boolean; workspaceI
       role="group"
       aria-label={COPY.billingPlanLabel}
     >
-      {ws && (
-        <div className="lpe-billing-row" data-workspace-id={ws.id}>
-          <span className="lpe-billing-label">{COPY.workspaceLabel}</span>
-          <span className="lpe-billing-sub" title={`role: ${wsRoleCopy}`}>
-            {ws.name || `#${ws.id}`} · {wsRoleCopy} · {wsLicCopy}
-          </span>
-        </div>
-      )}
       <div className="lpe-billing-row">
         <span className="lpe-billing-label">{COPY.billingPlanLabel}</span>
         <span className="lpe-billing-badge" data-plan={status.plan}>
@@ -1281,13 +1257,9 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
   const [quota, setQuota] = useState<{
     lifetimeUsed: number; freeLimit: number; hasLicense: boolean;
   } | null>(null);
-  const [workspaces, setWorkspaces] = useState<WorkspaceListItem[]>([]);
-  const [workspaceId, setWorkspaceId] = useState<number | undefined>(undefined);
   const siteUrl = INSPECT_PAGE_WP_SITE_URL;
   const configured = !!siteUrl;
   const signedIn = configured && !!settings.nonce && !!settings.userId;
-  const activeWorkspace = workspaces.find((w) => w.id === workspaceId)
-    ?? workspaces[0];
 
   const onSignIn = async (): Promise<void> => {
     if (!configured) { setErr(COPY.shareNotConfiguredMsg); return; }
@@ -1384,24 +1356,6 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
     };
   }, [signedIn]);
 
-  // Phase W5/W6 — fetch the user's workspaces so we can render a picker
-  // and forward `workspaceId` to billing calls. Gracefully no-ops on
-  // plugins < v2.6.0 (listWorkspaces returns []) — the UI then hides
-  // the picker and falls back to the legacy single-workspace flow.
-  useEffect(() => {
-    if (!signedIn) { setWorkspaces([]); setWorkspaceId(undefined); return; }
-    let cancelled = false;
-    (async () => {
-      try {
-        const ws = await listWorkspaces({ getShareSettings });
-        if (cancelled) return;
-        setWorkspaces(ws);
-        if (ws.length && workspaceId === undefined) setWorkspaceId(ws[0].id);
-      } catch { if (!cancelled) setWorkspaces([]); }
-    })();
-    return () => { cancelled = true; };
-  }, [signedIn]);
-
   return (
     <details className="lpe-settings" open>
       <summary>{COPY.shareSettingsHeader}</summary>
@@ -1416,18 +1370,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
               {COPY.shareSignedInAsPrefix}{" "}
               <strong>{settings.displayName || settings.email}</strong>
             </div>
-            {workspaces.length >= 1 && (
-              <div className="lpe-field" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <span className="lpe-billing-label">{COPY.workspaceLabel}</span>
-                <WorkspacePicker
-                  workspaces={workspaces}
-                  value={workspaceId}
-                  onChange={(id) => setWorkspaceId(id)}
-                  siteUrl={settings.siteUrl}
-                />
-              </div>
-            )}
-            <BillingPanel signedIn={signedIn} workspaceId={workspaceId} />
+            <BillingPanel signedIn={signedIn} />
             {quota && (
               <div className="lpe-debug-note" role="status">
                 {quota.hasLicense
@@ -1467,7 +1410,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
                       onClick={async () => {
                         emitBilling("portal_clicked", "settings");
                         try {
-                          const { url } = await startBillingPortal({ getShareSettings, workspaceId });
+                          const { url } = await startBillingPortal({ getShareSettings });
                           if (typeof window !== "undefined" && url) {
                             emitBilling("portal_opened", "settings");
                             window.open(url, "_blank", "noopener,noreferrer");
@@ -1502,7 +1445,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
                           freeLimit: quota.freeLimit,
                         });
                         try {
-                          const { url } = await startBillingCheckout({ getShareSettings, workspaceId });
+                          const { url } = await startBillingCheckout({ getShareSettings });
                           if (typeof window !== "undefined" && url) {
                             emitBilling("checkout_opened", "settings");
                             window.open(url, "_blank", "noopener,noreferrer");
@@ -1547,19 +1490,13 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
         {hint && <div className="lpe-debug-note">{hint}</div>}
         {err && <div className="lpe-debug-note" role="alert">{err}</div>}
         <div className="lpe-debug-note">{COPY.shareHelp}</div>
-        {signedIn && activeWorkspace && (
-          <div className="lpe-debug-note" role="status">
-            {COPY.workspaceRecentLabel}{" "}
-            <strong>{activeWorkspace.name || `#${activeWorkspace.id}`}</strong>
-          </div>
-        )}
-        {signedIn && <RecentSharesList workspaceId={workspaceId} />}
+        {signedIn && <RecentSharesList />}
       </div>
     </details>
   );
 }
 
-function RecentSharesList({ workspaceId }: { workspaceId?: number }): JSX.Element {
+function RecentSharesList(): JSX.Element {
   const [items, setItems] = useState<ShareSessionSummary[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -1569,12 +1506,12 @@ function RecentSharesList({ workspaceId }: { workspaceId?: number }): JSX.Elemen
   const refresh = useCallback(async () => {
     setBusy(true); setErr("");
     try {
-      const rows = await listShareSessions({ getShareSettings, workspaceId });
+      const rows = await listShareSessions({ getShareSettings });
       setItems(rows);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally { setBusy(false); }
-  }, [workspaceId]);
+  }, []);
 
   useEffect(() => { void refresh(); }, [refresh]);
 
@@ -1859,32 +1796,24 @@ function ShareLinksButton(props: ShareLinksButtonProps): JSX.Element {
     return (
       <button
         type="button"
-        className="lpe-btn lpe-btn-hero lpe-btn-secondary"
+        className="lpe-btn"
         onClick={onSignIn}
         disabled={busy}
         title={COPY.shareSignInBtn}
       >
-        <svg className="lpe-btn-ico" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <path d="M11 4h4a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 15 16h-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-          <path d="M3 10h9m0 0-3-3m3 3-3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        <span>{COPY.shareSignInBtn} — {COPY.exportModeShare}</span>
+        {COPY.shareSignInBtn} — {COPY.exportModeShare}
       </button>
     );
   }
   return (
     <button
       type="button"
-      className="lpe-btn lpe-btn-hero lpe-btn-secondary"
+      className="lpe-btn"
       onClick={() => { if (artifacts) void onShare(artifacts); }}
       disabled={busy || !hasArtifacts || !artifacts}
       title={hasArtifacts ? COPY.exportModeShare : "Run export first"}
     >
-      <svg className="lpe-btn-ico" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4h-6A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16h6a1.5 1.5 0 0 0 1.5-1.5V13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-        <path d="M8 10h9m0 0-3-3m3 3-3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-      <span>{COPY.exportModeShare}</span>
+      {COPY.exportModeShare}
     </button>
   );
 }

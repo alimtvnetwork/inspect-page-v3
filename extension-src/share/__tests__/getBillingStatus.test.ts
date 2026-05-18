@@ -76,35 +76,4 @@ describe("getBillingStatus", () => {
     const p = getBillingStatus({ getShareSettings: async () => validCfg, fetchImpl });
     await p.catch((e) => expect((e as MessageError).code).toBe(ErrorCode.E_SHARE_NETWORK));
   });
-
-  it("parses workspace block when present (W4+)", async () => {
-    const fetchImpl = vi.fn(async () => jsonRes({
-      has_license: false, plan: "free", configured: true, subscription: "",
-      lifetime_used: 0, free_limit: 5, remaining: 5,
-      workspace: {
-        id: 7, name: "Acme",
-        role: "admin", license_status: "active", has_license: true,
-        can_manage: true,
-        stripe_customer_id: "cus_X", stripe_subscription_id: "sub_X",
-      },
-    }));
-    const out = await getBillingStatus({ getShareSettings: async () => validCfg, fetchImpl });
-    expect(out.workspace).toEqual({
-      id: 7, name: "Acme", role: "admin",
-      licenseStatus: "active", hasLicense: true, canManage: true,
-      stripeCustomerId: "cus_X", stripeSubscriptionId: "sub_X",
-    });
-  });
-
-  it("forwards workspace_id as a query param when provided", async () => {
-    const fetchImpl = vi.fn(async () => jsonRes({
-      has_license: false, plan: "free", configured: true, subscription: "",
-      lifetime_used: 0, free_limit: 5, remaining: 5,
-    }));
-    await getBillingStatus({ getShareSettings: async () => validCfg, fetchImpl, workspaceId: 42 });
-    expect(fetchImpl).toHaveBeenCalledWith(
-      expect.stringContaining("/billing/status?workspace_id=42"),
-      expect.anything(),
-    );
-  });
 });

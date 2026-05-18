@@ -97,14 +97,6 @@ final class InspectPage_Activator {
 
         foreach ( $sql as $stmt ) { dbDelta( $stmt ); }
 
-        // ---- Workspaces (W1) ----
-        if ( class_exists( 'InspectPage_Workspaces' ) ) {
-            foreach ( InspectPage_Workspaces::schema_sql( $charset ) as $stmt ) {
-                dbDelta( $stmt );
-            }
-            InspectPage_Workspaces::backfill_solo_workspaces();
-        }
-
         self::seed_enum( "{$p}share_session_statuses", InspectPage_SessionStatus::all() );
         self::seed_enum( "{$p}share_session_kinds",    InspectPage_SessionKind::all() );
         self::seed_enum( "{$p}share_asset_types",      InspectPage_AssetType::all() );

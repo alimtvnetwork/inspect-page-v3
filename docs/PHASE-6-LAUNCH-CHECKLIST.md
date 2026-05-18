@@ -1,6 +1,6 @@
 # Phase 6 — Hardening + Chrome Web Store launch checklist
 
-Last updated: 18 May 2026 · Status: in progress · Targets **extension v2.7.0** + **WP plugin v2.6.0** (Team Workspaces)
+Last updated: 17 May 2026 · Status: in progress · Targets **extension v2.5.9** + **WP plugin v2.5.4**
 
 This is the final gate before flipping the listing to **Public** on the Chrome
 Web Store. Everything below must be checked off (or explicitly waived) before
@@ -121,60 +121,21 @@ a fresh Chrome profile. Check:
       (no detour through Settings); status region shows
       "WP login tab opened — sign in there and come back".
 
-### AC-WS — Team Workspaces acceptance (v2.7.0 / v2.6.0)
-
-- [ ] **AC-WS-1 Activation backfill** Fresh `wp-plugin/inspect-page` activate
-      on a site with 3 pre-existing WP users → `wp_pp_workspaces` has 3 rows
-      (one solo workspace per user, role `owner`), and any user whose legacy
-      `inspect_page_license` was `active` shows `workspaces.license_status =
-      active`.
-- [ ] **AC-WS-2 Invite flow** Owner opens **Tools → Inspect Page Workspaces**,
-      invites `alice@example.com` as `member` → `wp_mail` log shows mail with
-      a 64-hex token URL pointing at the hidden `inspect-page-accept` admin
-      page; clicking it while logged in as Alice adds her to
-      `wp_pp_workspace_members` and marks the invite `used_at`. Re-using the
-      same token returns "already used"; an expired token (>7d) returns
-      "expired".
-- [ ] **AC-WS-3 Role gating** Member calls `POST /workspaces/{id}/invites` →
-      `403`; member calls `POST /billing/checkout?workspace_id={id}` → `403`;
-      owner/admin succeed. Owner can `POST /workspaces/{id}/transfer-owner`
-      to a fellow admin; the demoted owner becomes `admin`.
-- [ ] **AC-WS-4 Billing routing** Owner of workspace **B** runs
-      Upgrade → Stripe Checkout, with the extension's workspace picker set to
-      **B**. Webhook `checkout.session.completed` carries
-      `metadata.workspace_id = B`; `wp_pp_workspaces.B.license_status` flips
-      to `active` and `/billing/status?workspace_id=B` returns
-      `workspace.licenseStatus = active`. Workspace **A** stays `free`.
-- [ ] **AC-WS-5 Webhook back-compat** Same event also updates the owner's
-      legacy `inspect_page_license` user-meta to `active` (parallel write),
-      so a pre-2.6.0 extension still sees the user as Pro.
-- [ ] **AC-WS-6 Extension picker** Popup → Settings, signed in as a user in
-      ≥2 workspaces: workspace `<select>` renders, changing it re-fetches
-      `/billing/status?workspace_id=…` and the **Plan** + workspace row
-      update in <1s. With a single workspace the picker is hidden but the
-      workspace row still shows name · role · license.
-- [ ] **AC-WS-7 Graceful fallback** Point a v2.7.0 extension at a WP site
-      still running plugin v2.5.x (no `/workspaces` route). `listWorkspaces`
-      returns `[]`, the picker stays hidden, BillingPanel omits the
-      workspace row, all legacy Smart Share flows still work.
-
 ## 5. Submit
 
-- [x] Bump `extension/manifest.json` + `extension/package.json` to `2.7.0`.
-- [x] Bump `wp-plugin/inspect-page/inspect-page.php` to `2.6.0`.
-- [x] `bash extension/scripts/package.sh` + WP plugin zip step →
-      `public/inspect-page.zip` and `public/inspect-page-wp.zip` regenerated
-      with fresh `.sha256` files.
-- [ ] Upload `inspect-page.zip` to Chrome Web Store dashboard; use
-      `docs/RELEASE-NOTES-v2.7.0.md` (Team Workspaces highlights) for the
-      listing copy and the "Recent changes" field.
+- [x] Bump `extension/manifest.json` + `extension/package.json` to `2.5.9`.
+- [x] Bump `wp-plugin/inspect-page/inspect-page.php` to `2.5.4`.
+- [x] `bash scripts/release.sh` → `public/inspect-page.zip` (extension)
+      and `public/inspect-page-wp.zip` (WP plugin) regenerated with fresh
+      `.sha256` files.
+- [ ] Upload `inspect-page.zip` to Chrome Web Store dashboard; pick
+      `store-assets/listing-2.5.9.md` (or latest) for the listing copy and the
+      "Recent changes" field.
 - [ ] Refresh the WP plugin download link on the landing page to
       `inspect-page-wp.zip` (already in `public/`).
-- [ ] Tag releases `ext-v2.7.0` and `wp-v2.6.0` and publish
-      `docs/RELEASE-NOTES-v2.7.0.md` alongside the upload.
-- [ ] Re-shoot Chrome Web Store screenshots (5 × 1280×800) on the Blueprint
-      light-mint theme; replace screenshot #5 with the new
-      **Tools → Inspect Page Workspaces** admin page.
+- [ ] Tag releases `ext-v2.5.9` and `wp-v2.5.4` and publish the
+      matching `docs/RELEASE-NOTES-*.md` (or use the `[Extension 2.5.9]`
+      CHANGELOG entry) alongside the upload.
 
 ## 6. Post-launch (out of scope, tracked here)
 
@@ -185,7 +146,5 @@ a fresh Chrome profile. Check:
   v2.5.1**: in-page chip with ✓ Select / ⧉ Copy selector / ✕ Cancel.
 - ~~Settings popover overflow / Inspect tab slowness / sign-in detour~~ —
   **shipped in Extension v2.5.9** (B1 / B2 / B3).
-- ~~Team workspaces~~ — **shipped in Extension v2.7.0 + WP plugin v2.6.0**
-  (`wp_pp_workspaces*` tables, owner/admin/member roles, invite emails,
-  workspace-aware Stripe billing, extension WorkspacePicker). See
-  `docs/RELEASE-NOTES-v2.7.0.md`.
+- **Team workspaces** — deferred; 4-phase plan drafted (workspaces schema +
+  REST → invite flow + admin UI → extension surfacing → tests/docs/release).

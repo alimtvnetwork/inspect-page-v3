@@ -35,30 +35,11 @@ export interface BillingStatus {
     interval: string | null;
     nickname: string | null;
   };
-  /**
-   * Targeted workspace block (WP plugin v2.6.0+, Team Workspaces / W4).
-   * Absent on older plugins or when the caller's user has no workspace.
-   * `licenseStatus` is the source of truth for Pro-on-workspace UI; the
-   * legacy top-level `hasLicense` only reflects the *user's* legacy
-   * per-user license.
-   */
-  workspace?: {
-    id: number;
-    name: string;
-    role: "owner" | "admin" | "member";
-    licenseStatus: "free" | "active" | "past_due" | "canceled";
-    hasLicense: boolean;
-    canManage: boolean;
-    stripeCustomerId: string | null;
-    stripeSubscriptionId: string | null;
-  };
 }
 
 export interface GetBillingStatusDeps {
   getShareSettings: () => Promise<ShareSettings>;
   fetchImpl?: typeof fetch;
-  /** Target a specific workspace (default: user's primary workspace). */
-  workspaceId?: number;
 }
 
 export async function getBillingStatus(
@@ -71,10 +52,7 @@ export async function getBillingStatus(
       "Sign in to your WordPress site in Settings → Smart Share.",
     );
   }
-  const base = `${normalizeBaseUrl(cfg.siteUrl)}/wp-json/inspect-page/v1/billing/status`;
-  const url  = deps.workspaceId && deps.workspaceId > 0
-    ? `${base}?workspace_id=${encodeURIComponent(String(deps.workspaceId))}`
-    : base;
+  const url = `${normalizeBaseUrl(cfg.siteUrl)}/wp-json/inspect-page/v1/billing/status`;
   const fetchFn = deps.fetchImpl ?? fetch;
   let res: Response;
   try {
@@ -131,26 +109,6 @@ export async function getBillingStatus(
         currency: typeof p.currency === "string" ? p.currency : null,
         interval: typeof p.interval === "string" ? p.interval : null,
         nickname: typeof p.nickname === "string" ? p.nickname : null,
-      };
-    }
-  }
-  const rawWs = o.workspace;
-  if (rawWs && typeof rawWs === "object") {
-    const w = rawWs as Record<string, unknown>;
-    const role = w.role === "owner" || w.role === "admin" ? w.role : "member";
-    const ls   = w.license_status === "active" || w.license_status === "past_due" || w.license_status === "canceled"
-      ? w.license_status
-      : "free";
-    if (typeof w.id === "number" && w.id > 0) {
-      result.workspace = {
-        id: w.id,
-        name: typeof w.name === "string" ? w.name : "",
-        role,
-        licenseStatus: ls,
-        hasLicense: Boolean(w.has_license),
-        canManage: Boolean(w.can_manage),
-        stripeCustomerId: typeof w.stripe_customer_id === "string" ? w.stripe_customer_id : null,
-        stripeSubscriptionId: typeof w.stripe_subscription_id === "string" ? w.stripe_subscription_id : null,
       };
     }
   }
