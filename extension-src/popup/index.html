@@ -4,17 +4,32 @@
     <meta charset="utf-8" />
     <title>Inspect Page</title>
     <style>
-      /* Force Chrome's popup window to use the full practical MV3 height so
-         Settings, Inspect and Recent Shares are readable without cramped rows. */
+      /* Lock popup to Samsung Galaxy S20 Ultra viewport (412 x 915).
+         Chrome will clamp popup height to ~600px on small displays, but on
+         normal displays the popup will render at the full 915px.
+         Overflow is scrollable but the scrollbar is hidden in every engine. */
       html, body {
         margin: 0;
         padding: 0;
-        width: 600px;
-        height: 600px;
-        min-height: 600px;
+        width: 412px;
+        height: 915px;
+        min-width: 412px;
+        min-height: 915px;
         background: transparent;
+        overflow: hidden;
       }
-      #root { width: 600px; height: 600px; min-height: 600px; }
+      #root {
+        width: 412px;
+        height: 915px;
+        min-height: 915px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: none;          /* Firefox */
+        -ms-overflow-style: none;       /* old Edge / IE */
+      }
+      #root::-webkit-scrollbar { width: 0; height: 0; display: none; } /* Chromium */
+      *::-webkit-scrollbar { width: 0; height: 0; display: none; }
+      * { scrollbar-width: none; -ms-overflow-style: none; }
     </style>
   </head>
   <body>
