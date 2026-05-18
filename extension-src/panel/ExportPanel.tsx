@@ -668,7 +668,14 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           />
         )}
 
-        {state.elementSnapshot && !busy && (
+        {/*
+         * Show the rich Inspector view (identity + box-model + text props +
+         * selection colors/contrast) as soon as a snapshot is available.
+         * Previous guard `!busy` hid it during PanelStatus.Selecting, so users
+         * saw "nothing" after picking until/unless the export download
+         * completed. Only hide while the picker is still active.
+         */}
+        {state.elementSnapshot && state.status !== PanelStatus.PickerActive && (
           <ElementInspectorWithCode
             snapshot={state.elementSnapshot}
             preview={state.debugPreview}
