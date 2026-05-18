@@ -360,6 +360,75 @@ check( 'Alice demoted to admin',       InspectPage_Workspaces::role_of( $new['id
 $xfer_bad = InspectPage_Workspaces::transfer_owner( $new['id'], 999 );
 check( 'transfer to non-member → WP_Error', is_wp_error( $xfer_bad ) );
 
+// --- Invites (W2) --------------------------------------------------------
+
+// Fresh workspace owned by Alice (uid 1). Carol is currently owner of $new
+// after the transfer above, so make a new one to test invites cleanly.
+$ws2 = InspectPage_Workspaces::create( 1, 'Invite Team' );
+check( 'invite-test workspace created', is_array( $ws2 ) );
+
+// Helper accessors
+check( 'sanitize_email lowercases', InspectPage_Workspaces::sanitize_email( ' Foo@Bar.COM ' ) === 'foo@bar.com' );
+check( 'sanitize_email rejects junk', InspectPage_Workspaces::sanitize_email( 'not-an-email' ) === '' );
+check( 'generate_invite_token is 64 hex', preg_match( '/^[a-f0-9]{64}$/', InspectPage_Workspaces::generate_invite_token() ) === 1 );
+
+// Happy path: create invite
+$inv = InspectPage_Workspaces::create_invite( $ws2['id'], 1, 'Dan@Example.test', 'member' );
+check( 'create_invite returns array', is_array( $inv ) );
+check( 'invite email normalized',     $inv['email'] === 'dan@example.test' );
+check( 'invite role normalized',      $inv['role']  === 'member' );
+check( 'invite has 64-hex token',     preg_match( '/^[a-f0-9]{64}$/', $inv['token'] ) === 1 );
+
+// Bad inputs
+$bad_email = InspectPage_Workspaces::create_invite( $ws2['id'], 1, 'nope', 'member' );
+check( 'invite bad email → WP_Error', is_wp_error( $bad_email ) );
+$bad_role = InspectPage_Workspaces::create_invite( $ws2['id'], 1, 'eve@example.test', 'owner' );
+check( 'invite as owner blocked',     is_wp_error( $bad_role ) && $bad_role->code === 'inspect_page.invite.bad_role' );
+
+// Duplicate detection (same email, still pending)
+$dup = InspectPage_Workspaces::create_invite( $ws2['id'], 1, 'dan@example.test', 'member' );
+check( 'duplicate invite blocked', is_wp_error( $dup ) && $dup->code === 'inspect_page.invite.duplicate' );
+
+// list_invites returns the pending one
+$list = InspectPage_Workspaces::list_invites( $ws2['id'] );
+check( 'list_invites returns 1 pending', count( $list ) === 1 );
+
+// Invite an existing member → blocked
+seed_user( 4, 'Dan', 'dan@example.test' );
+$wpdb->insert( 'wp_pp_workspace_members', [
+    'workspace_id' => $ws2['id'], 'user_id' => 4, 'role' => 'member', 'joined_at' => '2025-01-03 00:00:00',
+] );
+$already = InspectPage_Workspaces::create_invite( $ws2['id'], 1, 'dan@example.test', 'member' );
+check( 'invite already-member blocked', is_wp_error( $already ) && $already->code === 'inspect_page.invite.already_member' );
+
+// Revoke
+$rev = InspectPage_Workspaces::revoke_invite( $ws2['id'], $inv['id'] );
+check( 'revoke_invite ok',          is_array( $rev ) && $rev['ok'] === true );
+check( 'list_invites empty after revoke', count( InspectPage_Workspaces::list_invites( $ws2['id'] ) ) === 0 );
+
+// Re-invite a fresh email then accept
+seed_user( 5, 'Eve', 'eve@example.test' );
+$inv2 = InspectPage_Workspaces::create_invite( $ws2['id'], 1, 'eve@example.test', 'admin' );
+check( 'second invite created', is_array( $inv2 ) );
+
+// Invalid token
+$acc_bad = InspectPage_Workspaces::accept_invite( str_repeat( '0', 64 ), 5 );
+check( 'accept bad token → WP_Error', is_wp_error( $acc_bad ) && $acc_bad->code === 'inspect_page.invite.invalid' );
+
+// Email mismatch (uid 1 = Alice)
+$acc_mis = InspectPage_Workspaces::accept_invite( $inv2['token'], 1 );
+check( 'accept email-mismatch blocked', is_wp_error( $acc_mis ) && $acc_mis->code === 'inspect_page.invite.email_mismatch' );
+
+// Happy path accept (uid 5 = Eve, matches email)
+$acc = InspectPage_Workspaces::accept_invite( $inv2['token'], 5 );
+check( 'accept ok',                        is_array( $acc ) && $acc['ok'] === true );
+check( 'accept workspace_id correct',      (int) $acc['workspace_id'] === (int) $ws2['id'] );
+check( 'Eve now has admin role',           InspectPage_Workspaces::role_of( $ws2['id'], 5 ) === 'admin' );
+
+// Second use of same token → consumed
+$reuse = InspectPage_Workspaces::accept_invite( $inv2['token'], 5 );
+check( 'reused token → consumed',          is_wp_error( $reuse ) && $reuse->code === 'inspect_page.invite.consumed' );
+
 // --- exit ----------------------------------------------------------------
 
 echo "\n";
