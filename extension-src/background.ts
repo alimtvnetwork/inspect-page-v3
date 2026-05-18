@@ -149,7 +149,11 @@ async function mountPanelInActiveTab(): Promise<void> {
 router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
   MessageKind.RunFullPageExport,
   async ({ tabId, settings }, sender) => {
-    const tid = tabId > 0 ? tabId : sender.tab?.id;
+    let tid = tabId > 0 ? tabId : sender.tab?.id;
+    if (tid === undefined) {
+      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      tid = tab?.id;
+    }
     if (tid === undefined) {
       throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, "Cannot resolve tab for export");
     }
@@ -161,7 +165,11 @@ router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
 router.on<EnterPickerModePayload, EnterPickerModeResponse>(
   MessageKind.EnterPickerMode,
   async ({ tabId }, sender) => {
-    const tid = tabId > 0 ? tabId : sender.tab?.id;
+    let tid = tabId > 0 ? tabId : sender.tab?.id;
+    if (tid === undefined) {
+      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      tid = tab?.id;
+    }
     if (tid === undefined) {
       throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, "Cannot resolve tab for picker");
     }
