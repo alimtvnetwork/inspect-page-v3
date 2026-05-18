@@ -121,6 +121,14 @@ class TestWPDB {
     }
 
     public function get_var( $sql ) {
+        if ( preg_match( "/SELECT id FROM \S+workspaces WHERE stripe_customer_id = '([^']+)' LIMIT 1/", $sql, $m ) ) {
+            foreach ( $this->rows['workspaces'] as $r ) {
+                if ( isset( $r['stripe_customer_id'] ) && (string) $r['stripe_customer_id'] === $m[1] ) {
+                    return (string) $r['id'];
+                }
+            }
+            return null;
+        }
         if ( preg_match( "/SELECT id FROM \S+workspace_invites\s+WHERE workspace_id = (\d+) AND email = '([^']+)' AND accepted_at IS NULL AND expires_at > '([^']+)'/s", $sql, $m ) ) {
             foreach ( $this->rows['invites'] as $r ) {
                 if ( (int) $r['workspace_id'] !== (int) $m[1] ) { continue; }
@@ -428,6 +436,34 @@ check( 'Eve now has admin role',           InspectPage_Workspaces::role_of( $ws2
 // Second use of same token → consumed
 $reuse = InspectPage_Workspaces::accept_invite( $inv2['token'], 5 );
 check( 'reused token → consumed',          is_wp_error( $reuse ) && $reuse->code === 'inspect_page.invite.consumed' );
+
+// --- Billing helpers (W4) ------------------------------------------------
+
+$bill_ws = InspectPage_Workspaces::create( 1, 'Billing Co' );
+check( 'billing-test workspace created', is_array( $bill_ws ) );
+
+$n = InspectPage_Workspaces::update_billing( $bill_ws['id'], [
+    'license_status'         => 'active',
+    'stripe_customer_id'     => 'cus_TEST123',
+    'stripe_subscription_id' => 'sub_TEST123',
+    'forbidden_column'       => 'nope',
+] );
+check( 'update_billing returns rows affected', $n === 1 );
+
+$reloaded = InspectPage_Workspaces::get( $bill_ws['id'] );
+check( 'license flipped to active',       $reloaded['license_status'] === 'active' );
+check( 'stripe customer stored',          $reloaded['stripe_customer_id'] === 'cus_TEST123' );
+check( 'stripe subscription stored',      $reloaded['stripe_subscription_id'] === 'sub_TEST123' );
+check( 'has_active_license true',         InspectPage_Workspaces::has_active_license( $bill_ws['id'] ) === true );
+
+check( 'find_by_stripe_customer hit',    (int) InspectPage_Workspaces::find_by_stripe_customer( 'cus_TEST123' ) === (int) $bill_ws['id'] );
+check( 'find_by_stripe_customer miss',   InspectPage_Workspaces::find_by_stripe_customer( 'cus_NOPE' ) === 0 );
+check( 'find_by_stripe_customer empty',  InspectPage_Workspaces::find_by_stripe_customer( '' ) === 0 );
+
+// default_for_user: Alice owns multiple workspaces; pick an owner one.
+$def = InspectPage_Workspaces::default_for_user( 1 );
+check( 'default_for_user picks owned workspace', $def > 0 && InspectPage_Workspaces::role_of( $def, 1 ) === 'owner' );
+check( 'default_for_user (no memberships) → 0',  InspectPage_Workspaces::default_for_user( 999999 ) === 0 );
 
 // --- exit ----------------------------------------------------------------
 
