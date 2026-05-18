@@ -1713,3 +1713,198 @@
 .lpe-root[data-lpe-surface="popup"] .lpe-settings summary:hover {
   background: var(--ext-mint-soft);
 }
+
+/* ============================================================
+   Blueprint repaint — inspect + element sub-panels (Phase C/D)
+   Scoped to `.lpe-root` so both popup and floating surface
+   pick it up. White cards, soft mint-tinted accents, pill
+   subtabs, rounded modals/drawers.
+   ============================================================ */
+
+/* Subtabs → pill row */
+.lpe-root .lpe-subtabs {
+  display: flex; gap: 4px;
+  background: var(--ext-mint-soft);
+  padding: 4px;
+  border-radius: 999px;
+}
+.lpe-root .lpe-subtab {
+  flex: 1;
+  border: none; background: transparent;
+  font: inherit; font-weight: 600;
+  padding: 6px 12px; border-radius: 999px;
+  color: var(--ext-muted); cursor: pointer;
+}
+.lpe-root .lpe-subtab:hover { color: var(--ext-fg); }
+.lpe-root .lpe-subtab[aria-selected="true"],
+.lpe-root .lpe-subtab.is-active {
+  background: var(--ext-card);
+  color: var(--ext-fg);
+  box-shadow: 0 2px 6px -2px rgba(17,23,20,0.18);
+}
+
+/* Generic "card-y" inspect blocks */
+.lpe-root .lpe-overview-hero,
+.lpe-root .lpe-color-category,
+.lpe-root .lpe-color-row,
+.lpe-root .lpe-pair-card,
+.lpe-root .lpe-cssinfo-stat,
+.lpe-root .lpe-detail-row,
+.lpe-root .lpe-eli-section,
+.lpe-root .lpe-inspector-item,
+.lpe-root .lpe-inspector-detail,
+.lpe-root .lpe-inspector-styles,
+.lpe-root .lpe-cdr-section {
+  background: var(--ext-card);
+  border: 1px solid var(--ext-border);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+/* Overview thumb → mint-soft frame */
+.lpe-root .lpe-overview-thumb,
+.lpe-root .lpe-overview-hero-empty {
+  background: var(--ext-mint-soft);
+  border-radius: 12px;
+  border: 1px solid var(--ext-border);
+  overflow: hidden;
+}
+
+/* Color swatches keep their actual color but get a hairline border */
+.lpe-root .lpe-color-swatch,
+.lpe-root .lpe-detail-swatch,
+.lpe-root .lpe-pair-swatch,
+.lpe-root .lpe-eli-swatch {
+  border: 1px solid var(--ext-border);
+  border-radius: 8px;
+}
+
+/* AA pills + contrast badges → mint chips */
+.lpe-root .lpe-aa-pill,
+.lpe-root .lpe-contrast-badge {
+  background: var(--ext-mint-soft);
+  color: var(--ext-fg);
+  border: none;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.lpe-root .lpe-aa-pill.is-pass,
+.lpe-root .lpe-contrast-badge-pass {
+  background: var(--ext-mint);
+  color: #FFFFFF;
+}
+.lpe-root .lpe-aa-pill.is-fail,
+.lpe-root .lpe-contrast-badge-fail {
+  background: rgba(239, 68, 68, 0.16);
+  color: #b1271b;
+}
+
+/* Modals + drawers → white rounded panels */
+.lpe-root .lpe-modal-backdrop {
+  background: rgba(17, 23, 20, 0.45);
+  backdrop-filter: blur(2px);
+}
+.lpe-root .lpe-modal {
+  background: var(--ext-card);
+  border: 1px solid var(--ext-border);
+  border-radius: 18px;
+  box-shadow: 0 24px 56px -28px rgba(17, 23, 20, 0.45);
+  overflow: hidden;
+}
+.lpe-root .lpe-modal-header {
+  background: var(--ext-card);
+  border-bottom: 1px solid var(--ext-border);
+  padding: 12px 16px;
+}
+.lpe-root .lpe-modal-body { padding: 14px 16px; background: var(--ext-bg); }
+
+/* Code drawer (cdr) */
+.lpe-root .lpe-cdr {
+  background: var(--ext-card);
+  border: 1px solid var(--ext-border);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.lpe-root .lpe-cdr-header {
+  background: var(--ext-mint-soft);
+  border-bottom: 1px solid var(--ext-border);
+  padding: 10px 14px;
+}
+.lpe-root .lpe-cdr-title { color: var(--ext-fg); font-weight: 700; }
+.lpe-root .lpe-cdr-tabs { gap: 4px; padding: 8px 12px; background: var(--ext-card); }
+.lpe-root .lpe-cdr-tab {
+  border: none; background: transparent;
+  padding: 6px 12px; border-radius: 999px;
+  font: inherit; font-weight: 600; color: var(--ext-muted);
+  cursor: pointer;
+}
+.lpe-root .lpe-cdr-tab[aria-selected="true"],
+.lpe-root .lpe-cdr-tab.is-active {
+  background: var(--ext-mint); color: #FFFFFF;
+}
+.lpe-root .lpe-cdr-pre,
+.lpe-root .lpe-modal-code-pre {
+  background: #F7FAF9;
+  border: 1px solid var(--ext-border);
+  border-radius: 12px;
+  padding: 12px;
+  color: var(--ext-fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.lpe-root .lpe-cdr-copy { border-radius: 999px; }
+
+/* Element inspector */
+.lpe-root .lpe-eli-tagpill {
+  background: var(--ext-mint-soft);
+  color: var(--ext-fg);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-weight: 700;
+}
+.lpe-root .lpe-eli-show-code,
+.lpe-root .lpe-eli-copy {
+  border-radius: 999px;
+}
+
+/* Box model preview */
+.lpe-root .lpe-bm {
+  background: var(--ext-card);
+  border: 1px solid var(--ext-border);
+  border-radius: 14px;
+  padding: 12px;
+}
+.lpe-root .lpe-bm-margin { background: rgba(45, 212, 168, 0.08); border-radius: 10px; }
+.lpe-root .lpe-bm-border { background: rgba(45, 212, 168, 0.16); border-radius: 8px; }
+.lpe-root .lpe-bm-padding { background: rgba(45, 212, 168, 0.28); border-radius: 6px; }
+.lpe-root .lpe-bm-content { background: var(--ext-mint); color: #FFFFFF; border-radius: 4px; }
+
+/* Inspect shell header */
+.lpe-root .lpe-inspect-shell-header {
+  background: var(--ext-card);
+  border: 1px solid var(--ext-border);
+  border-radius: 14px;
+  padding: 10px 14px;
+}
+.lpe-root .lpe-inspect-footer {
+  background: var(--ext-card);
+  border-top: 1px solid var(--ext-border);
+  padding: 10px 14px;
+}
+
+/* Skeleton shimmer */
+.lpe-root .lpe-skel-block,
+.lpe-root .lpe-skel-line {
+  background: var(--ext-mint-soft);
+  border-radius: 8px;
+}
+
+/* Locate toast → mint pill */
+.lpe-root .lpe-locate-toast {
+  background: var(--ext-fg);
+  color: #FFFFFF;
+  border-radius: 999px;
+  padding: 8px 14px;
+  box-shadow: 0 12px 28px -12px rgba(17,23,20,0.5);
+}
