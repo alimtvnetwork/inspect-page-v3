@@ -1378,6 +1378,24 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
     };
   }, [signedIn]);
 
+  // Phase W5/W6 — fetch the user's workspaces so we can render a picker
+  // and forward `workspaceId` to billing calls. Gracefully no-ops on
+  // plugins < v2.6.0 (listWorkspaces returns []) — the UI then hides
+  // the picker and falls back to the legacy single-workspace flow.
+  useEffect(() => {
+    if (!signedIn) { setWorkspaces([]); setWorkspaceId(undefined); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const ws = await listWorkspaces({ getShareSettings });
+        if (cancelled) return;
+        setWorkspaces(ws);
+        if (ws.length && workspaceId === undefined) setWorkspaceId(ws[0].id);
+      } catch { if (!cancelled) setWorkspaces([]); }
+    })();
+    return () => { cancelled = true; };
+  }, [signedIn]);
+
   return (
     <details className="lpe-settings" open>
       <summary>{COPY.shareSettingsHeader}</summary>
