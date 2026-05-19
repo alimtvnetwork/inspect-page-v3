@@ -83,6 +83,16 @@ interface PanelState {
   debugPreview?: NonNullable<StatusUpdatePayload["debugPreview"]>;
   /** C3 — rich element snapshot for the new Inspector view. */
   elementSnapshot?: ElementSnapshot;
+  /**
+   * v2.7.2 — multi-element picker results. When set (length > 0), the
+   * inspector renders a horizontal chip strip; clicking a chip swaps the
+   * inspector body to that element's snapshot. The active chip is tracked
+   * by `activePickIndex`. The single `debugPreview` + `elementSnapshot`
+   * fields above always mirror `multiPicks[activePickIndex]` so existing
+   * render paths keep working unchanged.
+   */
+  multiPicks?: NonNullable<StatusUpdatePayload["multiElementSnapshot"]>;
+  activePickIndex?: number;
   /** v1.3: artifacts returned by a successful Full Page export. */
   fullPageArtifacts?: {
     html: string;
@@ -229,6 +239,12 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           message: p.message,
           ...(p.debugPreview ? { debugPreview: p.debugPreview } : {}),
           ...(p.elementSnapshot ? { elementSnapshot: p.elementSnapshot as ElementSnapshot } : {}),
+          ...(p.multiElementSnapshot && p.multiElementSnapshot.length > 0
+            ? {
+                multiPicks: p.multiElementSnapshot,
+                activePickIndex: p.multiElementSnapshot.length - 1,
+              }
+            : {}),
           lastAction: "pick",
         }));
         setMode("pick");
@@ -251,6 +267,12 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           : {}),
         ...(p.debugPreview ? { debugPreview: p.debugPreview } : {}),
         ...(p.elementSnapshot ? { elementSnapshot: p.elementSnapshot as ElementSnapshot } : {}),
+        ...(p.multiElementSnapshot && p.multiElementSnapshot.length > 0
+          ? {
+              multiPicks: p.multiElementSnapshot,
+              activePickIndex: p.multiElementSnapshot.length - 1,
+            }
+          : {}),
         ...(p.status === PanelStatus.Success && p.telemetry
           ? { successTelemetry: p.telemetry }
           : {}),
@@ -670,6 +692,49 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
          * completed. Only hide while the picker is still active.
          */}
         {state.elementSnapshot && state.status !== PanelStatus.PickerActive && (
+          <>
+          {state.multiPicks && state.multiPicks.length > 1 && (
+            <MultiPickChips
+              picks={state.multiPicks}
+              activeIndex={state.activePickIndex ?? state.multiPicks.length - 1}
+              onSelect={(idx) => setState((s) => {
+                const pick = s.multiPicks?.[idx];
+                if (!pick) return s;
+                return {
+                  ...s,
+                  activePickIndex: idx,
+                  debugPreview: pick.debugPreview,
+                  elementSnapshot: pick.elementSnapshot as ElementSnapshot | undefined,
+                };
+              })}
+              onRemove={(idx) => setState((s) => {
+                if (!s.multiPicks) return s;
+                const next = s.multiPicks.filter((_, i) => i !== idx);
+                if (next.length === 0) {
+                  return {
+                    ...s,
+                    multiPicks: undefined,
+                    activePickIndex: undefined,
+                    debugPreview: undefined,
+                    elementSnapshot: undefined,
+                    status: PanelStatus.Idle,
+                  };
+                }
+                const prevActive = s.activePickIndex ?? next.length;
+                let nextActive = prevActive;
+                if (idx === prevActive) nextActive = Math.min(idx, next.length - 1);
+                else if (idx < prevActive) nextActive = prevActive - 1;
+                const pick = next[nextActive];
+                return {
+                  ...s,
+                  multiPicks: next,
+                  activePickIndex: nextActive,
+                  debugPreview: pick.debugPreview,
+                  elementSnapshot: pick.elementSnapshot as ElementSnapshot | undefined,
+                };
+              })}
+            />
+          )}
           <ElementInspectorWithCode
             snapshot={state.elementSnapshot}
             preview={state.debugPreview}
@@ -685,8 +750,9 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                 MessageKind.ExitPickerMode, { tabId: activeTabId ?? -1 },
               ).catch(() => undefined);
             }}
-            onBack={() => setState((s) => ({ ...s, elementSnapshot: undefined, debugPreview: undefined, status: PanelStatus.Idle }))}
+            onBack={() => setState((s) => ({ ...s, elementSnapshot: undefined, debugPreview: undefined, multiPicks: undefined, activePickIndex: undefined, status: PanelStatus.Idle }))}
           />
+          </>
         )}
 
         {state.debugPreview && !busy && (
@@ -1753,6 +1819,98 @@ function formatRemaining(ms: number): string {
   const s = total % 60;
   const pad = (n: number): string => n.toString().padStart(2, "0");
   return h > 0 ? `${h}h ${pad(m)}m ${pad(s)}s` : `${m}m ${pad(s)}s`;
+}
+
+function MultiPickChips(
+  {
+    picks, activeIndex, onSelect, onRemove,
+  }: {
+    picks: NonNullable<StatusUpdatePayload["multiElementSnapshot"]>;
+    activeIndex: number;
+    onSelect: (idx: number) => void;
+    onRemove: (idx: number) => void;
+  },
+): JSX.Element {
+  return (
+    <div
+      role="tablist"
+      aria-label="Picked elements"
+      style={{
+        display: "flex",
+        gap: 6,
+        overflowX: "auto",
+        padding: "8px 12px",
+        borderBottom: "1px solid var(--lpe-border, #1f2a26)",
+        background: "var(--lpe-surface, #111715)",
+      }}
+    >
+      {picks.map((p, idx) => {
+        const active = idx === activeIndex;
+        return (
+          <div
+            key={`${idx}-${p.selectorPath}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              flex: "0 0 auto",
+              padding: "4px 6px 4px 10px",
+              borderRadius: 999,
+              border: active
+                ? "1px solid var(--lpe-accent, #2DD4A8)"
+                : "1px solid var(--lpe-border, #1f2a26)",
+              background: active ? "rgba(45,212,168,0.12)" : "transparent",
+              color: "var(--lpe-fg, #F5FFFA)",
+              fontSize: 12,
+              maxWidth: 220,
+            }}
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onSelect(idx)}
+              title={p.selectorPath}
+              style={{
+                appearance: "none",
+                background: "transparent",
+                border: "none",
+                color: "inherit",
+                cursor: "pointer",
+                fontSize: 12,
+                padding: 0,
+                maxWidth: 180,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span aria-hidden="true" style={{ opacity: 0.7, marginRight: 4 }}>{idx + 1}.</span>
+              {p.selectorPath}
+            </button>
+            <button
+              type="button"
+              aria-label={`Remove pick ${idx + 1}`}
+              onClick={() => onRemove(idx)}
+              style={{
+                appearance: "none",
+                background: "transparent",
+                border: "none",
+                color: "inherit",
+                cursor: "pointer",
+                opacity: 0.6,
+                fontSize: 14,
+                lineHeight: 1,
+                padding: "0 2px",
+              }}
+            >
+              ×
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function ElementInspectorWithCode(
