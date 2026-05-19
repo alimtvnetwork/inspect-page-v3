@@ -8,7 +8,7 @@ import { getPanelPosition, getSettings, setPanelPosition, setSettings } from "@s
 import { getShareSettings, normalizeBaseUrl, setShareSettings } from "@shared/shareSettings";
 import { createShareSession as createShareSessionImpl } from "@share/createShareSession";
 import { revokeShareSession as revokeShareSessionImpl } from "@share/revokeShareSession";
-import { KEEPALIVE_INTERVAL_MS, CAPTURE_TAB_READY_TIMEOUT_MS } from "@shared/constants";
+import { KEEPALIVE_INTERVAL_MS } from "@shared/constants";
 import { COLLECT_TIMEOUT_MS } from "@shared/constants";
 import type {
   CollectPageArtifactsResponse,
@@ -588,17 +588,18 @@ async function runFullPageExport(
   const phase = { name: "boot", attempt: 0 };
   const setPhase = (name: string, attempt = 0): void => { phase.name = name; phase.attempt = attempt; };
   try {
-  const target = await resolveFullPageExportTarget(tabId);
-  exportTabId = target.tabId;
-  startUrl = target.startUrl;
+  // Original brief: Export Full Page works on any http(s):// site the user
+  // is currently viewing. No host allow/block list, no preview-tab redirect.
+  // The only URLs we can't touch are ones Chrome physically forbids scripting
+  // (chrome://, chrome-extension://, edge://, about:, view-source:,
+  // devtools://, file://, the Web Store). Those surface naturally via
+  // ensureContentScript → E_NOT_AVAILABLE_HERE below.
+  exportTabId = tabId;
+  try {
+    const t = await chrome.tabs.get(tabId);
+    startUrl = t?.url ?? "";
+  } catch { /* tab gone — let later steps fail with a real error */ }
   await makeTabVisibleForCapture(exportTabId);
-
-  const unsupported = detectUnsupportedFullPageHost(startUrl);
-  if (unsupported) {
-    const err = new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, unsupported.message, `unsupportedHost=${unsupported.host} | startUrl=${startUrl}`);
-    await broadcast({ status: PanelStatus.Error, message: err.message, errorCode: err.code, errorDetail: err.detail });
-    throw err;
-  }
 
   await broadcast({ status: PanelStatus.Collecting });
 
