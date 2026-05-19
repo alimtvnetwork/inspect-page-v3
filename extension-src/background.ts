@@ -588,6 +588,7 @@ async function runFullPageExport(
 ): Promise<RunFullPageExportResponse> {
   startKeepAlive();
   let exportTabId = tabId;
+  canceledFullPageTabs.delete(tabId);
   // Capture the export tab's URL at start so we can detect mid-export
   // navigation (the #1 cause of "Page failed to load." with no other
   // diagnostic). Lovable editor pages are handed off to their rendered
@@ -643,7 +644,9 @@ async function runFullPageExport(
     let lastErr: unknown;
     artifacts = undefined as unknown as CollectPageArtifactsResponse;
     for (let i = 0; i < delays.length; i++) {
+      throwIfFullPageCanceled(exportTabId);
       if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]));
+      throwIfFullPageCanceled(exportTabId);
       try {
         setPhase("collect", i + 1);
         artifacts = await collect();
@@ -709,8 +712,10 @@ async function runFullPageExport(
       return broadcast(p);
     },
     recoverTabMessaging: ensureContentScript,
+    isCanceled: () => canceledFullPageTabs.has(exportTabId),
   });
 
+  throwIfFullPageCanceled(exportTabId);
   // Update captureFrames count in meta now that we know it.
   const finalMeta = {
     ...artifacts.meta,
