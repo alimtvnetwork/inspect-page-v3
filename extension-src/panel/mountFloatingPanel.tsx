@@ -22,7 +22,8 @@ export interface MountFloatingPanelOptions {
 export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
   const existing = document.getElementById(HOST_ID) as HTMLDivElement | null;
   if (existing) {
-    applyPanelFrame(existing);
+    const size = getPanelCssSize();
+    applyPanelFrame(existing, size.w, size.h);
     existing.style.display = "block";
     existing.style.pointerEvents = "auto";
     existing.focus({ preventScroll: true });
@@ -155,29 +156,6 @@ function wireDrag(host: HTMLDivElement, onDone: () => void): void {
     const top = clamp(start.top + event.clientY - start.y, EDGE_GAP, window.innerHeight - host.offsetHeight - EDGE_GAP);
     host.style.left = `${left}px`;
     host.style.top = `${top}px`;
-  });
-  host.shadowRoot?.addEventListener("pointerup", () => {
-    if (!start) return;
-    start = null;
-    onDone();
-  });
-}
-
-function wireResize(host: HTMLDivElement, onDone: () => void): void {
-  let start: { x: number; y: number; w: number; h: number } | null = null;
-  host.shadowRoot?.addEventListener("pointerdown", (event) => {
-    const target = event.target as HTMLElement | null;
-    if (!target?.closest?.("[data-resize-handle='true']")) return;
-    start = { x: event.clientX, y: event.clientY, w: host.offsetWidth, h: host.offsetHeight };
-    (event.target as Element).setPointerCapture?.(event.pointerId);
-    event.preventDefault();
-  });
-  host.shadowRoot?.addEventListener("pointermove", (event) => {
-    if (!start) return;
-    const w = clamp(start.w + event.clientX - start.x, MIN_W, window.innerWidth - host.offsetLeft - EDGE_GAP);
-    const h = clamp(start.h + event.clientY - start.y, MIN_H, window.innerHeight - host.offsetTop - EDGE_GAP);
-    host.style.width = `${w}px`;
-    host.style.height = `${h}px`;
   });
   host.shadowRoot?.addEventListener("pointerup", () => {
     if (!start) return;
