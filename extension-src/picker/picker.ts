@@ -176,6 +176,58 @@ const STYLE = `
 .lpe-pk-tip .lpe-pk-pill.bad { background: rgba(255,90,90,0.2); color: #ffb4b4; }
 `;
 
+const SEL_STYLE = `
+.lpe-pk-sel-ring {
+  position: fixed; pointer-events: none;
+  outline: 2px solid #2DD4A8;
+  background: rgba(45,212,168,0.10);
+  z-index: ${Z_INDEX_PICKER};
+  box-sizing: border-box;
+}
+.lpe-pk-sel-num {
+  position: fixed; pointer-events: none;
+  background: linear-gradient(135deg,#2DD4A8,#73FFB8);
+  color: #0B0F0E;
+  font: 700 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+  min-width: 18px; height: 18px; line-height: 18px;
+  padding: 0 5px; border-radius: 9px; text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  z-index: ${Z_INDEX_PICKER};
+}
+.lpe-pk-bar {
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+  z-index: ${Z_INDEX_PICKER};
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 10px;
+  background: rgba(13,17,23,0.94); color: #F5FFFA;
+  border: 1px solid rgba(45,212,168,0.35);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  font: 12px ui-sans-serif, system-ui, sans-serif;
+  pointer-events: auto;
+}
+.lpe-pk-bar-count { color: #9ca3af; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; padding: 0 4px; }
+.lpe-pk-bar-btn {
+  all: unset; box-sizing: border-box; cursor: pointer;
+  padding: 4px 10px; border-radius: 6px;
+  font: 600 12px ui-sans-serif, system-ui, sans-serif;
+}
+.lpe-pk-bar-btn[data-variant="done"] {
+  background: linear-gradient(135deg,#2DD4A8,#73FFB8); color: #0B0F0E;
+}
+.lpe-pk-bar-btn[data-variant="done"]:disabled { opacity: 0.4; cursor: not-allowed; }
+.lpe-pk-bar-btn[data-variant="cancel"] { color: #ffb4b4; }
+.lpe-pk-bar-btn[data-variant="cancel"]:hover { background: rgba(255,90,90,0.18); }
+.lpe-pk-toast {
+  position: fixed; top: 56px; left: 50%; transform: translateX(-50%);
+  z-index: ${Z_INDEX_PICKER};
+  padding: 6px 12px; border-radius: 8px;
+  background: rgba(255,90,90,0.92); color: #fff;
+  font: 600 12px ui-sans-serif, system-ui, sans-serif;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+  display: none;
+}
+`;
+
 export function isPickerActive(): boolean {
   return state !== null;
 }
