@@ -1588,8 +1588,10 @@
   font-size: 13px;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-btn-primary {
-  background: linear-gradient(135deg, #12C99A 0%, #2DD4A8 42%, #73FFB8 100%) !important;
-  box-shadow: 0 1px 0 rgba(245, 255, 250, 0.28) inset, 0 10px 26px rgba(45, 212, 168, 0.36), 0 0 0 1px rgba(115, 255, 184, 0.32) !important;
+  background: rgba(17, 23, 21, 0.92) !important;
+  color: #F5FFFA !important;
+  border-color: rgba(115, 255, 184, 0.42) !important;
+  box-shadow: 0 0 0 1px rgba(45, 212, 168, 0.16), 0 10px 24px -18px rgba(115, 255, 184, 0.75) !important;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-status,
 .lpe-root[data-lpe-surface="floating"] .lpe-eli,
