@@ -179,10 +179,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     return () => { alive = false; };
   }, []);
 
-  const onDismissOnboarding = useCallback(async () => {
-    setOnboardingDismissed(true);
-    try { await dismissOnboarding(); } catch { /* ignore */ }
-  }, []);
+  // onDismissOnboarding removed alongside Smart Share banner (UX request).
 
   // ---- Load settings on mount ----
   useEffect(() => {
