@@ -280,6 +280,11 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): 
   });
 }
 
+function throwIfCanceled(input: ScreenshotInput): void {
+  if (!input.isCanceled?.()) return;
+  throw new MessageError(ErrorCode.E_EXPORT_INTERRUPTED, "Export canceled.", "user-canceled");
+}
+
 async function sendToTabWithRecovery<P, R>(
   input: ScreenshotInput,
   kind: MessageKind,
