@@ -9,6 +9,7 @@
  * selectorPath). Safe to JSON.stringify.
  */
 import { selectorPath } from "./selectorPath";
+import { xpathFor } from "./xpath";
 import { matchedCss } from "./matchedCss";
 import { contrastRatio, isLargeText, verdict, type ContrastVerdict } from "../inspect/contrast";
 
@@ -21,6 +22,7 @@ export interface ElementSnapshot {
     classList: string[];
     role: string | null;
     selectorPath: string;
+    xpath: string;          // absolute XPath, or //*[@id="..."] when id is unique
     label: string;          // e.g. "Button" — friendly name
     selectorChip: string;   // e.g. "button.relative"
   };
@@ -265,6 +267,7 @@ export async function collectElementSnapshot(
     identity: {
       tag, id, classList, role,
       selectorPath: selectorPath(target),
+      xpath: xpathFor(target),
       label: friendlyLabel(tag, role),
       selectorChip: selectorChip(tag, classList),
     },

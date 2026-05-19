@@ -82,6 +82,18 @@ export function ElementInspector(props: ElementInspectorProps): JSX.Element {
           swatch={text.color}
           onCopy={() => copy(text.color)}
         />
+        <Row
+          label="CSS selector"
+          value={identity.selectorPath}
+          mono
+          onCopy={() => copy(identity.selectorPath)}
+        />
+        <Row
+          label="XPath"
+          value={identity.xpath}
+          mono
+          onCopy={() => copy(identity.xpath)}
+        />
       </section>
 
       <SelectionContrast selection={selection} onCopy={copy} />
