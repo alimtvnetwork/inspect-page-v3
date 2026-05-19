@@ -19,7 +19,16 @@ import { contrastRatio, isLargeText, verdict } from "../inspect/contrast";
 export interface PickerHandlers {
   onSelect(detail: { element: Element; rect: DOMRect }): void | Promise<void>;
   onCancel(): void;
+  /**
+   * Phase 1 multi-pick: invoked when the user clicks the floating "Done" bar
+   * after toggling 1..MAX_PICKS elements. If absent, the picker falls back to
+   * calling `onSelect` for each element sequentially.
+   */
+  onCommit?(elements: Element[]): void | Promise<void>;
 }
+
+/** Hard cap on simultaneously-picked elements. */
+export const MAX_PICKS = 11;
 
 interface PickerState {
   host: HTMLDivElement;
@@ -47,6 +56,16 @@ interface PickerState {
   prevCursor: string;
   rafScheduled: boolean;
   pendingEvent: PointerEvent | MouseEvent | null;
+  // Phase 1 multi-pick
+  selections: Element[];
+  selLayer: HTMLDivElement;
+  bar: HTMLDivElement;
+  barDone: HTMLButtonElement;
+  barCancel: HTMLButtonElement;
+  barCount: HTMLSpanElement;
+  toast: HTMLDivElement;
+  toastTimer: number | null;
+  onScrollOrResize: () => void;
   cleanup: () => void;
 }
 
@@ -157,6 +176,58 @@ const STYLE = `
 .lpe-pk-tip .lpe-pk-pill.bad { background: rgba(255,90,90,0.2); color: #ffb4b4; }
 `;
 
+const SEL_STYLE = `
+.lpe-pk-sel-ring {
+  position: fixed; pointer-events: none;
+  outline: 2px solid #2DD4A8;
+  background: rgba(45,212,168,0.10);
+  z-index: ${Z_INDEX_PICKER};
+  box-sizing: border-box;
+}
+.lpe-pk-sel-num {
+  position: fixed; pointer-events: none;
+  background: linear-gradient(135deg,#2DD4A8,#73FFB8);
+  color: #0B0F0E;
+  font: 700 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+  min-width: 18px; height: 18px; line-height: 18px;
+  padding: 0 5px; border-radius: 9px; text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  z-index: ${Z_INDEX_PICKER};
+}
+.lpe-pk-bar {
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+  z-index: ${Z_INDEX_PICKER};
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 10px;
+  background: rgba(13,17,23,0.94); color: #F5FFFA;
+  border: 1px solid rgba(45,212,168,0.35);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  font: 12px ui-sans-serif, system-ui, sans-serif;
+  pointer-events: auto;
+}
+.lpe-pk-bar-count { color: #9ca3af; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; padding: 0 4px; }
+.lpe-pk-bar-btn {
+  all: unset; box-sizing: border-box; cursor: pointer;
+  padding: 4px 10px; border-radius: 6px;
+  font: 600 12px ui-sans-serif, system-ui, sans-serif;
+}
+.lpe-pk-bar-btn[data-variant="done"] {
+  background: linear-gradient(135deg,#2DD4A8,#73FFB8); color: #0B0F0E;
+}
+.lpe-pk-bar-btn[data-variant="done"]:disabled { opacity: 0.4; cursor: not-allowed; }
+.lpe-pk-bar-btn[data-variant="cancel"] { color: #ffb4b4; }
+.lpe-pk-bar-btn[data-variant="cancel"]:hover { background: rgba(255,90,90,0.18); }
+.lpe-pk-toast {
+  position: fixed; top: 56px; left: 50%; transform: translateX(-50%);
+  z-index: ${Z_INDEX_PICKER};
+  padding: 6px 12px; border-radius: 8px;
+  background: rgba(255,90,90,0.92); color: #fff;
+  font: 600 12px ui-sans-serif, system-ui, sans-serif;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+  display: none;
+}
+`;
+
 export function isPickerActive(): boolean {
   return state !== null;
 }
@@ -171,7 +242,7 @@ export function enterPicker(handlers: PickerHandlers): void {
 
   const shadow = host.attachShadow({ mode: "open" });
   const styleEl = document.createElement("style");
-  styleEl.textContent = STYLE;
+  styleEl.textContent = STYLE + SEL_STYLE;
   shadow.appendChild(styleEl);
 
   const box = document.createElement("div");
@@ -205,7 +276,7 @@ export function enterPicker(handlers: PickerHandlers): void {
     b.textContent = glyph;
     return b;
   };
-  const chipBtnSelect = mkChipBtn("Select element", "✓", "select");
+  const chipBtnSelect = mkChipBtn("Add to selection", "✓", "select");
   const chipBtnCopy = mkChipBtn("Copy selector", "⧉", "copy");
   const chipBtnCancel = mkChipBtn("Cancel picker", "✕", "cancel");
   const chipFlash = document.createElement("span");
@@ -242,6 +313,34 @@ export function enterPicker(handlers: PickerHandlers): void {
   const tip = document.createElement("div");
   tip.className = "lpe-pk-tip";
   shadow.appendChild(tip);
+
+  // Phase 1 multi-pick — persistent selection layer + top bar + toast
+  const selLayer = document.createElement("div");
+  selLayer.style.cssText = "position:fixed;inset:0;pointer-events:none;";
+  shadow.appendChild(selLayer);
+
+  const bar = document.createElement("div");
+  bar.className = "lpe-pk-bar";
+  const barDone = document.createElement("button");
+  barDone.type = "button";
+  barDone.className = "lpe-pk-bar-btn";
+  barDone.dataset.variant = "done";
+  barDone.textContent = "Done";
+  barDone.disabled = true;
+  const barCount = document.createElement("span");
+  barCount.className = "lpe-pk-bar-count";
+  barCount.textContent = `0 / ${MAX_PICKS}`;
+  const barCancel = document.createElement("button");
+  barCancel.type = "button";
+  barCancel.className = "lpe-pk-bar-btn";
+  barCancel.dataset.variant = "cancel";
+  barCancel.textContent = "Cancel";
+  bar.append(barDone, barCount, barCancel);
+  shadow.appendChild(bar);
+
+  const toast = document.createElement("div");
+  toast.className = "lpe-pk-toast";
+  shadow.appendChild(toast);
 
   const prevCursor = document.body?.style.cursor ?? "";
   if (document.body) document.body.style.cursor = "crosshair";
@@ -300,15 +399,13 @@ export function enterPicker(handlers: PickerHandlers): void {
     if (t?.closest?.("#inspect-page-panel-host")) return;
     // Let chip-button clicks through to their own handlers.
     if (e.composedPath().includes(chip)) return;
+    // Let bar-button clicks through to their own handlers.
+    if (e.composedPath().includes(bar)) return;
     e.preventDefault(); e.stopPropagation();
-    // Treat a left-click as a selection too (in addition to right-click)
-    // so the picker is discoverable without needing the context menu.
     const target = pickTarget(e.clientX, e.clientY);
     if (!target) return;
-    const rect = target.getBoundingClientRect();
-    void Promise.resolve(handlers.onSelect({ element: target, rect })).catch((err) => {
-      logger.warn(LogCategory.Picker, "SELECT_FAIL", "select handler threw", err);
-    });
+    // Phase 1: toggle into multi-pick selections; commit happens on Done.
+    toggleSelection(target);
   };
 
   // P1: short-circuit overlay re-targeting while pointer is on the chip
@@ -322,10 +419,8 @@ export function enterPicker(handlers: PickerHandlers): void {
     e.preventDefault(); e.stopPropagation();
     const t = state?.currentTarget ?? null;
     if (!t) return;
-    const rect = t.getBoundingClientRect();
-    void Promise.resolve(handlers.onSelect({ element: t, rect })).catch((err) => {
-      logger.warn(LogCategory.Picker, "SELECT_FAIL", "select handler threw", err);
-    });
+    // Chip ✓ — Phase 1: add hovered element to selection (toggle).
+    toggleSelection(t);
   };
   const fireCopy = async (e: Event): Promise<void> => {
     e.preventDefault(); e.stopPropagation();
@@ -395,6 +490,36 @@ export function enterPicker(handlers: PickerHandlers): void {
   window.addEventListener("keydown", onKeyDown, true);
   window.addEventListener("keyup", onKeyUp, true);
 
+  const onScrollOrResize = (): void => { renderSelections(); };
+  window.addEventListener("scroll", onScrollOrResize, true);
+  window.addEventListener("resize", onScrollOrResize, true);
+
+  const fireDone = (e: Event): void => {
+    e.preventDefault(); e.stopPropagation();
+    if (!state || state.selections.length === 0) return;
+    const els = state.selections.slice();
+    if (handlers.onCommit) {
+      void Promise.resolve(handlers.onCommit(els)).catch((err) => {
+        logger.warn(LogCategory.Picker, "COMMIT_FAIL", "commit handler threw", err);
+      });
+    } else {
+      for (const el of els) {
+        const r = el.getBoundingClientRect();
+        void Promise.resolve(handlers.onSelect({ element: el, rect: r })).catch((err) => {
+          logger.warn(LogCategory.Picker, "SELECT_FAIL", "select handler threw", err);
+        });
+      }
+    }
+    exitPicker();
+  };
+  const fireBarCancel = (e: Event): void => {
+    e.preventDefault(); e.stopPropagation();
+    handlers.onCancel();
+    exitPicker();
+  };
+  barDone.addEventListener("click", fireDone);
+  barCancel.addEventListener("click", fireBarCancel);
+
   const cleanup = (): void => {
     window.removeEventListener("mousemove", onMoveThrottled, true);
     window.removeEventListener("mouseover", onMoveThrottled, true);
@@ -402,8 +527,13 @@ export function enterPicker(handlers: PickerHandlers): void {
     window.removeEventListener("click", onClick, true);
     window.removeEventListener("keydown", onKeyDown, true);
     window.removeEventListener("keyup", onKeyUp, true);
+    window.removeEventListener("scroll", onScrollOrResize, true);
+    window.removeEventListener("resize", onScrollOrResize, true);
     chip.removeEventListener("pointerenter", onChipEnter);
     chip.removeEventListener("pointerleave", onChipLeave);
+    barDone.removeEventListener("click", fireDone);
+    barCancel.removeEventListener("click", fireBarCancel);
+    if (state?.toastTimer) window.clearTimeout(state.toastTimer);
   };
 
   state = {
@@ -415,6 +545,8 @@ export function enterPicker(handlers: PickerHandlers): void {
     prevCursor,
     rafScheduled: false,
     pendingEvent: null,
+    selections: [], selLayer, bar, barDone, barCancel, barCount,
+    toast, toastTimer: null, onScrollOrResize,
     cleanup,
   };
 
@@ -428,6 +560,59 @@ export function exitPicker(): void {
   state.host.remove();
   state = null;
   logger.info(LogCategory.Picker, "Picker exited");
+}
+
+/** Phase 1 — toggle an element in/out of the multi-pick selections. */
+function toggleSelection(el: Element): void {
+  if (!state) return;
+  const idx = state.selections.indexOf(el);
+  if (idx >= 0) {
+    state.selections.splice(idx, 1);
+  } else {
+    if (state.selections.length >= MAX_PICKS) {
+      showToast(`Limit reached (${MAX_PICKS})`);
+      return;
+    }
+    state.selections.push(el);
+  }
+  state.barDone.disabled = state.selections.length === 0;
+  state.barCount.textContent = `${state.selections.length} / ${MAX_PICKS}`;
+  renderSelections();
+}
+
+/** Phase 1 — paint persistent green rings + numbered badges for each pick. */
+function renderSelections(): void {
+  if (!state) return;
+  const layer = state.selLayer;
+  layer.textContent = "";
+  state.selections.forEach((el, i) => {
+    let r: DOMRect;
+    try { r = el.getBoundingClientRect(); } catch { return; }
+    if (r.width === 0 && r.height === 0) return;
+    const ring = document.createElement("div");
+    ring.className = "lpe-pk-sel-ring";
+    ring.style.left = `${r.left}px`;
+    ring.style.top = `${r.top}px`;
+    ring.style.width = `${r.width}px`;
+    ring.style.height = `${r.height}px`;
+    layer.appendChild(ring);
+    const num = document.createElement("div");
+    num.className = "lpe-pk-sel-num";
+    num.textContent = String(i + 1);
+    num.style.left = `${Math.max(2, r.left - 6)}px`;
+    num.style.top = `${Math.max(2, r.top - 6)}px`;
+    layer.appendChild(num);
+  });
+}
+
+function showToast(msg: string): void {
+  if (!state) return;
+  state.toast.textContent = msg;
+  state.toast.style.display = "block";
+  if (state.toastTimer) window.clearTimeout(state.toastTimer);
+  state.toastTimer = window.setTimeout(() => {
+    if (state) state.toast.style.display = "none";
+  }, 1600);
 }
 
 /** Returns the host-page element under (x,y), excluding our overlay host. */
