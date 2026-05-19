@@ -526,22 +526,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         ))}
       </div>
 
-      {surface !== "inspect-popout" && !onboardingDismissed && !shareConfigured(shareSettings ?? { siteUrl: "", userId: 0, displayName: "", email: "", nonce: "", signedInAtIso: "" }) && (
-        <div className="lpe-onboarding" role="status">
-          <div>
-            <strong>{COPY.onboardingTitle}</strong>
-            <span>{COPY.onboardingBody}</span>
-          </div>
-          <div className="lpe-onboarding-actions">
-            <button type="button" className="lpe-btn lpe-btn-primary" onClick={() => void onSignIn()}>
-              {COPY.onboardingSignIn}
-            </button>
-            <button type="button" className="lpe-btn" onClick={onDismissOnboarding}>
-              {COPY.onboardingDismiss}
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Smart Share onboarding banner removed per UX request (v2.7.0+) */}
 
       <div className="lpe-body" data-mode={mode}>
         {mode === "inspect" ? (
