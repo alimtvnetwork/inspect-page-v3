@@ -783,8 +783,14 @@ async function runFullPageExport(
     });
     throw err;
   } finally {
+    canceledFullPageTabs.delete(exportTabId);
     stopKeepAlive();
   }
+}
+
+function throwIfFullPageCanceled(tabId: number): void {
+  if (!canceledFullPageTabs.has(tabId)) return;
+  throw new MessageError(ErrorCode.E_EXPORT_INTERRUPTED, "Export canceled.", "user-canceled");
 }
 
 function mapFullPageExportError(e: unknown): MessageError {
