@@ -155,6 +155,9 @@ export interface RunElementExportPayload {
 }
 export interface RunElementExportResponse { mdFilename: string; downloadId: number }
 
+export interface MountFloatingPanelPayload { tabId: number }
+export type MountFloatingPanelResponse = void;
+
 export interface CollectPageArtifactsPayload { tabId: number }
 export interface CollectPageArtifactsResponse {
   html: string;
