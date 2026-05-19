@@ -44,19 +44,23 @@ function blobToDataUrl(blob: Blob): Promise<string> {
  * Falls back to the anchor-click path if the background round-trip fails
  * (e.g. content-script context invalidated).
  */
-async function triggerDownload(blob: Blob, filename: string): Promise<void> {
+async function triggerDownload(blob: Blob, filename: string): Promise<string | undefined> {
   try {
     const dataUrl = await blobToDataUrl(blob);
-    await sendToBackground<{ dataUrl: string; filename: string }, { downloadId: number }>(
+    const res = await sendToBackground<
+      { dataUrl: string; filename: string },
+      { downloadId: number; savedPath?: string }
+    >(
       MessageKind.DownloadBlob, { dataUrl, filename },
     );
-    return;
+    return res.savedPath;
   } catch {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = filename;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    return undefined;
   }
 }
 
@@ -112,6 +116,7 @@ export function ExportModes({
     | { phase: "error"; message: string }
   >({ phase: "idle" });
   const [now, setNow] = useState<number>(Date.now());
+  const [lastSavedPath, setLastSavedPath] = useState<string | null>(null);
 
   useEffect(() => {
     if (shareState.phase !== "done") return;
@@ -121,10 +126,11 @@ export function ExportModes({
 
   const onMd = useCallback(async () => {
     const md = buildSingleMd(artifacts);
-    await triggerDownload(
+    const saved = await triggerDownload(
       new Blob([md], { type: "text/markdown;charset=utf-8" }),
       `${fileBaseName(artifacts)}.md`,
     );
+    if (saved) setLastSavedPath(saved);
   }, [artifacts]);
 
   const handleShare = useCallback(async () => {
@@ -152,7 +158,8 @@ export function ExportModes({
       zip.file(`images/${img.name}`, base64ToUint8(img.base64));
     }
     const blob = await zip.generateAsync({ type: "blob" });
-    await triggerDownload(blob, `${fileBaseName(artifacts)}-mdfiles.zip`);
+    const saved = await triggerDownload(blob, `${fileBaseName(artifacts)}-mdfiles.zip`);
+    if (saved) setLastSavedPath(saved);
   }, [artifacts]);
 
   const onZip = useCallback(async () => {
@@ -169,7 +176,8 @@ export function ExportModes({
     }
     zip.file("manifest.json", `${JSON.stringify(artifacts.meta, null, 2)}\n`);
     const blob = await zip.generateAsync({ type: "blob" });
-    await triggerDownload(blob, `${fileBaseName(artifacts)}.zip`);
+    const saved = await triggerDownload(blob, `${fileBaseName(artifacts)}.zip`);
+    if (saved) setLastSavedPath(saved);
   }, [artifacts]);
 
   return (
@@ -202,6 +210,11 @@ export function ExportModes({
       )}
       {shareState.phase === "error" && (
         <div className="lpe-debug-note" role="alert">⚠ {shareState.message}</div>
+      )}
+      {lastSavedPath && (
+        <div className="lpe-debug-note" title={lastSavedPath}>
+          ✓ Saved to: <code>{lastSavedPath}</code>
+        </div>
       )}
     </div>
   );

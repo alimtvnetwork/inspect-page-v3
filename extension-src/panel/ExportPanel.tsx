@@ -1135,10 +1135,15 @@ function buildCombinedElementArtifacts(
       jsParts.push(`/* ${header} */`, p.debugPreview.js, "");
     }
     const s = p.source;
+    const snap = p.elementSnapshot as ElementSnapshot | undefined;
+    const cssSel = snap?.identity.selectorPath ?? p.selectorPath;
+    const xpath = snap?.identity.xpath ?? "";
     preludeParts.push(`## Source — Element ${n}`);
     preludeParts.push(`- URL: ${s?.url ?? activeUrl ?? ""}`);
     preludeParts.push(`- Captured: ${s?.capturedAtIso ?? ""}`);
     preludeParts.push(`- Selector path: ${p.selectorPath}`);
+    preludeParts.push(`- CSS selector: ${cssSel}`);
+    if (xpath) preludeParts.push(`- XPath: ${xpath}`);
     preludeParts.push(`- Page title: ${s?.pageTitle ?? ""}`);
     if (s?.viewport) {
       preludeParts.push(`- Viewport: ${s.viewport.w}×${s.viewport.h} CSS px @ DPR ${s.dpr}`);

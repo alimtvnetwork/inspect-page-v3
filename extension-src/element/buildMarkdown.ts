@@ -15,6 +15,10 @@ export interface BuildMarkdownInput {
   viewportCssPx: { w: number; h: number };
   dpr: number;
   selectorPath: string;
+  /** Optional XPath for the picked element. */
+  xpath?: string;
+  /** Optional suggested output filename (no path). Rendered in the Source block. */
+  filename?: string;
   tag: string;
   id?: string;
   classes: string[];
@@ -50,8 +54,11 @@ export function buildMarkdown(input: BuildMarkdownInput): BuildMarkdownResult {
     parts.push(`- URL: ${input.url}`);
     parts.push(`- Captured: ${input.capturedAtIso}`);
     parts.push(`- Selector path: ${input.selectorPath}`);
+    parts.push(`- CSS selector: ${input.selectorPath}`);
+    if (input.xpath) parts.push(`- XPath: ${input.xpath}`);
     parts.push(`- Page title: ${input.title}`);
     parts.push(`- Viewport: ${input.viewportCssPx.w}×${input.viewportCssPx.h} CSS px @ DPR ${input.dpr}`);
+    if (input.filename) parts.push(`- Suggested filename: ${input.filename}`);
     parts.push("");
     parts.push("## outerHTML");
     parts.push("```html");

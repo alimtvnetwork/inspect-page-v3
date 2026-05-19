@@ -291,7 +291,7 @@ router.on<RunElementExportPayload, RunElementExportResponse>(
 // DownloadBlob — used by the panel/inspector "Export for AI" buttons so the
 // user always gets a Save As… dialog instead of an auto-download to the
 // default Downloads folder.
-router.on<{ dataUrl: string; filename: string }, { downloadId: number }>(
+router.on<{ dataUrl: string; filename: string }, { downloadId: number; savedPath?: string }>(
   MessageKind.DownloadBlob,
   async ({ dataUrl, filename }) => {
     try {
@@ -300,7 +300,8 @@ router.on<{ dataUrl: string; filename: string }, { downloadId: number }>(
         filename,
         saveAs: true,
       });
-      return { downloadId };
+      const savedPath = await waitForDownloadPath(downloadId).catch(() => undefined);
+      return savedPath ? { downloadId, savedPath } : { downloadId };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       // User cancel in the Save As dialog is not a hard error.
@@ -311,6 +312,38 @@ router.on<{ dataUrl: string; filename: string }, { downloadId: number }>(
 );
 
 router.attach();
+
+/**
+ * Resolve the final on-disk path for a Save As… download. Returns the absolute
+ * filename once `chrome.downloads` reports state=complete, or rejects after a
+ * short timeout so callers can fall back to the suggested filename.
+ */
+function waitForDownloadPath(downloadId: number, timeoutMs = 60_000): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (downloadId < 0) return reject(new Error("cancelled"));
+    const timer = setTimeout(() => {
+      chrome.downloads.onChanged.removeListener(handler);
+      reject(new Error("timeout"));
+    }, timeoutMs);
+    const handler = (delta: chrome.downloads.DownloadDelta) => {
+      if (delta.id !== downloadId) return;
+      if (delta.state?.current === "complete") {
+        clearTimeout(timer);
+        chrome.downloads.onChanged.removeListener(handler);
+        chrome.downloads.search({ id: downloadId }, (items) => {
+          const item = items?.[0];
+          if (item?.filename) resolve(item.filename);
+          else reject(new Error("no item"));
+        });
+      } else if (delta.state?.current === "interrupted") {
+        clearTimeout(timer);
+        chrome.downloads.onChanged.removeListener(handler);
+        reject(new Error("interrupted"));
+      }
+    };
+    chrome.downloads.onChanged.addListener(handler);
+  });
+}
 
 interface ThumbnailCropRect { x: number; y: number; w: number; h: number; dpr: number }
 
