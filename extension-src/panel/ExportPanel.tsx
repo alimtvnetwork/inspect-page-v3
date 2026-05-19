@@ -235,7 +235,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         const p = entry.payload;
         setState((prev) => ({
           ...prev,
-          status: PanelStatus.Selecting,
+          status: PanelStatus.Idle,
           message: p.message,
           ...(p.debugPreview ? { debugPreview: p.debugPreview } : {}),
           ...(p.elementSnapshot ? { elementSnapshot: p.elementSnapshot as ElementSnapshot } : {}),
