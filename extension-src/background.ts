@@ -266,6 +266,25 @@ router.on<{ tabId: number; target: string }, { count: number }>(
   },
 );
 
+// Forward Inspector "Locate" clicks to the active tab's content script.
+router.on<{ tabId: number; selector: string }, { count: number }>(
+  MessageKind.LocateElement,
+  async ({ tabId, selector }, sender) => {
+    let tid = tabId > 0 ? tabId : sender.tab?.id;
+    if (tid === undefined) {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      tid = tab?.id;
+    }
+    if (tid === undefined) {
+      throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, "Cannot resolve tab for locate element");
+    }
+    await ensureContentScript(tid);
+    return sendToTab<{ selector: string }, { count: number }>(
+      tid, MessageKind.LocateElement, { selector },
+    );
+  },
+);
+
 router.on<RunElementExportPayload, RunElementExportResponse>(
   MessageKind.RunElementExport,
   async (payload, sender) => {
