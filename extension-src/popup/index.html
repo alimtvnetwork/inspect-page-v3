@@ -4,24 +4,24 @@
     <meta charset="utf-8" />
     <title>Inspect Page</title>
     <style>
-      /* Lock popup to Samsung Galaxy S20 Ultra viewport (412 x 915).
+      /* Lock popup to the same compact extension viewport as the floating panel (412 x 820).
          Chrome will clamp popup height to ~600px on small displays, but on
-         normal displays the popup will render at the full 915px.
+         normal displays the popup will render at the full 820px.
          Overflow is scrollable but the scrollbar is hidden in every engine. */
       html, body {
         margin: 0;
         padding: 0;
         width: 412px;
-        height: 915px;
+        height: 820px;
         min-width: 412px;
-        min-height: 915px;
+        min-height: 820px;
         background: transparent;
         overflow: hidden;
       }
       #root {
         width: 412px;
-        height: 915px;
-        min-height: 915px;
+        height: 820px;
+        min-height: 820px;
         overflow-y: auto;
         overflow-x: hidden;
         scrollbar-width: none;          /* Firefox */

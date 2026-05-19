@@ -43,17 +43,20 @@
   height: 100%;
   min-width: 0;
   min-height: 0;
+  max-width: 412px !important;
+  max-height: 820px !important;
   display: flex;
   flex-direction: column;
-  /* Match popup dark-mint surface: same radial mint+cyan tints over #0B0F0E. */
+  /* Match popup dark-mint surface, with stronger mint depth inside the fixed 412×820 frame. */
   background:
-    radial-gradient(120% 80% at 20% 0%, rgba(45, 212, 168, 0.10) 0%, transparent 55%),
-    radial-gradient(120% 80% at 100% 100%, rgba(92, 225, 230, 0.08) 0%, transparent 55%),
+    radial-gradient(120% 78% at 16% 0%, rgba(45, 212, 168, 0.22) 0%, rgba(45, 212, 168, 0.06) 36%, transparent 62%),
+    radial-gradient(120% 82% at 100% 100%, rgba(115, 255, 184, 0.16) 0%, transparent 58%),
+    linear-gradient(180deg, rgba(17, 23, 21, 0.96), rgba(8, 12, 11, 1)),
     #0B0F0E;
   color: #F5FFFA;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(115, 255, 184, 0.24);
   border-radius: 12px;
-  box-shadow: 0 18px 48px -16px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 18px 48px -16px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(45, 212, 168, 0.18);
 }
 
 /* ---------- Theme tokens (Phase A1) ---------- */
@@ -406,6 +409,8 @@
   min-height: 0;
   max-height: none;
   overflow-y: auto;
+  padding: 10px 10px 12px;
+  gap: 8px;
 }
 .lpe-btn {
   display: block; width: 100%;
@@ -436,8 +441,14 @@
 .lpe-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
 .lpe-root[data-lpe-theme="dark"] .lpe-btn { background: #161b22; border-color: #30363d; color: #e6edf3; }
 .lpe-root[data-lpe-theme="dark"] .lpe-btn:hover:not([disabled]) { background: #1f242c; }
-.lpe-root[data-lpe-theme="dark"] .lpe-btn-primary { background: var(--lpe-accent); color: var(--lpe-accent-fg); border-color: var(--lpe-accent); }
-.lpe-root[data-lpe-theme="dark"] .lpe-btn-primary:hover:not([disabled]) { background: #1f6feb; }
+.lpe-root[data-lpe-theme="dark"] .lpe-btn-primary {
+  background: linear-gradient(135deg, #12C99A 0%, #2DD4A8 42%, #73FFB8 100%);
+  color: var(--lpe-accent-fg);
+  border-color: rgba(115, 255, 184, 0.65);
+}
+.lpe-root[data-lpe-theme="dark"] .lpe-btn-primary:hover:not([disabled]) {
+  background: linear-gradient(135deg, #0EB98E 0%, #26E0AF 48%, #8CFFC6 100%);
+}
 .lpe-status {
   padding: 8px 10px;
   border: 1px solid var(--lpe-border);
@@ -1428,6 +1439,70 @@
   pointer-events: none;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
+
+/* Fixed compact floating surface: keep the visual UI inside 412 × 820 even when old saved sizes exist. */
+.lpe-root[data-lpe-surface="floating"] {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 412px !important;
+  max-height: 820px !important;
+  overflow: hidden !important;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-header {
+  min-height: 42px;
+  padding: 6px 10px;
+  background: rgba(17, 23, 21, 0.92);
+  backdrop-filter: blur(10px);
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-header-title {
+  font-size: 14px;
+  letter-spacing: 0;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-header-btn {
+  min-width: 28px;
+  min-height: 28px;
+  padding: 2px 6px;
+  font-size: 13px;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-tabs {
+  background: rgba(11, 15, 14, 0.78);
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-tab {
+  padding: 7px 8px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-body {
+  padding: 10px;
+  gap: 8px;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-btn {
+  min-height: 38px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 13px;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-btn-primary {
+  background: linear-gradient(135deg, #12C99A 0%, #2DD4A8 42%, #73FFB8 100%) !important;
+  box-shadow: 0 1px 0 rgba(245, 255, 250, 0.28) inset, 0 10px 26px rgba(45, 212, 168, 0.36), 0 0 0 1px rgba(115, 255, 184, 0.32) !important;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-status,
+.lpe-root[data-lpe-surface="floating"] .lpe-eli,
+.lpe-root[data-lpe-surface="floating"] .lpe-debug,
+.lpe-root[data-lpe-surface="floating"] .lpe-billing-panel {
+  background: rgba(17, 23, 21, 0.86);
+  border-color: rgba(115, 255, 184, 0.16);
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-eli {
+  padding: 9px 10px;
+  gap: 9px;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-bm-margin,
+.lpe-root[data-lpe-surface="floating"] .lpe-bm-border,
+.lpe-root[data-lpe-surface="floating"] .lpe-bm-padding {
+  padding: 16px 24px;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-resize-handle { display: none; }
 
 /* Hide scrollbars inside extension panel while preserving scroll. */
 .lpe-root *::-webkit-scrollbar { width: 0 !important; height: 0 !important; background: transparent !important; }
