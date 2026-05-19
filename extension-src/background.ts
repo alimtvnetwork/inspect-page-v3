@@ -576,26 +576,30 @@ async function runFullPageExport(
   settings: SetSettingsPayload,
 ): Promise<RunFullPageExportResponse> {
   startKeepAlive();
-  // Capture the tab's URL at start so we can detect mid-export navigation
-  // (the #1 cause of "Page failed to load." with no other diagnostic).
+  let exportTabId = tabId;
+  // Capture the export tab's URL at start so we can detect mid-export
+  // navigation (the #1 cause of "Page failed to load." with no other
+  // diagnostic). Lovable editor pages are handed off to their rendered
+  // preview tab before this point, so the exported HTML/CSS/JS/screenshot are
+  // from the actual app, not the IDE shell.
   let startUrl = "";
-  try { startUrl = (await chrome.tabs.get(tabId)).url ?? ""; } catch { /* tab gone */ }
-  // Friendly early guard for hosts that are technically https:// but cannot
-  // be full-page-captured (SPA editors with no document-level scroll,
-  // sandboxed previews, etc.). Surfacing this here gives a clear message
-  // instead of the generic "Page failed to load." after 6 silent retries.
-  const unsupported = detectUnsupportedFullPageHost(startUrl);
-  if (unsupported) {
-    stopKeepAlive();
-    const err = new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, unsupported.message, `unsupportedHost=${unsupported.host} | startUrl=${startUrl}`);
-    await broadcast({ status: PanelStatus.Error, message: err.message, errorCode: err.code, errorDetail: err.detail });
-    throw err;
-  }
   // Diagnostic phase tracker — surfaced in the error `detail` so future
   // failures pinpoint exactly which step blew up.
   const phase = { name: "boot", attempt: 0 };
   const setPhase = (name: string, attempt = 0): void => { phase.name = name; phase.attempt = attempt; };
   try {
+  const target = await resolveFullPageExportTarget(tabId);
+  exportTabId = target.tabId;
+  startUrl = target.startUrl;
+  await makeTabVisibleForCapture(exportTabId);
+
+  const unsupported = detectUnsupportedFullPageHost(startUrl);
+  if (unsupported) {
+    const err = new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, unsupported.message, `unsupportedHost=${unsupported.host} | startUrl=${startUrl}`);
+    await broadcast({ status: PanelStatus.Error, message: err.message, errorCode: err.code, errorDetail: err.detail });
+    throw err;
+  }
+
   await broadcast({ status: PanelStatus.Collecting });
 
   // Proactively wait for the page to be `complete` and the CS to be
@@ -604,7 +608,7 @@ async function runFullPageExport(
   // Page on a still-loading or just-navigated tab.
   setPhase("ensureContentScript:pre-collect");
   try {
-    await ensureContentScript(tabId);
+    await ensureContentScript(exportTabId);
   } catch (e) {
     logger.warn(LogCategory.Capture, ErrorCode.E_NOT_AVAILABLE_HERE, "pre-collect content script readiness failed; retrying during collect", e);
   }
@@ -613,7 +617,7 @@ async function runFullPageExport(
   const collect = (): Promise<CollectPageArtifactsResponse> =>
     withTimeout(
       sendToTab<{ tabId: number }, CollectPageArtifactsResponse>(
-        tabId, MessageKind.CollectPageArtifacts, { tabId },
+        exportTabId, MessageKind.CollectPageArtifacts, { tabId: exportTabId },
       ),
       COLLECT_TIMEOUT_MS,
       "collect artifacts",
@@ -639,7 +643,7 @@ async function runFullPageExport(
         const d = err instanceof MessageError ? (err.detail ?? m) : m;
         if (!isTransient(m) && !isTransient(d)) throw err;
         logger.warn(LogCategory.Capture, "COLLECT_RETRY", `attempt ${i + 1} failed; re-injecting CS`, err);
-        try { await ensureContentScript(tabId); } catch { /* keep retrying */ }
+        try { await ensureContentScript(exportTabId); } catch { /* keep retrying */ }
       }
     }
     if (lastErr) throw lastErr;
@@ -649,7 +653,7 @@ async function runFullPageExport(
     // reachable). Re-wrapping would mask the real cause and surface a
     // generic "Page failed to load." with E_PERMISSION_DENIED.
     if (e instanceof MessageError) {
-      await maybeAttachNavigationDetail(e, tabId, startUrl, phase);
+      await maybeAttachNavigationDetail(e, exportTabId, startUrl, phase);
       throw e;
     }
     const msg = e instanceof Error ? e.message : String(e);
@@ -677,10 +681,10 @@ async function runFullPageExport(
   }
 
   // ---- Screenshot (Stage 6) ----
-  const tab = await chrome.tabs.get(tabId);
+  const tab = await chrome.tabs.get(exportTabId);
   setPhase("captureFullPage");
   const screenshot = await captureFullPage({
-    tabId,
+    tabId: exportTabId,
     windowId: tab.windowId,
     pageCssPx: artifacts.meta.pageCssPx,
     viewportCssPx: artifacts.meta.viewportCssPx,
@@ -753,7 +757,7 @@ async function runFullPageExport(
   return response;
   } catch (e) {
     const err = mapFullPageExportError(e);
-    await maybeAttachNavigationDetail(err, tabId, startUrl, phase);
+    await maybeAttachNavigationDetail(err, exportTabId, startUrl, phase);
     await broadcast({
       status: PanelStatus.Error,
       message: err.message,
@@ -780,6 +784,125 @@ function mapFullPageExportError(e: unknown): MessageError {
     return new MessageError(ErrorCode.E_EXPORT_TIMEOUT, "Export took too long. Try a smaller page or use Pick Element.", msg);
   }
   return new MessageError(ErrorCode.E_EXPORT_INTERRUPTED, "Export failed before it could finish. Reload the tab and try again.", msg);
+}
+
+async function resolveFullPageExportTarget(tabId: number): Promise<{ tabId: number; startUrl: string }> {
+  let tab: chrome.tabs.Tab | null = null;
+  try { tab = await chrome.tabs.get(tabId); } catch { /* tab gone */ }
+  const startUrl = tab?.url ?? "";
+  if (!isLovableEditorUrl(startUrl)) return { tabId, startUrl };
+
+  const previewTab = await findLovablePreviewTab(tab);
+  if (!previewTab?.id || !previewTab.url) {
+    const err = new MessageError(
+      ErrorCode.E_NOT_AVAILABLE_HERE,
+      "Open the Lovable preview in a browser tab, then run Export Full Page again. The editor itself is not the rendered page.",
+      `unsupportedHost=lovable.dev | previewTab=missing | startUrl=${startUrl}`,
+    );
+    await broadcast({ status: PanelStatus.Error, message: err.message, errorCode: err.code, errorDetail: err.detail });
+    throw err;
+  }
+  logger.info(LogCategory.Capture, `Lovable editor export redirected to preview tab ${previewTab.id}`);
+  return { tabId: previewTab.id, startUrl: previewTab.url };
+}
+
+async function findLovablePreviewTab(editorTab: chrome.tabs.Tab | null): Promise<chrome.tabs.Tab | null> {
+  const iframeUrl = editorTab?.id ? await extractLovablePreviewUrlFromEditorTab(editorTab.id) : "";
+  const tabs = await chrome.tabs.query({});
+  const candidates = tabs.filter((tab) => tab.id && tab.url && isLikelyLovablePreviewUrl(tab.url));
+  if (candidates.length === 0 && iframeUrl) {
+    return chrome.tabs.create({
+      url: iframeUrl,
+      active: true,
+      windowId: editorTab?.windowId,
+      index: typeof editorTab?.index === "number" ? editorTab.index + 1 : undefined,
+    });
+  }
+  if (candidates.length === 0) return null;
+  const sameWindow = candidates.filter((tab) => !editorTab?.windowId || tab.windowId === editorTab.windowId);
+  const pool = sameWindow.length > 0 ? sameWindow : candidates;
+  const currentProject = projectIdFromLovableEditorUrl(editorTab?.url ?? "");
+  const scored = pool
+    .map((tab) => ({ tab, score: scorePreviewCandidate(tab, currentProject, editorTab, iframeUrl) }))
+    .sort((a, b) => b.score - a.score);
+  return scored[0]?.tab ?? null;
+}
+
+async function extractLovablePreviewUrlFromEditorTab(tabId: number): Promise<string> {
+  try {
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId, allFrames: false },
+      func: () => {
+        const urls: string[] = [];
+        for (const iframe of Array.from(document.querySelectorAll("iframe"))) {
+          const src = (iframe as HTMLIFrameElement).src || iframe.getAttribute("src") || "";
+          if (src) urls.push(src);
+        }
+        const hit = urls.find((url) => {
+          try {
+            const u = new URL(url, location.href);
+            const h = u.hostname.toLowerCase();
+            return h.endsWith(".lovable.app") || h.includes("preview--") || h.includes("id-preview--");
+          } catch { return false; }
+        });
+        return hit ? new URL(hit, location.href).href : "";
+      },
+    });
+    return typeof result?.result === "string" ? result.result : "";
+  } catch {
+    return "";
+  }
+}
+
+function isLovableEditorUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.hostname.toLowerCase() === "lovable.dev" && u.pathname.startsWith("/projects/");
+  } catch { return false; }
+}
+
+function projectIdFromLovableEditorUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split("/").filter(Boolean);
+    return parts[0] === "projects" ? (parts[1] ?? "") : "";
+  } catch { return ""; }
+}
+
+function isLikelyLovablePreviewUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return false;
+    const host = u.hostname.toLowerCase();
+    return host.endsWith(".lovable.app") || host.includes("preview--") || host.includes("id-preview--");
+  } catch { return false; }
+}
+
+function scorePreviewCandidate(tab: chrome.tabs.Tab, projectId: string, editorTab: chrome.tabs.Tab | null, iframeUrl: string): number {
+  const url = tab.url ?? "";
+  let score = 0;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (host.endsWith(".lovable.app")) score += 100;
+    if (/preview--|id-preview--/.test(host)) score += 60;
+    if (projectId && host.includes(projectId)) score += 500;
+    if (iframeUrl && url === iframeUrl) score += 1000;
+  } catch { /* ignore */ }
+  if (tab.active) score += 20;
+  if (editorTab?.windowId && tab.windowId === editorTab.windowId) score += 40;
+  if (typeof tab.index === "number" && typeof editorTab?.index === "number") {
+    score += Math.max(0, 20 - Math.abs(tab.index - editorTab.index));
+  }
+  return score;
+}
+
+async function makeTabVisibleForCapture(tabId: number): Promise<void> {
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    if (!tab.active) await chrome.tabs.update(tabId, { active: true });
+  } catch {
+    // Let the normal export path surface a phase-tagged tab error.
+  }
 }
 
 /**
