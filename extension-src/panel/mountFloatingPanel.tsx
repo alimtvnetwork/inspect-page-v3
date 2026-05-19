@@ -2,7 +2,7 @@ import { StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MessageKind } from "@shared/enums";
 import { sendToBackground } from "@shared/messaging";
-import type { PanelPosition } from "@shared/types";
+import type { GetTabZoomResponse, PanelPosition } from "@shared/types";
 import { ExportPanel } from "./ExportPanel";
 import { clamp } from "./clamp";
 import stylesText from "./styles.css?inline";
@@ -13,6 +13,7 @@ const TARGET_VISUAL_H = 820;
 const EDGE_GAP = 16;
 
 let root: Root | null = null;
+let activeTabZoom = 1;
 
 export interface MountFloatingPanelOptions {
   tabId: number;
@@ -22,7 +23,8 @@ export interface MountFloatingPanelOptions {
 export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
   const existing = document.getElementById(HOST_ID) as HTMLDivElement | null;
   if (existing) {
-    const size = getPanelCssSize();
+    void refreshTabZoom(options.tabId).then(() => repositionExisting(existing));
+    const size = getPanelCssSize(activeTabZoom);
     applyPanelFrame(existing, size.w, size.h);
     existing.style.display = "block";
     existing.style.pointerEvents = "auto";
@@ -61,7 +63,7 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
   document.documentElement.appendChild(host);
 
   const place = (position?: PanelPosition): void => {
-    const size = getPanelCssSize();
+    const size = getPanelCssSize(activeTabZoom);
     const maxX = Math.max(EDGE_GAP, window.innerWidth - size.w - EDGE_GAP);
     const maxY = Math.max(EDGE_GAP, window.innerHeight - size.h - EDGE_GAP);
     const x = clamp(position?.xPx ?? maxX, EDGE_GAP, maxX);
@@ -83,8 +85,11 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
     }).catch(() => undefined);
   };
 
-  void sendToBackground<Record<string, never>, PanelPosition>(MessageKind.GetPanelPosition, {})
-    .then(place)
+  void Promise.all([
+    refreshTabZoom(options.tabId),
+    sendToBackground<Record<string, never>, PanelPosition>(MessageKind.GetPanelPosition, {}),
+  ])
+    .then(([, position]) => place(position))
     .catch(() => place());
 
   wireDrag(host, persist);
