@@ -34,6 +34,7 @@ export enum MessageKind {
   RevokeShareSession = "RevokeShareSession",
   CollectInspectSnapshot = "CollectInspectSnapshot",
   LocateColor = "LocateColor",
+  DownloadBlob = "DownloadBlob",
 }
 
 export enum PanelStatus {

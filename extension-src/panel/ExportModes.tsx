@@ -8,7 +8,8 @@
 import { useCallback, useEffect, useState } from "react";
 import JSZip from "jszip";
 import { COPY } from "@shared/copy";
-import { ExportFlow } from "@shared/enums";
+import { ExportFlow, MessageKind } from "@shared/enums";
+import { sendToBackground } from "@shared/messaging";
 import type { ExportArtifacts } from "@shared/types";
 import { buildPromptMd } from "@share/buildPromptMd";
 
@@ -27,12 +28,36 @@ function safeDomain(d: string): string {
   return (d || "page").replace(/^www\./, "").replace(/[^a-z0-9_-]+/gi, "_");
 }
 
-function triggerDownload(blob: Blob, filename: string): void {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result));
+    fr.onerror = () => reject(fr.error ?? new Error("FileReader failed"));
+    fr.readAsDataURL(blob);
+  });
+}
+
+/**
+ * Route the download through the background service worker so the user
+ * always sees a Save As… dialog (`saveAs: true`) instead of having the
+ * file land silently in the default Downloads folder.
+ * Falls back to the anchor-click path if the background round-trip fails
+ * (e.g. content-script context invalidated).
+ */
+async function triggerDownload(blob: Blob, filename: string): Promise<void> {
+  try {
+    const dataUrl = await blobToDataUrl(blob);
+    await sendToBackground<{ dataUrl: string; filename: string }, { downloadId: number }>(
+      MessageKind.DownloadBlob, { dataUrl, filename },
+    );
+    return;
+  } catch {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
 }
 
 function flowSlug(f: ExportFlow): string {
@@ -94,9 +119,9 @@ export function ExportModes({
     return () => clearInterval(t);
   }, [shareState.phase]);
 
-  const onMd = useCallback(() => {
+  const onMd = useCallback(async () => {
     const md = buildSingleMd(artifacts);
-    triggerDownload(
+    await triggerDownload(
       new Blob([md], { type: "text/markdown;charset=utf-8" }),
       `${fileBaseName(artifacts)}.md`,
     );
@@ -127,7 +152,7 @@ export function ExportModes({
       zip.file(`images/${img.name}`, base64ToUint8(img.base64));
     }
     const blob = await zip.generateAsync({ type: "blob" });
-    triggerDownload(blob, `${fileBaseName(artifacts)}-mdfiles.zip`);
+    await triggerDownload(blob, `${fileBaseName(artifacts)}-mdfiles.zip`);
   }, [artifacts]);
 
   const onZip = useCallback(async () => {
@@ -144,7 +169,7 @@ export function ExportModes({
     }
     zip.file("manifest.json", `${JSON.stringify(artifacts.meta, null, 2)}\n`);
     const blob = await zip.generateAsync({ type: "blob" });
-    triggerDownload(blob, `${fileBaseName(artifacts)}.zip`);
+    await triggerDownload(blob, `${fileBaseName(artifacts)}.zip`);
   }, [artifacts]);
 
   return (
