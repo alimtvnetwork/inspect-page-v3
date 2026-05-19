@@ -578,6 +578,7 @@ async function runFullPageExport(
   startKeepAlive();
   const target = await resolveFullPageExportTarget(tabId);
   const exportTabId = target.tabId;
+  await makeTabVisibleForCapture(exportTabId);
   // Capture the export tab's URL at start so we can detect mid-export
   // navigation (the #1 cause of "Page failed to load." with no other
   // diagnostic). Lovable editor pages are handed off to their rendered
@@ -807,16 +808,51 @@ async function resolveFullPageExportTarget(tabId: number): Promise<{ tabId: numb
 }
 
 async function findLovablePreviewTab(editorTab: chrome.tabs.Tab | null): Promise<chrome.tabs.Tab | null> {
+  const iframeUrl = editorTab?.id ? await extractLovablePreviewUrlFromEditorTab(editorTab.id) : "";
   const tabs = await chrome.tabs.query({});
   const candidates = tabs.filter((tab) => tab.id && tab.url && isLikelyLovablePreviewUrl(tab.url));
+  if (candidates.length === 0 && iframeUrl) {
+    return chrome.tabs.create({
+      url: iframeUrl,
+      active: true,
+      windowId: editorTab?.windowId,
+      index: typeof editorTab?.index === "number" ? editorTab.index + 1 : undefined,
+    });
+  }
   if (candidates.length === 0) return null;
   const sameWindow = candidates.filter((tab) => !editorTab?.windowId || tab.windowId === editorTab.windowId);
   const pool = sameWindow.length > 0 ? sameWindow : candidates;
   const currentProject = projectIdFromLovableEditorUrl(editorTab?.url ?? "");
   const scored = pool
-    .map((tab) => ({ tab, score: scorePreviewCandidate(tab, currentProject, editorTab) }))
+    .map((tab) => ({ tab, score: scorePreviewCandidate(tab, currentProject, editorTab, iframeUrl) }))
     .sort((a, b) => b.score - a.score);
   return scored[0]?.tab ?? null;
+}
+
+async function extractLovablePreviewUrlFromEditorTab(tabId: number): Promise<string> {
+  try {
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId, allFrames: false },
+      func: () => {
+        const urls: string[] = [];
+        for (const iframe of Array.from(document.querySelectorAll("iframe"))) {
+          const src = (iframe as HTMLIFrameElement).src || iframe.getAttribute("src") || "";
+          if (src) urls.push(src);
+        }
+        const hit = urls.find((url) => {
+          try {
+            const u = new URL(url, location.href);
+            const h = u.hostname.toLowerCase();
+            return h.endsWith(".lovable.app") || h.includes("preview--") || h.includes("id-preview--");
+          } catch { return false; }
+        });
+        return hit ? new URL(hit, location.href).href : "";
+      },
+    });
+    return typeof result?.result === "string" ? result.result : "";
+  } catch {
+    return "";
+  }
 }
 
 function isLovableEditorUrl(url: string): boolean {
@@ -843,7 +879,7 @@ function isLikelyLovablePreviewUrl(url: string): boolean {
   } catch { return false; }
 }
 
-function scorePreviewCandidate(tab: chrome.tabs.Tab, projectId: string, editorTab: chrome.tabs.Tab | null): number {
+function scorePreviewCandidate(tab: chrome.tabs.Tab, projectId: string, editorTab: chrome.tabs.Tab | null, iframeUrl: string): number {
   const url = tab.url ?? "";
   let score = 0;
   try {
@@ -851,6 +887,7 @@ function scorePreviewCandidate(tab: chrome.tabs.Tab, projectId: string, editorTa
     if (host.endsWith(".lovable.app")) score += 100;
     if (/preview--|id-preview--/.test(host)) score += 60;
     if (projectId && host.includes(projectId)) score += 500;
+    if (iframeUrl && url === iframeUrl) score += 1000;
   } catch { /* ignore */ }
   if (tab.active) score += 20;
   if (editorTab?.windowId && tab.windowId === editorTab.windowId) score += 40;
@@ -858,6 +895,16 @@ function scorePreviewCandidate(tab: chrome.tabs.Tab, projectId: string, editorTa
     score += Math.max(0, 20 - Math.abs(tab.index - editorTab.index));
   }
   return score;
+}
+
+async function makeTabVisibleForCapture(tabId: number): Promise<void> {
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    if (tab.windowId !== undefined) await chrome.windows.update(tab.windowId, { focused: true }).catch(() => undefined);
+    if (!tab.active) await chrome.tabs.update(tabId, { active: true });
+  } catch {
+    // Let the normal export path surface a phase-tagged tab error.
+  }
 }
 
 /**
