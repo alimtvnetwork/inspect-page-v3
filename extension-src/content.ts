@@ -265,7 +265,7 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
           // Inspector focuses the last-clicked element by default.
           const last = items[items.length - 1];
           const previewPayload: StatusUpdatePayload = {
-            status: PanelStatus.Selecting,
+            status: PanelStatus.Idle,
             message: last.selectorPath,
             debugPreview: last.debugPreview,
             elementSnapshot: last.elementSnapshot,
