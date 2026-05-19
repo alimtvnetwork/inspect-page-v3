@@ -742,6 +742,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             shareEnabled={!!shareSettings && !!shareSettings.nonce && !!shareSettings.siteUrl}
             onShare={onShare}
             pickerLocked={state.status === PanelStatus.PickerActive}
+            multiPicks={state.multiPicks}
             onTogglePickerLock={(next) => {
               // ON  → re-arm the picker so user can hover/pick another element.
               // OFF → exit picker mode but keep the current Inspector view.
@@ -1069,6 +1070,40 @@ function buildElementArtifacts(
     js: preview.js || "",
     images: [],
     // meta is unused by ExportModes for element flow.
+    meta: {} as ExportArtifacts["meta"],
+  };
+}
+
+/**
+ * v2.7.2 — combine N picked elements into a single ExportArtifacts so the
+ * existing four-mode toolbar (MD / MD+files / ZIP / Smart Share) produces
+ * one merged file with per-element sections in click order.
+ */
+function buildCombinedElementArtifacts(
+  picks: NonNullable<StatusUpdatePayload["multiElementSnapshot"]>,
+  activeUrl: string | undefined,
+): ExportArtifacts {
+  const htmlParts: string[] = [];
+  const cssParts: string[] = [];
+  const jsParts: string[] = [];
+  picks.forEach((p, i) => {
+    const n = i + 1;
+    const header = `Element ${n} — ${p.selectorPath}`;
+    htmlParts.push(`<!-- ${header} -->`, p.debugPreview.html || "", "");
+    if (p.debugPreview.css) {
+      cssParts.push(`/* ${header} */`, p.debugPreview.css, "");
+    }
+    if (p.debugPreview.js) {
+      jsParts.push(`/* ${header} */`, p.debugPreview.js, "");
+    }
+  });
+  return {
+    flow: ExportFlow.Element,
+    domain: deriveDomain(activeUrl),
+    html: htmlParts.join("\n").trim(),
+    css: cssParts.join("\n").trim(),
+    js: jsParts.join("\n").trim(),
+    images: [],
     meta: {} as ExportArtifacts["meta"],
   };
 }
@@ -1915,7 +1950,7 @@ function MultiPickChips(
 
 function ElementInspectorWithCode(
   {
-    snapshot, onBack, preview, activeUrl, shareEnabled, onShare, onTogglePickerLock, pickerLocked,
+    snapshot, onBack, preview, activeUrl, shareEnabled, onShare, onTogglePickerLock, pickerLocked, multiPicks,
   }: {
     snapshot: ElementSnapshot;
     onBack: () => void;
@@ -1925,10 +1960,13 @@ function ElementInspectorWithCode(
     onShare?: (artifacts: ExportArtifacts) => Promise<void>;
     onTogglePickerLock?: (next: boolean) => void;
     pickerLocked?: boolean;
+    multiPicks?: NonNullable<StatusUpdatePayload["multiElementSnapshot"]>;
   },
 ): JSX.Element {
   const [showCode, setShowCode] = useState(false);
-  const artifacts = preview ? buildElementArtifacts(preview, activeUrl) : null;
+  const artifacts = multiPicks && multiPicks.length > 1
+    ? buildCombinedElementArtifacts(multiPicks, activeUrl)
+    : preview ? buildElementArtifacts(preview, activeUrl) : null;
   return (
     <>
       <ElementInspector
