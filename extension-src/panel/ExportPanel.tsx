@@ -619,7 +619,9 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           aria-live="polite"
           hidden={state.status === PanelStatus.Idle}
         >
-          {state.status !== PanelStatus.Idle && statusLabel(state)}
+          {state.status !== PanelStatus.Idle && (
+            <div className="lpe-status-message">{statusLabel(state)}</div>
+          )}
           {state.status === PanelStatus.Capturing && state.progress && (
             <div className="lpe-progress" aria-hidden="true">
               <div
