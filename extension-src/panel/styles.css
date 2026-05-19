@@ -1225,7 +1225,41 @@
 }
 
 /* ---------- Show Code drawer (Phase A9) ---------- */
-.lpe-modal-code { width: min(560px, 92vw); max-height: 80vh; }
+.lpe-modal-code {
+  width: min(560px, 92vw);
+  max-height: 80vh;
+  /* The Smart-Share `.lpe-modal` rule below sets background:white and a
+     light header — re-assert the dark-mint theme here so Show Code stays
+     legible. */
+  background: var(--lpe-bg) !important;
+  color: var(--lpe-fg);
+  border: 1px solid var(--lpe-border) !important;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.lpe-modal-code .lpe-modal-header {
+  background: var(--lpe-surface);
+  border-bottom: 1px solid var(--lpe-border);
+  color: var(--lpe-fg);
+  padding: 8px 12px;
+  gap: 8px;
+}
+.lpe-modal-code .lpe-modal-header h3 {
+  margin: 0; font-size: 13px; color: var(--lpe-fg);
+  flex: 1 1 auto; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lpe-modal-code .lpe-modal-header .lpe-btn {
+  flex: 0 0 auto;
+  width: auto; min-width: 0;
+  padding: 4px 10px; font-size: 12px;
+}
+.lpe-modal-code .lpe-modal-body {
+  background: var(--lpe-bg);
+  color: var(--lpe-fg);
+  padding: 10px 12px 12px;
+  gap: 8px;
+}
 .lpe-modal-code-selector {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--lpe-muted); font-weight: 400;
@@ -1240,10 +1274,12 @@
   overflow-y: auto; max-height: 50vh;
 }
 .lpe-modal-code-footer {
-  display: flex; align-items: flex-start; gap: 8px;
+  display: flex; align-items: flex-start; gap: 10px;
 }
+.lpe-modal-code-footer .lpe-btn { flex: 0 0 auto; width: auto; min-width: 0; padding: 6px 14px; }
 .lpe-modal-code-note {
-  flex: 1; font-size: 11px; color: var(--lpe-muted);
+  flex: 1 1 auto; min-width: 0;
+  font-size: 11px; line-height: 1.5; color: var(--lpe-muted);
 }
 
 /* ---------- Detail drawer (Phase A10) ---------- */
