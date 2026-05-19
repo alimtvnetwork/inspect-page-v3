@@ -607,7 +607,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                   type="button"
                   className="lpe-btn lpe-btn-primary"
                   onClick={onPick}
-                  disabled={busy || settings === null}
+                  disabled={(busy && state.status !== PanelStatus.Selecting) || settings === null}
                 >
                   {state.elementSnapshot ? COPY.pickAnother : COPY.btnPick}
                 </button>
