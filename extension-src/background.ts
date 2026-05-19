@@ -22,6 +22,8 @@ import type {
   CheckShareAuthResponse,
   RevokeShareSessionPayload,
   RevokeShareSessionResponse,
+  CancelFullPageExportPayload,
+  CancelFullPageExportResponse,
   OpenLoginPopupPayload,
   OpenLoginPopupResponse,
   GetShareSettingsPayload,
@@ -59,6 +61,7 @@ import { runElementExport } from "@element/runElementExport";
 logger.info(LogCategory.Lifecycle, `Service worker booted v${__EXT_VERSION__}`);
 
 const router = new MessageRouter();
+const canceledFullPageTabs = new Set<number>();
 
 chrome.action.onClicked.addListener(async (tab) => {
   try {
@@ -181,6 +184,14 @@ router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
     // generic E_NOT_AVAILABLE_HERE. The orchestrator owns readiness, retries,
     // reinjection, and phase-tagged errors.
     return runFullPageExport(tid, settings);
+  },
+);
+
+router.on<CancelFullPageExportPayload, CancelFullPageExportResponse>(
+  MessageKind.CancelFullPageExport,
+  async ({ tabId }, sender) => {
+    const tid = tabId > 0 ? tabId : sender.tab?.id;
+    if (tid !== undefined) canceledFullPageTabs.add(tid);
   },
 );
 
@@ -577,6 +588,7 @@ async function runFullPageExport(
 ): Promise<RunFullPageExportResponse> {
   startKeepAlive();
   let exportTabId = tabId;
+  canceledFullPageTabs.delete(tabId);
   // Capture the export tab's URL at start so we can detect mid-export
   // navigation (the #1 cause of "Page failed to load." with no other
   // diagnostic). Lovable editor pages are handed off to their rendered
@@ -632,7 +644,9 @@ async function runFullPageExport(
     let lastErr: unknown;
     artifacts = undefined as unknown as CollectPageArtifactsResponse;
     for (let i = 0; i < delays.length; i++) {
+      throwIfFullPageCanceled(exportTabId);
       if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]));
+      throwIfFullPageCanceled(exportTabId);
       try {
         setPhase("collect", i + 1);
         artifacts = await collect();
@@ -698,8 +712,10 @@ async function runFullPageExport(
       return broadcast(p);
     },
     recoverTabMessaging: ensureContentScript,
+    isCanceled: () => canceledFullPageTabs.has(exportTabId),
   });
 
+  throwIfFullPageCanceled(exportTabId);
   // Update captureFrames count in meta now that we know it.
   const finalMeta = {
     ...artifacts.meta,
@@ -758,6 +774,10 @@ async function runFullPageExport(
   return response;
   } catch (e) {
     const err = mapFullPageExportError(e);
+    if (err.detail === "user-canceled") {
+      await broadcast({ status: PanelStatus.Idle });
+      throw err;
+    }
     await maybeAttachNavigationDetail(err, exportTabId, startUrl, phase);
     await broadcast({
       status: PanelStatus.Error,
@@ -767,8 +787,14 @@ async function runFullPageExport(
     });
     throw err;
   } finally {
+    canceledFullPageTabs.delete(exportTabId);
     stopKeepAlive();
   }
+}
+
+function throwIfFullPageCanceled(tabId: number): void {
+  if (!canceledFullPageTabs.has(tabId)) return;
+  throw new MessageError(ErrorCode.E_EXPORT_INTERRUPTED, "Export canceled.", "user-canceled");
 }
 
 function mapFullPageExportError(e: unknown): MessageError {

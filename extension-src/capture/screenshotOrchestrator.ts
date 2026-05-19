@@ -38,6 +38,7 @@ export interface ScreenshotInput {
   onPhase?: (phase: string, attempt?: number) => void;
   onProgress?: (p: StatusUpdatePayload) => void | Promise<void>;
   recoverTabMessaging?: (tabId: number) => Promise<void>;
+  isCanceled?: () => boolean;
 }
 export interface ScreenshotOutput {
   blob: Blob;
@@ -174,6 +175,7 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
 
   try {
     for (let i = 0; i < steps; i++) {
+      throwIfCanceled(input);
       const requestedY = Math.min(i * viewportCssPx.h, Math.max(0, effectivePageH - viewportCssPx.h));
       const scrollPayload = { y: requestedY, viewportHeight: viewportCssPx.h, settleMs: FRAME_SETTLE_MS };
 
@@ -198,8 +200,10 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
         status: PanelStatus.Capturing,
         progress: { done: i + 1, total: steps },
       });
+      throwIfCanceled(input);
     }
 
+    throwIfCanceled(input);
     input.onPhase?.("capture:finish-stitch");
     await input.onProgress?.({ status: PanelStatus.Stitching });
 
@@ -274,6 +278,11 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): 
       (error) => { clearTimeout(timer); reject(error); },
     );
   });
+}
+
+function throwIfCanceled(input: ScreenshotInput): void {
+  if (!input.isCanceled?.()) return;
+  throw new MessageError(ErrorCode.E_EXPORT_INTERRUPTED, "Export canceled.", "user-canceled");
 }
 
 async function sendToTabWithRecovery<P, R>(

@@ -6,6 +6,7 @@
 export enum MessageKind {
   Ping = "Ping",
   RunFullPageExport = "RunFullPageExport",
+  CancelFullPageExport = "CancelFullPageExport",
   RunElementExport = "RunElementExport",
   MountFloatingPanel = "MountFloatingPanel",
   EnterPickerMode = "EnterPickerMode",
