@@ -562,6 +562,59 @@ export function exitPicker(): void {
   logger.info(LogCategory.Picker, "Picker exited");
 }
 
+/** Phase 1 — toggle an element in/out of the multi-pick selections. */
+function toggleSelection(el: Element): void {
+  if (!state) return;
+  const idx = state.selections.indexOf(el);
+  if (idx >= 0) {
+    state.selections.splice(idx, 1);
+  } else {
+    if (state.selections.length >= MAX_PICKS) {
+      showToast(`Limit reached (${MAX_PICKS})`);
+      return;
+    }
+    state.selections.push(el);
+  }
+  state.barDone.disabled = state.selections.length === 0;
+  state.barCount.textContent = `${state.selections.length} / ${MAX_PICKS}`;
+  renderSelections();
+}
+
+/** Phase 1 — paint persistent green rings + numbered badges for each pick. */
+function renderSelections(): void {
+  if (!state) return;
+  const layer = state.selLayer;
+  layer.textContent = "";
+  state.selections.forEach((el, i) => {
+    let r: DOMRect;
+    try { r = el.getBoundingClientRect(); } catch { return; }
+    if (r.width === 0 && r.height === 0) return;
+    const ring = document.createElement("div");
+    ring.className = "lpe-pk-sel-ring";
+    ring.style.left = `${r.left}px`;
+    ring.style.top = `${r.top}px`;
+    ring.style.width = `${r.width}px`;
+    ring.style.height = `${r.height}px`;
+    layer.appendChild(ring);
+    const num = document.createElement("div");
+    num.className = "lpe-pk-sel-num";
+    num.textContent = String(i + 1);
+    num.style.left = `${Math.max(2, r.left - 6)}px`;
+    num.style.top = `${Math.max(2, r.top - 6)}px`;
+    layer.appendChild(num);
+  });
+}
+
+function showToast(msg: string): void {
+  if (!state) return;
+  state.toast.textContent = msg;
+  state.toast.style.display = "block";
+  if (state.toastTimer) window.clearTimeout(state.toastTimer);
+  state.toastTimer = window.setTimeout(() => {
+    if (state) state.toast.style.display = "none";
+  }, 1600);
+}
+
 /** Returns the host-page element under (x,y), excluding our overlay host. */
 function pickTarget(x: number, y: number): Element | null {
   if (!state) return null;
