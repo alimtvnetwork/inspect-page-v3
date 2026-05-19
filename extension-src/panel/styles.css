@@ -996,19 +996,19 @@
   padding: 20px; z-index: 9999;
   overflow: auto;
 }
-.lpe-modal {
+.lpe-modal-overlay .lpe-modal {
   background: white; border: 1px solid #d0d7de; border-radius: 8px;
   width: 100%; max-width: 520px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
   display: flex; flex-direction: column;
 }
-.lpe-modal-header {
+.lpe-modal-overlay .lpe-modal-header {
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px; padding: 8px 10px;
   border-bottom: 1px solid #eaeef2; background: #fbfcfd;
   border-radius: 8px 8px 0 0;
 }
-.lpe-modal-body { padding: 10px 12px 12px; }
+.lpe-modal-overlay .lpe-modal-body { padding: 10px 12px 12px; }
 .lpe-share-countdown {
   margin: 6px 0; font-size: 12px; color: #1f2937;
   font-variant-numeric: tabular-nums;
