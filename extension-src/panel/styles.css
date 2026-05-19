@@ -1440,6 +1440,70 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
+/* Fixed compact floating surface: keep the visual UI inside 412 × 820 even when old saved sizes exist. */
+.lpe-root[data-lpe-surface="floating"] {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 412px !important;
+  max-height: 820px !important;
+  overflow: hidden !important;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-header {
+  min-height: 42px;
+  padding: 6px 10px;
+  background: rgba(17, 23, 21, 0.92);
+  backdrop-filter: blur(10px);
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-header-title {
+  font-size: 14px;
+  letter-spacing: 0;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-header-btn {
+  min-width: 28px;
+  min-height: 28px;
+  padding: 2px 6px;
+  font-size: 13px;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-tabs {
+  background: rgba(11, 15, 14, 0.78);
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-tab {
+  padding: 7px 8px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-body {
+  padding: 10px;
+  gap: 8px;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-btn {
+  min-height: 38px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 13px;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-btn-primary {
+  background: linear-gradient(135deg, #12C99A 0%, #2DD4A8 42%, #73FFB8 100%) !important;
+  box-shadow: 0 1px 0 rgba(245, 255, 250, 0.28) inset, 0 10px 26px rgba(45, 212, 168, 0.36), 0 0 0 1px rgba(115, 255, 184, 0.32) !important;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-status,
+.lpe-root[data-lpe-surface="floating"] .lpe-eli,
+.lpe-root[data-lpe-surface="floating"] .lpe-debug,
+.lpe-root[data-lpe-surface="floating"] .lpe-billing-panel {
+  background: rgba(17, 23, 21, 0.86);
+  border-color: rgba(115, 255, 184, 0.16);
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-eli {
+  padding: 9px 10px;
+  gap: 9px;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-bm-margin,
+.lpe-root[data-lpe-surface="floating"] .lpe-bm-border,
+.lpe-root[data-lpe-surface="floating"] .lpe-bm-padding {
+  padding: 16px 24px;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-resize-handle { display: none; }
+
 /* Hide scrollbars inside extension panel while preserving scroll. */
 .lpe-root *::-webkit-scrollbar { width: 0 !important; height: 0 !important; background: transparent !important; }
 .lpe-root *::-webkit-scrollbar-thumb { background: transparent !important; }
