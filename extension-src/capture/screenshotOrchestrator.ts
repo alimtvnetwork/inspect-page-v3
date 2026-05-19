@@ -145,6 +145,7 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
   try {
     for (let i = 0; i < steps; i++) {
       const requestedY = Math.min(i * viewportCssPx.h, Math.max(0, effectivePageH - viewportCssPx.h));
+      const scrollPayload = { y: requestedY, viewportHeight: viewportCssPx.h, settleMs: FRAME_SETTLE_MS };
 
       const scroll = await sendToTabWithRecovery<
         { y: number; viewportHeight: number; settleMs: number },
@@ -152,8 +153,9 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
       >(
         input,
         MessageKind.BeginScrollCapture,
-        { y: requestedY, viewportHeight: viewportCssPx.h, settleMs: FRAME_SETTLE_MS },
+        scrollPayload,
         `scroll capture frame ${i + 1}`,
+        () => executeBeginScrollCaptureFallback(input.tabId, scrollPayload),
       );
 
       const wait = lastCaptureAt + CAPTURE_GAP_MS - Date.now();
@@ -194,6 +196,7 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
     try {
       await sendToTabWithRecovery<{ requestId: string }, RestoreAfterCaptureResponse>(
         input, MessageKind.RestoreAfterCapture, { requestId: sessionId }, "restore after capture",
+        () => executeRestoreAfterCaptureFallback(input.tabId),
       );
     } catch (e) {
       logger.warn(LogCategory.Capture, "RESTORE_FAIL", "Restore after capture failed", e);
