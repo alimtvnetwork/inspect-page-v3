@@ -187,6 +187,14 @@ router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
   },
 );
 
+router.on<CancelFullPageExportPayload, CancelFullPageExportResponse>(
+  MessageKind.CancelFullPageExport,
+  async ({ tabId }, sender) => {
+    const tid = tabId > 0 ? tabId : sender.tab?.id;
+    if (tid !== undefined) canceledFullPageTabs.add(tid);
+  },
+);
+
 router.on<EnterPickerModePayload, EnterPickerModeResponse>(
   MessageKind.EnterPickerMode,
   async ({ tabId }, sender) => {
