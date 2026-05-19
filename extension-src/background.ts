@@ -525,22 +525,42 @@ chrome.commands?.onCommand?.addListener(async (command) => {
 // the current tab (toolbar dropdown) instead of a detached window.
 
 // ---- Stage 9: SW keep-alive during exports (E20) ----
-let keepAliveTimer: ReturnType<typeof setInterval> | null = null;
 let keepAliveCount = 0;
+let keepAlivePort: chrome.runtime.Port | null = null;
+let keepAliveTimer: ReturnType<typeof setInterval> | null = null;
 function startKeepAlive(): void {
   keepAliveCount++;
-  if (keepAliveTimer) return;
+  if (keepAliveTimer || keepAlivePort) return;
+  // MV3 service workers are kept alive by an open Port (not by setInterval +
+  // chrome.runtime.getPlatformInfo, which Chromium throttles aggressively).
+  // We open a self-loop port; if Chromium ever closes it we reopen.
+  const openPort = (): void => {
+    try {
+      keepAlivePort = chrome.runtime.connect({ name: "inspect-page-keepalive" });
+      keepAlivePort.onDisconnect.addListener(() => {
+        keepAlivePort = null;
+        if (keepAliveCount > 0) openPort();
+      });
+    } catch { /* fall back to interval below */ }
+  };
+  openPort();
   keepAliveTimer = setInterval(() => {
     chrome.runtime.getPlatformInfo().catch(() => undefined);
   }, KEEPALIVE_INTERVAL_MS);
 }
 function stopKeepAlive(): void {
   keepAliveCount = Math.max(0, keepAliveCount - 1);
-  if (keepAliveCount === 0 && keepAliveTimer) {
-    clearInterval(keepAliveTimer);
-    keepAliveTimer = null;
+  if (keepAliveCount === 0) {
+    if (keepAliveTimer) { clearInterval(keepAliveTimer); keepAliveTimer = null; }
+    if (keepAlivePort) { try { keepAlivePort.disconnect(); } catch { /* noop */ } keepAlivePort = null; }
   }
 }
+// Absorb the no-op port on the receiving end so Chromium keeps it alive.
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === "inspect-page-keepalive") {
+    port.onMessage.addListener(() => undefined);
+  }
+});
 
 /**
  * Stage 5 orchestrator — collect artifacts via CS, build ZIP with placeholder
