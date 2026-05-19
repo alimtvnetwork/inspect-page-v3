@@ -827,14 +827,14 @@
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px dashed rgba(245, 255, 250, 0.62);
-  color: #05241C;
+  color: #F5FFFA;
 }
 .lpe-export-modes .lpe-debug-title { margin-bottom: 6px; color: inherit; }
 .lpe-root[data-lpe-theme="dark"] .lpe-debug,
-.lpe-root[data-lpe-theme="dark"] .lpe-export-modes { color: #05241C; }
+.lpe-root[data-lpe-theme="dark"] .lpe-export-modes { color: #F5FFFA; }
 .lpe-root[data-lpe-theme="dark"] .lpe-debug { background: rgba(11, 15, 14, 0.72); border-color: rgba(115, 255, 184, 0.22); }
 .lpe-root[data-lpe-theme="dark"] .lpe-debug-header { background: rgba(17, 23, 21, 0.96); border-bottom-color: rgba(115, 255, 184, 0.16); }
-.lpe-root[data-lpe-theme="dark"] .lpe-debug-actions { background: rgba(245, 255, 250, 0.96); border-bottom-color: rgba(115, 255, 184, 0.14); }
+.lpe-root[data-lpe-theme="dark"] .lpe-debug-actions { background: rgba(11, 15, 14, 0.72); border-bottom-color: rgba(115, 255, 184, 0.14); }
 .lpe-root[data-lpe-theme="dark"] .lpe-debug-pre { background: #06100D; color: #F5FFFA; }
 .lpe-root[data-lpe-theme="dark"] .lpe-debug-tab { background: rgba(17, 23, 21, 0.92); border-color: rgba(115, 255, 184, 0.24); color: #F5FFFA; }
 .lpe-root[data-lpe-theme="dark"] .lpe-debug-fmt-btn { background: rgba(17, 23, 21, 0.92); border-color: rgba(115, 255, 184, 0.24); color: #F5FFFA; }
