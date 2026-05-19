@@ -212,6 +212,7 @@ async function sendToTabWithRecovery<P, R>(
   kind: MessageKind,
   payload: P,
   label: string,
+  fallback?: () => Promise<R>,
 ): Promise<R> {
   const delays = [0, 300, 700, 1200];
   let lastErr: unknown;
@@ -225,10 +226,37 @@ async function sendToTabWithRecovery<P, R>(
       const detail = e instanceof MessageError ? (e.detail ?? msg) : msg;
       if (!TRANSIENT_TAB_MESSAGE_RE.test(msg) && !TRANSIENT_TAB_MESSAGE_RE.test(detail)) throw e;
       logger.warn(LogCategory.Capture, ErrorCode.E_NOT_AVAILABLE_HERE, `${label} transient tab message failure; retry ${i + 1}`, e);
+      if (fallback) {
+        try { return await fallback(); } catch (fallbackErr) { logger.warn(LogCategory.Capture, ErrorCode.E_NOT_AVAILABLE_HERE, `${label} script fallback failed`, fallbackErr); }
+      }
       await input.recoverTabMessaging?.(input.tabId).catch(() => undefined);
     }
   }
   throw lastErr ?? new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, `${label} failed`);
+}
+
+async function executeBeginScrollCaptureFallback(
+  tabId: number,
+  payload: { y: number; viewportHeight: number; settleMs: number },
+): Promise<BeginScrollCaptureResponse> {
+  const [result] = await chrome.scripting.executeScript({
+    target: { tabId, allFrames: false },
+    func: async (p) => {
+      window.scrollTo({ top: p.y, left: 0, behavior: "auto" });
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      await new Promise((resolve) => setTimeout(resolve, p.settleMs));
+      return { actualY: window.scrollY, dpr: window.devicePixelRatio };
+    },
+    args: [payload],
+  });
+  return result.result ?? { actualY: payload.y, dpr: 1 };
+}
+
+async function executeRestoreAfterCaptureFallback(tabId: number): Promise<RestoreAfterCaptureResponse> {
+  await chrome.scripting.executeScript({
+    target: { tabId, allFrames: false },
+    func: () => { /* best-effort: original restore still runs when content messaging recovers */ },
+  });
 }
 
 // Workaround for narrowing: addPayload is reused across loop iterations.
