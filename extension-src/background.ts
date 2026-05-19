@@ -576,6 +576,10 @@ async function runFullPageExport(
   // (the #1 cause of "Page failed to load." with no other diagnostic).
   let startUrl = "";
   try { startUrl = (await chrome.tabs.get(tabId)).url ?? ""; } catch { /* tab gone */ }
+  // Diagnostic phase tracker — surfaced in the error `detail` so future
+  // failures pinpoint exactly which step blew up.
+  const phase = { name: "boot", attempt: 0 };
+  const setPhase = (name: string, attempt = 0): void => { phase.name = name; phase.attempt = attempt; };
   try {
   await broadcast({ status: PanelStatus.Collecting });
 
@@ -583,6 +587,7 @@ async function runFullPageExport(
   // reachable before the first collect. Skipping this is the most common
   // cause of "page failed to load" errors when the user hits Export Full
   // Page on a still-loading or just-navigated tab.
+  setPhase("ensureContentScript:pre-collect");
   try { await ensureContentScript(tabId); } catch { /* surfaces below */ }
 
   let artifacts: CollectPageArtifactsResponse;
@@ -605,6 +610,7 @@ async function runFullPageExport(
     for (let i = 0; i < delays.length; i++) {
       if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]));
       try {
+        setPhase("collect", i + 1);
         artifacts = await collect();
         lastErr = undefined;
         break;
@@ -624,7 +630,7 @@ async function runFullPageExport(
     // reachable). Re-wrapping would mask the real cause and surface a
     // generic "Page failed to load." with E_PERMISSION_DENIED.
     if (e instanceof MessageError) {
-      await maybeAttachNavigationDetail(e, tabId, startUrl);
+      await maybeAttachNavigationDetail(e, tabId, startUrl, phase);
       throw e;
     }
     const msg = e instanceof Error ? e.message : String(e);
@@ -653,6 +659,7 @@ async function runFullPageExport(
 
   // ---- Screenshot (Stage 6) ----
   const tab = await chrome.tabs.get(tabId);
+  setPhase("captureFullPage");
   const screenshot = await captureFullPage({
     tabId,
     windowId: tab.windowId,
@@ -661,7 +668,10 @@ async function runFullPageExport(
     dpr: artifacts.meta.devicePixelRatio,
     format: settings?.imageFormat ?? "png",
     jpegQuality: settings?.jpegQuality ?? 90,
-    onProgress: (p) => broadcast(p),
+    onProgress: (p) => {
+      if (p.progress) setPhase("capture:frame", p.progress.done);
+      return broadcast(p);
+    },
     recoverTabMessaging: ensureContentScript,
   });
 
@@ -723,7 +733,7 @@ async function runFullPageExport(
   return response;
   } catch (e) {
     const err = mapFullPageExportError(e);
-    await maybeAttachNavigationDetail(err, tabId, startUrl);
+    await maybeAttachNavigationDetail(err, tabId, startUrl, phase);
     await broadcast({
       status: PanelStatus.Error,
       message: err.message,
@@ -762,25 +772,37 @@ async function maybeAttachNavigationDetail(
   err: MessageError,
   tabId: number,
   startUrl: string,
+  phase?: { name: string; attempt: number },
 ): Promise<void> {
+  const baseDetail = (err as { detail?: string }).detail ?? "";
+  const phaseTag = phase ? `phase=${phase.name}${phase.attempt ? `#${phase.attempt}` : ""}` : "";
+  let tab: chrome.tabs.Tab | null = null;
+  try { tab = await chrome.tabs.get(tabId); } catch { /* gone */ }
+  const nowUrl = tab?.url ?? "";
+  const status = tab?.status ?? "missing";
+  const diag = [
+    phaseTag,
+    `tabStatus=${status}`,
+    startUrl ? `startUrl=${truncUrl(startUrl)}` : "",
+    nowUrl && nowUrl !== startUrl ? `nowUrl=${truncUrl(nowUrl)}` : "",
+  ].filter(Boolean).join(" | ");
+  (err as { detail?: string }).detail = [baseDetail, diag].filter(Boolean).join(" || ");
   if (err.code !== ErrorCode.E_NOT_AVAILABLE_HERE) return;
-  if (!startUrl) return;
-  try {
-    const tab = await chrome.tabs.get(tabId);
-    const nowUrl = tab.url ?? "";
-    if (nowUrl && nowUrl !== startUrl) {
-      (err as { message: string }).message =
-        "The page navigated during export. Stay on the same page and try again.";
-      (err as { detail?: string }).detail = `was: ${startUrl} → now: ${nowUrl}`;
-    } else if (tab.status !== "complete") {
-      (err as { message: string }).message =
-        "The page is still loading. Wait until it finishes and try again.";
-    }
-  } catch {
+  if (!tab) {
     (err as { message: string }).message =
       "The tab was closed before export finished. Reopen the page and try again.";
+    return;
+  }
+  if (startUrl && nowUrl && nowUrl !== startUrl) {
+    (err as { message: string }).message =
+      "The page navigated during export. Stay on the same page and try again.";
+  } else if (status !== "complete") {
+    (err as { message: string }).message =
+      "The page is still loading. Wait until it finishes and try again.";
   }
 }
+
+function truncUrl(u: string): string { return u.length > 120 ? `${u.slice(0, 117)}…` : u; }
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
   const buf = await blob.arrayBuffer();
