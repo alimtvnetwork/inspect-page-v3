@@ -692,6 +692,49 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
          * completed. Only hide while the picker is still active.
          */}
         {state.elementSnapshot && state.status !== PanelStatus.PickerActive && (
+          <>
+          {state.multiPicks && state.multiPicks.length > 1 && (
+            <MultiPickChips
+              picks={state.multiPicks}
+              activeIndex={state.activePickIndex ?? state.multiPicks.length - 1}
+              onSelect={(idx) => setState((s) => {
+                const pick = s.multiPicks?.[idx];
+                if (!pick) return s;
+                return {
+                  ...s,
+                  activePickIndex: idx,
+                  debugPreview: pick.debugPreview,
+                  elementSnapshot: pick.elementSnapshot as ElementSnapshot | undefined,
+                };
+              })}
+              onRemove={(idx) => setState((s) => {
+                if (!s.multiPicks) return s;
+                const next = s.multiPicks.filter((_, i) => i !== idx);
+                if (next.length === 0) {
+                  return {
+                    ...s,
+                    multiPicks: undefined,
+                    activePickIndex: undefined,
+                    debugPreview: undefined,
+                    elementSnapshot: undefined,
+                    status: PanelStatus.Idle,
+                  };
+                }
+                const prevActive = s.activePickIndex ?? next.length;
+                let nextActive = prevActive;
+                if (idx === prevActive) nextActive = Math.min(idx, next.length - 1);
+                else if (idx < prevActive) nextActive = prevActive - 1;
+                const pick = next[nextActive];
+                return {
+                  ...s,
+                  multiPicks: next,
+                  activePickIndex: nextActive,
+                  debugPreview: pick.debugPreview,
+                  elementSnapshot: pick.elementSnapshot as ElementSnapshot | undefined,
+                };
+              })}
+            />
+          )}
           <ElementInspectorWithCode
             snapshot={state.elementSnapshot}
             preview={state.debugPreview}
@@ -707,8 +750,9 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                 MessageKind.ExitPickerMode, { tabId: activeTabId ?? -1 },
               ).catch(() => undefined);
             }}
-            onBack={() => setState((s) => ({ ...s, elementSnapshot: undefined, debugPreview: undefined, status: PanelStatus.Idle }))}
+            onBack={() => setState((s) => ({ ...s, elementSnapshot: undefined, debugPreview: undefined, multiPicks: undefined, activePickIndex: undefined, status: PanelStatus.Idle }))}
           />
+          </>
         )}
 
         {state.debugPreview && !busy && (
