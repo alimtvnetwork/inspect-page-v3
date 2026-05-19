@@ -11,6 +11,8 @@
  */
 import { useMemo, useState } from "react";
 import { COPY } from "@shared/copy";
+import { MessageKind } from "@shared/enums";
+import { sendToBackground } from "@shared/messaging";
 import { format } from "../format";
 import type { ComputedSample, InspectSnapshot } from "../../inspect/types";
 import { distanceBetween } from "../../inspect/distance";
@@ -33,6 +35,8 @@ export function InspectInspector({ snapshot }: InspectInspectorProps): JSX.Eleme
   const [copied, setCopied] = useState<number | null>(null);
   const [anchorIdx, setAnchorIdx] = useState<number | null>(null);
   const [codeIdx, setCodeIdx] = useState<number | null>(null);
+  const [locateMsg, setLocateMsg] = useState<string | null>(null);
+  const [locating, setLocating] = useState<number | null>(null);
 
   const visible = showAll ? samples : samples.slice(0, INITIAL_VISIBLE);
   const anchor = anchorIdx !== null ? samples[anchorIdx] ?? null : null;
@@ -50,6 +54,26 @@ export function InspectInspector({ snapshot }: InspectInspectorProps): JSX.Eleme
     try { await navigator.clipboard.writeText(selector); } catch { /* ignore */ }
     setCopied(i);
     window.setTimeout(() => setCopied((cur) => (cur === i ? null : cur)), 1200);
+  };
+
+  const locateInPage = async (i: number, selector: string): Promise<void> => {
+    setLocating(i);
+    try {
+      const res = await sendToBackground<
+        { tabId: number; selector: string },
+        { count: number }
+      >(MessageKind.LocateElement, { tabId: -1, selector });
+      setLocateMsg(
+        res.count === 0
+          ? format(COPY.inspectInspectorLocateNone, { selector })
+          : COPY.inspectInspectorLocateFound,
+      );
+    } catch {
+      setLocateMsg(format(COPY.inspectInspectorLocateError, { selector }));
+    } finally {
+      setLocating(null);
+      window.setTimeout(() => setLocateMsg(null), 2000);
+    }
   };
 
   return (
@@ -115,6 +139,14 @@ export function InspectInspector({ snapshot }: InspectInspectorProps): JSX.Eleme
                         <button
                           type="button"
                           className="lpe-link"
+                          disabled={locating === i}
+                          onClick={() => void locateInPage(i, s.selector)}
+                        >
+                          {COPY.inspectInspectorLocate}
+                        </button>
+                        <button
+                          type="button"
+                          className="lpe-link"
                           onClick={() => void copySelector(i, s.selector)}
                         >
                           {copied === i ? COPY.inspectInspectorCopied : COPY.inspectInspectorCopySelector}
@@ -140,6 +172,11 @@ export function InspectInspector({ snapshot }: InspectInspectorProps): JSX.Eleme
               );
             })}
           </ul>
+          {locateMsg && (
+            <div className="lpe-inspector-anchor-banner" role="status">
+              <span>{locateMsg}</span>
+            </div>
+          )}
           {samples.length > INITIAL_VISIBLE && (
             <button
               type="button"

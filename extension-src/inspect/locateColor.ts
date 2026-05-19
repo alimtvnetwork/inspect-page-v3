@@ -78,6 +78,23 @@ export function locateColor(target: string): { count: number } {
   return { count: matches.length };
 }
 
+/**
+ * Locate an element by selector — used by the Element Inspector "Locate"
+ * button. Scrolls the match into view and flashes the shared ring around it.
+ * Returns 0 when the selector matches nothing (e.g. element was removed).
+ */
+export function locateElement(selector: string): { count: number } {
+  if (!selector) return { count: 0 };
+  let els: Element[] = [];
+  try {
+    els = Array.from(document.querySelectorAll(selector));
+  } catch {
+    return { count: 0 };
+  }
+  flashElements(els);
+  return { count: els.length };
+}
+
 function ensureStyleTag(): void {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement("style");

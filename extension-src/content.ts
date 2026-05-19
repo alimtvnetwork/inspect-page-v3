@@ -30,7 +30,7 @@ import type {
 import { collectElement } from "@element/collectElement";
 import { collectElementSnapshot } from "@element/collectElementSnapshot";
 import { collectSnapshot } from "./inspect/collectSnapshot";
-import { locateColor } from "./inspect/locateColor";
+import { locateColor, locateElement } from "./inspect/locateColor";
 import { mountFloatingPanel } from "@panel/mountFloatingPanel";
 
 logger.debug(LogCategory.Lifecycle, "Content script loaded");
@@ -102,6 +102,13 @@ router.on<{ tabId: number }, { snapshot: unknown }>(
 router.on<{ target: string }, { count: number }>(
   MessageKind.LocateColor,
   ({ target }) => locateColor(target),
+);
+
+// Inspector "Locate" button — flash the element matching `selector` in the
+// live DOM and scroll it into view. Pure read + ephemeral overlay.
+router.on<{ selector: string }, { count: number }>(
+  MessageKind.LocateElement,
+  ({ selector }) => locateElement(selector),
 );
 
 router.on<RestoreAfterCapturePayload, RestoreAfterCaptureResponse>(
