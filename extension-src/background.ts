@@ -506,13 +506,18 @@ async function runFullPageExport(
       "collect artifacts",
     );
   } catch (e) {
+    // Preserve already-translated MessageError (e.g. E_NOT_AVAILABLE_HERE
+    // raised by sendToTab when the page is still loading or the CS isn't
+    // reachable). Re-wrapping would mask the real cause and surface a
+    // generic "Page failed to load." with E_PERMISSION_DENIED.
+    if (e instanceof MessageError) throw e;
     const msg = e instanceof Error ? e.message : String(e);
     // chrome.tabs.sendMessage rejects with this exact phrase when the CS
     // isn't injected (chrome://, edge://, file://, new tab, Web Store, PDFs).
-    if (/Receiving end does not exist|Could not establish connection/i.test(msg)) {
+    if (/Receiving end does not exist|Could not establish connection|page failed to load|tab was closed|frame .* removed|message port closed/i.test(msg)) {
       throw new MessageError(
         ErrorCode.E_NOT_AVAILABLE_HERE,
-        "This page can't be exported. Open a regular http(s):// site and try again.",
+        "This page can't be exported right now. Wait for it to finish loading, reload the tab, or open a regular http(s):// site and try again.",
         msg,
       );
     }
