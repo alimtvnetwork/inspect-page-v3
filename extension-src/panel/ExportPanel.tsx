@@ -526,7 +526,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         ))}
       </div>
 
-      {surface === "popup" && !onboardingDismissed && !shareConfigured(shareSettings ?? { siteUrl: "", userId: 0, displayName: "", email: "", nonce: "", signedInAtIso: "" }) && (
+      {surface !== "inspect-popout" && !onboardingDismissed && !shareConfigured(shareSettings ?? { siteUrl: "", userId: 0, displayName: "", email: "", nonce: "", signedInAtIso: "" }) && (
         <div className="lpe-onboarding" role="status">
           <div>
             <strong>{COPY.onboardingTitle}</strong>
@@ -574,7 +574,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             )}
             {mode === "pick" && (
               <>
-                {surface === "popup" && !state.elementSnapshot && state.status !== PanelStatus.PickerActive && (
+                {surface !== "inspect-popout" && !state.elementSnapshot && state.status !== PanelStatus.PickerActive && (
                   <div className="lpe-pick-hint" role="note" style={{
                     padding: "10px 12px",
                     borderRadius: 10,
