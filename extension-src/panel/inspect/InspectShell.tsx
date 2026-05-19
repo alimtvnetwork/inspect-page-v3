@@ -6,7 +6,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { COPY } from "@shared/copy";
 import { format } from "../format";
-import { INSPECT_PAGE_DOCS_URL } from "@shared/constants";
 import { MessageKind } from "@shared/enums";
 import { sendToBackground } from "@shared/messaging";
 import type { CollectInspectSnapshotResponse } from "@shared/types";
