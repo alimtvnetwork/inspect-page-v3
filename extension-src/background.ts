@@ -899,7 +899,6 @@ function scorePreviewCandidate(tab: chrome.tabs.Tab, projectId: string, editorTa
 async function makeTabVisibleForCapture(tabId: number): Promise<void> {
   try {
     const tab = await chrome.tabs.get(tabId);
-    if (tab.windowId !== undefined) await chrome.windows.update(tab.windowId, { focused: true }).catch(() => undefined);
     if (!tab.active) await chrome.tabs.update(tabId, { active: true });
   } catch {
     // Let the normal export path surface a phase-tagged tab error.
