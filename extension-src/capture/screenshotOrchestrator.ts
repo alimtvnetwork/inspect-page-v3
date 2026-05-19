@@ -194,14 +194,14 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
       input.onPhase?.("capture:restore");
       await executeRestoreAfterCaptureFallback(input.tabId);
     } catch (fallbackErr) {
-      logger.warn(LogCategory.Capture, "RESTORE_FALLBACK_FAIL", "Direct restore fallback failed; trying content-script restore", fallbackErr);
-      try {
-        await sendToTabWithRecovery<{ requestId: string }, RestoreAfterCaptureResponse>(
-          input, MessageKind.RestoreAfterCapture, { requestId: sessionId }, "restore after capture",
-        );
-      } catch (e) {
-        logger.warn(LogCategory.Capture, "RESTORE_FAIL", "Restore after capture failed", e);
-      }
+      logger.warn(LogCategory.Capture, "RESTORE_FALLBACK_FAIL", "Direct restore fallback failed", fallbackErr);
+    }
+    try {
+      await sendToTabWithRecovery<{ requestId: string }, RestoreAfterCaptureResponse>(
+        input, MessageKind.RestoreAfterCapture, { requestId: sessionId }, "restore after capture",
+      );
+    } catch (e) {
+      logger.warn(LogCategory.Capture, "RESTORE_FAIL", "Content-script restore failed", e);
     }
     try {
       await sendOffscreen<{ sessionId: string }, void>(MessageKind.OffscreenDispose, { sessionId });
