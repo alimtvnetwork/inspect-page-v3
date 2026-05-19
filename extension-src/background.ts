@@ -621,9 +621,34 @@ async function runFullPageExport(
     fullPageArtifacts: response.artifacts,
   });
   return response;
+  } catch (e) {
+    const err = mapFullPageExportError(e);
+    await broadcast({
+      status: PanelStatus.Error,
+      message: err.message,
+      errorCode: err.code,
+      errorDetail: err.detail,
+    });
+    throw err;
   } finally {
     stopKeepAlive();
   }
+}
+
+function mapFullPageExportError(e: unknown): MessageError {
+  if (e instanceof MessageError) return e;
+  const msg = e instanceof Error ? e.message : String(e);
+  if (/page failed to load|Receiving end does not exist|Could not establish connection|tab was closed|frame .* removed|message port closed/i.test(msg)) {
+    return new MessageError(
+      ErrorCode.E_NOT_AVAILABLE_HERE,
+      "This page can't be exported right now. Reload the tab and try again, or open a regular http(s):// site.",
+      msg,
+    );
+  }
+  if (/timed out/i.test(msg)) {
+    return new MessageError(ErrorCode.E_EXPORT_TIMEOUT, "Export took too long. Try a smaller page or use Pick Element.", msg);
+  }
+  return new MessageError(ErrorCode.E_EXPORT_INTERRUPTED, "Export failed before it could finish. Reload the tab and try again.", msg);
 }
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
