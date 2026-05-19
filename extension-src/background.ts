@@ -422,6 +422,13 @@ async function sendOffscreen<P, R>(kind: MessageKind, payload: P): Promise<R> {
  * Throws E_NOT_AVAILABLE_HERE on restricted URLs (chrome://, web store, …).
  */
 async function ensureContentScript(tabId: number): Promise<void> {
+  // Chromium throws "The page failed to load." from chrome.tabs.sendMessage
+  // when the target tab hasn't reached the `complete` loading state (still
+  // navigating, network-stalled, or doing a long pre-render). Block until
+  // the tab settles before any messaging so callers don't surface that as
+  // a hard error. Bail out after ~5s — the caller's own retry loop will
+  // give the user a better message than waiting forever.
+  await waitForTabReady(tabId);
   try {
     await chrome.tabs.sendMessage(tabId, {
       kind: MessageKind.Ping,
@@ -437,6 +444,12 @@ async function ensureContentScript(tabId: number): Promise<void> {
       target: { tabId, allFrames: false },
       files: ["content.js"],
     });
+    // After injection, the CS still needs a tick to register its
+    // chrome.runtime.onMessage listener. Verify reachability with a short
+    // ping-poll instead of returning immediately — otherwise the next
+    // sendToTab race-loses against listener registration and Chromium
+    // rejects with "Receiving end does not exist" or "page failed to load".
+    await pingUntilReachable(tabId, 6, 150);
   } catch (e) {
     throw new MessageError(
       ErrorCode.E_NOT_AVAILABLE_HERE,
@@ -444,6 +457,37 @@ async function ensureContentScript(tabId: number): Promise<void> {
       e instanceof Error ? e.message : String(e),
     );
   }
+}
+
+async function waitForTabReady(tabId: number, timeoutMs = 5000): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const tab = await chrome.tabs.get(tabId);
+      if (tab.status === "complete") return;
+    } catch {
+      return; // tab gone — let caller fail naturally
+    }
+    await new Promise((r) => setTimeout(r, 150));
+  }
+}
+
+async function pingUntilReachable(tabId: number, attempts: number, delayMs: number): Promise<void> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      await chrome.tabs.sendMessage(tabId, {
+        kind: MessageKind.Ping,
+        requestId: `ping_${Date.now()}_${i}`,
+        payload: { sentAtMs: Date.now() },
+      });
+      return;
+    } catch (e) {
+      lastErr = e;
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  throw lastErr ?? new Error("content script unreachable after injection");
 }
 
 // ---- Stage 9: keyboard shortcuts (E20: chrome.commands → CS) ----
