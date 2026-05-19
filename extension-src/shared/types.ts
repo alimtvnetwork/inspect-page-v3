@@ -257,6 +257,9 @@ export type GetSettingsResponse = Settings;
 export type SetSettingsPayload = Partial<Settings>;
 export type SetSettingsResponse = Settings;
 
+export interface GetTabZoomPayload { tabId: number }
+export interface GetTabZoomResponse { zoomFactor: number }
+
 export type GetPanelPositionPayload = Record<string, never>;
 export type GetPanelPositionResponse = PanelPosition;
 
