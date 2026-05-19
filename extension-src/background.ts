@@ -807,12 +807,15 @@ async function resolveFullPageExportTarget(tabId: number): Promise<{ tabId: numb
 }
 
 async function findLovablePreviewTab(editorTab: chrome.tabs.Tab | null): Promise<chrome.tabs.Tab | null> {
+  const projectId = projectIdFromLovableEditorUrl(editorTab?.url ?? "");
   const iframeUrl = editorTab?.id ? await extractLovablePreviewUrlFromEditorTab(editorTab.id) : "";
+  const fallbackPreviewUrl = projectId ? `https://id-preview--${projectId}.lovable.app/` : "";
+  const resolvedPreviewUrl = iframeUrl || fallbackPreviewUrl;
   const tabs = await chrome.tabs.query({});
   const candidates = tabs.filter((tab) => tab.id && tab.url && isLikelyLovablePreviewUrl(tab.url));
-  if (candidates.length === 0 && iframeUrl) {
+  if (candidates.length === 0 && resolvedPreviewUrl) {
     return chrome.tabs.create({
-      url: iframeUrl,
+      url: resolvedPreviewUrl,
       active: true,
       windowId: editorTab?.windowId,
       index: typeof editorTab?.index === "number" ? editorTab.index + 1 : undefined,
@@ -821,9 +824,8 @@ async function findLovablePreviewTab(editorTab: chrome.tabs.Tab | null): Promise
   if (candidates.length === 0) return null;
   const sameWindow = candidates.filter((tab) => !editorTab?.windowId || tab.windowId === editorTab.windowId);
   const pool = sameWindow.length > 0 ? sameWindow : candidates;
-  const currentProject = projectIdFromLovableEditorUrl(editorTab?.url ?? "");
   const scored = pool
-    .map((tab) => ({ tab, score: scorePreviewCandidate(tab, currentProject, editorTab, iframeUrl) }))
+    .map((tab) => ({ tab, score: scorePreviewCandidate(tab, projectId, editorTab, resolvedPreviewUrl) }))
     .sort((a, b) => b.score - a.score);
   return scored[0]?.tab ?? null;
 }
@@ -834,9 +836,20 @@ async function extractLovablePreviewUrlFromEditorTab(tabId: number): Promise<str
       target: { tabId, allFrames: false },
       func: () => {
         const urls: string[] = [];
-        for (const iframe of Array.from(document.querySelectorAll("iframe"))) {
-          const src = (iframe as HTMLIFrameElement).src || iframe.getAttribute("src") || "";
-          if (src) urls.push(src);
+        const visit = (root: ParentNode): void => {
+          for (const iframe of Array.from(root.querySelectorAll("iframe"))) {
+            const src = (iframe as HTMLIFrameElement).src || iframe.getAttribute("src") || "";
+            if (src) urls.push(src);
+          }
+          for (const el of Array.from(root.querySelectorAll("*"))) {
+            const shadow = (el as Element & { shadowRoot?: ShadowRoot | null }).shadowRoot;
+            if (shadow) visit(shadow);
+          }
+        };
+        visit(document);
+        for (const el of Array.from(document.querySelectorAll("[src],[href]"))) {
+          const url = (el.getAttribute("src") || el.getAttribute("href") || "").trim();
+          if (url) urls.push(url);
         }
         const hit = urls.find((url) => {
           try {
