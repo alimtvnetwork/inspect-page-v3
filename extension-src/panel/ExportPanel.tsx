@@ -639,7 +639,13 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             </div>
           )}
           {state.status === PanelStatus.Error && (
-            <div className="lpe-row" style={{ marginTop: 8 }}>
+            <div style={{ marginTop: 8 }}>
+              <ExportDiagnostics
+                code={state.errorCode}
+                message={state.message}
+                detail={state.errorDetail}
+              />
+              <div className="lpe-row" style={{ marginTop: 8 }}>
               <button type="button" className="lpe-btn" onClick={onCopyDetails}>{COPY.btnCopyDetails}</button>
               <button type="button" className="lpe-btn lpe-btn-primary" onClick={onRetry}>{COPY.btnRetry}</button>
               {state.errorCode === ErrorCode.E_SHARE_QUOTA_FREE && (
@@ -668,6 +674,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                   {COPY.shareUpgradeBtn}
                 </button>
               )}
+              </div>
             </div>
           )}
           {state.status === PanelStatus.Success && state.successTelemetry && (
