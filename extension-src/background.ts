@@ -288,6 +288,28 @@ router.on<RunElementExportPayload, RunElementExportResponse>(
   },
 );
 
+// DownloadBlob — used by the panel/inspector "Export for AI" buttons so the
+// user always gets a Save As… dialog instead of an auto-download to the
+// default Downloads folder.
+router.on<{ dataUrl: string; filename: string }, { downloadId: number }>(
+  MessageKind.DownloadBlob,
+  async ({ dataUrl, filename }) => {
+    try {
+      const downloadId = await chrome.downloads.download({
+        url: dataUrl,
+        filename,
+        saveAs: true,
+      });
+      return { downloadId };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      // User cancel in the Save As dialog is not a hard error.
+      if (/user|cancel/i.test(msg)) return { downloadId: -1 };
+      throw new MessageError(ErrorCode.E_DOWNLOAD_FAILED, "chrome.downloads failed", msg);
+    }
+  },
+);
+
 router.attach();
 
 interface ThumbnailCropRect { x: number; y: number; w: number; h: number; dpr: number }
