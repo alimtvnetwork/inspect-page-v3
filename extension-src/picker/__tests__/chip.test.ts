@@ -24,7 +24,7 @@ describe("picker chip (P1/P2)", () => {
     expect(size).not.toBeNull();
     expect(btns.length).toBe(3);
     const labels = Array.from(btns).map((b) => b.getAttribute("aria-label"));
-    expect(labels).toEqual(["Select element", "Copy selector", "Cancel picker"]);
+    expect(labels).toEqual(["Add to selection", "Copy selector", "Cancel picker"]);
   });
 
   it("Cancel button calls onCancel and tears down the picker", () => {
