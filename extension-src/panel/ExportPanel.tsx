@@ -1910,6 +1910,20 @@ function compactSelectorLabel(selectorPath: string): string {
   return parts.at(-1) || selectorPath;
 }
 
+function pickDisplayLabel(pick: NonNullable<StatusUpdatePayload["multiElementSnapshot"]>[number]): {
+  title: string;
+  selector: string;
+} {
+  const snapshot = pick.elementSnapshot as ElementSnapshot | undefined;
+  const friendly = snapshot?.identity?.label?.trim();
+  const chip = snapshot?.identity?.selectorChip?.trim();
+  const compact = compactSelectorLabel(pick.selectorPath).trim();
+  return {
+    title: friendly || chip || compact || `Element`,
+    selector: chip && chip !== friendly ? chip : compact || pick.selectorPath,
+  };
+}
+
 function MultiPickChips(
   {
     picks, activeIndex, onSelect, onRemove,
@@ -1921,38 +1935,47 @@ function MultiPickChips(
   },
 ): JSX.Element {
   return (
-    <div role="tablist" aria-label="Picked elements" className="lpe-multi-picks">
-      {picks.map((p, idx) => {
-        const active = idx === activeIndex;
-        return (
-          <div
-            key={`${idx}-${p.selectorPath}`}
-            className="lpe-multi-pick"
-            data-active={active ? "true" : "false"}
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => onSelect(idx)}
-              title={p.selectorPath}
-              className="lpe-multi-pick-main"
+    <section aria-label="Selected elements" className="lpe-multi-picks">
+      <div className="lpe-multi-picks-head">
+        <span>Selected elements</span>
+        <span className="lpe-multi-picks-count">{picks.length}</span>
+      </div>
+      <div className="lpe-multi-picks-list">
+        {picks.map((p, idx) => {
+          const active = idx === activeIndex;
+          const label = pickDisplayLabel(p);
+          return (
+            <div
+              key={`${idx}-${p.selectorPath}`}
+              className="lpe-multi-pick"
+              data-active={active ? "true" : "false"}
             >
-              <span aria-hidden="true" className="lpe-multi-pick-index">{idx + 1}</span>
-              <span className="lpe-multi-pick-label">{compactSelectorLabel(p.selectorPath)}</span>
-            </button>
-            <button
-              type="button"
-              aria-label={`Remove pick ${idx + 1}`}
-              onClick={() => onRemove(idx)}
-              className="lpe-multi-pick-remove"
-            >
-              ×
-            </button>
-          </div>
-        );
-      })}
-    </div>
+              <button
+                type="button"
+                aria-pressed={active}
+                onClick={() => onSelect(idx)}
+                title={p.selectorPath}
+                className="lpe-multi-pick-main"
+              >
+                <span aria-hidden="true" className="lpe-multi-pick-index">{idx + 1}</span>
+                <span className="lpe-multi-pick-copy">
+                  <span className="lpe-multi-pick-label">{label.title}</span>
+                  <span className="lpe-multi-pick-selector">{label.selector}</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                aria-label={`Remove pick ${idx + 1}`}
+                onClick={() => onRemove(idx)}
+                className="lpe-multi-pick-remove"
+              >
+                ×
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
