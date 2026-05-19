@@ -1905,6 +1905,11 @@ function formatRemaining(ms: number): string {
   return h > 0 ? `${h}h ${pad(m)}m ${pad(s)}s` : `${m}m ${pad(s)}s`;
 }
 
+function compactSelectorLabel(selectorPath: string): string {
+  const parts = selectorPath.split(" > ").map((part) => part.trim()).filter(Boolean);
+  return parts.at(-1) || selectorPath;
+}
+
 function MultiPickChips(
   {
     picks, activeIndex, onSelect, onRemove,
@@ -1916,38 +1921,14 @@ function MultiPickChips(
   },
 ): JSX.Element {
   return (
-    <div
-      role="tablist"
-      aria-label="Picked elements"
-      style={{
-        display: "flex",
-        gap: 6,
-        overflowX: "auto",
-        padding: "8px 12px",
-        borderBottom: "1px solid var(--lpe-border, #1f2a26)",
-        background: "var(--lpe-surface, #111715)",
-      }}
-    >
+    <div role="tablist" aria-label="Picked elements" className="lpe-multi-picks">
       {picks.map((p, idx) => {
         const active = idx === activeIndex;
         return (
           <div
             key={`${idx}-${p.selectorPath}`}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              flex: "0 0 auto",
-              padding: "4px 6px 4px 10px",
-              borderRadius: 999,
-              border: active
-                ? "1px solid var(--lpe-accent, #2DD4A8)"
-                : "1px solid var(--lpe-border, #1f2a26)",
-              background: active ? "rgba(45,212,168,0.12)" : "transparent",
-              color: "var(--lpe-fg, #F5FFFA)",
-              fontSize: 12,
-              maxWidth: 220,
-            }}
+            className="lpe-multi-pick"
+            data-active={active ? "true" : "false"}
           >
             <button
               type="button"
@@ -1955,38 +1936,16 @@ function MultiPickChips(
               aria-selected={active}
               onClick={() => onSelect(idx)}
               title={p.selectorPath}
-              style={{
-                appearance: "none",
-                background: "transparent",
-                border: "none",
-                color: "inherit",
-                cursor: "pointer",
-                fontSize: 12,
-                padding: 0,
-                maxWidth: 180,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
+              className="lpe-multi-pick-main"
             >
-              <span aria-hidden="true" style={{ opacity: 0.7, marginRight: 4 }}>{idx + 1}.</span>
-              {p.selectorPath}
+              <span aria-hidden="true" className="lpe-multi-pick-index">{idx + 1}</span>
+              <span className="lpe-multi-pick-label">{compactSelectorLabel(p.selectorPath)}</span>
             </button>
             <button
               type="button"
               aria-label={`Remove pick ${idx + 1}`}
               onClick={() => onRemove(idx)}
-              style={{
-                appearance: "none",
-                background: "transparent",
-                border: "none",
-                color: "inherit",
-                cursor: "pointer",
-                opacity: 0.6,
-                fontSize: 14,
-                lineHeight: 1,
-                padding: "0 2px",
-              }}
+              className="lpe-multi-pick-remove"
             >
               ×
             </button>
