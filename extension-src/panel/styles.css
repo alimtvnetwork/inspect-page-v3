@@ -1385,6 +1385,7 @@
 .lpe-eli-copy {
   background: none; border: 1px solid var(--lpe-border); border-radius: 4px;
   color: var(--lpe-muted); cursor: pointer; padding: 0 6px; font-size: 12px; line-height: 18px;
+  margin-left: auto; flex: 0 0 auto;
 }
 .lpe-eli-copy:hover { color: var(--lpe-fg); }
 
@@ -1438,6 +1439,9 @@
 .lpe-eli-verdict.is-good      { color: #65a30d; border-color: rgba(101,163,13,0.5); background: rgba(101,163,13,0.10); }
 .lpe-eli-verdict.is-poor      { color: #d97706; border-color: rgba(217,119,6,0.5); background: rgba(217,119,6,0.10); }
 .lpe-eli-verdict.is-fail      { color: #dc2626; border-color: rgba(220,38,38,0.5); background: rgba(220,38,38,0.10); }
+.lpe-eli-contrast { gap: 10px; }
+.lpe-eli-contrast .lpe-eli-rowtext { flex: 0 0 auto; padding: 0 2px; }
+.lpe-eli-contrast .lpe-eli-verdict { margin-left: 2px; padding: 2px 10px; }
 .lpe-eli-wcag {
   display: flex; align-items: center; gap: 6px; margin-top: 2px;
   padding-left: 118px; font-size: 11px;
