@@ -831,13 +831,13 @@
 }
 .lpe-export-modes .lpe-debug-title { margin-bottom: 6px; color: inherit; }
 .lpe-root[data-lpe-theme="dark"] .lpe-debug,
-.lpe-root[data-lpe-theme="dark"] .lpe-export-modes { color: #e6edf3; }
-.lpe-root[data-lpe-theme="dark"] .lpe-debug { background: #0d1117; border-color: #30363d; }
-.lpe-root[data-lpe-theme="dark"] .lpe-debug-header { background: #161b22; border-bottom-color: #30363d; }
-.lpe-root[data-lpe-theme="dark"] .lpe-debug-actions { background: #0d1117; border-bottom-color: #30363d; }
-.lpe-root[data-lpe-theme="dark"] .lpe-debug-pre { background: #010409; color: #e6edf3; }
-.lpe-root[data-lpe-theme="dark"] .lpe-debug-tab { background: #0d1117; border-color: #30363d; color: #e6edf3; }
-.lpe-root[data-lpe-theme="dark"] .lpe-debug-fmt-btn { background: #0d1117; border-color: #30363d; color: #e6edf3; }
+.lpe-root[data-lpe-theme="dark"] .lpe-export-modes { color: #05241C; }
+.lpe-root[data-lpe-theme="dark"] .lpe-debug { background: rgba(11, 15, 14, 0.72); border-color: rgba(115, 255, 184, 0.22); }
+.lpe-root[data-lpe-theme="dark"] .lpe-debug-header { background: rgba(17, 23, 21, 0.96); border-bottom-color: rgba(115, 255, 184, 0.16); }
+.lpe-root[data-lpe-theme="dark"] .lpe-debug-actions { background: rgba(245, 255, 250, 0.96); border-bottom-color: rgba(115, 255, 184, 0.14); }
+.lpe-root[data-lpe-theme="dark"] .lpe-debug-pre { background: #06100D; color: #F5FFFA; }
+.lpe-root[data-lpe-theme="dark"] .lpe-debug-tab { background: rgba(17, 23, 21, 0.92); border-color: rgba(115, 255, 184, 0.24); color: #F5FFFA; }
+.lpe-root[data-lpe-theme="dark"] .lpe-debug-fmt-btn { background: rgba(17, 23, 21, 0.92); border-color: rgba(115, 255, 184, 0.24); color: #F5FFFA; }
 .lpe-root[data-lpe-theme="dark"] .lpe-debug-fmt-btn[aria-pressed="true"] { background: var(--lpe-accent); color: var(--lpe-accent-fg); border-color: var(--lpe-accent); }
 .lpe-root[data-lpe-theme="dark"] .lpe-debug-selector { border-bottom-color: #30363d; color: #8b949e; }
 .lpe-root[data-lpe-theme="dark"] .lpe-debug-selector code { color: #e6edf3; }
