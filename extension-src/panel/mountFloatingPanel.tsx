@@ -8,9 +8,9 @@ import { clamp } from "./clamp";
 import stylesText from "./styles.css?inline";
 
 const HOST_ID = "inspect-page-panel-host";
-const DEFAULT_W = 412;
-const DEFAULT_H = 915;
-const MIN_W = 340;
+const DEFAULT_W = 460;
+const DEFAULT_H = 600;
+const MIN_W = 360;
 const MIN_H = 420;
 const EDGE_GAP = 16;
 
