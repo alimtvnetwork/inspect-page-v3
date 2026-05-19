@@ -497,22 +497,44 @@ async function runFullPageExport(
   await broadcast({ status: PanelStatus.Collecting });
 
   let artifacts: CollectPageArtifactsResponse;
-  try {
-    artifacts = await withTimeout(
+  const collect = (): Promise<CollectPageArtifactsResponse> =>
+    withTimeout(
       sendToTab<{ tabId: number }, CollectPageArtifactsResponse>(
         tabId, MessageKind.CollectPageArtifacts, { tabId },
       ),
       COLLECT_TIMEOUT_MS,
       "collect artifacts",
     );
+  const isTransient = (msg: string): boolean =>
+    /Receiving end does not exist|Could not establish connection|page failed to load|message port closed/i.test(msg);
+  try {
+    try {
+      artifacts = await collect();
+    } catch (first) {
+      // CS may not be attached yet because the page is still loading or was
+      // just navigated. Re-inject, wait a tick, and retry once before
+      // surfacing the error to the user.
+      const msg1 = first instanceof Error ? first.message : String(first);
+      const detail1 = first instanceof MessageError ? (first.detail ?? msg1) : msg1;
+      if (!isTransient(msg1) && !isTransient(detail1)) throw first;
+      logger.warn(LogCategory.Capture, "COLLECT_RETRY", "retrying after transient failure", first);
+      try { await ensureContentScript(tabId); } catch { /* fall through */ }
+      await new Promise((r) => setTimeout(r, 250));
+      artifacts = await collect();
+    }
   } catch (e) {
+    // Preserve already-translated MessageError (e.g. E_NOT_AVAILABLE_HERE
+    // raised by sendToTab when the page is still loading or the CS isn't
+    // reachable). Re-wrapping would mask the real cause and surface a
+    // generic "Page failed to load." with E_PERMISSION_DENIED.
+    if (e instanceof MessageError) throw e;
     const msg = e instanceof Error ? e.message : String(e);
     // chrome.tabs.sendMessage rejects with this exact phrase when the CS
     // isn't injected (chrome://, edge://, file://, new tab, Web Store, PDFs).
-    if (/Receiving end does not exist|Could not establish connection/i.test(msg)) {
+    if (/Receiving end does not exist|Could not establish connection|page failed to load|tab was closed|frame .* removed|message port closed/i.test(msg)) {
       throw new MessageError(
         ErrorCode.E_NOT_AVAILABLE_HERE,
-        "This page can't be exported. Open a regular http(s):// site and try again.",
+        "This page can't be exported right now. Wait for it to finish loading, reload the tab, or open a regular http(s):// site and try again.",
         msg,
       );
     }
