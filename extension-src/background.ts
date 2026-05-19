@@ -56,6 +56,8 @@ import { runElementExport } from "@element/runElementExport";
 
 logger.info(LogCategory.Lifecycle, `Service worker booted v${__EXT_VERSION__}`);
 
+const router = new MessageRouter();
+
 chrome.action.onClicked.addListener(async (tab) => {
   try {
     if (!tab?.id) return;
@@ -85,8 +87,6 @@ router.on<MountFloatingPanelPayload, MountFloatingPanelResponse>(
     );
   },
 );
-
-const router = new MessageRouter();
 
 router.on<PingPayload, PingResponse>(MessageKind.Ping, (payload) => {
   logger.debug(LogCategory.Messaging, `Ping rtt=${Date.now() - payload.sentAtMs}ms`);
