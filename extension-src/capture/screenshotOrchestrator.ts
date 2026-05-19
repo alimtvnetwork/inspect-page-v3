@@ -214,7 +214,9 @@ async function sendToTabWithRecovery<P, R>(
   label: string,
   fallback?: () => Promise<R>,
 ): Promise<R> {
-  const delays = [0, 300, 700, 1200];
+  // Widened from 4 → 6 attempts (~7.4s budget) so slow re-hydrating pages
+  // get enough room to recover before we surface E_NOT_AVAILABLE_HERE.
+  const delays = [0, 300, 700, 1200, 2000, 3000];
   let lastErr: unknown;
   for (let i = 0; i < delays.length; i++) {
     if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]));
