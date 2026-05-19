@@ -6,7 +6,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { COPY } from "@shared/copy";
 import { format } from "../format";
-import { INSPECT_PAGE_DOCS_URL } from "@shared/constants";
 import { MessageKind } from "@shared/enums";
 import { sendToBackground } from "@shared/messaging";
 import type { CollectInspectSnapshotResponse } from "@shared/types";
@@ -90,10 +89,6 @@ export function InspectShell(): JSX.Element {
     return () => { aliveRef.current = false; };
   }, [load]);
 
-  const onOpenDocs = useCallback(() => {
-    try { window.open(INSPECT_PAGE_DOCS_URL, "_blank", "noopener,noreferrer"); } catch { /* ignore */ }
-  }, []);
-
   return (
     <div className="lpe-inspect-shell" role="region" aria-label={COPY.inspectModeTitle}>
       {state.status === "ready" && state.snapshot && (
@@ -132,7 +127,6 @@ export function InspectShell(): JSX.Element {
           <InspectOverview
             snapshot={state.snapshot}
             thumbnailDataUrl={state.thumbnailDataUrl ?? ""}
-            onOpenDocs={onOpenDocs}
           />
           <InspectTypography snapshot={state.snapshot} />
           <InspectColors snapshot={state.snapshot} />
