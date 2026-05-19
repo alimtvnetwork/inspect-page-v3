@@ -786,6 +786,80 @@ function mapFullPageExportError(e: unknown): MessageError {
   return new MessageError(ErrorCode.E_EXPORT_INTERRUPTED, "Export failed before it could finish. Reload the tab and try again.", msg);
 }
 
+async function resolveFullPageExportTarget(tabId: number): Promise<{ tabId: number; startUrl: string }> {
+  let tab: chrome.tabs.Tab | null = null;
+  try { tab = await chrome.tabs.get(tabId); } catch { /* tab gone */ }
+  const startUrl = tab?.url ?? "";
+  if (!isLovableEditorUrl(startUrl)) return { tabId, startUrl };
+
+  const previewTab = await findLovablePreviewTab(tab);
+  if (!previewTab?.id || !previewTab.url) {
+    const err = new MessageError(
+      ErrorCode.E_NOT_AVAILABLE_HERE,
+      "Open the Lovable preview in a browser tab, then run Export Full Page again. The editor itself is not the rendered page.",
+      `unsupportedHost=lovable.dev | previewTab=missing | startUrl=${startUrl}`,
+    );
+    await broadcast({ status: PanelStatus.Error, message: err.message, errorCode: err.code, errorDetail: err.detail });
+    throw err;
+  }
+  logger.info(LogCategory.Capture, `Lovable editor export redirected to preview tab ${previewTab.id}`);
+  return { tabId: previewTab.id, startUrl: previewTab.url };
+}
+
+async function findLovablePreviewTab(editorTab: chrome.tabs.Tab | null): Promise<chrome.tabs.Tab | null> {
+  const tabs = await chrome.tabs.query({});
+  const candidates = tabs.filter((tab) => tab.id && tab.url && isLikelyLovablePreviewUrl(tab.url));
+  if (candidates.length === 0) return null;
+  const sameWindow = candidates.filter((tab) => !editorTab?.windowId || tab.windowId === editorTab.windowId);
+  const pool = sameWindow.length > 0 ? sameWindow : candidates;
+  const currentProject = projectIdFromLovableEditorUrl(editorTab?.url ?? "");
+  const scored = pool
+    .map((tab) => ({ tab, score: scorePreviewCandidate(tab, currentProject, editorTab) }))
+    .sort((a, b) => b.score - a.score);
+  return scored[0]?.tab ?? null;
+}
+
+function isLovableEditorUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.hostname.toLowerCase() === "lovable.dev" && u.pathname.startsWith("/projects/");
+  } catch { return false; }
+}
+
+function projectIdFromLovableEditorUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split("/").filter(Boolean);
+    return parts[0] === "projects" ? (parts[1] ?? "") : "";
+  } catch { return ""; }
+}
+
+function isLikelyLovablePreviewUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return false;
+    const host = u.hostname.toLowerCase();
+    return host.endsWith(".lovable.app") || host.includes("preview--") || host.includes("id-preview--");
+  } catch { return false; }
+}
+
+function scorePreviewCandidate(tab: chrome.tabs.Tab, projectId: string, editorTab: chrome.tabs.Tab | null): number {
+  const url = tab.url ?? "";
+  let score = 0;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (host.endsWith(".lovable.app")) score += 100;
+    if (/preview--|id-preview--/.test(host)) score += 60;
+    if (projectId && host.includes(projectId)) score += 500;
+  } catch { /* ignore */ }
+  if (tab.active) score += 20;
+  if (editorTab?.windowId && tab.windowId === editorTab.windowId) score += 40;
+  if (typeof tab.index === "number" && typeof editorTab?.index === "number") {
+    score += Math.max(0, 20 - Math.abs(tab.index - editorTab.index));
+  }
+  return score;
+}
+
 /**
  * If the tab navigated away (or closed) during the export, rewrite the error
  * surface so the user sees the real cause instead of the generic "open a
