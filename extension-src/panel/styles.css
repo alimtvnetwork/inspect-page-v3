@@ -476,6 +476,15 @@
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
+.lpe-status-actions {
+  margin-top: 8px;
+  display: flex;
+}
+.lpe-status-actions .lpe-btn {
+  width: auto;
+  min-height: 34px;
+  padding: 6px 14px;
+}
 .lpe-status[data-status="Error"] .lpe-status-message {
   padding: 10px 12px;
   border-radius: 8px;
