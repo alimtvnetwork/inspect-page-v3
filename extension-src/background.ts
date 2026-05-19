@@ -814,12 +814,13 @@ async function findLovablePreviewTab(editorTab: chrome.tabs.Tab | null): Promise
   const tabs = await chrome.tabs.query({});
   const candidates = tabs.filter((tab) => tab.id && tab.url && isLikelyLovablePreviewUrl(tab.url));
   if (candidates.length === 0 && resolvedPreviewUrl) {
-    return chrome.tabs.create({
+    const created = await chrome.tabs.create({
       url: resolvedPreviewUrl,
       active: true,
       windowId: editorTab?.windowId,
       index: typeof editorTab?.index === "number" ? editorTab.index + 1 : undefined,
     });
+    return waitForPreviewTabReady(created, resolvedPreviewUrl);
   }
   if (candidates.length === 0) return null;
   const sameWindow = candidates.filter((tab) => !editorTab?.windowId || tab.windowId === editorTab.windowId);
@@ -828,6 +829,25 @@ async function findLovablePreviewTab(editorTab: chrome.tabs.Tab | null): Promise
     .map((tab) => ({ tab, score: scorePreviewCandidate(tab, projectId, editorTab, resolvedPreviewUrl) }))
     .sort((a, b) => b.score - a.score);
   return scored[0]?.tab ?? null;
+}
+
+async function waitForPreviewTabReady(tab: chrome.tabs.Tab, fallbackUrl: string): Promise<chrome.tabs.Tab> {
+  if (!tab.id) return tab;
+  const deadline = Date.now() + 15_000;
+  let latest = tab;
+  while (Date.now() < deadline) {
+    try {
+      latest = await chrome.tabs.get(tab.id);
+      const url = latest.url || latest.pendingUrl || fallbackUrl;
+      if (url && url !== "about:blank" && latest.status === "complete") {
+        return { ...latest, url };
+      }
+    } catch {
+      return tab;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  return { ...latest, url: latest.url || latest.pendingUrl || fallbackUrl };
 }
 
 async function extractLovablePreviewUrlFromEditorTab(tabId: number): Promise<string> {
