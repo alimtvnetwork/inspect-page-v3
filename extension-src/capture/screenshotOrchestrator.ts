@@ -34,6 +34,7 @@ export interface ScreenshotInput {
   format: ImageFormat;
   jpegQuality: number;
   onProgress?: (p: StatusUpdatePayload) => void | Promise<void>;
+  recoverTabMessaging?: (tabId: number) => Promise<void>;
 }
 export interface ScreenshotOutput {
   blob: Blob;
@@ -44,6 +45,8 @@ export interface ScreenshotOutput {
 
 const OFFSCREEN_URL = "offscreen.html";
 let offscreenReady: Promise<void> | null = null;
+
+const TRANSIENT_TAB_MESSAGE_RE = /Receiving end does not exist|Could not establish connection|page failed to load|tab was closed|frame .* removed|message port closed/i;
 
 export async function ensureOffscreen(): Promise<void> {
   if (offscreenReady) return offscreenReady;
