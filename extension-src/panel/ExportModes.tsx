@@ -132,7 +132,10 @@ export function ExportModes({
 
   const onZip = useCallback(async () => {
     const zip = new JSZip();
-    zip.file("prompt.md", buildPromptMd(artifacts, { mode: "zip" }));
+    const zipPrompt = artifacts.prelude
+      ? `${buildPromptMd(artifacts, { mode: "zip" })}\n\n${artifacts.prelude}`
+      : buildPromptMd(artifacts, { mode: "zip" });
+    zip.file("prompt.md", zipPrompt);
     if (artifacts.html) zip.file("index.html", artifacts.html);
     if (artifacts.css) zip.file("style.css", artifacts.css);
     if (artifacts.js) zip.file("script.js", artifacts.js);
