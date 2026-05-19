@@ -19,7 +19,16 @@ import { contrastRatio, isLargeText, verdict } from "../inspect/contrast";
 export interface PickerHandlers {
   onSelect(detail: { element: Element; rect: DOMRect }): void | Promise<void>;
   onCancel(): void;
+  /**
+   * Phase 1 multi-pick: invoked when the user clicks the floating "Done" bar
+   * after toggling 1..MAX_PICKS elements. If absent, the picker falls back to
+   * calling `onSelect` for each element sequentially.
+   */
+  onCommit?(elements: Element[]): void | Promise<void>;
 }
+
+/** Hard cap on simultaneously-picked elements. */
+export const MAX_PICKS = 11;
 
 interface PickerState {
   host: HTMLDivElement;
@@ -47,6 +56,16 @@ interface PickerState {
   prevCursor: string;
   rafScheduled: boolean;
   pendingEvent: PointerEvent | MouseEvent | null;
+  // Phase 1 multi-pick
+  selections: Element[];
+  selLayer: HTMLDivElement;
+  bar: HTMLDivElement;
+  barDone: HTMLButtonElement;
+  barCancel: HTMLButtonElement;
+  barCount: HTMLSpanElement;
+  toast: HTMLDivElement;
+  toastTimer: number | null;
+  onScrollOrResize: () => void;
   cleanup: () => void;
 }
 
