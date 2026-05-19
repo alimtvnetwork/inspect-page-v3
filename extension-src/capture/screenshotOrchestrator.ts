@@ -34,6 +34,7 @@ export interface ScreenshotInput {
   format: ImageFormat;
   jpegQuality: number;
   onProgress?: (p: StatusUpdatePayload) => void | Promise<void>;
+  recoverTabMessaging?: (tabId: number) => Promise<void>;
 }
 export interface ScreenshotOutput {
   blob: Blob;
@@ -44,6 +45,8 @@ export interface ScreenshotOutput {
 
 const OFFSCREEN_URL = "offscreen.html";
 let offscreenReady: Promise<void> | null = null;
+
+const TRANSIENT_TAB_MESSAGE_RE = /Receiving end does not exist|Could not establish connection|page failed to load|tab was closed|frame .* removed|message port closed/i;
 
 export async function ensureOffscreen(): Promise<void> {
   if (offscreenReady) return offscreenReady;
@@ -142,10 +145,17 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
   try {
     for (let i = 0; i < steps; i++) {
       const requestedY = Math.min(i * viewportCssPx.h, Math.max(0, effectivePageH - viewportCssPx.h));
+      const scrollPayload = { y: requestedY, viewportHeight: viewportCssPx.h, settleMs: FRAME_SETTLE_MS };
 
-      const scroll = await sendToTab<{ y: number; viewportHeight: number; settleMs: number }, BeginScrollCaptureResponse>(
-        tabId, MessageKind.BeginScrollCapture,
-        { y: requestedY, viewportHeight: viewportCssPx.h, settleMs: FRAME_SETTLE_MS },
+      const scroll = await sendToTabWithRecovery<
+        { y: number; viewportHeight: number; settleMs: number },
+        BeginScrollCaptureResponse
+      >(
+        input,
+        MessageKind.BeginScrollCapture,
+        scrollPayload,
+        `scroll capture frame ${i + 1}`,
+        () => executeBeginScrollCaptureFallback(input.tabId, scrollPayload),
       );
 
       const wait = lastCaptureAt + CAPTURE_GAP_MS - Date.now();
@@ -184,8 +194,9 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
     };
   } finally {
     try {
-      await sendToTab<{ requestId: string }, RestoreAfterCaptureResponse>(
-        tabId, MessageKind.RestoreAfterCapture, { requestId: sessionId },
+      await sendToTabWithRecovery<{ requestId: string }, RestoreAfterCaptureResponse>(
+        input, MessageKind.RestoreAfterCapture, { requestId: sessionId }, "restore after capture",
+        () => executeRestoreAfterCaptureFallback(input.tabId),
       );
     } catch (e) {
       logger.warn(LogCategory.Capture, "RESTORE_FAIL", "Restore after capture failed", e);
@@ -194,6 +205,87 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
       await sendOffscreen<{ sessionId: string }, void>(MessageKind.OffscreenDispose, { sessionId });
     } catch { /* ignore */ }
   }
+}
+
+async function sendToTabWithRecovery<P, R>(
+  input: ScreenshotInput,
+  kind: MessageKind,
+  payload: P,
+  label: string,
+  fallback?: () => Promise<R>,
+): Promise<R> {
+  const delays = [0, 300, 700, 1200];
+  let lastErr: unknown;
+  for (let i = 0; i < delays.length; i++) {
+    if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]));
+    try {
+      return await sendToTab<P, R>(input.tabId, kind, payload);
+    } catch (e) {
+      lastErr = e;
+      const msg = e instanceof Error ? e.message : String(e);
+      const detail = e instanceof MessageError ? (e.detail ?? msg) : msg;
+      if (!TRANSIENT_TAB_MESSAGE_RE.test(msg) && !TRANSIENT_TAB_MESSAGE_RE.test(detail)) throw e;
+      logger.warn(LogCategory.Capture, ErrorCode.E_NOT_AVAILABLE_HERE, `${label} transient tab message failure; retry ${i + 1}`, e);
+      if (fallback) {
+        try { return await fallback(); } catch (fallbackErr) { logger.warn(LogCategory.Capture, ErrorCode.E_NOT_AVAILABLE_HERE, `${label} script fallback failed`, fallbackErr); }
+      }
+      await input.recoverTabMessaging?.(input.tabId).catch(() => undefined);
+    }
+  }
+  throw lastErr ?? new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, `${label} failed`);
+}
+
+async function executeBeginScrollCaptureFallback(
+  tabId: number,
+  payload: { y: number; viewportHeight: number; settleMs: number },
+): Promise<BeginScrollCaptureResponse> {
+  const [result] = await chrome.scripting.executeScript({
+    target: { tabId, allFrames: false },
+    func: async (p) => {
+      const key = "__inspectPageCaptureFallbackState";
+      const page = window as typeof window & { __inspectPageCaptureFallbackState?: { x: number; y: number; behavior: string; stuck: Array<[HTMLElement, string]> } };
+      if (!page[key]) {
+        const stuck: Array<[HTMLElement, string]> = [];
+        for (const el of Array.from(document.querySelectorAll("*"))) {
+          if (!(el instanceof HTMLElement)) continue;
+          const position = getComputedStyle(el).position;
+          if (position === "fixed" || position === "sticky") {
+            stuck.push([el, el.style.cssText]);
+            el.style.setProperty("visibility", "hidden", "important");
+          }
+        }
+        page[key] = {
+          x: window.scrollX,
+          y: window.scrollY,
+          behavior: document.documentElement.style.scrollBehavior,
+          stuck,
+        };
+        document.documentElement.style.scrollBehavior = "auto";
+      }
+      window.scrollTo({ top: p.y, left: 0, behavior: "auto" });
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      await new Promise((resolve) => setTimeout(resolve, p.settleMs));
+      return { actualY: window.scrollY, dpr: window.devicePixelRatio };
+    },
+    args: [payload],
+  });
+  return result.result ?? { actualY: payload.y, dpr: 1 };
+}
+
+async function executeRestoreAfterCaptureFallback(tabId: number): Promise<RestoreAfterCaptureResponse> {
+  await chrome.scripting.executeScript({
+    target: { tabId, allFrames: false },
+    func: () => {
+      const key = "__inspectPageCaptureFallbackState";
+      const page = window as typeof window & { __inspectPageCaptureFallbackState?: { x: number; y: number; behavior: string; stuck: Array<[HTMLElement, string]> } };
+      const state = page[key];
+      if (!state) return;
+      for (const [el, cssText] of state.stuck) el.style.cssText = cssText;
+      document.documentElement.style.scrollBehavior = state.behavior;
+      window.scrollTo(state.x, state.y);
+      delete page[key];
+    },
+  });
 }
 
 // Workaround for narrowing: addPayload is reused across loop iterations.

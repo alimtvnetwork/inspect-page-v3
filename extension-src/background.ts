@@ -635,6 +635,7 @@ async function runFullPageExport(
     format: settings?.imageFormat ?? "png",
     jpegQuality: settings?.jpegQuality ?? 90,
     onProgress: (p) => broadcast(p),
+    recoverTabMessaging: ensureContentScript,
   });
 
   // Update captureFrames count in meta now that we know it.
