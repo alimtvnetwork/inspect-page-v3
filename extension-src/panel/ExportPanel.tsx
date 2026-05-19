@@ -2082,21 +2082,21 @@ function ExportDiagnostics({ code, message, detail }: ExportDiagnosticsProps): J
   if (fields.nowUrl) rows.push(["Now URL", fields.nowUrl]);
   if (rawCausePart && rawCausePart !== message) rows.push(["Cause", rawCausePart]);
   return (
-    <details className="lpe-settings" open>
-      <summary style={{ cursor: "pointer", fontWeight: 600 }}>Export diagnostics</summary>
-      <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.5 }}>
+    <details className="lpe-export-diagnostics" open>
+      <summary>Export diagnostics</summary>
+      <div className="lpe-export-diagnostics-body">
         {message && (
-          <div style={{ marginBottom: 6 }}>
+          <div className="lpe-export-diagnostics-message">
             <strong>Message: </strong>{message}
           </div>
         )}
         {rows.length > 0 && (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table>
             <tbody>
               {rows.map(([k, v]) => (
                 <tr key={k}>
-                  <td style={{ verticalAlign: "top", opacity: 0.7, paddingRight: 8, whiteSpace: "nowrap" }}>{k}</td>
-                  <td style={{ verticalAlign: "top", wordBreak: "break-all", fontFamily: "monospace" }}>{v}</td>
+                  <td>{k}</td>
+                  <td>{v}</td>
                 </tr>
               ))}
             </tbody>
