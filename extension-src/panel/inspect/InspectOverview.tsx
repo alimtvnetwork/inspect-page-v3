@@ -5,7 +5,6 @@
  *   - Visible-viewport thumbnail (single captureVisibleTab in the SW)
  *   - Page title
  *   - URL (truncated, click-to-copy)
- *   - "Open docs" CTA
  *
  * Pure presentation; the snapshot is collected by InspectShell.
  */
@@ -15,11 +14,10 @@ import type { InspectSnapshot } from "../../inspect/types";
 export interface InspectOverviewProps {
   snapshot: InspectSnapshot;
   thumbnailDataUrl: string;
-  onOpenDocs: () => void;
 }
 
 export function InspectOverview(props: InspectOverviewProps): JSX.Element {
-  const { snapshot, thumbnailDataUrl, onOpenDocs } = props;
+  const { snapshot, thumbnailDataUrl } = props;
   const { pageInfo } = snapshot;
 
   return (
@@ -54,10 +52,6 @@ export function InspectOverview(props: InspectOverviewProps): JSX.Element {
           {pageInfo.url}
         </a>
       </div>
-
-      <button type="button" className="lpe-btn" onClick={onOpenDocs}>
-        {COPY.inspectOpenDocs}
-      </button>
     </section>
   );
 }

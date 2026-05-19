@@ -90,10 +90,6 @@ export function InspectShell(): JSX.Element {
     return () => { aliveRef.current = false; };
   }, [load]);
 
-  const onOpenDocs = useCallback(() => {
-    try { window.open(INSPECT_PAGE_DOCS_URL, "_blank", "noopener,noreferrer"); } catch { /* ignore */ }
-  }, []);
-
   return (
     <div className="lpe-inspect-shell" role="region" aria-label={COPY.inspectModeTitle}>
       {state.status === "ready" && state.snapshot && (
@@ -132,7 +128,6 @@ export function InspectShell(): JSX.Element {
           <InspectOverview
             snapshot={state.snapshot}
             thumbnailDataUrl={state.thumbnailDataUrl ?? ""}
-            onOpenDocs={onOpenDocs}
           />
           <InspectTypography snapshot={state.snapshot} />
           <InspectColors snapshot={state.snapshot} />
