@@ -204,6 +204,30 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
   }
 }
 
+async function sendToTabWithRecovery<P, R>(
+  input: ScreenshotInput,
+  kind: MessageKind,
+  payload: P,
+  label: string,
+): Promise<R> {
+  const delays = [0, 300, 700, 1200];
+  let lastErr: unknown;
+  for (let i = 0; i < delays.length; i++) {
+    if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]));
+    try {
+      return await sendToTab<P, R>(input.tabId, kind, payload);
+    } catch (e) {
+      lastErr = e;
+      const msg = e instanceof Error ? e.message : String(e);
+      const detail = e instanceof MessageError ? (e.detail ?? msg) : msg;
+      if (!TRANSIENT_TAB_MESSAGE_RE.test(msg) && !TRANSIENT_TAB_MESSAGE_RE.test(detail)) throw e;
+      logger.warn(LogCategory.Capture, ErrorCode.E_NOT_AVAILABLE_HERE, `${label} transient tab message failure; retry ${i + 1}`, e);
+      await input.recoverTabMessaging?.(input.tabId).catch(() => undefined);
+    }
+  }
+  throw lastErr ?? new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, `${label} failed`);
+}
+
 // Workaround for narrowing: addPayload is reused across loop iterations.
 // (Declared at module scope so the type parameter to sendOffscreen can read it.)
 let addPayload: { dataUrl: string; xPx: number; yPx: number; sessionId: string };
