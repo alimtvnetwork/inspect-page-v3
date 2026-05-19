@@ -624,8 +624,9 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           const pickerStatus =
             state.status === PanelStatus.PickerActive ||
             state.status === PanelStatus.Selecting;
+          const exportBusy = busy && mode === "export" && !pickerStatus;
           const showStatusHere =
-            state.status !== PanelStatus.Idle && (
+            (state.status !== PanelStatus.Idle || exportBusy) && (
               mode === "export" ? !pickerStatus :
               mode === "pick"   ? pickerStatus || (state.status === PanelStatus.Error && !!state.elementSnapshot) :
               false
@@ -649,13 +650,13 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
               />
             </div>
           )}
-          {busy && state.status !== PanelStatus.PickerActive && (
-            <div style={{ marginTop: 6 }}>
+          {exportBusy && (
+            <div className="lpe-status-actions">
               <button type="button" className="lpe-btn" onClick={onCancel}>{COPY.btnCancel}</button>
             </div>
           )}
           {state.status === PanelStatus.PickerActive && (
-            <div style={{ marginTop: 6 }}>
+            <div className="lpe-status-actions">
               <button type="button" className="lpe-btn" onClick={onCancel}>{COPY.btnCancelPicker}</button>
             </div>
           )}
