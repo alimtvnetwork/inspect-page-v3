@@ -17,6 +17,11 @@ if [ -d "$ICONS_SRC" ]; then
   cp -f "$ICONS_SRC"/*.png "$DIST/icons/"
 fi
 
+if [ ! -f "$DIST/offscreen.html" ]; then
+  echo "dist/extension/offscreen.html missing. Rebuild the extension before packaging." >&2
+  exit 1
+fi
+
 rm -f "$OUT" "$OUT.sha256"
 ( cd "$DIST" && nix run nixpkgs#zip -- -r "$OUT" . >/dev/null )
 ( cd "$ROOT/public" && sha256sum "inspect-page.zip" > "inspect-page.zip.sha256" )
