@@ -56,13 +56,9 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
   document.documentElement.appendChild(host);
 
   const place = (position?: PanelPosition): void => {
-    const maxW = Math.max(MIN_W, window.innerWidth - EDGE_GAP * 2);
-    const maxH = Math.max(MIN_H, window.innerHeight - EDGE_GAP * 2);
-    const w = clamp(position?.wPx ?? DEFAULT_W, MIN_W, Math.min(DEFAULT_W, maxW));
-    const h = clamp(position?.hPx ?? DEFAULT_H, MIN_H, Math.min(DEFAULT_H, maxH));
-    const x = clamp(position?.xPx ?? window.innerWidth - w - EDGE_GAP, EDGE_GAP, window.innerWidth - w - EDGE_GAP);
-    const y = clamp(position?.yPx ?? EDGE_GAP, EDGE_GAP, window.innerHeight - h - EDGE_GAP);
-    applyPanelFrame(host, w, h);
+    const x = clamp(position?.xPx ?? window.innerWidth - DEFAULT_W - EDGE_GAP, EDGE_GAP, window.innerWidth - DEFAULT_W - EDGE_GAP);
+    const y = clamp(position?.yPx ?? EDGE_GAP, EDGE_GAP, window.innerHeight - DEFAULT_H - EDGE_GAP);
+    applyPanelFrame(host);
     Object.assign(host.style, {
       left: `${x}px`,
       top: `${y}px`,
@@ -73,8 +69,8 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
     void sendToBackground<Partial<PanelPosition>, PanelPosition>(MessageKind.SetPanelPosition, {
       xPx: Math.round(host.offsetLeft),
       yPx: Math.round(host.offsetTop),
-      wPx: Math.round(host.offsetWidth),
-      hPx: Math.round(host.offsetHeight),
+      wPx: DEFAULT_W,
+      hPx: DEFAULT_H,
       minimized: false,
     }).catch(() => undefined);
   };
