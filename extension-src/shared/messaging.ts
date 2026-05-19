@@ -87,6 +87,10 @@ export class MessageRouter {
   }
 }
 
+const TRANSIENT_TAB_MESSAGE_RE = /page failed to load|receiving end does not exist|could not establish connection|tab was closed|frame .* removed|the message port closed|message port closed/i;
+
+const RESTRICTED_TAB_MESSAGE_RE = /cannot access contents of url|cannot access a chrome|extensions gallery cannot be scripted|missing host permission|no tab with id|invalid tab id/i;
+
 function isEnvelope(value: unknown): value is Envelope<MessageKind, unknown> {
   if (typeof value !== "object" || value === null) return false;
   const v = value as Record<string, unknown>;
@@ -101,6 +105,23 @@ function isEnvelope(value: unknown): value is Envelope<MessageKind, unknown> {
 function toWireError(err: unknown): WireError {
   if (err instanceof MessageError) return err.toWire();
   const message = err instanceof Error ? err.message : String(err);
+  if (TRANSIENT_TAB_MESSAGE_RE.test(message)) {
+    return {
+      code: ErrorCode.E_NOT_AVAILABLE_HERE,
+      message: "This page can't be exported right now. Reload the tab and try again, or open a different page.",
+      detail: message,
+    };
+  }
+  if (RESTRICTED_TAB_MESSAGE_RE.test(message)) {
+    return {
+      code: ErrorCode.E_NOT_AVAILABLE_HERE,
+      message: "This page can't be exported. Open a regular http(s):// site and try again.",
+      detail: message,
+    };
+  }
+  if (Object.values(ErrorCode).includes(message as ErrorCode)) {
+    return { code: message as ErrorCode, message };
+  }
   return { code: ErrorCode.E_PERMISSION_DENIED, message };
 }
 
@@ -155,7 +176,7 @@ export async function sendToTab<P, R>(
     // Translate these into a single, user-actionable MessageError instead
     // of letting the raw string surface as a generic E_PERMISSION_DENIED.
     const msg = e instanceof Error ? e.message : String(e);
-    if (/page failed to load|receiving end does not exist|could not establish connection|tab was closed|frame .* removed|the message port closed/i.test(msg)) {
+    if (TRANSIENT_TAB_MESSAGE_RE.test(msg)) {
       throw new MessageError(
         ErrorCode.E_NOT_AVAILABLE_HERE,
         "This page can't be exported right now. Reload the tab and try again, or open a different page.",
