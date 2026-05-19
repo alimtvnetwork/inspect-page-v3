@@ -46,7 +46,9 @@ function fileBaseName(a: ExportArtifacts): string {
 /** Build the single-file MD: AI block + inlined html/css/js fences + base64 images. */
 function buildSingleMd(a: ExportArtifacts): string {
   const ai = buildPromptMd(a, { mode: "single" });
-  const parts: string[] = [ai, "", "## HTML", "", "```html", a.html || "", "```", ""];
+  const parts: string[] = [ai, ""];
+  if (a.prelude) parts.push(a.prelude, "");
+  parts.push("## HTML", "", "```html", a.html || "", "```", "");
   if (a.css) parts.push("## CSS", "", "```css", a.css, "```", "");
   if (a.js) parts.push("## JS", "", "```javascript", a.js, "```", "");
   for (const img of a.images) {
@@ -62,7 +64,8 @@ function buildSingleMd(a: ExportArtifacts): string {
 
 function buildMdFilesMd(a: ExportArtifacts): string {
   const ai = buildPromptMd(a, { mode: "mdFiles" });
-  return `${ai}\n\n_See \`./index.html\`, \`./style.css\`, and the \`./images/\` folder for the captured assets._\n`;
+  const prelude = a.prelude ? `\n\n${a.prelude}` : "";
+  return `${ai}${prelude}\n\n_See \`./index.html\`, \`./style.css\`, and the \`./images/\` folder for the captured assets._\n`;
 }
 
 function base64ToUint8(b64: string): Uint8Array {
@@ -129,7 +132,10 @@ export function ExportModes({
 
   const onZip = useCallback(async () => {
     const zip = new JSZip();
-    zip.file("prompt.md", buildPromptMd(artifacts, { mode: "zip" }));
+    const zipPrompt = artifacts.prelude
+      ? `${buildPromptMd(artifacts, { mode: "zip" })}\n\n${artifacts.prelude}`
+      : buildPromptMd(artifacts, { mode: "zip" });
+    zip.file("prompt.md", zipPrompt);
     if (artifacts.html) zip.file("index.html", artifacts.html);
     if (artifacts.css) zip.file("style.css", artifacts.css);
     if (artifacts.js) zip.file("script.js", artifacts.js);

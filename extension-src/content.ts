@@ -231,6 +231,13 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
                   css: payload.matchedCss,
                   js: JSON.stringify(payload.computedDiff, null, 2),
                 },
+                source: {
+                  url: location.href,
+                  capturedAtIso: new Date().toISOString(),
+                  pageTitle: document.title || "",
+                  viewport: { w: window.innerWidth, h: window.innerHeight },
+                  dpr: window.devicePixelRatio || 1,
+                },
               };
               try {
                 entry.elementSnapshot = await collectElementSnapshot(el, {
