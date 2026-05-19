@@ -101,15 +101,15 @@ function ensureStyleTag(): void {
   style.id = STYLE_ID;
   style.textContent = `
 .${RING_CLASS} {
-  outline: 2px solid #ff5b1f !important;
+  outline: 2px solid #2DD4A8 !important;
   outline-offset: 2px !important;
-  box-shadow: 0 0 0 2px rgba(255, 91, 31, 0.35), 0 0 16px 4px rgba(255, 91, 31, 0.55) !important;
+  box-shadow: 0 0 0 2px rgba(45, 212, 168, 0.35), 0 0 16px 4px rgba(115, 255, 184, 0.55) !important;
   animation: lpe-locate-pulse ${RING_DURATION_MS}ms ease-out 1;
 }
 @keyframes lpe-locate-pulse {
-  0%   { outline-color: #ff5b1f; box-shadow: 0 0 0 0 rgba(255, 91, 31, 0.7), 0 0 18px 4px rgba(255, 91, 31, 0.6); }
-  60%  { outline-color: #ff5b1f; box-shadow: 0 0 0 6px rgba(255, 91, 31, 0.0), 0 0 18px 4px rgba(255, 91, 31, 0.5); }
-  100% { outline-color: #ff5b1f; box-shadow: 0 0 0 0 rgba(255, 91, 31, 0.0), 0 0 0 0 rgba(255, 91, 31, 0.0); }
+  0%   { outline-color: #2DD4A8; box-shadow: 0 0 0 0 rgba(115, 255, 184, 0.7), 0 0 18px 4px rgba(45, 212, 168, 0.6); }
+  60%  { outline-color: #73FFB8; box-shadow: 0 0 0 6px rgba(115, 255, 184, 0.0), 0 0 18px 4px rgba(45, 212, 168, 0.5); }
+  100% { outline-color: #2DD4A8; box-shadow: 0 0 0 0 rgba(115, 255, 184, 0.0), 0 0 0 0 rgba(45, 212, 168, 0.0); }
 }
 `.trim();
   document.documentElement.appendChild(style);
