@@ -376,6 +376,14 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       } catch {
         // best effort
       }
+    } else if (state.lastAction === "fullPage") {
+      try {
+        await sendToBackground<{ tabId: number }, void>(
+          MessageKind.CancelFullPageExport, { tabId: activeTabId ?? -1 },
+        );
+      } catch {
+        // best effort
+      }
     }
     setState({ status: PanelStatus.Idle });
   }, [activeTabId, state.lastAction]);
