@@ -565,6 +565,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  align-self: stretch;
   padding: 10px 12px;
   border: none;
   background: transparent;
@@ -574,6 +575,7 @@
   font-size: 13px;
   text-align: left;
 }
+.lpe-multi-pick-main:hover { background: rgba(115, 255, 184, 0.06); }
 .lpe-multi-pick-index {
   flex: 0 0 auto;
   display: inline-grid;
@@ -586,18 +588,37 @@
   font-size: 12px;
   font-weight: 800;
 }
+.lpe-multi-pick-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 .lpe-multi-pick-label {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--lpe-fg);
+  font-weight: 800;
+  line-height: 1.25;
+}
+.lpe-multi-pick-selector {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--lpe-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.25;
 }
 .lpe-multi-pick-remove {
   appearance: none;
   flex: 0 0 auto;
-  width: 36px;
+  width: 42px;
   align-self: stretch;
-  min-height: 40px;
+  min-height: 62px;
   border: none;
   border-left: 1px solid rgba(115, 255, 184, 0.16);
   background: transparent;
