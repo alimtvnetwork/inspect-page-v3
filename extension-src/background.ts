@@ -8,7 +8,7 @@ import { getPanelPosition, getSettings, setPanelPosition, setSettings } from "@s
 import { getShareSettings, normalizeBaseUrl, setShareSettings } from "@shared/shareSettings";
 import { createShareSession as createShareSessionImpl } from "@share/createShareSession";
 import { revokeShareSession as revokeShareSessionImpl } from "@share/revokeShareSession";
-import { KEEPALIVE_INTERVAL_MS } from "@shared/constants";
+import { KEEPALIVE_INTERVAL_MS, CAPTURE_TAB_READY_TIMEOUT_MS } from "@shared/constants";
 import { COLLECT_TIMEOUT_MS } from "@shared/constants";
 import type {
   CollectPageArtifactsResponse,
@@ -833,7 +833,7 @@ async function findLovablePreviewTab(editorTab: chrome.tabs.Tab | null): Promise
 
 async function waitForPreviewTabReady(tab: chrome.tabs.Tab, fallbackUrl: string): Promise<chrome.tabs.Tab> {
   if (!tab.id) return tab;
-  const deadline = Date.now() + 15_000;
+  const deadline = Date.now() + CAPTURE_TAB_READY_TIMEOUT_MS;
   let latest = tab;
   while (Date.now() < deadline) {
     try {
