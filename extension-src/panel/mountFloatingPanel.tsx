@@ -107,10 +107,15 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
 }
 
 function applyPanelFrame(host: HTMLDivElement, w = DEFAULT_W, h = DEFAULT_H): void {
+  host.style.setProperty("min-width", `${DEFAULT_W}px`, "important");
+  host.style.setProperty("min-height", `${DEFAULT_H}px`, "important");
   host.style.setProperty("width", `${w}px`, "important");
   host.style.setProperty("height", `${h}px`, "important");
   host.style.setProperty("max-width", `${DEFAULT_W}px`, "important");
   host.style.setProperty("max-height", `${DEFAULT_H}px`, "important");
+  host.style.setProperty("right", "auto", "important");
+  host.style.setProperty("bottom", "auto", "important");
+  host.style.setProperty("transform", "none", "important");
   host.style.setProperty("overflow", "hidden", "important");
   host.style.setProperty("box-sizing", "border-box", "important");
 }
