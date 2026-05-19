@@ -8,7 +8,7 @@ import { getPanelPosition, getSettings, setPanelPosition, setSettings } from "@s
 import { getShareSettings, normalizeBaseUrl, setShareSettings } from "@shared/shareSettings";
 import { createShareSession as createShareSessionImpl } from "@share/createShareSession";
 import { revokeShareSession as revokeShareSessionImpl } from "@share/revokeShareSession";
-import { KEEPALIVE_INTERVAL_MS, CAPTURE_TAB_READY_TIMEOUT_MS } from "@shared/constants";
+import { KEEPALIVE_INTERVAL_MS } from "@shared/constants";
 import { COLLECT_TIMEOUT_MS } from "@shared/constants";
 import type {
   CollectPageArtifactsResponse,
@@ -588,17 +588,18 @@ async function runFullPageExport(
   const phase = { name: "boot", attempt: 0 };
   const setPhase = (name: string, attempt = 0): void => { phase.name = name; phase.attempt = attempt; };
   try {
-  const target = await resolveFullPageExportTarget(tabId);
-  exportTabId = target.tabId;
-  startUrl = target.startUrl;
+  // Original brief: Export Full Page works on any http(s):// site the user
+  // is currently viewing. No host allow/block list, no preview-tab redirect.
+  // The only URLs we can't touch are ones Chrome physically forbids scripting
+  // (chrome://, chrome-extension://, edge://, about:, view-source:,
+  // devtools://, file://, the Web Store). Those surface naturally via
+  // ensureContentScript → E_NOT_AVAILABLE_HERE below.
+  exportTabId = tabId;
+  try {
+    const t = await chrome.tabs.get(tabId);
+    startUrl = t?.url ?? "";
+  } catch { /* tab gone — let later steps fail with a real error */ }
   await makeTabVisibleForCapture(exportTabId);
-
-  const unsupported = detectUnsupportedFullPageHost(startUrl);
-  if (unsupported) {
-    const err = new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, unsupported.message, `unsupportedHost=${unsupported.host} | startUrl=${startUrl}`);
-    await broadcast({ status: PanelStatus.Error, message: err.message, errorCode: err.code, errorDetail: err.detail });
-    throw err;
-  }
 
   await broadcast({ status: PanelStatus.Collecting });
 
@@ -786,148 +787,6 @@ function mapFullPageExportError(e: unknown): MessageError {
   return new MessageError(ErrorCode.E_EXPORT_INTERRUPTED, "Export failed before it could finish. Reload the tab and try again.", msg);
 }
 
-async function resolveFullPageExportTarget(tabId: number): Promise<{ tabId: number; startUrl: string }> {
-  let tab: chrome.tabs.Tab | null = null;
-  try { tab = await chrome.tabs.get(tabId); } catch { /* tab gone */ }
-  const startUrl = tab?.url ?? "";
-  if (!isLovableEditorUrl(startUrl)) return { tabId, startUrl };
-
-  const previewTab = await findLovablePreviewTab(tab);
-  if (!previewTab?.id || !previewTab.url) {
-    const err = new MessageError(
-      ErrorCode.E_NOT_AVAILABLE_HERE,
-      "Open the Lovable preview in a browser tab, then run Export Full Page again. The editor itself is not the rendered page.",
-      `unsupportedHost=lovable.dev | previewTab=missing | startUrl=${startUrl}`,
-    );
-    await broadcast({ status: PanelStatus.Error, message: err.message, errorCode: err.code, errorDetail: err.detail });
-    throw err;
-  }
-  logger.info(LogCategory.Capture, `Lovable editor export redirected to preview tab ${previewTab.id}`);
-  return { tabId: previewTab.id, startUrl: previewTab.url };
-}
-
-async function findLovablePreviewTab(editorTab: chrome.tabs.Tab | null): Promise<chrome.tabs.Tab | null> {
-  const projectId = projectIdFromLovableEditorUrl(editorTab?.url ?? "");
-  const iframeUrl = editorTab?.id ? await extractLovablePreviewUrlFromEditorTab(editorTab.id) : "";
-  const fallbackPreviewUrl = projectId ? `https://id-preview--${projectId}.lovable.app/` : "";
-  const resolvedPreviewUrl = iframeUrl || fallbackPreviewUrl;
-  const tabs = await chrome.tabs.query({});
-  const candidates = tabs.filter((tab) => tab.id && tab.url && isLikelyLovablePreviewUrl(tab.url));
-  if (candidates.length === 0 && resolvedPreviewUrl) {
-    const created = await chrome.tabs.create({
-      url: resolvedPreviewUrl,
-      active: true,
-      windowId: editorTab?.windowId,
-      index: typeof editorTab?.index === "number" ? editorTab.index + 1 : undefined,
-    });
-    return waitForPreviewTabReady(created, resolvedPreviewUrl);
-  }
-  if (candidates.length === 0) return null;
-  const sameWindow = candidates.filter((tab) => !editorTab?.windowId || tab.windowId === editorTab.windowId);
-  const pool = sameWindow.length > 0 ? sameWindow : candidates;
-  const scored = pool
-    .map((tab) => ({ tab, score: scorePreviewCandidate(tab, projectId, editorTab, resolvedPreviewUrl) }))
-    .sort((a, b) => b.score - a.score);
-  return scored[0]?.tab ?? null;
-}
-
-async function waitForPreviewTabReady(tab: chrome.tabs.Tab, fallbackUrl: string): Promise<chrome.tabs.Tab> {
-  if (!tab.id) return tab;
-  const deadline = Date.now() + CAPTURE_TAB_READY_TIMEOUT_MS;
-  let latest = tab;
-  while (Date.now() < deadline) {
-    try {
-      latest = await chrome.tabs.get(tab.id);
-      const url = latest.url || latest.pendingUrl || fallbackUrl;
-      if (url && url !== "about:blank" && latest.status === "complete") {
-        return { ...latest, url };
-      }
-    } catch {
-      return tab;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-  return { ...latest, url: latest.url || latest.pendingUrl || fallbackUrl };
-}
-
-async function extractLovablePreviewUrlFromEditorTab(tabId: number): Promise<string> {
-  try {
-    const [result] = await chrome.scripting.executeScript({
-      target: { tabId, allFrames: false },
-      func: () => {
-        const urls: string[] = [];
-        const visit = (root: ParentNode): void => {
-          for (const iframe of Array.from(root.querySelectorAll("iframe"))) {
-            const src = (iframe as HTMLIFrameElement).src || iframe.getAttribute("src") || "";
-            if (src) urls.push(src);
-          }
-          for (const el of Array.from(root.querySelectorAll("*"))) {
-            const shadow = (el as Element & { shadowRoot?: ShadowRoot | null }).shadowRoot;
-            if (shadow) visit(shadow);
-          }
-        };
-        visit(document);
-        for (const el of Array.from(document.querySelectorAll("[src],[href]"))) {
-          const url = (el.getAttribute("src") || el.getAttribute("href") || "").trim();
-          if (url) urls.push(url);
-        }
-        const hit = urls.find((url) => {
-          try {
-            const u = new URL(url, location.href);
-            const h = u.hostname.toLowerCase();
-            return h.endsWith(".lovable.app") || h.includes("preview--") || h.includes("id-preview--");
-          } catch { return false; }
-        });
-        return hit ? new URL(hit, location.href).href : "";
-      },
-    });
-    return typeof result?.result === "string" ? result.result : "";
-  } catch {
-    return "";
-  }
-}
-
-function isLovableEditorUrl(url: string): boolean {
-  try {
-    const u = new URL(url);
-    return u.hostname.toLowerCase() === "lovable.dev" && u.pathname.startsWith("/projects/");
-  } catch { return false; }
-}
-
-function projectIdFromLovableEditorUrl(url: string): string {
-  try {
-    const u = new URL(url);
-    const parts = u.pathname.split("/").filter(Boolean);
-    return parts[0] === "projects" ? (parts[1] ?? "") : "";
-  } catch { return ""; }
-}
-
-function isLikelyLovablePreviewUrl(url: string): boolean {
-  try {
-    const u = new URL(url);
-    if (u.protocol !== "http:" && u.protocol !== "https:") return false;
-    const host = u.hostname.toLowerCase();
-    return host.endsWith(".lovable.app") || host.includes("preview--") || host.includes("id-preview--");
-  } catch { return false; }
-}
-
-function scorePreviewCandidate(tab: chrome.tabs.Tab, projectId: string, editorTab: chrome.tabs.Tab | null, iframeUrl: string): number {
-  const url = tab.url ?? "";
-  let score = 0;
-  try {
-    const host = new URL(url).hostname.toLowerCase();
-    if (host.endsWith(".lovable.app")) score += 100;
-    if (/preview--|id-preview--/.test(host)) score += 60;
-    if (projectId && host.includes(projectId)) score += 500;
-    if (iframeUrl && url === iframeUrl) score += 1000;
-  } catch { /* ignore */ }
-  if (tab.active) score += 20;
-  if (editorTab?.windowId && tab.windowId === editorTab.windowId) score += 40;
-  if (typeof tab.index === "number" && typeof editorTab?.index === "number") {
-    score += Math.max(0, 20 - Math.abs(tab.index - editorTab.index));
-  }
-  return score;
-}
 
 async function makeTabVisibleForCapture(tabId: number): Promise<void> {
   try {
@@ -980,34 +839,6 @@ async function maybeAttachNavigationDetail(
 
 function truncUrl(u: string): string { return u.length > 120 ? `${u.slice(0, 117)}…` : u; }
 
-/**
- * Some https:// hosts are SPA editors / sandboxed app shells with no
- * document-level scroll. Full-page capture would silently retry then fail
- * with the generic E_NOT_AVAILABLE_HERE; intercept and explain instead.
- * Users on these hosts should open their *published* site (or the actual
- * preview tab) and run the export there.
- */
-function detectUnsupportedFullPageHost(url: string): { host: string; message: string } | null {
-  if (!url) return null;
-  let host = "";
-  let pathname = "";
-  try { const u = new URL(url); host = u.hostname.toLowerCase(); pathname = u.pathname; } catch { return null; }
-  // Lovable editor itself (the IDE shell, not the preview iframe).
-  if (host === "lovable.dev" && pathname.startsWith("/projects/")) {
-    return { host, message: "This is the Lovable editor — it can't be exported as a full page. Open your preview tab (the rendered site) and run Export Full Page there." };
-  }
-  // Common editor / app shells with the same shape.
-  const editorHosts = new Set([
-    "figma.com", "www.figma.com",
-    "docs.google.com", "drive.google.com", "sheets.google.com",
-    "notion.so", "www.notion.so",
-    "linear.app", "app.asana.com",
-  ]);
-  if (editorHosts.has(host)) {
-    return { host, message: `${host} is an in-app editor — full-page export doesn't apply. Use Pick Element instead, or open a regular content page.` };
-  }
-  return null;
-}
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
   const buf = await blob.arrayBuffer();
