@@ -175,7 +175,11 @@ router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
     if (tid === undefined) {
       throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, "Cannot resolve tab for export");
     }
-    await ensureContentScript(tid);
+    // Do not pre-flight `ensureContentScript` here. If Chrome rejects during a
+    // reload/navigation (`The page failed to load.`), this router-level call
+    // bypasses runFullPageExport's retry/diagnostic path and surfaces the old
+    // generic E_NOT_AVAILABLE_HERE. The orchestrator owns readiness, retries,
+    // reinjection, and phase-tagged errors.
     return runFullPageExport(tid, settings);
   },
 );
@@ -588,7 +592,11 @@ async function runFullPageExport(
   // cause of "page failed to load" errors when the user hits Export Full
   // Page on a still-loading or just-navigated tab.
   setPhase("ensureContentScript:pre-collect");
-  try { await ensureContentScript(tabId); } catch { /* surfaces below */ }
+  try {
+    await ensureContentScript(tabId);
+  } catch (e) {
+    logger.warn(LogCategory.Capture, ErrorCode.E_NOT_AVAILABLE_HERE, "pre-collect content script readiness failed; retrying during collect", e);
+  }
 
   let artifacts: CollectPageArtifactsResponse;
   const collect = (): Promise<CollectPageArtifactsResponse> =>
@@ -604,7 +612,7 @@ async function runFullPageExport(
   try {
     // Retry transient failures with backoff. The CS may need extra time
     // to mount on slow pages or pages doing late hydration.
-    const delays = [0, 400, 900, 1500];
+    const delays = [0, 300, 700, 1200, 2000, 3000];
     let lastErr: unknown;
     artifacts = undefined as unknown as CollectPageArtifactsResponse;
     for (let i = 0; i < delays.length; i++) {
