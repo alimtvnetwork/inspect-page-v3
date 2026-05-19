@@ -242,6 +242,26 @@ async function executeBeginScrollCaptureFallback(
   const [result] = await chrome.scripting.executeScript({
     target: { tabId, allFrames: false },
     func: async (p) => {
+      const key = "__inspectPageCaptureFallbackState";
+      const page = window as typeof window & { [key]?: { x: number; y: number; behavior: string; stuck: Array<[HTMLElement, string]> } };
+      if (!page[key]) {
+        const stuck: Array<[HTMLElement, string]> = [];
+        for (const el of Array.from(document.querySelectorAll("*"))) {
+          if (!(el instanceof HTMLElement)) continue;
+          const position = getComputedStyle(el).position;
+          if (position === "fixed" || position === "sticky") {
+            stuck.push([el, el.style.cssText]);
+            el.style.setProperty("visibility", "hidden", "important");
+          }
+        }
+        page[key] = {
+          x: window.scrollX,
+          y: window.scrollY,
+          behavior: document.documentElement.style.scrollBehavior,
+          stuck,
+        };
+        document.documentElement.style.scrollBehavior = "auto";
+      }
       window.scrollTo({ top: p.y, left: 0, behavior: "auto" });
       await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       await new Promise((resolve) => setTimeout(resolve, p.settleMs));
@@ -255,7 +275,16 @@ async function executeBeginScrollCaptureFallback(
 async function executeRestoreAfterCaptureFallback(tabId: number): Promise<RestoreAfterCaptureResponse> {
   await chrome.scripting.executeScript({
     target: { tabId, allFrames: false },
-    func: () => { /* best-effort: original restore still runs when content messaging recovers */ },
+    func: () => {
+      const key = "__inspectPageCaptureFallbackState";
+      const page = window as typeof window & { [key]?: { x: number; y: number; behavior: string; stuck: Array<[HTMLElement, string]> } };
+      const state = page[key];
+      if (!state) return;
+      for (const [el, cssText] of state.stuck) el.style.cssText = cssText;
+      document.documentElement.style.scrollBehavior = state.behavior;
+      window.scrollTo(state.x, state.y);
+      delete page[key];
+    },
   });
 }
 
