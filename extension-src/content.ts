@@ -25,7 +25,6 @@ import { describe, enterPicker, exitPicker } from "@picker/picker";
 import type {
   EnterPickerModePayload, EnterPickerModeResponse,
   ExitPickerModePayload, ExitPickerModeResponse,
-  RunElementExportResponse,
   StatusUpdatePayload,
 } from "@shared/types";
 import { collectElement } from "@element/collectElement";
