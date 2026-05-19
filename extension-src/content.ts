@@ -25,7 +25,6 @@ import { describe, enterPicker, exitPicker } from "@picker/picker";
 import type {
   EnterPickerModePayload, EnterPickerModeResponse,
   ExitPickerModePayload, ExitPickerModeResponse,
-  RunElementExportResponse,
   StatusUpdatePayload,
 } from "@shared/types";
 import { collectElement } from "@element/collectElement";
@@ -117,6 +116,12 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
       onSelect: async ({ element, rect }) => {
         logger.info(LogCategory.Picker, `Picked ${describe(element)}`);
         exitPicker();
+        dispatchStatusLocal({ status: PanelStatus.Selecting });
+        void chrome.runtime.sendMessage({
+          kind: MessageKind.StatusUpdate,
+          requestId: `cs_selecting_${Date.now()}`,
+          payload: { status: PanelStatus.Selecting } as StatusUpdatePayload,
+        }).catch(() => undefined);
         try {
           const settings = await sendToBackground<Record<string, never>, GetSettingsResponse>(
             MessageKind.GetSettings, {},
@@ -131,7 +136,7 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
           // debugging *before* attempting the download. This way the user
           // always sees HTML/CSS/JS even if the bundle build/save fails.
           const previewPayload: StatusUpdatePayload = {
-            status: PanelStatus.Selecting,
+            status: PanelStatus.Idle,
             message: payload.selectorPath,
             debugPreview: {
               selectorPath: payload.selectorPath,
@@ -171,9 +176,10 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
               payload: previewPayload,
             });
           } catch { /* panel may be closed */ }
-          await sendToBackground<typeof payload, RunElementExportResponse>(
-            MessageKind.RunElementExport, payload,
-          );
+          // Do not auto-run the legacy element markdown download here. It can
+          // remain in Selecting/Downloading while Chrome waits on saveAs,
+          // locking both Export Full Page and Pick another element. The panel's
+          // Pick view already exposes explicit export/download actions.
         } catch (e) {
           logger.error(LogCategory.Element, "EXPORT_FAIL", "element export failed", e);
           const me = e instanceof MessageError ? e : null;

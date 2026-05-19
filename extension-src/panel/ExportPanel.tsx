@@ -235,7 +235,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         const p = entry.payload;
         setState((prev) => ({
           ...prev,
-          status: PanelStatus.Selecting,
+          status: PanelStatus.Idle,
           message: p.message,
           ...(p.debugPreview ? { debugPreview: p.debugPreview } : {}),
           ...(p.elementSnapshot ? { elementSnapshot: p.elementSnapshot as ElementSnapshot } : {}),
@@ -260,7 +260,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       setState((prev) => ({
         ...prev,
         status: p.status,
-        message: p.message ?? prev.message,
+          message: p.status === PanelStatus.Idle ? undefined : (p.message ?? prev.message),
         progress: p.progress,
         ...(p.status === PanelStatus.Error
           ? { errorCode: p.errorCode, errorDetail: p.errorDetail }
@@ -278,6 +278,9 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           : {}),
         ...(p.status === PanelStatus.Success && p.fullPageArtifacts
           ? { fullPageArtifacts: p.fullPageArtifacts }
+          : {}),
+        ...(p.status === PanelStatus.Idle
+          ? { progress: undefined, errorCode: undefined, errorDetail: undefined }
           : {}),
         ...(p.status === PanelStatus.Success && p.message
           ? { successFilename: p.message }
@@ -480,7 +483,10 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     }
   }, [onboardingDismissed]);
 
-  const busy = useMemo(() => BUSY_STATUSES.has(state.status), [state.status]);
+  const busy = useMemo(
+    () => BUSY_STATUSES.has(state.status) && !(state.status === PanelStatus.Selecting && !!state.elementSnapshot),
+    [state.status, state.elementSnapshot],
+  );
 
   return (
     <div className="lpe-root" data-lpe-theme={theme} data-lpe-surface={surface} role="region" aria-label={COPY.appName}>
@@ -601,7 +607,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                   type="button"
                   className="lpe-btn lpe-btn-primary"
                   onClick={onPick}
-                  disabled={busy || settings === null}
+                  disabled={(busy && state.status !== PanelStatus.Selecting) || settings === null}
                 >
                   {state.elementSnapshot ? COPY.pickAnother : COPY.btnPick}
                 </button>
