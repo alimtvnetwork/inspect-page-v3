@@ -48,6 +48,8 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
     #inspect-page-floating-root {
       width: var(--lpe-panel-w, 412px) !important;
       height: var(--lpe-panel-h, 820px) !important;
+      transform: scale(var(--lpe-panel-scale, 1)) !important;
+      transform-origin: top left !important;
       overflow: hidden !important;
     }
     ${stylesText}
@@ -125,8 +127,9 @@ function getPanelCssSize(): { w: number; h: number } {
 }
 
 function applyPanelFrame(host: HTMLDivElement, w = TARGET_VISUAL_W, h = TARGET_VISUAL_H): void {
-  host.style.setProperty("--lpe-panel-w", `${w}px`);
-  host.style.setProperty("--lpe-panel-h", `${h}px`);
+  host.style.setProperty("--lpe-panel-w", `${TARGET_VISUAL_W}px`);
+  host.style.setProperty("--lpe-panel-h", `${TARGET_VISUAL_H}px`);
+  host.style.setProperty("--lpe-panel-scale", `${w / TARGET_VISUAL_W}`);
   host.style.setProperty("min-width", `${w}px`, "important");
   host.style.setProperty("min-height", `${h}px`, "important");
   host.style.setProperty("width", `${w}px`, "important");
