@@ -258,6 +258,17 @@ export interface StatusUpdatePayload {
       js: string;
     };
     elementSnapshot?: unknown;
+    /**
+     * v2.7.2 — per-element source metadata so the combined MD export can
+     * render a `## Source — Element N` block for every selected element.
+     */
+    source?: {
+      url: string;
+      capturedAtIso: string;
+      pageTitle: string;
+      viewport: { w: number; h: number };
+      dpr: number;
+    };
   }[];
   /**
    * Full-page artifacts may be attached to the terminal Success broadcast so
