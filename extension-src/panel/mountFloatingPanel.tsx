@@ -85,13 +85,14 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
 
   wireDrag(host, persist);
   wireResize(host, persist);
-  window.addEventListener("resize", () => place({
+  const onWindowResize = (): void => place({
     xPx: host.offsetLeft,
     yPx: host.offsetTop,
     wPx: host.offsetWidth,
     hPx: host.offsetHeight,
     minimized: false,
-  }));
+  });
+  window.addEventListener("resize", onWindowResize);
 
   root = createRoot(mount);
   root.render(
@@ -102,6 +103,7 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
         activeTabId={options.tabId}
         onMinimize={() => { host.style.display = "none"; }}
         onClose={() => {
+          window.removeEventListener("resize", onWindowResize);
           root?.unmount();
           root = null;
           host.remove();
@@ -116,6 +118,7 @@ function wireDrag(host: HTMLDivElement, onDone: () => void): void {
   host.shadowRoot?.addEventListener("pointerdown", (event) => {
     const target = event.target as HTMLElement | null;
     if (!target?.closest?.("[data-drag-handle='true']")) return;
+    if (target.closest("button, input, select, textarea, a")) return;
     start = { x: event.clientX, y: event.clientY, left: host.offsetLeft, top: host.offsetTop };
     (event.target as Element).setPointerCapture?.(event.pointerId);
     event.preventDefault();
