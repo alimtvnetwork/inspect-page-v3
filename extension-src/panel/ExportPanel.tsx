@@ -150,13 +150,13 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const [theme, setTheme] = useState<PanelTheme>(() => {
     try {
       const v = globalThis.localStorage?.getItem(THEME_STORAGE_KEY);
-      return v === "dark" ? "dark" : "light";
-    } catch { return "light"; }
+      return v === "light" ? "light" : "dark";
+    } catch { return "dark"; }
   });
 
   const onToggleTheme = useCallback(() => {
     setTheme((t) => {
-      const next: PanelTheme = t === "light" ? "dark" : "light";
+      const next: PanelTheme = t === "dark" ? "light" : "dark";
       try { globalThis.localStorage?.setItem(THEME_STORAGE_KEY, next); } catch { /* ignore */ }
       return next;
     });
