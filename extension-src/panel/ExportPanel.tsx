@@ -1821,6 +1821,98 @@ function formatRemaining(ms: number): string {
   return h > 0 ? `${h}h ${pad(m)}m ${pad(s)}s` : `${m}m ${pad(s)}s`;
 }
 
+function MultiPickChips(
+  {
+    picks, activeIndex, onSelect, onRemove,
+  }: {
+    picks: NonNullable<StatusUpdatePayload["multiElementSnapshot"]>;
+    activeIndex: number;
+    onSelect: (idx: number) => void;
+    onRemove: (idx: number) => void;
+  },
+): JSX.Element {
+  return (
+    <div
+      role="tablist"
+      aria-label="Picked elements"
+      style={{
+        display: "flex",
+        gap: 6,
+        overflowX: "auto",
+        padding: "8px 12px",
+        borderBottom: "1px solid var(--lpe-border, #1f2a26)",
+        background: "var(--lpe-surface, #111715)",
+      }}
+    >
+      {picks.map((p, idx) => {
+        const active = idx === activeIndex;
+        return (
+          <div
+            key={`${idx}-${p.selectorPath}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              flex: "0 0 auto",
+              padding: "4px 6px 4px 10px",
+              borderRadius: 999,
+              border: active
+                ? "1px solid var(--lpe-accent, #2DD4A8)"
+                : "1px solid var(--lpe-border, #1f2a26)",
+              background: active ? "rgba(45,212,168,0.12)" : "transparent",
+              color: "var(--lpe-fg, #F5FFFA)",
+              fontSize: 12,
+              maxWidth: 220,
+            }}
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onSelect(idx)}
+              title={p.selectorPath}
+              style={{
+                appearance: "none",
+                background: "transparent",
+                border: "none",
+                color: "inherit",
+                cursor: "pointer",
+                fontSize: 12,
+                padding: 0,
+                maxWidth: 180,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span aria-hidden="true" style={{ opacity: 0.7, marginRight: 4 }}>{idx + 1}.</span>
+              {p.selectorPath}
+            </button>
+            <button
+              type="button"
+              aria-label={`Remove pick ${idx + 1}`}
+              onClick={() => onRemove(idx)}
+              style={{
+                appearance: "none",
+                background: "transparent",
+                border: "none",
+                color: "inherit",
+                cursor: "pointer",
+                opacity: 0.6,
+                fontSize: 14,
+                lineHeight: 1,
+                padding: "0 2px",
+              }}
+            >
+              ×
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function ElementInspectorWithCode(
   {
     snapshot, onBack, preview, activeUrl, shareEnabled, onShare, onTogglePickerLock, pickerLocked,
