@@ -239,6 +239,12 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           message: p.message,
           ...(p.debugPreview ? { debugPreview: p.debugPreview } : {}),
           ...(p.elementSnapshot ? { elementSnapshot: p.elementSnapshot as ElementSnapshot } : {}),
+          ...(p.multiElementSnapshot && p.multiElementSnapshot.length > 0
+            ? {
+                multiPicks: p.multiElementSnapshot,
+                activePickIndex: p.multiElementSnapshot.length - 1,
+              }
+            : {}),
           lastAction: "pick",
         }));
         setMode("pick");
@@ -261,6 +267,12 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           : {}),
         ...(p.debugPreview ? { debugPreview: p.debugPreview } : {}),
         ...(p.elementSnapshot ? { elementSnapshot: p.elementSnapshot as ElementSnapshot } : {}),
+        ...(p.multiElementSnapshot && p.multiElementSnapshot.length > 0
+          ? {
+              multiPicks: p.multiElementSnapshot,
+              activePickIndex: p.multiElementSnapshot.length - 1,
+            }
+          : {}),
         ...(p.status === PanelStatus.Success && p.telemetry
           ? { successTelemetry: p.telemetry }
           : {}),
