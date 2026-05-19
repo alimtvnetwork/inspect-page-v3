@@ -177,7 +177,7 @@ function SelectionContrast({ selection, onCopy }: SelectionContrastProps): JSX.E
       <Row label="Background" value={bg} swatch={bg} onCopy={() => onCopy(bg)} />
       <div className="lpe-eli-row">
         <span className="lpe-eli-rowlabel">Contrast</span>
-        <span className="lpe-eli-rowvalue">
+        <span className="lpe-eli-rowvalue lpe-eli-contrast">
           <span className="lpe-eli-sample" style={{ color: fg, background: bg }}>Aa</span>
           <span className="lpe-eli-rowtext">{ratio}:1</span>
           <span className={`lpe-eli-verdict ${verdictClass}`}>{v.label}</span>
