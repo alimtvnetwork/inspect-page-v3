@@ -10,6 +10,8 @@ import type {
   BeginScrollCaptureResponse,
   CollectPageArtifactsPayload,
   CollectPageArtifactsResponse,
+  MountFloatingPanelPayload,
+  MountFloatingPanelResponse,
   GetSettingsResponse,
   PingPayload,
   PingResponse,
@@ -30,6 +32,7 @@ import { collectElement } from "@element/collectElement";
 import { collectElementSnapshot } from "@element/collectElementSnapshot";
 import { collectSnapshot } from "./inspect/collectSnapshot";
 import { locateColor } from "./inspect/locateColor";
+import { mountFloatingPanel } from "@panel/mountFloatingPanel";
 
 logger.debug(LogCategory.Lifecycle, "Content script loaded");
 
@@ -57,6 +60,13 @@ router.on<PingPayload, PingResponse>(MessageKind.Ping, (payload) => {
   logger.debug(LogCategory.Messaging, `CS Ping rtt=${Date.now() - payload.sentAtMs}ms`);
   return { extensionVersion: __EXT_VERSION__, receivedAtMs: Date.now() };
 });
+
+router.on<MountFloatingPanelPayload, MountFloatingPanelResponse>(
+  MessageKind.MountFloatingPanel,
+  ({ tabId }) => {
+    mountFloatingPanel({ tabId, activeUrl: location.href });
+  },
+);
 
 router.on<CollectPageArtifactsPayload, CollectPageArtifactsResponse>(
   MessageKind.CollectPageArtifacts,
