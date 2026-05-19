@@ -386,6 +386,12 @@ export interface ExportArtifacts {
   js: string;
   images: ExportImage[];
   meta: ExportMeta;
+  /**
+   * v2.7.2 — optional markdown inserted after the AI instruction block and
+   * before the HTML section in every export mode. Used by the multi-element
+   * picker to surface per-element `## Source` metadata.
+   */
+  prelude?: string;
 }
 
 /* ---------- Inspect Mode (Phase A3+) ---------- */
