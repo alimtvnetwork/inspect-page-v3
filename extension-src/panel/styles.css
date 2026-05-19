@@ -431,26 +431,26 @@
   box-shadow: 0 0 0 1px rgba(45, 212, 168, 0.12), 0 10px 24px -18px rgba(115, 255, 184, 0.75);
 }
 .lpe-btn-primary {
-  background: linear-gradient(135deg, #2DD4A8 0%, #73FFB8 100%);
-  color: #05241C;
-  border-color: rgba(115, 255, 184, 0.72);
+  background: rgba(17, 23, 21, 0.92);
+  color: var(--lpe-fg);
+  border-color: rgba(115, 255, 184, 0.42);
   font-weight: 800;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.45) inset, 0 0 0 1px rgba(45, 212, 168, 0.28), 0 16px 34px -20px rgba(115, 255, 184, 0.9);
+  box-shadow: 0 0 0 1px rgba(45, 212, 168, 0.16), 0 10px 24px -18px rgba(115, 255, 184, 0.75);
 }
 .lpe-btn-primary:hover:not([disabled]) {
-  filter: brightness(1.05);
+  background: rgba(22, 30, 27, 0.98);
   transform: translateY(-1px);
 }
 .lpe-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
 .lpe-root[data-lpe-theme="dark"] .lpe-btn { background: rgba(17, 23, 21, 0.92); border-color: rgba(115, 255, 184, 0.24); color: #F5FFFA; }
 .lpe-root[data-lpe-theme="dark"] .lpe-btn:hover:not([disabled]) { background: rgba(22, 30, 27, 0.98); border-color: rgba(115, 255, 184, 0.48); }
 .lpe-root[data-lpe-theme="dark"] .lpe-btn-primary {
-  background: linear-gradient(135deg, #12C99A 0%, #2DD4A8 42%, #73FFB8 100%);
-  color: #05241C;
-  border-color: rgba(115, 255, 184, 0.72);
+  background: rgba(17, 23, 21, 0.92);
+  color: #F5FFFA;
+  border-color: rgba(115, 255, 184, 0.42);
 }
 .lpe-root[data-lpe-theme="dark"] .lpe-btn-primary:hover:not([disabled]) {
-  background: linear-gradient(135deg, #0EB98E 0%, #26E0AF 48%, #8CFFC6 100%);
+  background: rgba(22, 30, 27, 0.98);
 }
 .lpe-status {
   padding: 10px;
