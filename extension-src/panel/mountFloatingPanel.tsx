@@ -93,13 +93,15 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
     .catch(() => place());
 
   wireDrag(host, persist);
-  const onWindowResize = (): void => place({
-    xPx: host.offsetLeft,
-    yPx: host.offsetTop,
-    wPx: host.offsetWidth,
-    hPx: host.offsetHeight,
-    minimized: false,
-  });
+  const onWindowResize = (): void => {
+    void refreshTabZoom(options.tabId).finally(() => place({
+      xPx: host.offsetLeft,
+      yPx: host.offsetTop,
+      wPx: host.offsetWidth,
+      hPx: host.offsetHeight,
+      minimized: false,
+    }));
+  };
   window.addEventListener("resize", onWindowResize);
 
   root = createRoot(mount);
@@ -121,14 +123,33 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
   );
 }
 
-function getPanelCssSize(): { w: number; h: number } {
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  const nativeDpr = dpr >= 2.25 ? 2 : 1;
-  const pageZoom = Math.max(1, dpr / nativeDpr);
+function getPanelCssSize(pageZoom = 1): { w: number; h: number } {
+  const zoom = Number.isFinite(pageZoom) && pageZoom > 0 ? pageZoom : 1;
   return {
-    w: Math.round(TARGET_VISUAL_W / pageZoom),
-    h: Math.round(TARGET_VISUAL_H / pageZoom),
+    w: Math.round(TARGET_VISUAL_W / zoom),
+    h: Math.round(TARGET_VISUAL_H / zoom),
   };
+}
+
+async function refreshTabZoom(tabId: number): Promise<void> {
+  try {
+    const res = await sendToBackground<{ tabId: number }, GetTabZoomResponse>(
+      MessageKind.GetTabZoom,
+      { tabId },
+    );
+    activeTabZoom = Number.isFinite(res.zoomFactor) && res.zoomFactor > 0 ? res.zoomFactor : 1;
+  } catch {
+    activeTabZoom = 1;
+  }
+}
+
+function repositionExisting(host: HTMLDivElement): void {
+  const size = getPanelCssSize(activeTabZoom);
+  applyPanelFrame(host, size.w, size.h);
+  const maxX = Math.max(EDGE_GAP, window.innerWidth - size.w - EDGE_GAP);
+  const maxY = Math.max(EDGE_GAP, window.innerHeight - size.h - EDGE_GAP);
+  host.style.left = `${clamp(host.offsetLeft, EDGE_GAP, maxX)}px`;
+  host.style.top = `${clamp(host.offsetTop, EDGE_GAP, maxY)}px`;
 }
 
 function applyPanelFrame(host: HTMLDivElement, w = TARGET_VISUAL_W, h = TARGET_VISUAL_H): void {
