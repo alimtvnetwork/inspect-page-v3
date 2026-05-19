@@ -612,12 +612,23 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           </>
         )}
 
+        {(() => {
+          const pickerStatus =
+            state.status === PanelStatus.PickerActive ||
+            state.status === PanelStatus.Selecting;
+          const showStatusHere =
+            state.status !== PanelStatus.Idle && (
+              mode === "export" ? !pickerStatus :
+              mode === "pick"   ? pickerStatus || (state.status === PanelStatus.Error && !!state.elementSnapshot) :
+              false
+            );
+          if (!showStatusHere) return null;
+          return (
         <div
           className="lpe-status"
           data-status={state.status}
           role="status"
           aria-live="polite"
-          hidden={state.status === PanelStatus.Idle}
         >
           {state.status !== PanelStatus.Idle && (
             <div className="lpe-status-message">{statusLabel(state)}</div>
@@ -683,8 +694,10 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             <TelemetrySummary counts={state.successTelemetry} />
           )}
         </div>
+          );
+        })()}
 
-        {state.status === PanelStatus.Success && state.fullPageArtifacts && (
+        {mode === "export" && state.status === PanelStatus.Success && state.fullPageArtifacts && (
           <FullPageActions
             artifacts={state.fullPageArtifacts}
             activeUrl={activeUrl}
@@ -700,7 +713,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
          * saw "nothing" after picking until/unless the export download
          * completed. Only hide while the picker is still active.
          */}
-        {state.elementSnapshot && state.status !== PanelStatus.PickerActive && (
+        {mode === "pick" && state.elementSnapshot && state.status !== PanelStatus.PickerActive && (
           <>
           {state.multiPicks && state.multiPicks.length > 1 && (
             <MultiPickChips
@@ -765,7 +778,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           </>
         )}
 
-        {state.debugPreview && !busy && (
+        {mode === "pick" && state.debugPreview && !busy && (
           <DebugPreview
             preview={state.debugPreview}
             activeUrl={activeUrl}
