@@ -138,6 +138,9 @@ export interface RunFullPageExportResponse {
   };
 }
 
+export interface CancelFullPageExportPayload { tabId: number }
+export type CancelFullPageExportResponse = void;
+
 export interface RunElementExportPayload {
   tabId: number;
   selectorPath: string;
