@@ -24,6 +24,7 @@ export interface MountFloatingPanelOptions {
 export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
   const existing = document.getElementById(HOST_ID) as HTMLDivElement | null;
   if (existing) {
+    applyPanelFrame(existing);
     existing.style.display = "block";
     existing.style.pointerEvents = "auto";
     existing.focus({ preventScroll: true });
@@ -61,9 +62,8 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
     const h = clamp(position?.hPx ?? DEFAULT_H, MIN_H, Math.min(DEFAULT_H, maxH));
     const x = clamp(position?.xPx ?? window.innerWidth - w - EDGE_GAP, EDGE_GAP, window.innerWidth - w - EDGE_GAP);
     const y = clamp(position?.yPx ?? EDGE_GAP, EDGE_GAP, window.innerHeight - h - EDGE_GAP);
+    applyPanelFrame(host, w, h);
     Object.assign(host.style, {
-      width: `${w}px`,
-      height: `${h}px`,
       left: `${x}px`,
       top: `${y}px`,
     });
@@ -84,7 +84,6 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
     .catch(() => place());
 
   wireDrag(host, persist);
-  wireResize(host, persist);
   const onWindowResize = (): void => place({
     xPx: host.offsetLeft,
     yPx: host.offsetTop,
