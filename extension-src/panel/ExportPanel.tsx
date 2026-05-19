@@ -1949,7 +1949,7 @@ function MultiPickChips(
 
 function ElementInspectorWithCode(
   {
-    snapshot, onBack, preview, activeUrl, shareEnabled, onShare, onTogglePickerLock, pickerLocked,
+    snapshot, onBack, preview, activeUrl, shareEnabled, onShare, onTogglePickerLock, pickerLocked, multiPicks,
   }: {
     snapshot: ElementSnapshot;
     onBack: () => void;
@@ -1959,10 +1959,13 @@ function ElementInspectorWithCode(
     onShare?: (artifacts: ExportArtifacts) => Promise<void>;
     onTogglePickerLock?: (next: boolean) => void;
     pickerLocked?: boolean;
+    multiPicks?: NonNullable<StatusUpdatePayload["multiElementSnapshot"]>;
   },
 ): JSX.Element {
   const [showCode, setShowCode] = useState(false);
-  const artifacts = preview ? buildElementArtifacts(preview, activeUrl) : null;
+  const artifacts = multiPicks && multiPicks.length > 1
+    ? buildCombinedElementArtifacts(multiPicks, activeUrl)
+    : preview ? buildElementArtifacts(preview, activeUrl) : null;
   return (
     <>
       <ElementInspector
