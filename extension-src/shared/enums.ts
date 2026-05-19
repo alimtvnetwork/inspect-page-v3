@@ -34,6 +34,7 @@ export enum MessageKind {
   RevokeShareSession = "RevokeShareSession",
   CollectInspectSnapshot = "CollectInspectSnapshot",
   LocateColor = "LocateColor",
+  LocateElement = "LocateElement",
   DownloadBlob = "DownloadBlob",
 }
 
