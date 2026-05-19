@@ -2062,9 +2062,13 @@ interface ExportDiagnosticsProps {
 
 function ExportDiagnostics({ code, message, detail }: ExportDiagnosticsProps): JSX.Element | null {
   if (!code && !message && !detail) return null;
-  const [rawCausePart, diagPart] = (detail ?? "").includes(" || ")
-    ? (detail ?? "").split(" || ", 2) as [string, string]
-    : [detail ?? "", ""];
+  const detailText = detail ?? "";
+  const looksStructured = /(^| \| )\w+=/.test(detailText);
+  const [rawCausePart, diagPart] = detailText.includes(" || ")
+    ? detailText.split(" || ", 2) as [string, string]
+    : looksStructured
+      ? ["", detailText]
+      : [detailText, ""];
   const fields: Record<string, string> = {};
   for (const tok of diagPart.split(" | ").map((s) => s.trim()).filter(Boolean)) {
     const eq = tok.indexOf("=");
