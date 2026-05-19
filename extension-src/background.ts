@@ -525,22 +525,42 @@ chrome.commands?.onCommand?.addListener(async (command) => {
 // the current tab (toolbar dropdown) instead of a detached window.
 
 // ---- Stage 9: SW keep-alive during exports (E20) ----
-let keepAliveTimer: ReturnType<typeof setInterval> | null = null;
 let keepAliveCount = 0;
+let keepAlivePort: chrome.runtime.Port | null = null;
+let keepAliveTimer: ReturnType<typeof setInterval> | null = null;
 function startKeepAlive(): void {
   keepAliveCount++;
-  if (keepAliveTimer) return;
+  if (keepAliveTimer || keepAlivePort) return;
+  // MV3 service workers are kept alive by an open Port (not by setInterval +
+  // chrome.runtime.getPlatformInfo, which Chromium throttles aggressively).
+  // We open a self-loop port; if Chromium ever closes it we reopen.
+  const openPort = (): void => {
+    try {
+      keepAlivePort = chrome.runtime.connect({ name: "inspect-page-keepalive" });
+      keepAlivePort.onDisconnect.addListener(() => {
+        keepAlivePort = null;
+        if (keepAliveCount > 0) openPort();
+      });
+    } catch { /* fall back to interval below */ }
+  };
+  openPort();
   keepAliveTimer = setInterval(() => {
     chrome.runtime.getPlatformInfo().catch(() => undefined);
   }, KEEPALIVE_INTERVAL_MS);
 }
 function stopKeepAlive(): void {
   keepAliveCount = Math.max(0, keepAliveCount - 1);
-  if (keepAliveCount === 0 && keepAliveTimer) {
-    clearInterval(keepAliveTimer);
-    keepAliveTimer = null;
+  if (keepAliveCount === 0) {
+    if (keepAliveTimer) { clearInterval(keepAliveTimer); keepAliveTimer = null; }
+    if (keepAlivePort) { try { keepAlivePort.disconnect(); } catch { /* noop */ } keepAlivePort = null; }
   }
 }
+// Absorb the no-op port on the receiving end so Chromium keeps it alive.
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === "inspect-page-keepalive") {
+    port.onMessage.addListener(() => undefined);
+  }
+});
 
 /**
  * Stage 5 orchestrator — collect artifacts via CS, build ZIP with placeholder
@@ -552,6 +572,10 @@ async function runFullPageExport(
   settings: SetSettingsPayload,
 ): Promise<RunFullPageExportResponse> {
   startKeepAlive();
+  // Capture the tab's URL at start so we can detect mid-export navigation
+  // (the #1 cause of "Page failed to load." with no other diagnostic).
+  let startUrl = "";
+  try { startUrl = (await chrome.tabs.get(tabId)).url ?? ""; } catch { /* tab gone */ }
   try {
   await broadcast({ status: PanelStatus.Collecting });
 
@@ -599,7 +623,10 @@ async function runFullPageExport(
     // raised by sendToTab when the page is still loading or the CS isn't
     // reachable). Re-wrapping would mask the real cause and surface a
     // generic "Page failed to load." with E_PERMISSION_DENIED.
-    if (e instanceof MessageError) throw e;
+    if (e instanceof MessageError) {
+      await maybeAttachNavigationDetail(e, tabId, startUrl);
+      throw e;
+    }
     const msg = e instanceof Error ? e.message : String(e);
     // chrome.tabs.sendMessage rejects with this exact phrase when the CS
     // isn't injected (chrome://, edge://, file://, new tab, Web Store, PDFs).
@@ -696,6 +723,7 @@ async function runFullPageExport(
   return response;
   } catch (e) {
     const err = mapFullPageExportError(e);
+    await maybeAttachNavigationDetail(err, tabId, startUrl);
     await broadcast({
       status: PanelStatus.Error,
       message: err.message,
@@ -722,6 +750,36 @@ function mapFullPageExportError(e: unknown): MessageError {
     return new MessageError(ErrorCode.E_EXPORT_TIMEOUT, "Export took too long. Try a smaller page or use Pick Element.", msg);
   }
   return new MessageError(ErrorCode.E_EXPORT_INTERRUPTED, "Export failed before it could finish. Reload the tab and try again.", msg);
+}
+
+/**
+ * If the tab navigated away (or closed) during the export, rewrite the error
+ * surface so the user sees the real cause instead of the generic "open a
+ * regular http(s):// site" message. We mutate in place because callers have
+ * already thrown/broadcast the reference.
+ */
+async function maybeAttachNavigationDetail(
+  err: MessageError,
+  tabId: number,
+  startUrl: string,
+): Promise<void> {
+  if (err.code !== ErrorCode.E_NOT_AVAILABLE_HERE) return;
+  if (!startUrl) return;
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    const nowUrl = tab.url ?? "";
+    if (nowUrl && nowUrl !== startUrl) {
+      (err as { message: string }).message =
+        "The page navigated during export. Stay on the same page and try again.";
+      (err as { detail?: string }).detail = `was: ${startUrl} → now: ${nowUrl}`;
+    } else if (tab.status !== "complete") {
+      (err as { message: string }).message =
+        "The page is still loading. Wait until it finishes and try again.";
+    }
+  } catch {
+    (err as { message: string }).message =
+      "The tab was closed before export finished. Reopen the page and try again.";
+  }
 }
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
