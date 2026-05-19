@@ -700,21 +700,21 @@
 /* v1.2 — picked-element debug preview (HTML / CSS / JS tabs). */
 .lpe-debug {
   margin-top: 4px;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-  background: #fbfcfd;
-  color: #1f2328;
+  border: 1px solid rgba(115, 255, 184, 0.22);
+  border-radius: 10px;
+  background: rgba(11, 15, 14, 0.72);
+  color: var(--lpe-fg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 .lpe-debug-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 8px;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
+  padding: 8px 10px;
+  background: rgba(17, 23, 21, 0.96);
+  border-bottom: 1px solid rgba(115, 255, 184, 0.16);
 }
-.lpe-debug-title { font-weight: 600; font-size: 12px; }
+.lpe-debug-title { font-weight: 750; font-size: 12px; color: var(--lpe-fg); }
 .lpe-debug-selector {
   padding: 4px 8px; font-size: 11px; color: #57606a;
   border-bottom: 1px solid #eaeef2;
@@ -754,9 +754,9 @@
 }
 .lpe-debug-actions {
   display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
-  padding: 6px 8px;
-  border-bottom: 1px solid #eaeef2;
-  background: #fbfcfd;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(115, 255, 184, 0.14);
+  background: rgba(245, 255, 250, 0.96);
 }
 .lpe-debug-fmt {
   display: inline-flex; align-items: center; gap: 4px;
@@ -826,8 +826,8 @@
 .lpe-export-modes {
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px dashed #d0d7de;
-  color: #1f2328;
+  border-top: 1px dashed rgba(245, 255, 250, 0.62);
+  color: #05241C;
 }
 .lpe-export-modes .lpe-debug-title { margin-bottom: 6px; color: inherit; }
 .lpe-root[data-lpe-theme="dark"] .lpe-debug,
