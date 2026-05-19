@@ -772,15 +772,17 @@
 }
 .lpe-debug-fmt {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 11px; color: #57606a;
+  font-size: 11px; color: var(--lpe-muted);
 }
 .lpe-debug-fmt-btn {
-  border: 1px solid #d0d7de; background: white;
+  border: 1px solid rgba(115, 255, 184, 0.24);
+  background: rgba(17, 23, 21, 0.92);
   padding: 2px 8px; border-radius: 4px;
+  color: var(--lpe-fg);
   cursor: pointer; font: inherit; font-size: 11px;
 }
 .lpe-debug-fmt-btn[aria-pressed="true"] {
-  background: #0969da; color: white; border-color: #0969da;
+  background: var(--lpe-accent); color: var(--lpe-accent-fg); border-color: var(--lpe-accent);
 }
 .lpe-debug-actions .lpe-btn {
   width: auto; padding: 3px 10px; font-size: 12px;
@@ -788,15 +790,16 @@
 }
 .lpe-debug-actions .lpe-spacer { flex: 1 1 auto; }
 .lpe-debug-note {
-  padding: 6px 8px; font-size: 11px; color: #57606a;
-  background: #fff8c5; border-bottom: 1px solid #eaeef2;
+  padding: 6px 8px; font-size: 11px; color: var(--lpe-fg);
+  background: rgba(17, 23, 21, 0.92); border-bottom: 1px solid rgba(115, 255, 184, 0.14);
 }
 .lpe-debug-pre {
   margin: 0; padding: 8px;
   max-height: 240px; overflow: auto;
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 11px; line-height: 1.4;
-  background: #ffffff;
+  background: #06100D;
+  color: var(--lpe-fg);
   white-space: pre-wrap; word-break: break-word;
 }
 
