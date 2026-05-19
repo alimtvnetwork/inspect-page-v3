@@ -576,10 +576,14 @@ async function runFullPageExport(
   settings: SetSettingsPayload,
 ): Promise<RunFullPageExportResponse> {
   startKeepAlive();
-  // Capture the tab's URL at start so we can detect mid-export navigation
-  // (the #1 cause of "Page failed to load." with no other diagnostic).
-  let startUrl = "";
-  try { startUrl = (await chrome.tabs.get(tabId)).url ?? ""; } catch { /* tab gone */ }
+  const target = await resolveFullPageExportTarget(tabId);
+  const exportTabId = target.tabId;
+  // Capture the export tab's URL at start so we can detect mid-export
+  // navigation (the #1 cause of "Page failed to load." with no other
+  // diagnostic). Lovable editor pages are handed off to their rendered
+  // preview tab before this point, so the exported HTML/CSS/JS/screenshot are
+  // from the actual app, not the IDE shell.
+  let startUrl = target.startUrl;
   // Friendly early guard for hosts that are technically https:// but cannot
   // be full-page-captured (SPA editors with no document-level scroll,
   // sandboxed previews, etc.). Surfacing this here gives a clear message
@@ -604,7 +608,7 @@ async function runFullPageExport(
   // Page on a still-loading or just-navigated tab.
   setPhase("ensureContentScript:pre-collect");
   try {
-    await ensureContentScript(tabId);
+    await ensureContentScript(exportTabId);
   } catch (e) {
     logger.warn(LogCategory.Capture, ErrorCode.E_NOT_AVAILABLE_HERE, "pre-collect content script readiness failed; retrying during collect", e);
   }
@@ -613,7 +617,7 @@ async function runFullPageExport(
   const collect = (): Promise<CollectPageArtifactsResponse> =>
     withTimeout(
       sendToTab<{ tabId: number }, CollectPageArtifactsResponse>(
-        tabId, MessageKind.CollectPageArtifacts, { tabId },
+        exportTabId, MessageKind.CollectPageArtifacts, { tabId: exportTabId },
       ),
       COLLECT_TIMEOUT_MS,
       "collect artifacts",
@@ -639,7 +643,7 @@ async function runFullPageExport(
         const d = err instanceof MessageError ? (err.detail ?? m) : m;
         if (!isTransient(m) && !isTransient(d)) throw err;
         logger.warn(LogCategory.Capture, "COLLECT_RETRY", `attempt ${i + 1} failed; re-injecting CS`, err);
-        try { await ensureContentScript(tabId); } catch { /* keep retrying */ }
+        try { await ensureContentScript(exportTabId); } catch { /* keep retrying */ }
       }
     }
     if (lastErr) throw lastErr;
@@ -649,7 +653,7 @@ async function runFullPageExport(
     // reachable). Re-wrapping would mask the real cause and surface a
     // generic "Page failed to load." with E_PERMISSION_DENIED.
     if (e instanceof MessageError) {
-      await maybeAttachNavigationDetail(e, tabId, startUrl, phase);
+      await maybeAttachNavigationDetail(e, exportTabId, startUrl, phase);
       throw e;
     }
     const msg = e instanceof Error ? e.message : String(e);
@@ -677,10 +681,10 @@ async function runFullPageExport(
   }
 
   // ---- Screenshot (Stage 6) ----
-  const tab = await chrome.tabs.get(tabId);
+  const tab = await chrome.tabs.get(exportTabId);
   setPhase("captureFullPage");
   const screenshot = await captureFullPage({
-    tabId,
+    tabId: exportTabId,
     windowId: tab.windowId,
     pageCssPx: artifacts.meta.pageCssPx,
     viewportCssPx: artifacts.meta.viewportCssPx,
@@ -753,7 +757,7 @@ async function runFullPageExport(
   return response;
   } catch (e) {
     const err = mapFullPageExportError(e);
-    await maybeAttachNavigationDetail(err, tabId, startUrl, phase);
+    await maybeAttachNavigationDetail(err, exportTabId, startUrl, phase);
     await broadcast({
       status: PanelStatus.Error,
       message: err.message,
