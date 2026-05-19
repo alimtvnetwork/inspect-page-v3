@@ -112,6 +112,15 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
   );
 }
 
+function applyPanelFrame(host: HTMLDivElement, w = DEFAULT_W, h = DEFAULT_H): void {
+  host.style.setProperty("width", `${w}px`, "important");
+  host.style.setProperty("height", `${h}px`, "important");
+  host.style.setProperty("max-width", `${DEFAULT_W}px`, "important");
+  host.style.setProperty("max-height", `${DEFAULT_H}px`, "important");
+  host.style.setProperty("overflow", "hidden", "important");
+  host.style.setProperty("box-sizing", "border-box", "important");
+}
+
 function wireDrag(host: HTMLDivElement, onDone: () => void): void {
   let start: { x: number; y: number; left: number; top: number } | null = null;
   host.shadowRoot?.addEventListener("pointerdown", (event) => {
