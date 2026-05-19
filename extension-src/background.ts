@@ -580,6 +580,17 @@ async function runFullPageExport(
   // (the #1 cause of "Page failed to load." with no other diagnostic).
   let startUrl = "";
   try { startUrl = (await chrome.tabs.get(tabId)).url ?? ""; } catch { /* tab gone */ }
+  // Friendly early guard for hosts that are technically https:// but cannot
+  // be full-page-captured (SPA editors with no document-level scroll,
+  // sandboxed previews, etc.). Surfacing this here gives a clear message
+  // instead of the generic "Page failed to load." after 6 silent retries.
+  const unsupported = detectUnsupportedFullPageHost(startUrl);
+  if (unsupported) {
+    stopKeepAlive();
+    const err = new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, unsupported.message, `unsupportedHost=${unsupported.host} | startUrl=${startUrl}`);
+    await broadcast({ status: PanelStatus.Error, message: err.message, errorCode: err.code, errorDetail: err.detail });
+    throw err;
+  }
   // Diagnostic phase tracker — surfaced in the error `detail` so future
   // failures pinpoint exactly which step blew up.
   const phase = { name: "boot", attempt: 0 };
@@ -811,6 +822,35 @@ async function maybeAttachNavigationDetail(
 }
 
 function truncUrl(u: string): string { return u.length > 120 ? `${u.slice(0, 117)}…` : u; }
+
+/**
+ * Some https:// hosts are SPA editors / sandboxed app shells with no
+ * document-level scroll. Full-page capture would silently retry then fail
+ * with the generic E_NOT_AVAILABLE_HERE; intercept and explain instead.
+ * Users on these hosts should open their *published* site (or the actual
+ * preview tab) and run the export there.
+ */
+function detectUnsupportedFullPageHost(url: string): { host: string; message: string } | null {
+  if (!url) return null;
+  let host = "";
+  let pathname = "";
+  try { const u = new URL(url); host = u.hostname.toLowerCase(); pathname = u.pathname; } catch { return null; }
+  // Lovable editor itself (the IDE shell, not the preview iframe).
+  if (host === "lovable.dev" && pathname.startsWith("/projects/")) {
+    return { host, message: "This is the Lovable editor — it can't be exported as a full page. Open your preview tab (the rendered site) and run Export Full Page there." };
+  }
+  // Common editor / app shells with the same shape.
+  const editorHosts = new Set([
+    "figma.com", "www.figma.com",
+    "docs.google.com", "drive.google.com", "sheets.google.com",
+    "notion.so", "www.notion.so",
+    "linear.app", "app.asana.com",
+  ]);
+  if (editorHosts.has(host)) {
+    return { host, message: `${host} is an in-app editor — full-page export doesn't apply. Use Pick Element instead, or open a regular content page.` };
+  }
+  return null;
+}
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
   const buf = await blob.arrayBuffer();
