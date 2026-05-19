@@ -83,6 +83,16 @@ interface PanelState {
   debugPreview?: NonNullable<StatusUpdatePayload["debugPreview"]>;
   /** C3 — rich element snapshot for the new Inspector view. */
   elementSnapshot?: ElementSnapshot;
+  /**
+   * v2.7.2 — multi-element picker results. When set (length > 0), the
+   * inspector renders a horizontal chip strip; clicking a chip swaps the
+   * inspector body to that element's snapshot. The active chip is tracked
+   * by `activePickIndex`. The single `debugPreview` + `elementSnapshot`
+   * fields above always mirror `multiPicks[activePickIndex]` so existing
+   * render paths keep working unchanged.
+   */
+  multiPicks?: NonNullable<StatusUpdatePayload["multiElementSnapshot"]>;
+  activePickIndex?: number;
   /** v1.3: artifacts returned by a successful Full Page export. */
   fullPageArtifacts?: {
     html: string;
