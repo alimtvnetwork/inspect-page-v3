@@ -1428,3 +1428,8 @@
   pointer-events: none;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
+
+/* Hide scrollbars inside extension panel while preserving scroll. */
+.lpe-root *::-webkit-scrollbar { width: 0 !important; height: 0 !important; background: transparent !important; }
+.lpe-root *::-webkit-scrollbar-thumb { background: transparent !important; }
+.lpe-root, .lpe-root * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
