@@ -10,8 +10,6 @@ import stylesText from "./styles.css?inline";
 const HOST_ID = "inspect-page-panel-host";
 const DEFAULT_W = 412;
 const DEFAULT_H = 820;
-const MIN_W = 360;
-const MIN_H = 420;
 const EDGE_GAP = 16;
 
 let root: Root | null = null;
@@ -46,7 +44,7 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
   const style = document.createElement("style");
   style.textContent = `
     :host { all: initial; contain: layout style; }
-    #inspect-page-floating-root { width: 100%; height: 100%; }
+    #inspect-page-floating-root { width: 412px !important; height: 820px !important; overflow: hidden !important; }
     ${stylesText}
   `;
   const mount = document.createElement("div");
