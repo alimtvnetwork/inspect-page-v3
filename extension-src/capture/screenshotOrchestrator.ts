@@ -9,6 +9,7 @@
  * Output: Blob containing the stitched PNG/JPEG.
  */
 import {
+  CAPTURE_TAB_READY_TIMEOUT_MS,
   CAPTURE_GAP_MS, CAPTURE_RETRY_MAX, FRAME_SETTLE_MS,
   SCROLL_STEP_TIMEOUT_MS,
   STITCH_MAX_H_PX, STITCH_MAX_W_PX,
@@ -121,7 +122,7 @@ async function ensureTabReadyForVisibleCapture(tabId: number, windowId: number):
     // Capture will surface the real tab/window failure below.
   }
 
-  const deadline = Date.now() + CAPTURE_GAP_MS * 10;
+  const deadline = Date.now() + CAPTURE_TAB_READY_TIMEOUT_MS;
   while (Date.now() < deadline) {
     try {
       const tab = await chrome.tabs.get(tabId);
