@@ -243,6 +243,23 @@ export interface StatusUpdatePayload {
    */
   elementSnapshot?: unknown;
   /**
+   * v2.7.2 — multi-element picker. Populated when the user commits more than
+   * one element from the picker via the Done button. Order matches click
+   * order. The single-element `debugPreview` / `elementSnapshot` fields
+   * still reflect the *last-clicked* element so the inspector body shows
+   * that pick by default; the panel renders a chip strip from this list.
+   */
+  multiElementSnapshot?: {
+    selectorPath: string;
+    debugPreview: {
+      selectorPath: string;
+      html: string;
+      css: string;
+      js: string;
+    };
+    elementSnapshot?: unknown;
+  }[];
+  /**
    * Full-page artifacts may be attached to the terminal Success broadcast so
    * floating panels receive the rich post-export actions before the top-level
    * background response returns.
