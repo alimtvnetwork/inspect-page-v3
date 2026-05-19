@@ -1086,6 +1086,7 @@ function buildCombinedElementArtifacts(
   const htmlParts: string[] = [];
   const cssParts: string[] = [];
   const jsParts: string[] = [];
+  const preludeParts: string[] = [];
   picks.forEach((p, i) => {
     const n = i + 1;
     const header = `Element ${n} — ${p.selectorPath}`;
@@ -1096,6 +1097,16 @@ function buildCombinedElementArtifacts(
     if (p.debugPreview.js) {
       jsParts.push(`/* ${header} */`, p.debugPreview.js, "");
     }
+    const s = p.source;
+    preludeParts.push(`## Source — Element ${n}`);
+    preludeParts.push(`- URL: ${s?.url ?? activeUrl ?? ""}`);
+    preludeParts.push(`- Captured: ${s?.capturedAtIso ?? ""}`);
+    preludeParts.push(`- Selector path: ${p.selectorPath}`);
+    preludeParts.push(`- Page title: ${s?.pageTitle ?? ""}`);
+    if (s?.viewport) {
+      preludeParts.push(`- Viewport: ${s.viewport.w}×${s.viewport.h} CSS px @ DPR ${s.dpr}`);
+    }
+    preludeParts.push("");
   });
   return {
     flow: ExportFlow.Element,
@@ -1105,6 +1116,7 @@ function buildCombinedElementArtifacts(
     js: jsParts.join("\n").trim(),
     images: [],
     meta: {} as ExportArtifacts["meta"],
+    prelude: preludeParts.join("\n").trim() + "\n",
   };
 }
 
