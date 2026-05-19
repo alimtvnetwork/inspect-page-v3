@@ -736,11 +736,14 @@
 .lpe-debug-tabs {
   display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
   padding: 6px 8px;
-  border-bottom: 1px solid #eaeef2;
+  border-bottom: 1px solid rgba(115, 255, 184, 0.14);
+  background: rgba(11, 15, 14, 0.72);
 }
 .lpe-debug-tab {
-  border: 1px solid #d0d7de; background: white;
+  border: 1px solid rgba(115, 255, 184, 0.24);
+  background: rgba(17, 23, 21, 0.92);
   padding: 3px 8px; border-radius: 4px;
+  color: var(--lpe-fg);
   cursor: pointer; font: inherit; font-size: 12px;
   display: inline-flex; align-items: center; gap: 4px;
 }
@@ -765,7 +768,7 @@
   display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
   padding: 8px 10px;
   border-bottom: 1px solid rgba(115, 255, 184, 0.14);
-  background: rgba(245, 255, 250, 0.96);
+  background: rgba(11, 15, 14, 0.72);
 }
 .lpe-debug-fmt {
   display: inline-flex; align-items: center; gap: 4px;
