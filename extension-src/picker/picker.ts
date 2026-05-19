@@ -242,7 +242,7 @@ export function enterPicker(handlers: PickerHandlers): void {
 
   const shadow = host.attachShadow({ mode: "open" });
   const styleEl = document.createElement("style");
-  styleEl.textContent = STYLE;
+  styleEl.textContent = STYLE + SEL_STYLE;
   shadow.appendChild(styleEl);
 
   const box = document.createElement("div");
@@ -314,6 +314,34 @@ export function enterPicker(handlers: PickerHandlers): void {
   tip.className = "lpe-pk-tip";
   shadow.appendChild(tip);
 
+  // Phase 1 multi-pick — persistent selection layer + top bar + toast
+  const selLayer = document.createElement("div");
+  selLayer.style.cssText = "position:fixed;inset:0;pointer-events:none;";
+  shadow.appendChild(selLayer);
+
+  const bar = document.createElement("div");
+  bar.className = "lpe-pk-bar";
+  const barDone = document.createElement("button");
+  barDone.type = "button";
+  barDone.className = "lpe-pk-bar-btn";
+  barDone.dataset.variant = "done";
+  barDone.textContent = "Done";
+  barDone.disabled = true;
+  const barCount = document.createElement("span");
+  barCount.className = "lpe-pk-bar-count";
+  barCount.textContent = `0 / ${MAX_PICKS}`;
+  const barCancel = document.createElement("button");
+  barCancel.type = "button";
+  barCancel.className = "lpe-pk-bar-btn";
+  barCancel.dataset.variant = "cancel";
+  barCancel.textContent = "Cancel";
+  bar.append(barDone, barCount, barCancel);
+  shadow.appendChild(bar);
+
+  const toast = document.createElement("div");
+  toast.className = "lpe-pk-toast";
+  shadow.appendChild(toast);
+
   const prevCursor = document.body?.style.cursor ?? "";
   if (document.body) document.body.style.cursor = "crosshair";
 
@@ -371,15 +399,13 @@ export function enterPicker(handlers: PickerHandlers): void {
     if (t?.closest?.("#inspect-page-panel-host")) return;
     // Let chip-button clicks through to their own handlers.
     if (e.composedPath().includes(chip)) return;
+    // Let bar-button clicks through to their own handlers.
+    if (e.composedPath().includes(bar)) return;
     e.preventDefault(); e.stopPropagation();
-    // Treat a left-click as a selection too (in addition to right-click)
-    // so the picker is discoverable without needing the context menu.
     const target = pickTarget(e.clientX, e.clientY);
     if (!target) return;
-    const rect = target.getBoundingClientRect();
-    void Promise.resolve(handlers.onSelect({ element: target, rect })).catch((err) => {
-      logger.warn(LogCategory.Picker, "SELECT_FAIL", "select handler threw", err);
-    });
+    // Phase 1: toggle into multi-pick selections; commit happens on Done.
+    toggleSelection(target);
   };
 
   // P1: short-circuit overlay re-targeting while pointer is on the chip
@@ -393,10 +419,8 @@ export function enterPicker(handlers: PickerHandlers): void {
     e.preventDefault(); e.stopPropagation();
     const t = state?.currentTarget ?? null;
     if (!t) return;
-    const rect = t.getBoundingClientRect();
-    void Promise.resolve(handlers.onSelect({ element: t, rect })).catch((err) => {
-      logger.warn(LogCategory.Picker, "SELECT_FAIL", "select handler threw", err);
-    });
+    // Chip ✓ — Phase 1: add hovered element to selection (toggle).
+    toggleSelection(t);
   };
   const fireCopy = async (e: Event): Promise<void> => {
     e.preventDefault(); e.stopPropagation();
@@ -466,6 +490,36 @@ export function enterPicker(handlers: PickerHandlers): void {
   window.addEventListener("keydown", onKeyDown, true);
   window.addEventListener("keyup", onKeyUp, true);
 
+  const onScrollOrResize = (): void => { renderSelections(); };
+  window.addEventListener("scroll", onScrollOrResize, true);
+  window.addEventListener("resize", onScrollOrResize, true);
+
+  const fireDone = (e: Event): void => {
+    e.preventDefault(); e.stopPropagation();
+    if (!state || state.selections.length === 0) return;
+    const els = state.selections.slice();
+    if (handlers.onCommit) {
+      void Promise.resolve(handlers.onCommit(els)).catch((err) => {
+        logger.warn(LogCategory.Picker, "COMMIT_FAIL", "commit handler threw", err);
+      });
+    } else {
+      for (const el of els) {
+        const r = el.getBoundingClientRect();
+        void Promise.resolve(handlers.onSelect({ element: el, rect: r })).catch((err) => {
+          logger.warn(LogCategory.Picker, "SELECT_FAIL", "select handler threw", err);
+        });
+      }
+    }
+    exitPicker();
+  };
+  const fireBarCancel = (e: Event): void => {
+    e.preventDefault(); e.stopPropagation();
+    handlers.onCancel();
+    exitPicker();
+  };
+  barDone.addEventListener("click", fireDone);
+  barCancel.addEventListener("click", fireBarCancel);
+
   const cleanup = (): void => {
     window.removeEventListener("mousemove", onMoveThrottled, true);
     window.removeEventListener("mouseover", onMoveThrottled, true);
@@ -473,8 +527,13 @@ export function enterPicker(handlers: PickerHandlers): void {
     window.removeEventListener("click", onClick, true);
     window.removeEventListener("keydown", onKeyDown, true);
     window.removeEventListener("keyup", onKeyUp, true);
+    window.removeEventListener("scroll", onScrollOrResize, true);
+    window.removeEventListener("resize", onScrollOrResize, true);
     chip.removeEventListener("pointerenter", onChipEnter);
     chip.removeEventListener("pointerleave", onChipLeave);
+    barDone.removeEventListener("click", fireDone);
+    barCancel.removeEventListener("click", fireBarCancel);
+    if (state?.toastTimer) window.clearTimeout(state.toastTimer);
   };
 
   state = {
@@ -486,6 +545,8 @@ export function enterPicker(handlers: PickerHandlers): void {
     prevCursor,
     rafScheduled: false,
     pendingEvent: null,
+    selections: [], selLayer, bar, barDone, barCancel, barCount,
+    toast, toastTimer: null, onScrollOrResize,
     cleanup,
   };
 
