@@ -8,8 +8,8 @@ import { clamp } from "./clamp";
 import stylesText from "./styles.css?inline";
 
 const HOST_ID = "inspect-page-panel-host";
-const DEFAULT_W = 412;
-const DEFAULT_H = 820;
+const TARGET_VISUAL_W = 412;
+const TARGET_VISUAL_H = 820;
 const EDGE_GAP = 16;
 
 let root: Root | null = null;
@@ -44,7 +44,11 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
   const style = document.createElement("style");
   style.textContent = `
     :host { all: initial; contain: layout style; }
-    #inspect-page-floating-root { width: 412px !important; height: 820px !important; overflow: hidden !important; }
+    #inspect-page-floating-root {
+      width: var(--lpe-panel-w, 412px) !important;
+      height: var(--lpe-panel-h, 820px) !important;
+      overflow: hidden !important;
+    }
     ${stylesText}
   `;
   const mount = document.createElement("div");
@@ -54,9 +58,12 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
   document.documentElement.appendChild(host);
 
   const place = (position?: PanelPosition): void => {
-    const x = clamp(position?.xPx ?? window.innerWidth - DEFAULT_W - EDGE_GAP, EDGE_GAP, window.innerWidth - DEFAULT_W - EDGE_GAP);
-    const y = clamp(position?.yPx ?? EDGE_GAP, EDGE_GAP, window.innerHeight - DEFAULT_H - EDGE_GAP);
-    applyPanelFrame(host);
+    const size = getPanelCssSize();
+    const maxX = Math.max(EDGE_GAP, window.innerWidth - size.w - EDGE_GAP);
+    const maxY = Math.max(EDGE_GAP, window.innerHeight - size.h - EDGE_GAP);
+    const x = clamp(position?.xPx ?? maxX, EDGE_GAP, maxX);
+    const y = clamp(position?.yPx ?? EDGE_GAP, EDGE_GAP, maxY);
+    applyPanelFrame(host, size.w, size.h);
     Object.assign(host.style, {
       left: `${x}px`,
       top: `${y}px`,
@@ -67,8 +74,8 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
     void sendToBackground<Partial<PanelPosition>, PanelPosition>(MessageKind.SetPanelPosition, {
       xPx: Math.round(host.offsetLeft),
       yPx: Math.round(host.offsetTop),
-      wPx: DEFAULT_W,
-      hPx: DEFAULT_H,
+      wPx: TARGET_VISUAL_W,
+      hPx: TARGET_VISUAL_H,
       minimized: false,
     }).catch(() => undefined);
   };
@@ -106,13 +113,25 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
   );
 }
 
-function applyPanelFrame(host: HTMLDivElement, w = DEFAULT_W, h = DEFAULT_H): void {
-  host.style.setProperty("min-width", `${DEFAULT_W}px`, "important");
-  host.style.setProperty("min-height", `${DEFAULT_H}px`, "important");
+function getPanelCssSize(): { w: number; h: number } {
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const nativeDpr = dpr >= 2.25 ? 2 : 1;
+  const pageZoom = Math.max(1, dpr / nativeDpr);
+  return {
+    w: Math.round(TARGET_VISUAL_W / pageZoom),
+    h: Math.round(TARGET_VISUAL_H / pageZoom),
+  };
+}
+
+function applyPanelFrame(host: HTMLDivElement, w = TARGET_VISUAL_W, h = TARGET_VISUAL_H): void {
+  host.style.setProperty("--lpe-panel-w", `${w}px`);
+  host.style.setProperty("--lpe-panel-h", `${h}px`);
+  host.style.setProperty("min-width", `${w}px`, "important");
+  host.style.setProperty("min-height", `${h}px`, "important");
   host.style.setProperty("width", `${w}px`, "important");
   host.style.setProperty("height", `${h}px`, "important");
-  host.style.setProperty("max-width", `${DEFAULT_W}px`, "important");
-  host.style.setProperty("max-height", `${DEFAULT_H}px`, "important");
+  host.style.setProperty("max-width", `${w}px`, "important");
+  host.style.setProperty("max-height", `${h}px`, "important");
   host.style.setProperty("right", "auto", "important");
   host.style.setProperty("bottom", "auto", "important");
   host.style.setProperty("transform", "none", "important");
