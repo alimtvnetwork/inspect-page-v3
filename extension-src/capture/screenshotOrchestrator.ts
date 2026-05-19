@@ -86,11 +86,12 @@ async function sendOffscreen<P, R>(kind: MessageKind, payload: P): Promise<R> {
 }
 
 async function captureVisibleTabWithRetry(
-  windowId: number, format: ImageFormat, quality: number,
+  tabId: number, windowId: number, format: ImageFormat, quality: number,
 ): Promise<string> {
   let lastErr: unknown;
   for (let attempt = 0; attempt <= CAPTURE_RETRY_MAX; attempt++) {
     try {
+      await ensureTabReadyForVisibleCapture(tabId, windowId);
       const opts: chrome.tabs.CaptureVisibleTabOptions = { format };
       if (format === "jpeg") opts.quality = quality;
       return await chrome.tabs.captureVisibleTab(windowId, opts);
@@ -105,6 +106,32 @@ async function captureVisibleTabWithRetry(
     "captureVisibleTab failed after retry",
     lastErr instanceof Error ? lastErr.message : String(lastErr),
   );
+}
+
+async function ensureTabReadyForVisibleCapture(tabId: number, windowId: number): Promise<void> {
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    if (tab.windowId !== undefined) {
+      await chrome.windows.update(tab.windowId, { focused: true }).catch(() => undefined);
+    } else {
+      await chrome.windows.update(windowId, { focused: true }).catch(() => undefined);
+    }
+    if (!tab.active) await chrome.tabs.update(tabId, { active: true }).catch(() => undefined);
+  } catch {
+    // Capture will surface the real tab/window failure below.
+  }
+
+  const deadline = Date.now() + CAPTURE_GAP_MS * 10;
+  while (Date.now() < deadline) {
+    try {
+      const tab = await chrome.tabs.get(tabId);
+      if (tab.status === "complete") break;
+    } catch {
+      break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, CAPTURE_GAP_MS));
+  }
+  await new Promise((resolve) => setTimeout(resolve, CAPTURE_GAP_MS));
 }
 
 export async function captureFullPage(input: ScreenshotInput): Promise<ScreenshotOutput> {
@@ -156,7 +183,7 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
       const wait = lastCaptureAt + CAPTURE_GAP_MS - Date.now();
       if (wait > 0) await new Promise((r) => setTimeout(r, wait));
 
-      const dataUrl = await captureVisibleTabWithRetry(windowId, format, jpegQuality);
+      const dataUrl = await captureVisibleTabWithRetry(tabId, windowId, format, jpegQuality);
       lastCaptureAt = Date.now();
 
       input.onPhase?.("capture:stitch-frame", i + 1);
