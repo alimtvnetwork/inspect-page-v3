@@ -22,6 +22,7 @@ export enum MessageKind {
   StatusUpdate = "StatusUpdate",
   GetSettings = "GetSettings",
   SetSettings = "SetSettings",
+  GetTabZoom = "GetTabZoom",
   GetPanelPosition = "GetPanelPosition",
   SetPanelPosition = "SetPanelPosition",
   GetShareSettings = "GetShareSettings",

@@ -30,6 +30,8 @@ import type {
   SetShareSettingsResponse,
   GetSettingsPayload,
   GetSettingsResponse,
+  GetTabZoomPayload,
+  GetTabZoomResponse,
   GetPanelPositionPayload,
   GetPanelPositionResponse,
   SetPanelPositionPayload,
@@ -103,6 +105,19 @@ router.on<GetSettingsPayload, GetSettingsResponse>(MessageKind.GetSettings, asyn
 router.on<SetSettingsPayload, SetSettingsResponse>(MessageKind.SetSettings, async (patch) => {
   return setSettings(patch);
 });
+
+router.on<GetTabZoomPayload, GetTabZoomResponse>(
+  MessageKind.GetTabZoom,
+  async ({ tabId }, sender) => {
+    const tid = tabId > 0 ? tabId : sender.tab?.id;
+    if (tid === undefined) return { zoomFactor: 1 };
+    try {
+      return { zoomFactor: await chrome.tabs.getZoom(tid) };
+    } catch {
+      return { zoomFactor: 1 };
+    }
+  },
+);
 
 router.on<GetPanelPositionPayload, GetPanelPositionResponse>(
   MessageKind.GetPanelPosition, async () => getPanelPosition(),
