@@ -10,6 +10,7 @@
  */
 import {
   CAPTURE_GAP_MS, CAPTURE_RETRY_MAX, FRAME_SETTLE_MS,
+  SCROLL_STEP_TIMEOUT_MS,
   STITCH_MAX_H_PX, STITCH_MAX_W_PX,
 } from "@shared/constants";
 import { ErrorCode, LogCategory, MessageKind, PanelStatus } from "@shared/enums";
@@ -33,6 +34,7 @@ export interface ScreenshotInput {
   dpr: number;
   format: ImageFormat;
   jpegQuality: number;
+  onPhase?: (phase: string, attempt?: number) => void;
   onProgress?: (p: StatusUpdatePayload) => void | Promise<void>;
   recoverTabMessaging?: (tabId: number) => Promise<void>;
 }
@@ -147,23 +149,17 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
       const requestedY = Math.min(i * viewportCssPx.h, Math.max(0, effectivePageH - viewportCssPx.h));
       const scrollPayload = { y: requestedY, viewportHeight: viewportCssPx.h, settleMs: FRAME_SETTLE_MS };
 
-      const scroll = await sendToTabWithRecovery<
-        { y: number; viewportHeight: number; settleMs: number },
-        BeginScrollCaptureResponse
-      >(
-        input,
-        MessageKind.BeginScrollCapture,
-        scrollPayload,
-        `scroll capture frame ${i + 1}`,
-        () => executeBeginScrollCaptureFallback(input.tabId, scrollPayload),
-      );
+      input.onPhase?.("capture:scroll", i + 1);
+      const scroll = await withTimeout(scrollFrame(input, scrollPayload, i + 1), SCROLL_STEP_TIMEOUT_MS, `scroll capture frame ${i + 1}`);
 
+      input.onPhase?.("capture:visible", i + 1);
       const wait = lastCaptureAt + CAPTURE_GAP_MS - Date.now();
       if (wait > 0) await new Promise((r) => setTimeout(r, wait));
 
       const dataUrl = await captureVisibleTabWithRetry(windowId, format, jpegQuality);
       lastCaptureAt = Date.now();
 
+      input.onPhase?.("capture:stitch-frame", i + 1);
       const yPx = Math.round(scroll.actualY * dpr);
       const res = await sendOffscreen<typeof addPayload, OffscreenAddFrameResponse>(
         MessageKind.OffscreenAddFrame, (addPayload = { dataUrl, xPx: 0, yPx, sessionId }),
@@ -176,6 +172,7 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
       });
     }
 
+    input.onPhase?.("capture:finish-stitch");
     await input.onProgress?.({ status: PanelStatus.Stitching });
 
     const stitch = await sendOffscreen<
@@ -194,17 +191,61 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
     };
   } finally {
     try {
+      input.onPhase?.("capture:restore");
+      await executeRestoreAfterCaptureFallback(input.tabId);
+    } catch (fallbackErr) {
+      logger.warn(LogCategory.Capture, "RESTORE_FALLBACK_FAIL", "Direct restore fallback failed", fallbackErr);
+    }
+    try {
       await sendToTabWithRecovery<{ requestId: string }, RestoreAfterCaptureResponse>(
         input, MessageKind.RestoreAfterCapture, { requestId: sessionId }, "restore after capture",
-        () => executeRestoreAfterCaptureFallback(input.tabId),
       );
     } catch (e) {
-      logger.warn(LogCategory.Capture, "RESTORE_FAIL", "Restore after capture failed", e);
+      logger.warn(LogCategory.Capture, "RESTORE_FAIL", "Content-script restore failed", e);
     }
     try {
       await sendOffscreen<{ sessionId: string }, void>(MessageKind.OffscreenDispose, { sessionId });
     } catch { /* ignore */ }
   }
+}
+
+async function scrollFrame(
+  input: ScreenshotInput,
+  scrollPayload: { y: number; viewportHeight: number; settleMs: number },
+  frame: number,
+): Promise<BeginScrollCaptureResponse> {
+  // Root cause fix: some SPA-heavy sites (LeetCode included) intermittently
+  // make chrome.tabs.sendMessage reject with "The page failed to load" even
+  // while chrome.tabs.get(tabId).status is already "complete". For scroll
+  // capture, a registered content-script listener is not required; direct
+  // chrome.scripting.executeScript is more reliable and bypasses that stale
+  // messaging channel. Keep the old content-script path only as a fallback.
+  try {
+    return await executeBeginScrollCaptureFallback(input.tabId, scrollPayload);
+  } catch (fallbackErr) {
+    logger.warn(LogCategory.Capture, ErrorCode.E_NOT_AVAILABLE_HERE, `scroll capture frame ${frame} direct script failed; trying content-script messaging`, fallbackErr);
+  }
+
+  return sendToTabWithRecovery<
+        { y: number; viewportHeight: number; settleMs: number },
+        BeginScrollCaptureResponse
+      >(
+        input,
+        MessageKind.BeginScrollCapture,
+        scrollPayload,
+        `scroll capture frame ${frame}`,
+        () => executeBeginScrollCaptureFallback(input.tabId, scrollPayload),
+      );
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs);
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (error) => { clearTimeout(timer); reject(error); },
+    );
+  });
 }
 
 async function sendToTabWithRecovery<P, R>(

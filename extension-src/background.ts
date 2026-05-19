@@ -687,6 +687,7 @@ async function runFullPageExport(
     dpr: artifacts.meta.devicePixelRatio,
     format: settings?.imageFormat ?? "png",
     jpegQuality: settings?.jpegQuality ?? 90,
+    onPhase: setPhase,
     onProgress: (p) => {
       if (p.progress) setPhase("capture:frame", p.progress.done);
       return broadcast(p);
