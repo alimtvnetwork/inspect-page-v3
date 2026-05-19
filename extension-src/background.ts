@@ -540,6 +540,12 @@ async function runFullPageExport(
   try {
   await broadcast({ status: PanelStatus.Collecting });
 
+  // Proactively wait for the page to be `complete` and the CS to be
+  // reachable before the first collect. Skipping this is the most common
+  // cause of "page failed to load" errors when the user hits Export Full
+  // Page on a still-loading or just-navigated tab.
+  try { await ensureContentScript(tabId); } catch { /* surfaces below */ }
+
   let artifacts: CollectPageArtifactsResponse;
   const collect = (): Promise<CollectPageArtifactsResponse> =>
     withTimeout(
@@ -552,20 +558,27 @@ async function runFullPageExport(
   const isTransient = (msg: string): boolean =>
     /Receiving end does not exist|Could not establish connection|page failed to load|message port closed/i.test(msg);
   try {
-    try {
-      artifacts = await collect();
-    } catch (first) {
-      // CS may not be attached yet because the page is still loading or was
-      // just navigated. Re-inject, wait a tick, and retry once before
-      // surfacing the error to the user.
-      const msg1 = first instanceof Error ? first.message : String(first);
-      const detail1 = first instanceof MessageError ? (first.detail ?? msg1) : msg1;
-      if (!isTransient(msg1) && !isTransient(detail1)) throw first;
-      logger.warn(LogCategory.Capture, "COLLECT_RETRY", "retrying after transient failure", first);
-      try { await ensureContentScript(tabId); } catch { /* fall through */ }
-      await new Promise((r) => setTimeout(r, 250));
-      artifacts = await collect();
+    // Retry transient failures with backoff. The CS may need extra time
+    // to mount on slow pages or pages doing late hydration.
+    const delays = [0, 400, 900, 1500];
+    let lastErr: unknown;
+    artifacts = undefined as unknown as CollectPageArtifactsResponse;
+    for (let i = 0; i < delays.length; i++) {
+      if (delays[i] > 0) await new Promise((r) => setTimeout(r, delays[i]));
+      try {
+        artifacts = await collect();
+        lastErr = undefined;
+        break;
+      } catch (err) {
+        lastErr = err;
+        const m = err instanceof Error ? err.message : String(err);
+        const d = err instanceof MessageError ? (err.detail ?? m) : m;
+        if (!isTransient(m) && !isTransient(d)) throw err;
+        logger.warn(LogCategory.Capture, "COLLECT_RETRY", `attempt ${i + 1} failed; re-injecting CS`, err);
+        try { await ensureContentScript(tabId); } catch { /* keep retrying */ }
+      }
     }
+    if (lastErr) throw lastErr;
   } catch (e) {
     // Preserve already-translated MessageError (e.g. E_NOT_AVAILABLE_HERE
     // raised by sendToTab when the page is still loading or the CS isn't
