@@ -576,15 +576,13 @@ async function runFullPageExport(
   settings: SetSettingsPayload,
 ): Promise<RunFullPageExportResponse> {
   startKeepAlive();
-  const target = await resolveFullPageExportTarget(tabId);
-  const exportTabId = target.tabId;
-  await makeTabVisibleForCapture(exportTabId);
+  let exportTabId = tabId;
   // Capture the export tab's URL at start so we can detect mid-export
   // navigation (the #1 cause of "Page failed to load." with no other
   // diagnostic). Lovable editor pages are handed off to their rendered
   // preview tab before this point, so the exported HTML/CSS/JS/screenshot are
   // from the actual app, not the IDE shell.
-  let startUrl = target.startUrl;
+  let startUrl = "";
   // Friendly early guard for hosts that are technically https:// but cannot
   // be full-page-captured (SPA editors with no document-level scroll,
   // sandboxed previews, etc.). Surfacing this here gives a clear message
@@ -601,6 +599,18 @@ async function runFullPageExport(
   const phase = { name: "boot", attempt: 0 };
   const setPhase = (name: string, attempt = 0): void => { phase.name = name; phase.attempt = attempt; };
   try {
+  const target = await resolveFullPageExportTarget(tabId);
+  exportTabId = target.tabId;
+  startUrl = target.startUrl;
+  await makeTabVisibleForCapture(exportTabId);
+
+  const unsupported = detectUnsupportedFullPageHost(startUrl);
+  if (unsupported) {
+    const err = new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, unsupported.message, `unsupportedHost=${unsupported.host} | startUrl=${startUrl}`);
+    await broadcast({ status: PanelStatus.Error, message: err.message, errorCode: err.code, errorDetail: err.detail });
+    throw err;
+  }
+
   await broadcast({ status: PanelStatus.Collecting });
 
   // Proactively wait for the page to be `complete` and the CS to be
