@@ -713,7 +713,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
          * saw "nothing" after picking until/unless the export download
          * completed. Only hide while the picker is still active.
          */}
-        {state.elementSnapshot && state.status !== PanelStatus.PickerActive && (
+        {mode === "pick" && state.elementSnapshot && state.status !== PanelStatus.PickerActive && (
           <>
           {state.multiPicks && state.multiPicks.length > 1 && (
             <MultiPickChips
