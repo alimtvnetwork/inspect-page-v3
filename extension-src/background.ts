@@ -774,6 +774,10 @@ async function runFullPageExport(
   return response;
   } catch (e) {
     const err = mapFullPageExportError(e);
+    if (err.detail === "user-canceled") {
+      await broadcast({ status: PanelStatus.Idle });
+      throw err;
+    }
     await maybeAttachNavigationDetail(err, exportTabId, startUrl, phase);
     await broadcast({
       status: PanelStatus.Error,
