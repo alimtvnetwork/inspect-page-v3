@@ -276,7 +276,7 @@ export function enterPicker(handlers: PickerHandlers): void {
     b.textContent = glyph;
     return b;
   };
-  const chipBtnSelect = mkChipBtn("Select element", "✓", "select");
+  const chipBtnSelect = mkChipBtn("Add to selection", "✓", "select");
   const chipBtnCopy = mkChipBtn("Copy selector", "⧉", "copy");
   const chipBtnCancel = mkChipBtn("Cancel picker", "✕", "cancel");
   const chipFlash = document.createElement("span");
