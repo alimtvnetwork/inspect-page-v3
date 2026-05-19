@@ -580,6 +580,17 @@ async function runFullPageExport(
   // (the #1 cause of "Page failed to load." with no other diagnostic).
   let startUrl = "";
   try { startUrl = (await chrome.tabs.get(tabId)).url ?? ""; } catch { /* tab gone */ }
+  // Friendly early guard for hosts that are technically https:// but cannot
+  // be full-page-captured (SPA editors with no document-level scroll,
+  // sandboxed previews, etc.). Surfacing this here gives a clear message
+  // instead of the generic "Page failed to load." after 6 silent retries.
+  const unsupported = detectUnsupportedFullPageHost(startUrl);
+  if (unsupported) {
+    stopKeepAlive();
+    const err = new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, unsupported.message, `unsupportedHost=${unsupported.host} | startUrl=${startUrl}`);
+    await broadcast({ status: PanelStatus.Error, message: err.message, errorCode: err.code, errorDetail: err.detail });
+    throw err;
+  }
   // Diagnostic phase tracker — surfaced in the error `detail` so future
   // failures pinpoint exactly which step blew up.
   const phase = { name: "boot", attempt: 0 };
