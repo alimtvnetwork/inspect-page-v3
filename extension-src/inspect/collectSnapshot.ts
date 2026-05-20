@@ -23,13 +23,28 @@ import type {
   InspectSnapshot,
   PageInfo,
   TextNodeSample,
+  TypographyGroup,
 } from "./types";
 import { isInjectedOverlay } from "./overlayFilter";
 
 const MAX_ELEMENTS = 6000;
 const MAX_COMPUTED_SAMPLES = 400;
 const MAX_TEXT_NODES = 200;
+const MAX_TYPOGRAPHY_GROUPS = 60;
 const HEADING_TAGS = new Set(["H1", "H2", "H3", "H4", "H5", "H6"]);
+const TYPOGRAPHY_TAGS = new Set([
+  "P", "SPAN", "A", "LI", "BUTTON", "LABEL", "STRONG", "EM",
+  "SMALL", "BLOCKQUOTE", "CODE", "PRE", "TD", "TH", "DT", "DD",
+  "H1", "H2", "H3", "H4", "H5", "H6",
+]);
+const TAG_LABELS: Record<string, string> = {
+  P: "Paragraph", SPAN: "Span", A: "Link", LI: "List item",
+  BUTTON: "Button", LABEL: "Label", STRONG: "Strong", EM: "Emphasis",
+  SMALL: "Small", BLOCKQUOTE: "Blockquote", CODE: "Code", PRE: "Preformatted",
+  TD: "Table cell", TH: "Table header", DT: "Definition term", DD: "Definition",
+  H1: "Heading 1", H2: "Heading 2", H3: "Heading 3",
+  H4: "Heading 4", H5: "Heading 5", H6: "Heading 6",
+};
 
 /* -------------------- Color utilities -------------------- */
 
@@ -157,6 +172,14 @@ export function collectSnapshot(opts: CollectOptions = {}): InspectSnapshot {
   }>();
   const computedSamples: ComputedSample[] = [];
   const textNodes: TextNodeSample[] = [];
+  /** key = `${tag}|${family}|${sizePx}|${weight}|${color}` */
+  const typoMap = new Map<string, {
+    tag: string; fontFamily: string; fontStack: string;
+    fontSizePx: number; fontWeight: number;
+    lineHeightPx: number | null; letterSpacing: string;
+    color: string; sampleText: string; selectorPath: string;
+    instances: number;
+  }>();
 
   const addColor = (value: string | null, cat: ColorCategory): void => {
     if (!value) return;
@@ -241,6 +264,35 @@ export function collectSnapshot(opts: CollectOptions = {}): InspectSnapshot {
         backgroundColor: normalizeColor(cs.backgroundColor) ?? cs.backgroundColor,
       });
     }
+
+    // Typography groups (CSS Peeper-style per-tag grouping)
+    if (TYPOGRAPHY_TAGS.has(el.tagName) && hasDirectText(el)) {
+      const family = primaryFamily(stack || "");
+      const sizePx = Math.round(parseFloat(cs.fontSize) || 0);
+      const weight = Number(cs.fontWeight) || 400;
+      const color = normalizeColor(cs.color) ?? cs.color ?? "";
+      const key = `${el.tagName}|${family}|${sizePx}|${weight}|${color}`;
+      const existing = typoMap.get(key);
+      if (existing) {
+        existing.instances++;
+      } else if (typoMap.size < MAX_TYPOGRAPHY_GROUPS) {
+        const lhRaw = cs.lineHeight;
+        const lh = lhRaw && lhRaw !== "normal" ? parseFloat(lhRaw) : NaN;
+        typoMap.set(key, {
+          tag: el.tagName.toLowerCase(),
+          fontFamily: family,
+          fontStack: stack || "",
+          fontSizePx: sizePx,
+          fontWeight: weight,
+          lineHeightPx: Number.isFinite(lh) ? Math.round(lh) : null,
+          letterSpacing: cs.letterSpacing || "normal",
+          color,
+          sampleText: directText(el).slice(0, 80),
+          selectorPath: shortSelector(el),
+          instances: 1,
+        });
+      }
+    }
   }
 
   // ---- Aggregate fonts ----
@@ -267,6 +319,24 @@ export function collectSnapshot(opts: CollectOptions = {}): InspectSnapshot {
   // ---- CSS stats ----
   const cssStats = collectCssStats(doc);
 
+  // ---- Aggregate typography groups ----
+  const typography: TypographyGroup[] = Array.from(typoMap.values())
+    .map((g) => ({
+      tag: g.tag,
+      label: TAG_LABELS[g.tag.toUpperCase()] ?? g.tag.toUpperCase(),
+      instances: g.instances,
+      fontFamily: g.fontFamily,
+      fontStack: g.fontStack,
+      fontSizePx: g.fontSizePx,
+      fontWeight: g.fontWeight,
+      lineHeightPx: g.lineHeightPx,
+      letterSpacing: g.letterSpacing,
+      color: g.color,
+      sampleText: g.sampleText,
+      selectorPath: g.selectorPath,
+    }))
+    .sort((a, b) => b.instances - a.instances);
+
   return {
     pageInfo,
     fonts,
@@ -274,6 +344,7 @@ export function collectSnapshot(opts: CollectOptions = {}): InspectSnapshot {
     cssStats,
     computedSamples,
     textNodes,
+    typography,
     collectedAt: Date.now(),
   };
 }
