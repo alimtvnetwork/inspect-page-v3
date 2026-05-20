@@ -1,6 +1,5 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { ThemeSwitcher } from "@/components/landing/ThemeSwitcher";
 
 const NotFound = () => {
   const location = useLocation();
@@ -18,7 +17,6 @@ const NotFound = () => {
           Return to Home
         </a>
       </div>
-      <ThemeSwitcher />
     </div>
   );
 };
