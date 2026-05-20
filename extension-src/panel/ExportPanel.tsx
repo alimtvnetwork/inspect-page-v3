@@ -173,6 +173,8 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const [mode, setMode] = useState<PanelMode>("export");
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const settingsBtnRef = useRef<HTMLButtonElement | null>(null);
+  const [settingsTab, setSettingsTab] = useState<"general" | "share" | "appearance">("general");
+  const [extTheme, setExtTheme] = useState<StoredExtTheme>({ presetId: DEFAULT_EXT_PRESET_ID });
   const [theme, setTheme] = useState<PanelTheme>(() => {
     try {
       const v = globalThis.localStorage?.getItem(THEME_STORAGE_KEY);
