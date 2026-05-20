@@ -101,7 +101,7 @@ export function InspectAccount(): JSX.Element {
             <div className="lpe-account-name">Not signed in</div>
             <div className="lpe-account-sub">Sign in to your Inspect Page WordPress account.</div>
           </div>
-          <button type="button" className="lpe-btn lpe-account-primary" onClick={() => void onSignIn()} disabled={busy}>
+          <button type="button" className="lpe-account-btn lpe-account-primary" onClick={() => void onSignIn()} disabled={busy}>
             Sign in
           </button>
         </div>
@@ -126,15 +126,15 @@ export function InspectAccount(): JSX.Element {
           </div>
           <div className="lpe-account-actions">
             {isPro ? (
-              <button type="button" className="lpe-btn" onClick={() => void onManage()} disabled={busy}>
+              <button type="button" className="lpe-account-btn" onClick={() => void onManage()} disabled={busy}>
                 Manage subscription
               </button>
             ) : (
-              <button type="button" className="lpe-btn lpe-account-primary" onClick={() => void onUpgrade()} disabled={busy}>
+              <button type="button" className="lpe-account-btn lpe-account-primary" onClick={() => void onUpgrade()} disabled={busy}>
                 Upgrade to Pro
               </button>
             )}
-            <button type="button" className="lpe-link" onClick={() => void onSignOut()} disabled={busy}>
+            <button type="button" className="lpe-link lpe-account-signout" onClick={() => void onSignOut()} disabled={busy}>
               Sign out
             </button>
           </div>

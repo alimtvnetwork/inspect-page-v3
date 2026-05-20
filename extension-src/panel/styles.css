@@ -235,6 +235,15 @@
 .lpe-text-typo-details {
   align-self: flex-start; padding: 2px 0; font-size: 12px;
 }
+.lpe-text-typo-toggle {
+  align-self: center; margin-top: 4px;
+  padding: 6px 14px; font-size: 12px; font-weight: 600;
+  border: 1px solid var(--lpe-border); border-radius: 999px;
+  background: var(--lpe-surface-2); color: var(--lpe-accent);
+}
+.lpe-text-typo-toggle:hover {
+  background: rgba(45, 212, 168, 0.12); border-color: var(--lpe-accent);
+}
 .lpe-text-typo-preview {
   padding: 12px; margin-bottom: 12px;
   border: 1px solid var(--lpe-border); border-radius: 6px;
@@ -245,11 +254,11 @@
 /* ---------- Account (Phase A4c) ---------- */
 .lpe-account { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
 .lpe-account-card {
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  display: flex; flex-direction: column; align-items: stretch; gap: 10px;
   padding: 12px; border: 1px solid var(--lpe-border); border-radius: 8px;
   background: var(--lpe-surface);
 }
-.lpe-account-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.lpe-account-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .lpe-account-name { font-size: 14px; font-weight: 600; color: var(--lpe-fg); }
 .lpe-account-sub { font-size: 12px; color: var(--lpe-muted); word-break: break-word; }
 .lpe-account-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
@@ -262,15 +271,45 @@
   background: linear-gradient(135deg, #2DD4A8, #73FFB8); color: #0B0F0E;
   border-color: transparent; font-weight: 600;
 }
-.lpe-account-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.lpe-account-actions { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.lpe-account-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 100%; padding: 8px 14px; min-height: 36px;
+  border: 1px solid var(--lpe-border); border-radius: 8px;
+  background: var(--lpe-surface-2); color: var(--lpe-fg);
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.lpe-account-btn:hover:not([disabled]) {
+  background: rgba(45, 212, 168, 0.08); border-color: var(--lpe-accent);
+}
+.lpe-account-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
 .lpe-account-primary {
-  background: linear-gradient(135deg, #2DD4A8, #73FFB8) !important;
-  color: #0B0F0E !important; border: none !important; font-weight: 600;
+  background: linear-gradient(135deg, #2DD4A8, #73FFB8);
+  color: #0B0F0E; border-color: transparent;
+}
+.lpe-account-primary:hover:not([disabled]) {
+  background: linear-gradient(135deg, #2DD4A8, #73FFB8);
+  filter: brightness(1.05); border-color: transparent;
+}
+.lpe-account-signout {
+  align-self: center; font-size: 12px;
 }
 .lpe-account-msg {
   font-size: 12px; color: var(--lpe-muted);
   padding: 6px 10px; border-radius: 6px; background: var(--lpe-surface-2);
 }
+
+/* Compact close button used inside modal headers */
+.lpe-modal-close {
+  flex: 0 0 auto;
+  width: 28px; height: 28px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--lpe-border); border-radius: 6px;
+  background: var(--lpe-surface-2); color: var(--lpe-fg);
+  font: inherit; font-size: 14px; line-height: 1; cursor: pointer;
+}
+.lpe-modal-close:hover { background: rgba(45, 212, 168, 0.12); border-color: var(--lpe-accent); color: var(--lpe-accent); }
 
 /* ---------- Modal (Phase A4+) ---------- */
 .lpe-modal-backdrop {

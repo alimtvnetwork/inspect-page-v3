@@ -13,13 +13,17 @@ import { sendToBackground } from "@shared/messaging";
 import type { InspectSnapshot, TypographyGroup } from "../../inspect/types";
 
 const SAMPLE = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
+const COLLAPSED_COUNT = 3;
 
 export interface InspectTextTypographyProps { snapshot: InspectSnapshot }
 
 export function InspectTextTypography({ snapshot }: InspectTextTypographyProps): JSX.Element | null {
   const [open, setOpen] = useState<TypographyGroup | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const groups = snapshot.typography ?? [];
   if (groups.length === 0) return null;
+  const visible = showAll ? groups : groups.slice(0, COLLAPSED_COUNT);
+  const hidden = groups.length - visible.length;
 
   return (
     <section className="lpe-typo lpe-text-typo" aria-label="Text Typography">
@@ -29,10 +33,20 @@ export function InspectTextTypography({ snapshot }: InspectTextTypographyProps):
       </header>
 
       <div className="lpe-text-typo-list">
-        {groups.map((g, i) => (
+        {visible.map((g, i) => (
           <TextTypoCard key={`${g.tag}-${i}`} group={g} onShowDetails={() => setOpen(g)} />
         ))}
       </div>
+
+      {groups.length > COLLAPSED_COUNT && (
+        <button
+          type="button"
+          className="lpe-link lpe-text-typo-toggle"
+          onClick={() => setShowAll((v) => !v)}
+        >
+          {showAll ? "Show less" : `See all (${hidden} more)`}
+        </button>
+      )}
 
       {open && <TextTypoDetailDrawer group={open} onClose={() => setOpen(null)} />}
     </section>
@@ -96,7 +110,7 @@ function TextTypoDetailDrawer({ group, onClose }: {
       <div className="lpe-modal" onClick={(e) => e.stopPropagation()}>
         <div className="lpe-modal-header">
           <h3>{group.label} · typography</h3>
-          <button type="button" className="lpe-btn" onClick={onClose} aria-label="Close">✕</button>
+          <button type="button" className="lpe-modal-close" onClick={onClose} aria-label="Close">✕</button>
         </div>
         <div className="lpe-modal-body">
           <div
