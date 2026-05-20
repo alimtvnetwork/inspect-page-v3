@@ -37,6 +37,15 @@ import { MessageKind as MK } from "@shared/enums";
 import { getOnboardingState, dismissOnboarding } from "@shared/onboarding";
 import { shareConfigured } from "@shared/shareSettings";
 import { getShareSettings, setShareSettings } from "@shared/shareSettings";
+import {
+  applyExtensionTheme,
+  loadStoredExtTheme,
+  saveStoredExtTheme,
+  subscribeExtTheme,
+  DEFAULT_EXT_PRESET_ID,
+  type StoredExtTheme,
+} from "./extensionThemes";
+import { AppearanceSection } from "./AppearanceSection";
 import { listShareSessions, type ShareSessionSummary } from "../share/listShareSessions";
 import { startBillingCheckout } from "../share/startBillingCheckout";
 import { startBillingPortal } from "../share/startBillingPortal";
@@ -164,6 +173,8 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const [mode, setMode] = useState<PanelMode>("export");
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const settingsBtnRef = useRef<HTMLButtonElement | null>(null);
+  const [settingsTab, setSettingsTab] = useState<"general" | "share" | "appearance">("general");
+  const [extTheme, setExtTheme] = useState<StoredExtTheme>({ presetId: DEFAULT_EXT_PRESET_ID });
   const [theme, setTheme] = useState<PanelTheme>(() => {
     try {
       const v = globalThis.localStorage?.getItem(THEME_STORAGE_KEY);
@@ -228,6 +239,31 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       .then((s) => { if (alive) setShareSettingsState(s); })
       .catch(() => { /* non-fatal */ });
     return () => { alive = false; };
+  }, []);
+
+  // ---- Load extension theme preset + subscribe to changes ----
+  useEffect(() => {
+    let alive = true;
+    void loadStoredExtTheme().then((v) => {
+      if (!alive) return;
+      setExtTheme(v);
+      applyExtensionTheme(v);
+    });
+    const unsub = subscribeExtTheme((v) => {
+      setExtTheme(v);
+      applyExtensionTheme(v);
+    });
+    return () => { alive = false; unsub(); };
+  }, []);
+
+  // Re-apply on every render where the preset changed (covers fresh mounts of
+  // the floating panel after the popup wrote a new preset).
+  useEffect(() => { applyExtensionTheme(extTheme); }, [extTheme, theme, surface]);
+
+  const onExtThemeChange = useCallback((next: StoredExtTheme) => {
+    setExtTheme(next);
+    applyExtensionTheme(next);
+    void saveStoredExtTheme(next);
   }, []);
 
   // ---- Step 2 (Pick-into-popup, Option A) ----
@@ -542,18 +578,43 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
               aria-label={COPY.btnClose}
             >✕</button>
           </div>
+          <div className="lpe-settings-tabs" role="tablist" aria-label="Settings sections">
+            {([
+              ["general", "General"],
+              ["share", "Smart Share"],
+              ["appearance", "Appearance"],
+            ] as const).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={settingsTab === id}
+                className="lpe-settings-tab"
+                data-active={settingsTab === id ? "true" : "false"}
+                onClick={() => setSettingsTab(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <div className="lpe-settings-popover-body">
-            {settings && (
+            {settingsTab === "general" && settings && (
               <SettingsSection
                 settings={settings}
                 error={settingsError}
                 onPatch={onSettingsPatch}
               />
             )}
-            {shareSettings && (
+            {settingsTab === "share" && shareSettings && (
               <ShareSettingsSection
                 settings={shareSettings}
                 onPatch={onShareSettingsPatch}
+              />
+            )}
+            {settingsTab === "appearance" && (
+              <AppearanceSection
+                value={extTheme}
+                onChange={onExtThemeChange}
               />
             )}
           </div>
