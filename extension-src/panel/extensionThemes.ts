@@ -81,24 +81,24 @@ export const EXT_THEME_PRESETS: ExtensionThemePreset[] = [
       "#100A18",
   },
   {
-    id: "ruby-noir",
-    name: "Ruby Noir",
-    swatch: "#F43F5E",
+    id: "paper-light",
+    name: "Paper Light",
+    swatch: "#1F2937",
     vars: {
-      "--lpe-bg": "#13090D",
-      "--lpe-fg": "#FFF7F8",
-      "--lpe-muted": "#C9A6AF",
-      "--lpe-surface": "#1B0F14",
-      "--lpe-surface-2": "#26131A",
-      "--lpe-border": "rgba(244, 63, 94, 0.24)",
-      "--lpe-accent": "#F43F5E",
-      "--lpe-accent-hover": "#FDA4AF",
+      "--lpe-bg": "#FFFFFF",
+      "--lpe-fg": "#0F1417",
+      "--lpe-muted": "#5B6470",
+      "--lpe-surface": "#F6F7F9",
+      "--lpe-surface-2": "#ECEEF2",
+      "--lpe-border": "rgba(15, 20, 23, 0.10)",
+      "--lpe-accent": "#1F2937",
+      "--lpe-accent-hover": "#0F1417",
       "--lpe-accent-fg": "#FFFFFF",
     },
     background:
-      "radial-gradient(120% 80% at 20% 0%, rgba(244,63,94,0.15) 0%, transparent 55%)," +
-      "radial-gradient(120% 80% at 100% 100%, rgba(251,113,133,0.08) 0%, transparent 55%)," +
-      "#13090D",
+      "radial-gradient(120% 80% at 20% 0%, rgba(15,20,23,0.05) 0%, transparent 55%)," +
+      "radial-gradient(120% 80% at 100% 100%, rgba(15,20,23,0.03) 0%, transparent 55%)," +
+      "#FFFFFF",
   },
 ];
 
@@ -106,7 +106,8 @@ export const DEFAULT_EXT_PRESET_ID = "dark-mint";
 const STORAGE_KEY = "inspect-page.ext-theme";
 const PRESET_ALIASES: Record<string, string> = {
   "midnight-indigo": "violet-noir",
-  emerald: "ruby-noir",
+  emerald: "paper-light",
+  "ruby-noir": "paper-light",
 };
 
 export interface StoredExtTheme {
