@@ -241,9 +241,12 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     return () => { alive = false; unsub(); };
   }, []);
 
-  // Re-apply on every render where the preset changed (covers fresh mounts of
-  // the floating panel after the popup wrote a new preset).
-  useEffect(() => { applyExtensionTheme(extTheme); }, [extTheme, theme, surface]);
+  // Re-apply before paint so clicking a preset visibly recolors the active
+  // popup/floating panel immediately, including Shadow DOM mounts.
+  useLayoutEffect(() => {
+    if (rootRef.current) applyExtensionThemeToElement(rootRef.current, extTheme);
+    applyExtensionTheme(extTheme);
+  }, [extTheme, surface]);
 
   const onExtThemeChange = useCallback((next: StoredExtTheme) => {
     setExtTheme(next);
@@ -527,7 +530,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   );
 
   return (
-    <div className="lpe-root" data-lpe-theme={theme} data-lpe-surface={surface} role="region" aria-label={COPY.appName}>
+    <div ref={rootRef} className="lpe-root" data-lpe-theme="dark" data-lpe-surface={surface} role="region" aria-label={COPY.appName}>
       <header
         className="lpe-header"
         data-draggable={surface === "floating" ? "true" : "false"}
