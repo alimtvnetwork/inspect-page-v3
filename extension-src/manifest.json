@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Inspect Page",
   "short_name": "Inspect Page",
-  "version": "2.7.27",
+  "version": "2.7.28",
   "description": "Export any web page (or one element) for your LLM: HTML, CSS, JS and a full-page screenshot.",
   "minimum_chrome_version": "116",
   "icons": {

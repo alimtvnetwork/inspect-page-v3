@@ -10,6 +10,7 @@ import { FRAME_SETTLE_RAFS, STICKY_SCAN_LIMIT } from "@shared/constants";
 import { ErrorCode, LogCategory } from "@shared/enums";
 import { logger } from "@shared/logger";
 import type { BeginScrollCapturePayload, BeginScrollCaptureResponse } from "@shared/types";
+import { collectInjectedOverlays, OVERLAY_HOST_SELECTOR } from "../inspect/overlayFilter";
 
 interface StuckSnapshot { el: HTMLElement; prevCss: string }
 
@@ -17,6 +18,7 @@ interface CaptureState {
   prevScroll: { x: number; y: number };
   prevScrollBehavior: string;
   stuck: StuckSnapshot[];
+  hiddenOverlays: StuckSnapshot[];
   startHref: string;
 }
 
@@ -28,12 +30,33 @@ function isPositioned(el: Element): boolean {
 }
 
 function snapshotPage(): CaptureState {
+  // Hide Inspect Page's own UI hosts AND foreign extension overlays FIRST,
+  // using display:none so they leave zero pixels in the screenshot. We do
+  // this before the sticky scan so STICKY_SCAN_LIMIT can never starve the
+  // overlay-hide path on element-dense pages.
+  const hiddenOverlays: StuckSnapshot[] = [];
+  const hideOverlay = (el: HTMLElement): void => {
+    hiddenOverlays.push({ el, prevCss: el.style.cssText });
+    el.style.setProperty("display", "none", "important");
+    el.style.setProperty("visibility", "hidden", "important");
+    el.style.setProperty("pointer-events", "none", "important");
+  };
+  for (const el of Array.from(document.querySelectorAll<HTMLElement>(OVERLAY_HOST_SELECTOR))) {
+    hideOverlay(el);
+  }
+  for (const el of collectInjectedOverlays(document, window)) {
+    if (hiddenOverlays.some((s) => s.el === el)) continue;
+    hideOverlay(el);
+  }
+
   const all = document.querySelectorAll("*");
   const stuck: StuckSnapshot[] = [];
   const limit = Math.min(all.length, STICKY_SCAN_LIMIT);
   for (let i = 0; i < limit; i++) {
     const el = all[i] as HTMLElement;
     if (!(el instanceof HTMLElement)) continue;
+    // Already hidden as an overlay → skip.
+    if (hiddenOverlays.some((s) => s.el === el)) continue;
     if (isPositioned(el)) {
       stuck.push({ el, prevCss: el.style.cssText });
       el.style.setProperty("visibility", "hidden", "important");
@@ -48,6 +71,7 @@ function snapshotPage(): CaptureState {
     prevScroll: { x: window.scrollX, y: window.scrollY },
     prevScrollBehavior,
     stuck,
+    hiddenOverlays,
     startHref: location.href,
   };
 }
@@ -86,6 +110,9 @@ export async function beginScrollCapture(
 export function restoreAfterCapture(): void {
   if (!state) return;
   for (const { el, prevCss } of state.stuck) {
+    el.style.cssText = prevCss;
+  }
+  for (const { el, prevCss } of state.hiddenOverlays) {
     el.style.cssText = prevCss;
   }
   document.documentElement.style.scrollBehavior = state.prevScrollBehavior;
