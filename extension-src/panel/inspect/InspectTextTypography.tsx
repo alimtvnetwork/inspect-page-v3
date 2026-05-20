@@ -13,7 +13,7 @@ import { sendToBackground } from "@shared/messaging";
 import type { InspectSnapshot, TypographyGroup } from "../../inspect/types";
 
 const SAMPLE = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
-const COLLAPSED_COUNT = 3;
+const COLLAPSED_COUNT = 2;
 
 export interface InspectTextTypographyProps { snapshot: InspectSnapshot }
 
@@ -27,9 +27,17 @@ export function InspectTextTypography({ snapshot }: InspectTextTypographyProps):
 
   return (
     <section className="lpe-typo lpe-text-typo" aria-label="Text Typography">
-      <header className="lpe-section-header">
+      <header className="lpe-section-header lpe-text-typo-header">
         <h2 className="lpe-section-title">Text Typography</h2>
-        <span className="lpe-typo-chip">{groups.length}</span>
+        {groups.length > COLLAPSED_COUNT && (
+          <button
+            type="button"
+            className="lpe-link lpe-text-typo-toggle"
+            onClick={() => setShowAll((v) => !v)}
+          >
+            {showAll ? "Show less" : `See all ${groups.length}`}
+          </button>
+        )}
       </header>
 
       <div className="lpe-text-typo-list">
@@ -44,7 +52,7 @@ export function InspectTextTypography({ snapshot }: InspectTextTypographyProps):
           className="lpe-link lpe-text-typo-toggle"
           onClick={() => setShowAll((v) => !v)}
         >
-          {showAll ? "Show less" : `See all (${hidden} more)`}
+          {showAll ? "Show less" : `See more (${hidden} more)`}
         </button>
       )}
 
