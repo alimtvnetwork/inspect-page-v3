@@ -66,6 +66,35 @@ export interface TextNodeSample {
   backgroundColor: string;
 }
 
+/**
+ * Phase A4b — Text Typography group (CSS Peeper style).
+ *
+ * One card per unique (tag + family + size + weight + color) combination
+ * observed in the page. Lets us render a per-tag list with an actual
+ * sample of the element's text in its real typographic style.
+ */
+export interface TypographyGroup {
+  /** Lowercase tag name, e.g. "p", "span", "h1", "a", "li", "button". */
+  tag: string;
+  /** Human label, e.g. "Paragraph", "Span", "Heading 1". */
+  label: string;
+  /** Number of matching elements on the page. */
+  instances: number;
+  fontFamily: string;
+  fontStack: string;
+  fontSizePx: number;
+  fontWeight: number;
+  /** `null` when `line-height: normal`. */
+  lineHeightPx: number | null;
+  letterSpacing: string;
+  /** Normalized `#rrggbb` / `#rrggbbaa` — falls back to raw if unparseable. */
+  color: string;
+  /** First direct-text sample, trimmed to 80 chars. */
+  sampleText: string;
+  /** Short selector of the first matching element — used by Locate. */
+  selectorPath: string;
+}
+
 export interface InspectSnapshot {
   pageInfo: PageInfo;
   fonts: FontUsage[];
@@ -73,5 +102,7 @@ export interface InspectSnapshot {
   cssStats: CssStats;
   computedSamples: ComputedSample[];
   textNodes: TextNodeSample[];
+  /** Phase A4b — per-tag typography groups for the Text Typography section. */
+  typography: TypographyGroup[];
   collectedAt: number;
 }
