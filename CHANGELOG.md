@@ -1,5 +1,19 @@
 # Changelog
 
+## [Extension 2.7.26] — 2026-05-20
+
+- **Text Typography section** (CSS Peeper–style). Inspect Mode now lists
+  every distinct text style on the page — one card per tag + family +
+  size + weight + color — with an actual `AaBbCc…` sample rendered in
+  the element's own typography, a Locate button (scrolls + flashes the
+  first match), and a "Show details" drawer.
+- **Account section.** Bottom of Inspect Mode now shows sign-in / plan
+  badge (Free X/5 or Pro · unlimited) / Upgrade or Manage subscription /
+  Sign out. Pure UI over the existing billing endpoints.
+- Snapshot: new `TypographyGroup[]` (bounded to 60 groups within the
+  existing 6000-element walk).
+- 117/117 vitest. Zip + sha256 repackaged.
+
 ## [Extension 2.6.0] — 2026-05-17
 
 - **Pricing card polish (Option C2/C3).** Free-plan `BillingPanel` in
