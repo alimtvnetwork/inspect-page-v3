@@ -38,7 +38,7 @@ describe("buildToken", () => {
     expect(buildToken(usage("linear-gradient(0deg, red, blue)", "gradient"), 1, 1)).toBeNull();
   });
 
-  it("produces three variants with HEX/RGB/HSL fields", () => {
+  it("produces copy-ready HEX/RGB/HSL fields", () => {
     const tok = buildToken(usage("#ffbb00", "background", 7), 3, 2)!;
     expect(tok.token).toBe("--ip-color-3");
     expect(tok.humanName).toBe("Surface 2");
@@ -47,7 +47,7 @@ describe("buildToken", () => {
     expect(tok.base.hex).toBe("#ffbb00");
     expect(tok.base.rgb).toBe("rgb(255, 187, 0)");
     expect(tok.base.hsl).toBe("hsl(44, 100%, 50%)");
-    // Tint/shade shifted in the right direction.
+    // Internal tint/shade values remain deterministic for compatibility.
     const baseL = rgbToHsl(parseHex(tok.base.hex)!).l;
     const tintL = rgbToHsl(parseHex(tok.tint.hex)!).l;
     const shadeL = rgbToHsl(parseHex(tok.shade.hex)!).l;
