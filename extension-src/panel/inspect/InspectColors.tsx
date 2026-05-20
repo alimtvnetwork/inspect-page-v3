@@ -18,10 +18,11 @@ import { colorsToCsv, safeBaseName, mimeFor } from "../../inspect/exportSnapshot
 import { downloadText } from "./downloadBlob";
 import { sendToBackground } from "@shared/messaging";
 import { MessageKind } from "@shared/enums";
+import { InspectColorTokens } from "./InspectColorTokens";
 
 export interface InspectColorsProps { snapshot: InspectSnapshot }
 
-type Tab = "palette" | "categories";
+type Tab = "palette" | "categories" | "tokens";
 
 export function InspectColors({ snapshot }: InspectColorsProps): JSX.Element {
   const [tab, setTab] = useState<Tab>("palette");
@@ -100,6 +101,13 @@ export function InspectColors({ snapshot }: InspectColorsProps): JSX.Element {
         >
           {COPY.inspectColorsCategories}
         </button>
+        <button
+          type="button" role="tab" aria-selected={tab === "tokens"}
+          className="lpe-subtab" data-active={tab === "tokens" ? "true" : "false"}
+          onClick={() => setTab("tokens")}
+        >
+          {COPY.inspectColorsTokens}
+        </button>
       </div>
 
       {tab === "palette" && (
@@ -115,6 +123,9 @@ export function InspectColors({ snapshot }: InspectColorsProps): JSX.Element {
           onLocate={onLocate}
           onOpenDetail={onOpenDetail}
         />
+      )}
+      {tab === "tokens" && (
+        <InspectColorTokens snapshot={snapshot} />
       )}
       {detail && <DetailDrawer color={detail} onClose={() => setDetail(null)} />}
       {locateMsg && (
