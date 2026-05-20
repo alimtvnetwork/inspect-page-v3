@@ -176,6 +176,16 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
   let framesPlaced = 0;
   let lastCaptureAt = 0;
 
+  // Toolbar badge — visible while popup auto-closes and floating panel is
+  // hidden during capture, so the user always knows we are still working.
+  const setBadge = (text: string, color = "#2DD4A8"): void => {
+    try {
+      chrome.action?.setBadgeBackgroundColor?.({ color });
+      chrome.action?.setBadgeText?.({ text });
+    } catch { /* no-op on platforms without chrome.action */ }
+  };
+  setBadge("…");
+
   try {
     input.onPhase?.("capture:ready");
     await ensureTabReadyForVisibleCapture(tabId, windowId);
@@ -206,12 +216,14 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
         status: PanelStatus.Capturing,
         progress: { done: i + 1, total: steps },
       });
+      setBadge(`${i + 1}/${steps}`);
       throwIfCanceled(input);
     }
 
     throwIfCanceled(input);
     input.onPhase?.("capture:finish-stitch");
     await input.onProgress?.({ status: PanelStatus.Stitching });
+    setBadge("✓", "#16A34A");
 
     const stitch = await sendOffscreen<
       { format: ImageFormat; quality?: number; sessionId: string },
@@ -244,6 +256,11 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
     try {
       await sendOffscreen<{ sessionId: string }, void>(MessageKind.OffscreenDispose, { sessionId });
     } catch { /* ignore */ }
+    // Clear toolbar badge ~2.5s after capture finishes so success/error tick
+    // stays visible briefly without lingering forever.
+    setTimeout(() => {
+      try { chrome.action?.setBadgeText?.({ text: "" }); } catch { /* no-op */ }
+    }, 2500);
   }
 }
 
