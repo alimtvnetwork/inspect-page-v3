@@ -193,6 +193,11 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
 
   const disabled = isDisabledUrl(activeUrl);
 
+  // Stable ref to the active runAction so the "pending action" effect
+  // below (which runs once after settings load) can call the latest
+  // version without re-binding.
+  const runActionRef = useRef<((k: "fullPage" | "pick") => void) | null>(null);
+
   // ---- Load onboarding state ----
   useEffect(() => {
     let alive = true;
