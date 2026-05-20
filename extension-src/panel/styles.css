@@ -2076,30 +2076,54 @@
   color: var(--lpe-muted);
 }
 
-/* Theme preset overrides: remove the old hard-coded mint look so Appearance is visibly live. */
+/* Theme preset overrides: keep every extension section on the selected palette. */
 .lpe-root[data-lpe-preset] .lpe-header,
-.lpe-root[data-lpe-preset][data-lpe-surface="floating"] .lpe-header,
 .lpe-root[data-lpe-preset] .lpe-tabs,
-.lpe-root[data-lpe-preset][data-lpe-surface="floating"] .lpe-tabs,
-.lpe-root[data-lpe-preset] .lpe-settings-tabs {
-  background: color-mix(in srgb, var(--lpe-surface) 88%, transparent) !important;
-  border-color: var(--lpe-border) !important;
+.lpe-root[data-lpe-preset] .lpe-settings-tabs,
+.lpe-root[data-lpe-preset] .lpe-settings-popover,
+.lpe-root[data-lpe-preset] .lpe-settings-popover-head,
+.lpe-root[data-lpe-preset] .lpe-modal-header,
+.lpe-root[data-lpe-preset] .lpe-debug-header,
+.lpe-root[data-lpe-preset] .lpe-debug-tabs,
+.lpe-root[data-lpe-preset] .lpe-debug-actions,
+.lpe-root[data-lpe-preset][data-lpe-surface="floating"] .lpe-header,
+.lpe-root[data-lpe-preset][data-lpe-surface="floating"] .lpe-tabs {
+  background: color-mix(in srgb, var(--lpe-surface) 90%, transparent) !important;
+  border-color: color-mix(in srgb, var(--lpe-accent) 20%, var(--lpe-border)) !important;
+  color: var(--lpe-fg) !important;
 }
 .lpe-root[data-lpe-preset] .lpe-btn,
-.lpe-root[data-lpe-preset][data-lpe-theme="dark"] .lpe-btn,
-.lpe-root[data-lpe-preset][data-lpe-surface="floating"] .lpe-btn,
 .lpe-root[data-lpe-preset] .lpe-status,
-.lpe-root[data-lpe-preset][data-lpe-surface="floating"] .lpe-status,
 .lpe-root[data-lpe-preset] .lpe-debug,
-.lpe-root[data-lpe-preset][data-lpe-surface="floating"] .lpe-debug,
+.lpe-root[data-lpe-preset] .lpe-debug-tab,
+.lpe-root[data-lpe-preset] .lpe-debug-fmt-btn,
+.lpe-root[data-lpe-preset] .lpe-debug-note,
 .lpe-root[data-lpe-preset] .lpe-billing-panel,
+.lpe-root[data-lpe-preset] .lpe-telemetry,
+.lpe-root[data-lpe-preset] .lpe-multi-picks,
+.lpe-root[data-lpe-preset] .lpe-multi-pick,
+.lpe-root[data-lpe-preset] .lpe-pick-hint,
+.lpe-root[data-lpe-preset] .lpe-eli,
+.lpe-root[data-lpe-preset] .lpe-cdr,
+.lpe-root[data-lpe-preset] .lpe-modal,
+.lpe-root[data-lpe-preset] .lpe-modal-overlay .lpe-modal,
+.lpe-root[data-lpe-preset] .lpe-field-row,
+.lpe-root[data-lpe-preset] .lpe-input,
+.lpe-root[data-lpe-preset] .lpe-select,
+.lpe-root[data-lpe-preset] .lpe-appearance-card,
+.lpe-root[data-lpe-preset][data-lpe-surface="floating"] .lpe-status,
+.lpe-root[data-lpe-preset][data-lpe-surface="floating"] .lpe-debug,
 .lpe-root[data-lpe-preset][data-lpe-surface="floating"] .lpe-billing-panel {
-  background: color-mix(in srgb, var(--lpe-surface) 90%, transparent) !important;
-  border-color: color-mix(in srgb, var(--lpe-accent) 26%, var(--lpe-border)) !important;
+  background: color-mix(in srgb, var(--lpe-surface) 88%, transparent) !important;
+  border-color: color-mix(in srgb, var(--lpe-accent) 28%, var(--lpe-border)) !important;
   color: var(--lpe-fg) !important;
 }
 .lpe-root[data-lpe-preset] .lpe-btn-primary,
-.lpe-root[data-lpe-preset][data-lpe-theme="dark"] .lpe-btn-primary,
+.lpe-root[data-lpe-preset] .lpe-debug-tab.is-active,
+.lpe-root[data-lpe-preset] .lpe-debug-fmt-btn[aria-pressed="true"],
+.lpe-root[data-lpe-preset] .lpe-cdr-tab.is-active,
+.lpe-root[data-lpe-preset] .lpe-billing-badge[data-plan="pro"],
+.lpe-root[data-lpe-preset] .lpe-billing-toast,
 .lpe-root[data-lpe-preset][data-lpe-surface="floating"] .lpe-btn-primary {
   background: var(--lpe-accent) !important;
   color: var(--lpe-accent-fg) !important;
@@ -2107,8 +2131,36 @@
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--lpe-accent) 34%, transparent), 0 10px 24px -18px var(--lpe-accent) !important;
 }
 .lpe-root[data-lpe-preset] .lpe-btn:hover:not([disabled]),
-.lpe-root[data-lpe-preset][data-lpe-theme="dark"] .lpe-btn:hover:not([disabled]),
+.lpe-root[data-lpe-preset] .lpe-debug-tab:hover,
+.lpe-root[data-lpe-preset] .lpe-debug-fmt-btn:hover,
+.lpe-root[data-lpe-preset] .lpe-multi-pick-main:hover,
+.lpe-root[data-lpe-preset] .lpe-multi-pick-remove:hover,
+.lpe-root[data-lpe-preset] .lpe-appearance-card:hover,
 .lpe-root[data-lpe-preset][data-lpe-surface="floating"] .lpe-btn:hover:not([disabled]) {
+  background: color-mix(in srgb, var(--lpe-accent) 14%, var(--lpe-surface-2)) !important;
   border-color: color-mix(in srgb, var(--lpe-accent) 54%, var(--lpe-border)) !important;
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--lpe-accent) 16%, transparent), 0 10px 24px -18px var(--lpe-accent) !important;
+}
+.lpe-root[data-lpe-preset] .lpe-status[data-status="Success"],
+.lpe-root[data-lpe-preset] .lpe-status[data-status="Success"] .lpe-status-message,
+.lpe-root[data-lpe-preset] .lpe-telemetry-header,
+.lpe-root[data-lpe-preset] .lpe-multi-picks-count,
+.lpe-root[data-lpe-preset] .lpe-multi-pick-index,
+.lpe-root[data-lpe-preset] .lpe-appearance-check,
+.lpe-root[data-lpe-preset] .lpe-link,
+.lpe-root[data-lpe-preset] .lpe-overview-url {
+  color: var(--lpe-accent-hover) !important;
+}
+.lpe-root[data-lpe-preset] .lpe-debug-pre,
+.lpe-root[data-lpe-preset] .lpe-cdr-pre,
+.lpe-root[data-lpe-preset] .lpe-modal-code-pre {
+  background: color-mix(in srgb, var(--lpe-bg) 94%, black) !important;
+  border-color: color-mix(in srgb, var(--lpe-accent) 22%, var(--lpe-border)) !important;
+  color: var(--lpe-fg) !important;
+}
+.lpe-root[data-lpe-preset] .lpe-pick-hint {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.45;
 }
