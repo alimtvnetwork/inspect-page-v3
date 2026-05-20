@@ -437,6 +437,36 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const onFullPage = useCallback(() => void runAction("fullPage"), [runAction]);
   const onPick = useCallback(() => void runAction("pick"), [runAction]);
 
+  // Keep runActionRef pointed at the latest runAction so the floating-panel
+  // pending-action consumer below can fire it once settings are loaded.
+  useEffect(() => { runActionRef.current = (k) => void runAction(k); }, [runAction]);
+
+  // Floating-panel side of the popup→panel handoff. When the popup writes
+  // `inspect-page:pending-action`, the floating panel reads it on mount
+  // (after settings are available) and runs the requested action.
+  useEffect(() => {
+    if (surface !== "floating") return;
+    if (settings === null) return; // wait for settings before dispatching
+    let alive = true;
+    (async () => {
+      try {
+        const r = await chrome.storage.session.get("inspect-page:pending-action");
+        const entry = r["inspect-page:pending-action"] as
+          | { kind: "fullPage" | "pick"; ts: number }
+          | undefined;
+        if (!alive || !entry) return;
+        // Only honor very recent handoffs (10 s) to avoid stale auto-runs.
+        const fresh = Date.now() - entry.ts < 10_000;
+        await chrome.storage.session.remove("inspect-page:pending-action");
+        if (!fresh) return;
+        if (entry.kind === "pick") setMode("pick");
+        else setMode("export");
+        runActionRef.current?.(entry.kind);
+      } catch { /* session storage unavailable */ }
+    })();
+    return () => { alive = false; };
+  }, [surface, settings]);
+
   const onCancel = useCallback(async () => {
     if (state.lastAction === "pick") {
       try {
