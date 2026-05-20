@@ -35,7 +35,7 @@ const samples: ComputedSample[] = [
 const idx = buildColorSelectorIndex(samples);
 
 describe("tokensToMarkdown", () => {
-  it("emits the v2 palette table + variants + selector map", () => {
+  it("emits the token format table + selector map", () => {
     const md = tokensToMarkdown(tokens, idx);
     expect(md).toContain("## Color tokens");
     expect(md).toContain("| Token | Human name | HEX | RGB | HSL |");
@@ -43,8 +43,8 @@ describe("tokensToMarkdown", () => {
     expect(md).toContain("Surface 1");
     expect(md).toContain("`#0b1220`");
     expect(md).toContain("`rgb(11, 18, 32)`");
-    expect(md).toContain("## Variants");
-    expect(md).toContain("| Token | Tint | Base | Shade |");
+    expect(md).not.toContain("## Variants");
+    expect(md).not.toContain("| Token | Tint | Base | Shade |");
     expect(md).toContain("## Selector map");
     expect(md).toContain("`.page` { background-color }");
     expect(md).toContain("`.btn` { background-color }");
@@ -56,12 +56,12 @@ describe("tokensToMarkdown", () => {
 });
 
 describe("tokensToCssTokens", () => {
-  it("emits :root with base + tint + shade per token", () => {
+  it("emits :root with one base token per color", () => {
     const css = tokensToCssTokens(tokens);
     expect(css).toContain(":root {");
     expect(css).toContain("--ip-color-1: #0b1220;");
-    expect(css).toContain("--ip-color-1-tint:");
-    expect(css).toContain("--ip-color-1-shade:");
+    expect(css).not.toContain("--ip-color-1-tint:");
+    expect(css).not.toContain("--ip-color-1-shade:");
     expect(css).toContain("--ip-color-3: #f3f4f6;");
     expect(css.trim().endsWith("}")).toBe(true);
   });
