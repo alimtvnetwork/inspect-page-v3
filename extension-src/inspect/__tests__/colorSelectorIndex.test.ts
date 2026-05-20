@@ -65,8 +65,8 @@ describe("invertSelectorIndex", () => {
     ]);
     const inv = invertSelectorIndex(fwd);
     expect(inv.get(".card")).toEqual([
-      { hex: "#111a2e", property: "background-color" },
       { hex: "#f3f4f6", property: "color" },
+      { hex: "#111a2e", property: "background-color" },
     ]);
     expect(inv.get(".btn")).toEqual([{ hex: "#ffbb00", property: "background-color" }]);
   });
