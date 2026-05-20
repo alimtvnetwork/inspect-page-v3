@@ -11,7 +11,7 @@
  *  - safeBaseName: filesystem-safe filename derived from page URL.
  */
 import type { InspectSnapshot, ColorUsage, FontUsage } from "./types";
-import type { ColorSelectorBinding, ColorToken } from "./types";
+import type { ColorCategory, ColorSelectorBinding, ColorToken } from "./types";
 import { invertSelectorIndex } from "./colorSelectorIndex";
 
 /* ---------- CSV ---------- */
@@ -53,7 +53,27 @@ export function fontsToCsv(fonts: readonly FontUsage[]): string {
 /** Map of selector → user-edited custom CSS body (the inside of the `{ … }`). */
 export type CustomCssMap = Readonly<Record<string, string>>;
 
-/** Render the token table with the three copy formats: HEX, RGB, and HSL. */
+/** Section labels per category — mirrors the v2 Dark Calendar palette layout. */
+const SECTION_TITLE: Record<ColorCategory, string> = {
+  background: "Surfaces (backgrounds)",
+  border: "Borders",
+  text: "Text",
+  fill: "Fills",
+  stroke: "Strokes",
+  shadow: "Shadows",
+  gradient: "Gradients",
+  other: "Other",
+};
+
+const SECTION_ORDER: ColorCategory[] = [
+  "background", "border", "text", "fill", "stroke", "shadow", "gradient", "other",
+];
+
+/**
+ * Render the v2 Dark Calendar-style palette: one `### Section` per
+ * category, each with a `| Token | Human name | HEX | RGB | HSL |` table.
+ * Followed by a `## Selector map` section.
+ */
 export function tokensToMarkdown(
   tokens: readonly ColorToken[],
   index: ReadonlyMap<string, ColorSelectorBinding[]>,
@@ -63,12 +83,25 @@ export function tokensToMarkdown(
 
   out.push(`## Color tokens`);
   out.push("");
-  out.push(`| Token | Human name | HEX | RGB | HSL |`);
-  out.push(`|---|---|---|---|---|`);
+
+  const byCat = new Map<ColorCategory, ColorToken[]>();
   for (const t of tokens) {
-    out.push(`| \`${t.token}\` | ${t.humanName} | \`${t.base.hex}\` | \`${t.base.rgb}\` | \`${t.base.hsl}\` |`);
+    const arr = byCat.get(t.category) ?? [];
+    arr.push(t);
+    byCat.set(t.category, arr);
   }
-  out.push("");
+  for (const cat of SECTION_ORDER) {
+    const list = byCat.get(cat);
+    if (!list || list.length === 0) continue;
+    out.push(`### ${SECTION_TITLE[cat]}`);
+    out.push("");
+    out.push(`| Token | Human name | HEX | RGB | HSL |`);
+    out.push(`|---|---|---|---|---|`);
+    for (const t of list) {
+      out.push(`| \`${t.token}\` | ${t.humanName} | \`${t.base.hex}\` | \`${t.base.rgb}\` | \`${t.base.hsl}\` |`);
+    }
+    out.push("");
+  }
 
   out.push(`## Selector map`);
   out.push("");
