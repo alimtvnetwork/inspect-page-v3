@@ -2,12 +2,8 @@
  * Phase v2.7.5 — Color Tokens v2 engine.
  *
  * Pure module that converts the deduplicated palette (ColorUsage[]) into a
- * list of {@link ColorToken}s — each with a stable `--ip-color-N` name, a
- * human-readable label per category, and three deterministic variants
- * (tint / base / shade) derived via HSL lightness shifts.
- *
- * The shape mirrors the v2 Dark Calendar Palette markdown the user shared
- * (HEX + RGB + HSL columns).
+ * list of {@link ColorToken}s — each with a stable `--ip-color-N` name,
+ * a human-readable label per category, and copy-ready HEX/RGB/HSL strings.
  */
 import type { ColorCategory, ColorToken, ColorUsage, ColorVariant } from "./types";
 import {
