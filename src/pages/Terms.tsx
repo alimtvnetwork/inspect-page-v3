@@ -4,6 +4,7 @@
  */
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { ThemeSwitcher } from "@/components/landing/ThemeSwitcher";
 
 const Terms = (): JSX.Element => {
   useEffect(() => {
@@ -118,6 +119,7 @@ const Terms = (): JSX.Element => {
           </p>
         </section>
       </main>
+      <ThemeSwitcher />
     </div>
   );
 };
