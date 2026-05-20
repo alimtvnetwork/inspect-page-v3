@@ -204,6 +204,7 @@
 
 /* ---------- Text Typography (Phase A4b) ---------- */
 .lpe-text-typo { margin-top: 12px; }
+.lpe-text-typo-header { align-items: center; }
 .lpe-text-typo-list { display: flex; flex-direction: column; gap: 8px; }
 .lpe-text-typo-card {
   display: flex; flex-direction: column; gap: 6px;
@@ -236,8 +237,8 @@
   align-self: flex-start; padding: 2px 0; font-size: 12px;
 }
 .lpe-text-typo-toggle {
-  align-self: center; margin-top: 4px;
-  padding: 6px 14px; font-size: 12px; font-weight: 600;
+  flex: 0 0 auto;
+  padding: 4px 9px; font-size: 12px; font-weight: 650;
   border: 1px solid var(--lpe-border); border-radius: 999px;
   background: var(--lpe-surface-2); color: var(--lpe-accent);
 }
@@ -303,7 +304,9 @@
 /* Compact close button used inside modal headers */
 .lpe-modal-close {
   flex: 0 0 auto;
-  width: 28px; height: 28px; padding: 0;
+  width: 28px !important; min-width: 28px !important; max-width: 28px !important;
+  height: 28px !important; min-height: 28px !important; max-height: 28px !important;
+  padding: 0 !important;
   display: inline-flex; align-items: center; justify-content: center;
   border: 1px solid var(--lpe-border); border-radius: 6px;
   background: var(--lpe-surface-2); color: var(--lpe-fg);
