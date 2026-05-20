@@ -11,7 +11,7 @@ import { COPY } from "@shared/copy";
 import { format } from "../format";
 import type { InspectSnapshot } from "../../inspect/types";
 import { buildTokens } from "../../inspect/colorVariants";
-import { buildColorSelectorIndex, invertSelectorIndex } from "../../inspect/colorSelectorIndex";
+import { buildColorSelectorIndex } from "../../inspect/colorSelectorIndex";
 import {
   tokensToMarkdown, tokensToCssTokens, tokensToPerSelectorCss, tokensToJson,
   safeBaseName, mimeFor,
@@ -27,10 +27,10 @@ export function InspectColorTokens({ snapshot }: InspectColorTokensProps): JSX.E
   const palette = useMemo(() => dedupePalette(snapshot.colors), [snapshot.colors]);
   const baseTokens = useMemo(() => buildTokens(palette), [palette]);
   const selectorIndex = useMemo(() => buildColorSelectorIndex(snapshot.computedSamples), [snapshot.computedSamples]);
-  const allSelectors = useMemo(() => Array.from(invertSelectorIndex(selectorIndex).keys()).sort(), [selectorIndex]);
 
   const [overrides, setOverrides] = useState<ColorTokenOverrides>(emptyOverrides);
   const [exportOpen, setExportOpen] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,10 +55,11 @@ export function InspectColorTokens({ snapshot }: InspectColorTokensProps): JSX.E
     persist({ ...overrides, humanNames });
   };
 
-  const setCustomCss = (selector: string, body: string): void => {
-    const customCss = { ...overrides.customCss };
-    if (body.trim()) customCss[selector] = body; else delete customCss[selector];
-    persist({ ...overrides, customCss });
+  const copy = (key: string, text: string): void => {
+    void navigator.clipboard?.writeText(text).then(() => {
+      setCopied(key);
+      window.setTimeout(() => setCopied((c) => (c === key ? null : c)), 1200);
+    }).catch(() => {});
   };
 
   const base = safeBaseName(snapshot);
@@ -82,7 +83,7 @@ export function InspectColorTokens({ snapshot }: InspectColorTokensProps): JSX.E
     } },
   ];
 
-  if (tokens.length === 0 && allSelectors.length === 0) {
+  if (tokens.length === 0) {
     return <div className="lpe-inspect-empty"><span>{COPY.inspectTokensNone}</span></div>;
   }
 
@@ -115,7 +116,13 @@ export function InspectColorTokens({ snapshot }: InspectColorTokensProps): JSX.E
 
       <ul className="lpe-token-list">
         {tokens.map((t) => {
-          const bindings = selectorIndex.get(t.base.hex) ?? [];
+          const allKey = `${t.token}:all`;
+          const allText = `${t.base.hex}\n${t.base.rgb}\n${t.base.hsl}`;
+          const formats: Array<{ k: "hex" | "rgb" | "hsl"; label: string; value: string }> = [
+            { k: "hex", label: "HEX", value: t.base.hex },
+            { k: "rgb", label: "RGB", value: t.base.rgb },
+            { k: "hsl", label: "HSL", value: t.base.hsl },
+          ];
           return (
             <li key={t.token} className="lpe-token-row">
               <div className="lpe-token-row-head">
@@ -131,54 +138,30 @@ export function InspectColorTokens({ snapshot }: InspectColorTokensProps): JSX.E
                   }}
                   aria-label={`Rename ${t.token}`}
                 />
-                <span className="lpe-token-hex" title={t.base.hex}>{t.base.hex}</span>
+                <button
+                  type="button"
+                  className="lpe-token-copy-all"
+                  onClick={() => copy(allKey, allText)}
+                  title="Copy HEX, RGB and HSL"
+                >{copied === allKey ? "Copied ✓" : "Copy all"}</button>
               </div>
 
-              <div className="lpe-token-variants" aria-label={COPY.inspectTokensVariants}>
-                {(["tint", "base", "shade"] as const).map((k) => {
-                  const v = t[k];
-                  const label = k === "tint" ? COPY.inspectTokensTint : k === "shade" ? COPY.inspectTokensShade : COPY.inspectTokensBase;
+              <div className="lpe-token-formats" aria-label="Color formats">
+                {formats.map((f) => {
+                  const key = `${t.token}:${f.k}`;
                   return (
                     <button
-                      key={k} type="button" className="lpe-token-variant"
-                      onClick={() => { void navigator.clipboard?.writeText(v.hex).catch(() => {}); }}
-                      title={`${label} — click to copy ${v.hex}`}
+                      key={f.k} type="button" className="lpe-token-format"
+                      onClick={() => copy(key, f.value)}
+                      title={`Click to copy ${f.label}`}
                     >
-                      <span className="lpe-token-variant-swatch" style={{ background: v.hex }} aria-hidden="true" />
-                      <span className="lpe-token-variant-meta">
-                        <span className="lpe-token-variant-label">{label}</span>
-                        <span className="lpe-token-variant-hex">{v.hex}</span>
-                      </span>
+                      <span className="lpe-token-format-label">{f.label}</span>
+                      <span className="lpe-token-format-value">{f.value}</span>
+                      <span className="lpe-token-format-hint">{copied === key ? "Copied ✓" : "Copy"}</span>
                     </button>
                   );
                 })}
               </div>
-
-              {bindings.length > 0 && (
-                <details className="lpe-token-selectors">
-                  <summary>{format(COPY.inspectTokensUsedBy, { n: bindings.length })}</summary>
-                  <ul className="lpe-token-selector-list">
-                    {bindings.map((b, i) => (
-                      <li key={`${b.selector}-${b.property}-${i}`}>
-                        <code>{b.selector}</code>
-                        <span className="lpe-token-selector-prop">{b.property}</span>
-                        <textarea
-                          className="lpe-token-custom-css"
-                          placeholder={COPY.inspectTokensCustomCssPh}
-                          defaultValue={overrides.customCss[b.selector] ?? ""}
-                          onBlur={(e) => {
-                            const cur = overrides.customCss[b.selector] ?? "";
-                            if (e.target.value !== cur) setCustomCss(b.selector, e.target.value);
-                          }}
-                          aria-label={format(COPY.inspectTokensCustomCss, { selector: b.selector })}
-                          rows={2}
-                          spellCheck={false}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              )}
             </li>
           );
         })}
