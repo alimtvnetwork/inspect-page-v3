@@ -1,60 +1,57 @@
-# Plan — Text Typography + Account sections in Inspect Mode
+# Theme Color Customizer — Landing Site
 
-Goal: replicate the CSS Peeper "Typography" experience inside our Inspect panel — a per-element-kind list (Paragraph, Span, H1, H2, …) with instance count, an `AaBbCc…` preview rendered in the element's actual font/size/weight/color, a "Show details" drawer with full style breakdown + Locate, and a bottom Account section.
+## Scope
+Add a user-controlled theme color feature to the **marketing landing site** (`src/...`) only.
+The Chrome extension popup + in-page floating panel keep their locked dark-mint theme (project memory: "Extension theme LOCKED"). This work does NOT touch `extension-src/`.
 
-Current state: `InspectTypography.tsx` only shows 2 summary cards (Headings/Body) + a flat "Show all" modal. The snapshot's `fonts[]` is grouped by family, not by tag — so we don't yet have per-tag instances with their own sample text.
+Default theme remains the current **Blueprint** (royal blue on white). Users can switch to other presets — including a **Riseup Asia** preset derived from https://present-v3.lovable.app/ (dark bg `#0B0B0B`, amber accent `#F59E0B`) — or pick a fully custom accent color.
 
-## Phase 1 — Snapshot model
+## Phases
 
-Extend `extension-src/inspect/types.ts` and `collectSnapshot.ts`:
-- New type `TypographyGroup` with: `tag` (`p`, `span`, `h1`…`h6`, `a`, `li`, `button`, `label`, `strong`, `em`, `small`, `blockquote`, `code`), `instances` (count), `fontFamily`, `fontStack`, `fontSizePx`, `fontWeight`, `lineHeightPx | "normal"`, `letterSpacing`, `color`, `sampleText` (first non-empty trimmed textContent, max 80 chars), `selectorPath` (first instance, for Locate).
-- Collector walks visible elements once, groups by `(tag, fontFamily, fontSizePx, fontWeight, color)` so genuinely different uses of the same tag become separate cards (matches CSS Peeper).
-- Bound: max 60 groups, max 8000 scanned elements (reuse existing budget).
-- Add `typography: TypographyGroup[]` to `InspectSnapshot`.
+### Phase 1 — Theme engine + presets
+- New `src/theme/themes.ts` with preset definitions. Each preset = a set of HSL token values mapped onto the existing tokens in `src/index.css` (`--background`, `--foreground`, `--primary`, `--primary-glow`, `--primary-soft`, `--accent`, `--card`, `--border`, `--ring`, `--gradient-primary`, `--shadow-glow`, etc.).
+- Presets shipped:
+  1. **Blueprint** (current default — royal blue on white)
+  2. **Riseup Asia** (dark `#0B0B0B` bg, amber `#F59E0B` accent — matches reference)
+  3. **Midnight Indigo** (dark + indigo)
+  4. **Emerald** (light + green)
+- New `src/theme/ThemeProvider.tsx`: React context that
+  - reads saved theme from `localStorage` key `inspect-page.landing-theme` (preset id + optional custom accent HSL),
+  - on mount applies the values by setting CSS variables on `document.documentElement.style`,
+  - exposes `{ theme, setPreset, setCustomAccent, resetToDefault }`.
+- Wrap `src/App.tsx` (or `src/main.tsx`) with `<ThemeProvider>`.
 
-## Phase 2 — UI: Text Typography section
+### Phase 2 — Theme switcher UI
+- New `src/components/landing/ThemeSwitcher.tsx` — small floating "paint" button (bottom-right) that opens a popover/sheet (shadcn `Popover` + `RadioGroup`) with:
+  - Preset swatches (4 circles, click to apply).
+  - A custom-accent color input (`<input type="color">`) that maps the chosen HEX to HSL and overrides `--primary`/`--primary-glow`/`--ring`.
+  - "Reset to default" button.
+- Mount once in `src/pages/Index.tsx` (and `NotFound`, `Privacy`, `Terms` if we want it site-wide — confirm during build).
+- Live preview: every change instantly re-applies CSS vars, so all existing sections (Hero, Pricing, etc.) recolor automatically because they already use semantic tokens.
 
-Rewrite `InspectTypography.tsx` (or add `InspectTextTypography.tsx`) to render:
-- Section header: "Text Typography" + count badge.
-- Vertical list of cards. Each card:
-  - Title: tag name (`Paragraph`, `Span`, `Heading 1`, …).
-  - Sub: `N instance` / `N instances`.
-  - Sample row: `AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPp…` rendered with the group's actual `fontFamily / fontSize / fontWeight / color`, single-line, truncated with ellipsis.
-  - Right-aligned Locate icon (reuses `locateElement(selectorPath)` from `inspect/locateColor.ts`) — flashes all matching elements.
-  - "Show details ›" link → opens a drawer (reuse `DetailDrawer.tsx`) with: Font family, Size, Weight, Line height, Letter spacing, Color (with swatch + copy), Selector path (copy), Instance count, full sample paragraph.
-- Mount it below `InspectInspector` in `InspectShell.tsx` (the user asked for it below Element Inspector).
-- All styling uses existing dark-mint tokens in `panel/styles.css` (no new colors).
+### Phase 3 — Polish + persistence + a11y
+- Persist selection across reloads (already from Phase 1).
+- Respect `prefers-reduced-motion` for any transition.
+- Add `aria-label`s and keyboard support for the switcher.
+- Add a tiny "Theme: Blueprint" caption inside the popover.
+- Smoke-check both light + dark presets across Hero / Pricing / WhatsNew / Footer.
 
-## Phase 3 — Account section (bottom of Inspect)
+## Technical notes
+- All color edits go through CSS custom properties in HSL (matching existing `index.css` convention). No component changes required since components already use `bg-primary`, `text-foreground`, etc.
+- Custom HEX → HSL conversion: small util in `src/theme/colorUtils.ts`. Output as `"H S% L%"` string (Tailwind/shadcn expects values without `hsl()` wrapper).
+- localStorage shape: `{ presetId: string; customAccent?: { h:number; s:number; l:number } }`.
+- No backend, no extension changes, no WP plugin changes.
 
-Add an "Account" card at the bottom of the Inspect scroll, above the footer:
-- Signed out → "Sign in to Inspect Page" button → reuse existing WP sign-in bridge from Settings.
-- Signed in → show: email (from `/billing/status`), plan badge (Free X/5 or Pro), "Manage subscription" + "Sign out".
-- Pure UI wrapper around existing `getBillingStatus` / `startBillingPortal` / sign-out helpers — no new backend.
+## Out of scope
+- Extension popup / floating panel theming (locked).
+- Per-section overrides.
+- Saving theme per-user on the server.
 
-## Phase 4 — Tests + package
+## Acceptance
+- Visiting `/` shows the current Blueprint look by default.
+- Clicking the switcher → "Riseup Asia" instantly turns the page dark with amber CTAs (matches present-v3 vibe).
+- Picking a custom color updates `--primary` everywhere (Hero CTA, Pricing highlight, links).
+- Reload preserves the choice.
+- "Reset" returns to Blueprint.
 
-- Unit test for the new collector grouping logic (`__tests__/typographyGroups.test.ts`).
-- Render test for `InspectTextTypography` (empty + populated).
-- Bump version to `v2.7.26`, rebuild + repackage `public/inspect-page.zip`, refresh sha256, verify 194+ vitest still green.
-
-## Execution rule
-
-You said execute phase-by-phase on `next`. I'll run Phase 1 first when you say `next`, then wait for the next `next` before Phase 2, etc.
-
-## Open questions (please confirm or I'll default)
-
-1. Grouping key — group by `(tag + fontFamily + size + weight + color)` like CSS Peeper, or strictly by `tag` only (one card per tag)? **Default: CSS Peeper style (composite key).**
-2. Tag whitelist above — OK, or include every tag containing text?
-3. Account section — put it inside the Inspect tab as proposed, or as a new bottom-bar tab icon (like the avatar in the screenshot)? **Default: card at bottom of Inspect tab; we already have a Settings tab for the avatar slot.**
-
-## Remaining launch tasks (unchanged)
-
-1. [BLOCKER] Prod `INSPECT_PAGE_WP_SITE_URL`
-2. Stripe live keys
-3. Pen-test pass
-4. Acceptance runs (AC-BILL / AC-ANALYTICS / AC-UI-259 / AC-WS)
-5. Re-shoot CWS screenshots
-6. Upload latest zip to Chrome Web Store
-7. Git tags `ext-vX.Y.Z` + `wp-v2.6.0`
-8. 24h post-launch watch
+Say **next** to execute Phase 1.
