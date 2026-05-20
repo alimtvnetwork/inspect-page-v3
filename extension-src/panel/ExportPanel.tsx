@@ -10,7 +10,7 @@
  *     handlers for RunFullPageExport / EnterPickerMode arrive in later stages.
  *     For now, clicking them shows an Error if the handler is missing — by design.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { COPY } from "@shared/copy";
 import {
   INSPECT_PAGE_WP_SITE_URL,
@@ -39,6 +39,7 @@ import { shareConfigured } from "@shared/shareSettings";
 import { getShareSettings, setShareSettings } from "@shared/shareSettings";
 import {
   applyExtensionTheme,
+  applyExtensionThemeToElement,
   loadStoredExtTheme,
   saveStoredExtTheme,
   subscribeExtTheme,
@@ -78,9 +79,6 @@ async function saveBlobWithPrompt(blob: Blob, filename: string): Promise<void> {
 }
 
 type PanelMode = "export" | "pick" | "inspect";
-type PanelTheme = "light" | "dark";
-const THEME_STORAGE_KEY = "inspect-page:theme";
-
 export type PanelSurface = "popup" | "floating";
 
 export interface ExportPanelProps {
@@ -173,22 +171,9 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   const [mode, setMode] = useState<PanelMode>("export");
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const settingsBtnRef = useRef<HTMLButtonElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const [settingsTab, setSettingsTab] = useState<"general" | "share" | "appearance">("general");
   const [extTheme, setExtTheme] = useState<StoredExtTheme>({ presetId: DEFAULT_EXT_PRESET_ID });
-  const [theme, setTheme] = useState<PanelTheme>(() => {
-    try {
-      const v = globalThis.localStorage?.getItem(THEME_STORAGE_KEY);
-      return v === "light" ? "light" : "dark";
-    } catch { return "dark"; }
-  });
-
-  const onToggleTheme = useCallback(() => {
-    setTheme((t) => {
-      const next: PanelTheme = t === "dark" ? "light" : "dark";
-      try { globalThis.localStorage?.setItem(THEME_STORAGE_KEY, next); } catch { /* ignore */ }
-      return next;
-    });
-  }, []);
 
   const onToggleSettings = useCallback(() => {
     setSettingsOpen((v) => !v);
@@ -256,9 +241,12 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     return () => { alive = false; unsub(); };
   }, []);
 
-  // Re-apply on every render where the preset changed (covers fresh mounts of
-  // the floating panel after the popup wrote a new preset).
-  useEffect(() => { applyExtensionTheme(extTheme); }, [extTheme, theme, surface]);
+  // Re-apply before paint so clicking a preset visibly recolors the active
+  // popup/floating panel immediately, including Shadow DOM mounts.
+  useLayoutEffect(() => {
+    if (rootRef.current) applyExtensionThemeToElement(rootRef.current, extTheme);
+    applyExtensionTheme(extTheme);
+  }, [extTheme, surface]);
 
   const onExtThemeChange = useCallback((next: StoredExtTheme) => {
     setExtTheme(next);
@@ -542,7 +530,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   );
 
   return (
-    <div className="lpe-root" data-lpe-theme={theme} data-lpe-surface={surface} role="region" aria-label={COPY.appName}>
+    <div ref={rootRef} className="lpe-root" data-lpe-theme="dark" data-lpe-surface={surface} role="region" aria-label={COPY.appName}>
       <header
         className="lpe-header"
         data-draggable={surface === "floating" ? "true" : "false"}
