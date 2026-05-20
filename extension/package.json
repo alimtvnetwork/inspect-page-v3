@@ -1,7 +1,7 @@
 {
   "name": "inspect-page",
   "private": true,
-  "version": "2.7.25",
+  "version": "2.7.26",
   "description": "Export any web page (or one element) for your LLM.",
   "type": "module",
   "scripts": {
