@@ -104,6 +104,10 @@ export const EXT_THEME_PRESETS: ExtensionThemePreset[] = [
 
 export const DEFAULT_EXT_PRESET_ID = "dark-mint";
 const STORAGE_KEY = "inspect-page.ext-theme";
+const PRESET_ALIASES: Record<string, string> = {
+  "midnight-indigo": "violet-noir",
+  emerald: "ruby-noir",
+};
 
 export interface StoredExtTheme {
   presetId: string;
@@ -112,8 +116,9 @@ export interface StoredExtTheme {
 }
 
 export function getPreset(id: string): ExtensionThemePreset {
+  const normalizedId = PRESET_ALIASES[id] ?? id;
   return (
-    EXT_THEME_PRESETS.find((p) => p.id === id) ?? EXT_THEME_PRESETS[0]
+    EXT_THEME_PRESETS.find((p) => p.id === normalizedId) ?? EXT_THEME_PRESETS[0]
   );
 }
 
