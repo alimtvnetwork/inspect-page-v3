@@ -702,6 +702,12 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                 >
                   {COPY.btnFullPage}
                 </button>
+                {!busy && state.status !== PanelStatus.Success && (
+                  <div className="lpe-status-hint lpe-status-hint--inline" aria-live="polite">
+                    <span className="lpe-status-hint-dot" aria-hidden="true" />
+                    <span className="lpe-status-hint-text">{COPY.statusLongHint}</span>
+                  </div>
+                )}
                 <ShareLinksButton
                   shareSettings={shareSettings}
                   hasArtifacts={!!state.fullPageArtifacts}
