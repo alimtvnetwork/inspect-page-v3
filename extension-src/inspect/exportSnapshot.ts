@@ -53,10 +53,7 @@ export function fontsToCsv(fonts: readonly FontUsage[]): string {
 /** Map of selector → user-edited custom CSS body (the inside of the `{ … }`). */
 export type CustomCssMap = Readonly<Record<string, string>>;
 
-/**
- * Render the v2 Dark Calendar Palette-style markdown block: token table,
- * variants table, and a "Selector map" subsection per token.
- */
+/** Render the token table with the three copy formats: HEX, RGB, and HSL. */
 export function tokensToMarkdown(
   tokens: readonly ColorToken[],
   index: ReadonlyMap<string, ColorSelectorBinding[]>,
@@ -70,15 +67,6 @@ export function tokensToMarkdown(
   out.push(`|---|---|---|---|---|`);
   for (const t of tokens) {
     out.push(`| \`${t.token}\` | ${t.humanName} | \`${t.base.hex}\` | \`${t.base.rgb}\` | \`${t.base.hsl}\` |`);
-  }
-  out.push("");
-
-  out.push(`## Variants`);
-  out.push("");
-  out.push(`| Token | Tint | Base | Shade |`);
-  out.push(`|---|---|---|---|`);
-  for (const t of tokens) {
-    out.push(`| \`${t.token}\` | \`${t.tint.hex}\` | \`${t.base.hex}\` | \`${t.shade.hex}\` |`);
   }
   out.push("");
 
@@ -98,15 +86,13 @@ export function tokensToMarkdown(
   return out.join("\n");
 }
 
-/** `:root { --ip-color-1: #…; --ip-color-1-tint: #…; --ip-color-1-shade: #…; … }`. */
+/** `:root { --ip-color-1: #…; … }`. */
 export function tokensToCssTokens(tokens: readonly ColorToken[]): string {
   if (tokens.length === 0) return "/* no tokens */\n";
   const lines: string[] = [`:root {`];
   for (const t of tokens) {
     lines.push(`  /* ${t.humanName} */`);
     lines.push(`  ${t.token}: ${t.base.hex};`);
-    lines.push(`  ${t.token}-tint: ${t.tint.hex};`);
-    lines.push(`  ${t.token}-shade: ${t.shade.hex};`);
   }
   lines.push(`}`);
   lines.push("");
