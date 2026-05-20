@@ -154,6 +154,7 @@ export const COPY = {
   statusSelecting: "Building element export…",
   statusSuccess: "Saved {filename}",
   statusError: "Error: {message} ({code})",
+  statusLongHint: "Hang tight — full-page captures can take a moment ✨",
   settingsHeader: "Settings",
   lblImageFormat: "Image format",
   lblJpegQuality: "JPEG quality",
