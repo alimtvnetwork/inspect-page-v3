@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { COPY } from "@shared/copy";
 import { format } from "../format";
 import type { InspectSnapshot } from "../../inspect/types";
+import type { ColorCategory, ColorToken } from "../../inspect/types";
 import { buildTokens } from "../../inspect/colorVariants";
 import { buildColorSelectorIndex } from "../../inspect/colorSelectorIndex";
 import {
@@ -87,6 +88,8 @@ export function InspectColorTokens({ snapshot }: InspectColorTokensProps): JSX.E
     return <div className="lpe-inspect-empty"><span>{COPY.inspectTokensNone}</span></div>;
   }
 
+  const grouped = groupByCategory(tokens);
+
   return (
     <section className="lpe-tokens" aria-label="Color tokens">
       <header className="lpe-section-header">
@@ -114,60 +117,107 @@ export function InspectColorTokens({ snapshot }: InspectColorTokensProps): JSX.E
         </div>
       </header>
 
-      <ul className="lpe-token-list">
-        {tokens.map((t) => {
-          const allKey = `${t.token}:all`;
-          const allText = `${t.base.hex}\n${t.base.rgb}\n${t.base.hsl}`;
-          const formats: Array<{ k: "hex" | "rgb" | "hsl"; label: string; value: string }> = [
-            { k: "hex", label: "HEX", value: t.base.hex },
-            { k: "rgb", label: "RGB", value: t.base.rgb },
-            { k: "hsl", label: "HSL", value: t.base.hsl },
-          ];
-          return (
-            <li key={t.token} className="lpe-token-row">
-              <div className="lpe-token-row-head">
-                <span className="lpe-color-swatch" style={{ background: t.base.hex }} aria-hidden="true" />
-                <code className="lpe-token-name">{t.token}</code>
-                <input
-                  type="text"
-                  className="lpe-token-rename"
-                  defaultValue={t.humanName}
-                  placeholder={COPY.inspectTokensRenamePh}
-                  onBlur={(e) => {
-                    if (e.target.value !== t.humanName) renameToken(t.token, e.target.value);
-                  }}
-                  aria-label={`Rename ${t.token}`}
-                />
-                <button
-                  type="button"
-                  className="lpe-token-copy-all"
-                  onClick={() => copy(allKey, allText)}
-                  title="Copy HEX, RGB and HSL"
-                >{copied === allKey ? "Copied ✓" : "Copy all"}</button>
-              </div>
-
-              <div className="lpe-token-formats" aria-label="Color formats">
-                {formats.map((f) => {
-                  const key = `${t.token}:${f.k}`;
-                  return (
-                    <button
-                      key={f.k} type="button" className="lpe-token-format"
-                      onClick={() => copy(key, f.value)}
-                      title={`Click to copy ${f.label}`}
-                    >
-                      <span className="lpe-token-format-label">{f.label}</span>
-                      <span className="lpe-token-format-value">{f.value}</span>
-                      <span className="lpe-token-format-hint">{copied === key ? "Copied ✓" : "Copy"}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+      {grouped.map(([cat, list]) => (
+        <div key={cat} className="lpe-token-group">
+          <h4 className="lpe-token-group-title">{SECTION_TITLE[cat]}</h4>
+          <div className="lpe-token-table" role="table" aria-label={SECTION_TITLE[cat]}>
+            <div className="lpe-token-thead" role="row">
+              <span role="columnheader" aria-label="Swatch" />
+              <span role="columnheader">Token</span>
+              <span role="columnheader">Human name</span>
+              <span role="columnheader">HEX</span>
+              <span role="columnheader">RGB</span>
+              <span role="columnheader">HSL</span>
+              <span role="columnheader">All</span>
+            </div>
+            {list.map((t) => {
+              const allKey = `${t.token}:all`;
+              const allText = `${t.token}  ${t.humanName}\n${t.base.hex}\n${t.base.rgb}\n${t.base.hsl}`;
+              const cells: Array<{ k: "hex" | "rgb" | "hsl"; v: string }> = [
+                { k: "hex", v: t.base.hex },
+                { k: "rgb", v: t.base.rgb },
+                { k: "hsl", v: t.base.hsl },
+              ];
+              return (
+                <div key={t.token} className="lpe-token-trow" role="row">
+                  <span
+                    className="lpe-token-swatch"
+                    style={{ background: t.base.hex }}
+                    aria-hidden="true"
+                  />
+                  <code className="lpe-token-name" role="cell">{t.token}</code>
+                  <input
+                    role="cell"
+                    type="text"
+                    className="lpe-token-rename"
+                    defaultValue={t.humanName}
+                    placeholder={COPY.inspectTokensRenamePh}
+                    onBlur={(e) => {
+                      if (e.target.value !== t.humanName) renameToken(t.token, e.target.value);
+                    }}
+                    aria-label={`Rename ${t.token}`}
+                  />
+                  {cells.map((c) => {
+                    const key = `${t.token}:${c.k}`;
+                    return (
+                      <button
+                        key={c.k}
+                        type="button"
+                        role="cell"
+                        className="lpe-token-cell"
+                        onClick={() => copy(key, c.v)}
+                        title={`Click to copy ${c.k.toUpperCase()}`}
+                      >
+                        <span className="lpe-token-cell-value">{c.v}</span>
+                        {copied === key && <span className="lpe-token-cell-hint">✓</span>}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    role="cell"
+                    className="lpe-token-cell lpe-token-cell-all"
+                    onClick={() => copy(allKey, allText)}
+                    title="Copy HEX, RGB and HSL"
+                  >{copied === allKey ? "Copied ✓" : "Copy all"}</button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </section>
   );
+}
+
+const SECTION_TITLE: Record<ColorCategory, string> = {
+  background: "Surfaces (backgrounds)",
+  border: "Borders",
+  text: "Text",
+  fill: "Fills",
+  stroke: "Strokes",
+  shadow: "Shadows",
+  gradient: "Gradients",
+  other: "Other",
+};
+
+const GROUP_ORDER: ColorCategory[] = [
+  "background", "border", "text", "fill", "stroke", "shadow", "gradient", "other",
+];
+
+function groupByCategory(tokens: readonly ColorToken[]): Array<[ColorCategory, ColorToken[]]> {
+  const map = new Map<ColorCategory, ColorToken[]>();
+  for (const t of tokens) {
+    const arr = map.get(t.category) ?? [];
+    arr.push(t);
+    map.set(t.category, arr);
+  }
+  const out: Array<[ColorCategory, ColorToken[]]> = [];
+  for (const cat of GROUP_ORDER) {
+    const list = map.get(cat);
+    if (list && list.length > 0) out.push([cat, list]);
+  }
+  return out;
 }
 
 /** Same dedup logic as InspectColors — kept private to avoid an export ripple. */
