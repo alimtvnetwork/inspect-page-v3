@@ -357,6 +357,27 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   // ---- Action handlers ----
   const runAction = useCallback(async (kind: "fullPage" | "pick") => {
     if (disabled) return;
+    // Popup auto-route: focus-stealing actions (Full Page export, element
+    // picker) cause Chrome to close the toolbar popup the moment the page
+    // gets focus. Instead of running them from the popup, mount the in-page
+    // floating panel, hand off the action via session storage, and close
+    // the popup. The floating panel survives because it lives in the page.
+    if (surface === "popup") {
+      try {
+        const tid = activeTabId ?? -1;
+        await chrome.storage.session.set({
+          "inspect-page:pending-action": { kind, ts: Date.now() },
+        });
+        await sendToBackground<{ tabId: number }, unknown>(
+          MessageKind.MountFloatingPanel, { tabId: tid },
+        );
+        setTimeout(() => { try { window.close(); } catch { /* ignore */ } }, 80);
+        return;
+      } catch {
+        // Fall through to in-popup behavior if the handoff failed (e.g.
+        // chrome:// pages where content scripts can't be injected).
+      }
+    }
     // Floating panel doesn't know its own tabId — SW resolves via sender.tab.id
     // when we send -1.
     const tid = activeTabId ?? -1;
