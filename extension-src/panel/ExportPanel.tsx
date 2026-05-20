@@ -659,15 +659,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             {mode === "pick" && (
               <>
                 {surface !== "inspect-popout" && !state.elementSnapshot && state.status !== PanelStatus.PickerActive && (
-                  <div className="lpe-pick-hint" role="note" style={{
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(45,212,168,0.25)",
-                    background: "rgba(45,212,168,0.08)",
-                    color: "var(--lpe-fg)",
-                    fontSize: 12,
-                    lineHeight: 1.45,
-                  }}>{COPY.pickHint}</div>
+                  <div className="lpe-pick-hint" role="note">{COPY.pickHint}</div>
                 )}
                 <button
                   type="button"
