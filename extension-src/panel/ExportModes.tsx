@@ -5,13 +5,18 @@
  * Renders [ MD ] [ MD + files ] [ ZIP ] [ Share Links ] buttons. The
  * Share Links button is disabled in V2 (wiring lands in V7).
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import JSZip from "jszip";
 import { COPY } from "@shared/copy";
 import { ExportFlow, MessageKind } from "@shared/enums";
 import { sendToBackground } from "@shared/messaging";
 import type { ExportArtifacts } from "@shared/types";
 import { buildPromptMd } from "@share/buildPromptMd";
+import {
+  loadColorTokenAddons, emptyColorTokenAddons, type ColorTokenAddons,
+} from "../inspect/colorTokensExport";
+import { snapshotCache } from "./inspect/snapshotCache";
+import type { InspectSnapshot } from "../inspect/types";
 
 export interface ExportModesProps {
   artifacts: ExportArtifacts;
@@ -73,10 +78,11 @@ function fileBaseName(a: ExportArtifacts): string {
 }
 
 /** Build the single-file MD: AI block + inlined html/css/js fences + base64 images. */
-function buildSingleMd(a: ExportArtifacts): string {
+function buildSingleMd(a: ExportArtifacts, addons: ColorTokenAddons): string {
   const ai = buildPromptMd(a, { mode: "single" });
   const parts: string[] = [ai, ""];
   if (a.prelude) parts.push(a.prelude, "");
+  if (addons.mdBlock) parts.push(addons.mdBlock, "");
   parts.push("## HTML", "", "```html", a.html || "", "```", "");
   if (a.css) parts.push("## CSS", "", "```css", a.css, "```", "");
   if (a.js) parts.push("## JS", "", "```javascript", a.js, "```", "");
@@ -91,10 +97,14 @@ function buildSingleMd(a: ExportArtifacts): string {
   return parts.join("\n");
 }
 
-function buildMdFilesMd(a: ExportArtifacts): string {
+function buildMdFilesMd(a: ExportArtifacts, addons: ColorTokenAddons): string {
   const ai = buildPromptMd(a, { mode: "mdFiles" });
   const prelude = a.prelude ? `\n\n${a.prelude}` : "";
-  return `${ai}${prelude}\n\n_See \`./index.html\`, \`./style.css\`, and the \`./images/\` folder for the captured assets._\n`;
+  const tokens = addons.mdBlock ? `\n\n${addons.mdBlock}` : "";
+  const tail = addons.tokensCss || addons.selectorsCss
+    ? `, plus \`./tokens.css\` and \`./selectors.css\` for the v2 color tokens`
+    : "";
+  return `${ai}${prelude}${tokens}\n\n_See \`./index.html\`, \`./style.css\`, and the \`./images/\` folder for the captured assets${tail}._\n`;
 }
 
 function base64ToUint8(b64: string): Uint8Array {
@@ -117,6 +127,19 @@ export function ExportModes({
   >({ phase: "idle" });
   const [now, setNow] = useState<number>(Date.now());
   const [lastSavedPath, setLastSavedPath] = useState<string | null>(null);
+  const [addons, setAddons] = useState<ColorTokenAddons>(emptyColorTokenAddons);
+
+  // Pull addons from the most-recent Inspect snapshot when one exists.
+  const snap = useMemo<InspectSnapshot | null>(() => {
+    const c = snapshotCache.get();
+    return c ? (c.data.snapshot as InspectSnapshot) : null;
+  }, []);
+  useEffect(() => {
+    if (!snap) { setAddons(emptyColorTokenAddons()); return; }
+    let cancelled = false;
+    void loadColorTokenAddons(snap).then((a) => { if (!cancelled) setAddons(a); });
+    return () => { cancelled = true; };
+  }, [snap]);
 
   useEffect(() => {
     if (shareState.phase !== "done") return;
@@ -125,19 +148,22 @@ export function ExportModes({
   }, [shareState.phase]);
 
   const onMd = useCallback(async () => {
-    const md = buildSingleMd(artifacts);
+    const md = buildSingleMd(artifacts, addons);
     const saved = await triggerDownload(
       new Blob([md], { type: "text/markdown;charset=utf-8" }),
       `${fileBaseName(artifacts)}.md`,
     );
     if (saved) setLastSavedPath(saved);
-  }, [artifacts]);
+  }, [artifacts, addons]);
 
   const handleShare = useCallback(async () => {
     if (!onShare) return;
     setShareState({ phase: "uploading" });
     try {
-      await onShare(artifacts);
+      // Bake the token CSS into the shared payload so the four hosted
+      // pages get the same `var(--ip-color-…)` system as ZIP downloads.
+      const augmented = withAddonsBakedIn(artifacts, addons);
+      await onShare(augmented);
       // Best-effort: extract expires_at via a side channel — onShare hides
       // it. We approximate 24h from now for the chip.
       setShareState({ phase: "done", expiresAt: Date.now() + 24 * 60 * 60 * 1000 });
@@ -147,30 +173,35 @@ export function ExportModes({
         message: e instanceof Error ? e.message : String(e),
       });
     }
-  }, [artifacts, onShare]);
+  }, [artifacts, onShare, addons]);
 
   const onMdFiles = useCallback(async () => {
     const zip = new JSZip();
-    zip.file("prompt.md", buildMdFilesMd(artifacts));
+    zip.file("prompt.md", buildMdFilesMd(artifacts, addons));
     if (artifacts.html) zip.file("index.html", artifacts.html);
     if (artifacts.css) zip.file("style.css", artifacts.css);
+    if (addons.tokensCss)    zip.file("tokens.css", addons.tokensCss);
+    if (addons.selectorsCss) zip.file("selectors.css", addons.selectorsCss);
     for (const img of artifacts.images) {
       zip.file(`images/${img.name}`, base64ToUint8(img.base64));
     }
     const blob = await zip.generateAsync({ type: "blob" });
     const saved = await triggerDownload(blob, `${fileBaseName(artifacts)}-mdfiles.zip`);
     if (saved) setLastSavedPath(saved);
-  }, [artifacts]);
+  }, [artifacts, addons]);
 
   const onZip = useCallback(async () => {
     const zip = new JSZip();
-    const zipPrompt = artifacts.prelude
-      ? `${buildPromptMd(artifacts, { mode: "zip" })}\n\n${artifacts.prelude}`
+    const preludeBits = [artifacts.prelude, addons.mdBlock].filter(Boolean).join("\n\n");
+    const zipPrompt = preludeBits
+      ? `${buildPromptMd(artifacts, { mode: "zip" })}\n\n${preludeBits}`
       : buildPromptMd(artifacts, { mode: "zip" });
     zip.file("prompt.md", zipPrompt);
     if (artifacts.html) zip.file("index.html", artifacts.html);
     if (artifacts.css) zip.file("style.css", artifacts.css);
     if (artifacts.js) zip.file("script.js", artifacts.js);
+    if (addons.tokensCss)    zip.file("tokens.css", addons.tokensCss);
+    if (addons.selectorsCss) zip.file("selectors.css", addons.selectorsCss);
     for (const img of artifacts.images) {
       zip.file(`images/${img.name}`, base64ToUint8(img.base64));
     }
@@ -178,7 +209,7 @@ export function ExportModes({
     const blob = await zip.generateAsync({ type: "blob" });
     const saved = await triggerDownload(blob, `${fileBaseName(artifacts)}.zip`);
     if (saved) setLastSavedPath(saved);
-  }, [artifacts]);
+  }, [artifacts, addons]);
 
   return (
     <div className="lpe-export-modes" aria-label={COPY.exportModesHeader}>
@@ -226,4 +257,17 @@ function formatRemaining(ms: number): string {
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   return `${h}h ${m}m`;
+}
+
+/**
+ * Append the v2 color-token CSS + per-selector CSS to the shared artifact's
+ * stylesheet so Smart Share's four hosted pages display them inline.
+ */
+function withAddonsBakedIn(a: ExportArtifacts, addons: ColorTokenAddons): ExportArtifacts {
+  if (!addons.tokensCss && !addons.selectorsCss) return a;
+  const segments: string[] = [];
+  if (a.css) segments.push(a.css);
+  if (addons.tokensCss)    segments.push(`/* === Color tokens === */\n${addons.tokensCss}`);
+  if (addons.selectorsCss) segments.push(`/* === Per-selector tokens === */\n${addons.selectorsCss}`);
+  return { ...a, css: segments.join("\n\n") };
 }
