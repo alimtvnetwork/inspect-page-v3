@@ -8,6 +8,7 @@ import { clamp } from "./clamp";
 import stylesText from "./styles.css?inline";
 
 const HOST_ID = "inspect-page-panel-host";
+const LAUNCHER_ID = "inspect-page-launcher-host";
 const TARGET_VISUAL_W = 412;
 const TARGET_VISUAL_H = 820;
 const EDGE_GAP = 16;
@@ -111,16 +112,59 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
         surface="floating"
         activeUrl={options.activeUrl}
         activeTabId={options.tabId}
-        onMinimize={() => { host.style.display = "none"; }}
+        onMinimize={() => {
+          host.style.display = "none";
+          showLauncher(() => {
+            host.style.display = "block";
+            host.focus({ preventScroll: true });
+          });
+        }}
         onClose={() => {
           window.removeEventListener("resize", onWindowResize);
           root?.unmount();
           root = null;
           host.remove();
+          removeLauncher();
         }}
       />
     </StrictMode>,
   );
+}
+
+function showLauncher(onRestore: () => void): void {
+  removeLauncher();
+  const el = document.createElement("button");
+  el.id = LAUNCHER_ID;
+  el.type = "button";
+  el.setAttribute("aria-label", "Restore Inspect Page panel");
+  el.title = "Restore Inspect Page";
+  el.textContent = "↗ Inspect Page";
+  el.style.cssText = [
+    "all: initial",
+    "position: fixed",
+    "top: 16px",
+    "right: 16px",
+    "z-index: 2147483646",
+    "padding: 8px 12px",
+    "border-radius: 999px",
+    "background: linear-gradient(135deg,#2DD4A8,#73FFB8)",
+    "color: #0B0F0E",
+    "font: 600 12px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif",
+    "box-shadow: 0 6px 20px rgba(45,212,168,0.45)",
+    "cursor: pointer",
+    "pointer-events: auto",
+    "user-select: none",
+  ].join(";");
+  el.addEventListener("click", () => {
+    removeLauncher();
+    onRestore();
+  });
+  document.documentElement.appendChild(el);
+}
+
+function removeLauncher(): void {
+  const el = document.getElementById(LAUNCHER_ID);
+  if (el) el.remove();
 }
 
 function getPanelCssSize(pageZoom = 1): { w: number; h: number } {
