@@ -771,6 +771,12 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             </div>
           )}
           {exportBusy && (
+            <div className="lpe-status-hint" aria-live="polite">
+              <span className="lpe-status-hint-dot" aria-hidden="true" />
+              <span className="lpe-status-hint-text">{COPY.statusLongHint}</span>
+            </div>
+          )}
+          {exportBusy && (
             <div className="lpe-status-actions">
               <button type="button" className="lpe-btn" onClick={onCancel}>{COPY.btnCancel}</button>
             </div>
