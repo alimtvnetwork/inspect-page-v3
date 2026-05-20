@@ -117,31 +117,34 @@ export function getPreset(id: string): ExtensionThemePreset {
   );
 }
 
+/** Apply a preset (+ optional custom accent) to one extension panel root. */
+export function applyExtensionThemeToElement(root: HTMLElement, stored: StoredExtTheme): void {
+  const preset = getPreset(stored.presetId);
+  root.setAttribute("data-lpe-preset", preset.id);
+  for (const [name, value] of Object.entries(preset.vars)) {
+    root.style.setProperty(name, value);
+  }
+  root.style.setProperty("--lpe-panel-bg", preset.background);
+  if (stored.customAccent) {
+    root.style.setProperty("--lpe-accent", stored.customAccent);
+    root.style.setProperty("--lpe-accent-hover", stored.customAccent);
+    root.style.setProperty("--lpe-panel-bg", preset.background.replaceAll(preset.swatch, stored.customAccent));
+  }
+  root.style.background = "var(--lpe-panel-bg)";
+}
+
 /**
  * Apply a preset (+ optional custom accent) to every `.lpe-root` mounted in
- * the current document. Safe to call repeatedly.
+ * the current document, including the open Shadow DOM floating panel.
  */
 export function applyExtensionTheme(stored: StoredExtTheme): void {
   if (typeof document === "undefined") return;
-  const preset = getPreset(stored.presetId);
-  const roots = document.querySelectorAll<HTMLElement>(".lpe-root");
-  roots.forEach((root) => {
-    root.setAttribute("data-lpe-preset", preset.id);
-    for (const [name, value] of Object.entries(preset.vars)) {
-      root.style.setProperty(name, value);
-    }
-    if (stored.customAccent) {
-      root.style.setProperty("--lpe-accent", stored.customAccent);
-      root.style.setProperty("--lpe-accent-hover", stored.customAccent);
-    }
-    // Override the hard-coded popup/floating gradient backgrounds.
-    const surface = root.getAttribute("data-lpe-surface");
-    if (surface === "popup") {
-      root.style.background = preset.background;
-    } else if (surface === "floating") {
-      root.style.background = preset.background;
-    }
-  });
+  const roots = Array.from(document.querySelectorAll<HTMLElement>(".lpe-root"));
+  const floatingHost = document.getElementById("inspect-page-panel-host");
+  floatingHost?.shadowRoot
+    ?.querySelectorAll<HTMLElement>(".lpe-root")
+    .forEach((root) => roots.push(root));
+  roots.forEach((root) => applyExtensionThemeToElement(root, stored));
 }
 
 export async function loadStoredExtTheme(): Promise<StoredExtTheme> {
