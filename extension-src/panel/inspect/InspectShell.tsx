@@ -16,6 +16,7 @@ import { InspectColors } from "./InspectColors";
 import { InspectContrast } from "./InspectContrast";
 import { InspectCssInfo } from "./InspectCssInfo";
 import { InspectInspector } from "./InspectInspector";
+import { InspectTextTypography } from "./InspectTextTypography";
 import { ExportMenu } from "./ExportMenu";
 
 interface SnapshotState {
@@ -133,6 +134,7 @@ export function InspectShell(): JSX.Element {
           <InspectContrast snapshot={state.snapshot} />
           <InspectCssInfo snapshot={state.snapshot} />
           <InspectInspector snapshot={state.snapshot} />
+          <InspectTextTypography snapshot={state.snapshot} />
           <footer className="lpe-inspect-footer">
             <span>{format(COPY.inspectFooterLabel, { version: "2.5.0" })}</span>
           </footer>
