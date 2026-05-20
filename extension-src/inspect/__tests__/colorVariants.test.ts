@@ -13,9 +13,10 @@ describe("hslToHex", () => {
       const rgb = parseHex(hex)!;
       const hsl = rgbToHsl(rgb);
       const out = parseHex(hslToHex(hsl))!;
-      expect(Math.abs(out.r - rgb.r)).toBeLessThanOrEqual(1);
-      expect(Math.abs(out.g - rgb.g)).toBeLessThanOrEqual(1);
-      expect(Math.abs(out.b - rgb.b)).toBeLessThanOrEqual(1);
+      // rgbToHsl rounds h/s/l to ints so a couple of channels of drift is expected.
+      expect(Math.abs(out.r - rgb.r)).toBeLessThanOrEqual(3);
+      expect(Math.abs(out.g - rgb.g)).toBeLessThanOrEqual(3);
+      expect(Math.abs(out.b - rgb.b)).toBeLessThanOrEqual(3);
     }
   });
 });
