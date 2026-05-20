@@ -51,6 +51,23 @@ import { ElementInspector } from "./element/ElementInspector";
 import { CodeDrawer } from "./element/CodeDrawer";
 import type { ElementSnapshot } from "@element/collectElementSnapshot";
 
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result));
+    fr.onerror = () => reject(fr.error ?? new Error("FileReader failed"));
+    fr.readAsDataURL(blob);
+  });
+}
+
+async function saveBlobWithPrompt(blob: Blob, filename: string): Promise<void> {
+  const dataUrl = await blobToDataUrl(blob);
+  await sendToBackground<
+    { dataUrl: string; filename: string },
+    { downloadId: number; savedPath?: string }
+  >(MessageKind.DownloadBlob, { dataUrl, filename });
+}
+
 type PanelMode = "export" | "pick" | "inspect";
 type PanelTheme = "light" | "dark";
 const THEME_STORAGE_KEY = "inspect-page:theme";
