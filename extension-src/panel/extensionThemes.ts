@@ -61,53 +61,55 @@ export const EXT_THEME_PRESETS: ExtensionThemePreset[] = [
       "#0A0A0A",
   },
   {
-    id: "violet-noir",
-    name: "Violet Noir",
-    swatch: "#C084FC",
+    id: "midnight-orange",
+    name: "Midnight Orange",
+    swatch: "#FF6600",
     vars: {
-      "--lpe-bg": "#100A18",
-      "--lpe-fg": "#FFF7FE",
-      "--lpe-muted": "#BDA8C8",
-      "--lpe-surface": "#17101F",
-      "--lpe-surface-2": "#21152D",
-      "--lpe-border": "rgba(192, 132, 252, 0.22)",
-      "--lpe-accent": "#C084FC",
-      "--lpe-accent-hover": "#E9D5FF",
-      "--lpe-accent-fg": "#16051F",
+      "--lpe-bg": "#04101F",
+      "--lpe-fg": "#FFE5C4",
+      "--lpe-muted": "#9AB0C4",
+      "--lpe-surface": "#0A1A2E",
+      "--lpe-surface-2": "#0F243D",
+      "--lpe-border": "rgba(255, 102, 0, 0.22)",
+      "--lpe-accent": "#FF6600",
+      "--lpe-accent-hover": "#FFB870",
+      "--lpe-accent-fg": "#1A0A00",
     },
     background:
-      "radial-gradient(120% 80% at 20% 0%, rgba(192,132,252,0.16) 0%, transparent 55%)," +
-      "radial-gradient(120% 80% at 100% 100%, rgba(236,72,153,0.08) 0%, transparent 55%)," +
-      "#100A18",
+      "radial-gradient(120% 80% at 20% 0%, rgba(255,102,0,0.14) 0%, transparent 55%)," +
+      "radial-gradient(120% 80% at 100% 100%, rgba(0,51,102,0.35) 0%, transparent 55%)," +
+      "#04101F",
   },
   {
-    id: "paper-light",
-    name: "Paper Light",
-    swatch: "#1F2937",
+    id: "slate-sky",
+    name: "Slate Sky",
+    swatch: "#6BA3D6",
     vars: {
-      "--lpe-bg": "#FFFFFF",
-      "--lpe-fg": "#0F1417",
-      "--lpe-muted": "#5B6470",
-      "--lpe-surface": "#F6F7F9",
-      "--lpe-surface-2": "#ECEEF2",
-      "--lpe-border": "rgba(15, 20, 23, 0.10)",
-      "--lpe-accent": "#1F2937",
-      "--lpe-accent-hover": "#0F1417",
-      "--lpe-accent-fg": "#FFFFFF",
+      "--lpe-bg": "#0E1620",
+      "--lpe-fg": "#F1F6FB",
+      "--lpe-muted": "#9FB2C4",
+      "--lpe-surface": "#162130",
+      "--lpe-surface-2": "#1E2C3E",
+      "--lpe-border": "rgba(107, 163, 214, 0.22)",
+      "--lpe-accent": "#6BA3D6",
+      "--lpe-accent-hover": "#A8CBE8",
+      "--lpe-accent-fg": "#06121F",
     },
     background:
-      "radial-gradient(120% 80% at 20% 0%, rgba(15,20,23,0.05) 0%, transparent 55%)," +
-      "radial-gradient(120% 80% at 100% 100%, rgba(15,20,23,0.03) 0%, transparent 55%)," +
-      "#FFFFFF",
+      "radial-gradient(120% 80% at 20% 0%, rgba(107,163,214,0.16) 0%, transparent 55%)," +
+      "radial-gradient(120% 80% at 100% 100%, rgba(52,73,94,0.40) 0%, transparent 55%)," +
+      "#0E1620",
   },
 ];
 
 export const DEFAULT_EXT_PRESET_ID = "dark-mint";
 const STORAGE_KEY = "inspect-page.ext-theme";
 const PRESET_ALIASES: Record<string, string> = {
-  "midnight-indigo": "violet-noir",
-  emerald: "paper-light",
-  "ruby-noir": "paper-light",
+  "midnight-indigo": "midnight-orange",
+  "violet-noir": "midnight-orange",
+  emerald: "slate-sky",
+  "ruby-noir": "slate-sky",
+  "paper-light": "slate-sky",
 };
 
 export interface StoredExtTheme {
