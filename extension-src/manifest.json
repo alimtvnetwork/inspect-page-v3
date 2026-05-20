@@ -29,7 +29,7 @@
       "all_frames": false
     }
   ],
-  "permissions": ["activeTab", "scripting", "tabs", "downloads", "storage", "offscreen"],
+  "permissions": ["activeTab", "scripting", "tabs", "downloads", "storage", "offscreen", "notifications"],
   "host_permissions": ["<all_urls>"],
   "commands": {
     "trigger-full-page": {
