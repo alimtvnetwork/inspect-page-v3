@@ -193,6 +193,11 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
 
   const disabled = isDisabledUrl(activeUrl);
 
+  // Stable ref to the active runAction so the "pending action" effect
+  // below (which runs once after settings load) can call the latest
+  // version without re-binding.
+  const runActionRef = useRef<((k: "fullPage" | "pick") => void) | null>(null);
+
   // ---- Load onboarding state ----
   useEffect(() => {
     let alive = true;
@@ -352,6 +357,27 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   // ---- Action handlers ----
   const runAction = useCallback(async (kind: "fullPage" | "pick") => {
     if (disabled) return;
+    // Popup auto-route: focus-stealing actions (Full Page export, element
+    // picker) cause Chrome to close the toolbar popup the moment the page
+    // gets focus. Instead of running them from the popup, mount the in-page
+    // floating panel, hand off the action via session storage, and close
+    // the popup. The floating panel survives because it lives in the page.
+    if (surface === "popup") {
+      try {
+        const tid = activeTabId ?? -1;
+        await chrome.storage.session.set({
+          "inspect-page:pending-action": { kind, ts: Date.now() },
+        });
+        await sendToBackground<{ tabId: number }, unknown>(
+          MessageKind.MountFloatingPanel, { tabId: tid },
+        );
+        setTimeout(() => { try { window.close(); } catch { /* ignore */ } }, 80);
+        return;
+      } catch {
+        // Fall through to in-popup behavior if the handoff failed (e.g.
+        // chrome:// pages where content scripts can't be injected).
+      }
+    }
     // Floating panel doesn't know its own tabId — SW resolves via sender.tab.id
     // when we send -1.
     const tid = activeTabId ?? -1;
@@ -410,6 +436,36 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
 
   const onFullPage = useCallback(() => void runAction("fullPage"), [runAction]);
   const onPick = useCallback(() => void runAction("pick"), [runAction]);
+
+  // Keep runActionRef pointed at the latest runAction so the floating-panel
+  // pending-action consumer below can fire it once settings are loaded.
+  useEffect(() => { runActionRef.current = (k) => void runAction(k); }, [runAction]);
+
+  // Floating-panel side of the popup→panel handoff. When the popup writes
+  // `inspect-page:pending-action`, the floating panel reads it on mount
+  // (after settings are available) and runs the requested action.
+  useEffect(() => {
+    if (surface !== "floating") return;
+    if (settings === null) return; // wait for settings before dispatching
+    let alive = true;
+    (async () => {
+      try {
+        const r = await chrome.storage.session.get("inspect-page:pending-action");
+        const entry = r["inspect-page:pending-action"] as
+          | { kind: "fullPage" | "pick"; ts: number }
+          | undefined;
+        if (!alive || !entry) return;
+        // Only honor very recent handoffs (10 s) to avoid stale auto-runs.
+        const fresh = Date.now() - entry.ts < 10_000;
+        await chrome.storage.session.remove("inspect-page:pending-action");
+        if (!fresh) return;
+        if (entry.kind === "pick") setMode("pick");
+        else setMode("export");
+        runActionRef.current?.(entry.kind);
+      } catch { /* session storage unavailable */ }
+    })();
+    return () => { alive = false; };
+  }, [surface, settings]);
 
   const onCancel = useCallback(async () => {
     if (state.lastAction === "pick") {

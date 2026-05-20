@@ -13,7 +13,7 @@ export const COPY = {
   btnResetSettings: "Reset to defaults",
   btnMinimize: "Minimize",
   btnClose: "Close",
-  pickHint: "Click \u201cPick element\u201d, then click any element on the page. The popup will close — re-open it from the toolbar to see the result.",
+  pickHint: "Click \u201cPick element\u201d to start picking. The popup closes and an in-page panel takes over so the extension stays visible while you work.",
   pickAnother: "Pick another element",
   pickLastLabel: "Last picked",
   lblResizePanel: "Resize panel",
