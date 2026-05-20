@@ -323,11 +323,49 @@ async function executeBeginScrollCaptureFallback(
     target: { tabId, allFrames: false },
     func: async (p) => {
       const key = "__inspectPageCaptureFallbackState";
-      const page = window as typeof window & { __inspectPageCaptureFallbackState?: { x: number; y: number; behavior: string; stuck: Array<[HTMLElement, string]> } };
+      const page = window as typeof window & { __inspectPageCaptureFallbackState?: { x: number; y: number; behavior: string; stuck: Array<[HTMLElement, string]>; overlays: Array<[HTMLElement, string]> } };
       if (!page[key]) {
+        // Hide Inspect Page own hosts + foreign extension overlays FIRST
+        // (display:none so they leave zero pixels in the screenshot).
+        const overlays: Array<[HTMLElement, string]> = [];
+        const OVERLAY_SEL = "#inspect-page-panel-host,#inspect-page-picker-host,[id^='inspect-page-'][id$='-host']";
+        const HIGH_Z = 2147480000;
+        const hideOverlay = (el: HTMLElement): void => {
+          overlays.push([el, el.style.cssText]);
+          el.style.setProperty("display", "none", "important");
+          el.style.setProperty("visibility", "hidden", "important");
+        };
+        for (const el of Array.from(document.querySelectorAll<HTMLElement>(OVERLAY_SEL))) hideOverlay(el);
+        const rootChildren: Element[] = [];
+        if (document.body) rootChildren.push(...Array.from(document.body.children));
+        if (document.documentElement) {
+          for (const c of Array.from(document.documentElement.children)) {
+            if (c !== document.body) rootChildren.push(c);
+          }
+        }
+        for (const node of rootChildren) {
+          const el = node as HTMLElement;
+          if (!el || el.nodeType !== 1) continue;
+          if (overlays.some(([h]) => h === el)) continue;
+          let injected = false;
+          if (el.tagName.includes("-")) injected = true;
+          if (!injected) {
+            let cs: CSSStyleDeclaration | null = null;
+            try { cs = window.getComputedStyle(el); } catch { cs = null; }
+            const pos = cs?.position ?? "";
+            const fixedish = pos === "fixed" || pos === "sticky";
+            if (fixedish && el.shadowRoot) injected = true;
+            if (!injected && fixedish) {
+              const z = Number(cs?.zIndex);
+              if (Number.isFinite(z) && z >= HIGH_Z) injected = true;
+            }
+          }
+          if (injected) hideOverlay(el);
+        }
         const stuck: Array<[HTMLElement, string]> = [];
         for (const el of Array.from(document.querySelectorAll("*"))) {
           if (!(el instanceof HTMLElement)) continue;
+          if (overlays.some(([h]) => h === el)) continue;
           const position = getComputedStyle(el).position;
           if (position === "fixed" || position === "sticky") {
             stuck.push([el, el.style.cssText]);
@@ -339,6 +377,7 @@ async function executeBeginScrollCaptureFallback(
           y: window.scrollY,
           behavior: document.documentElement.style.scrollBehavior,
           stuck,
+          overlays,
         };
         document.documentElement.style.scrollBehavior = "auto";
       }
