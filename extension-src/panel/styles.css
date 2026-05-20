@@ -2199,3 +2199,108 @@
   background: color-mix(in srgb, var(--lpe-surface-2) 86%, transparent) !important;
   border-color: color-mix(in srgb, var(--lpe-accent) 22%, var(--lpe-border)) !important;
 }
+
+/* ---------- Phase v2.7.5 — Color Tokens tab ---------- */
+.lpe-tokens { display: flex; flex-direction: column; gap: 8px; }
+.lpe-section-subtitle {
+  margin: 0; font-size: 12px; font-weight: 600;
+  color: var(--lpe-fg); letter-spacing: 0.02em;
+}
+.lpe-token-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.lpe-token-row {
+  background: var(--lpe-surface);
+  border: 1px solid var(--lpe-border);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.lpe-token-row-head {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.lpe-token-name {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--lpe-fg);
+  opacity: 0.85;
+}
+.lpe-token-rename {
+  flex: 1 1 120px; min-width: 80px;
+  background: var(--lpe-bg);
+  border: 1px solid var(--lpe-border);
+  color: var(--lpe-fg);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+}
+.lpe-token-hex {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--lpe-fg);
+  opacity: 0.7;
+}
+.lpe-token-variants {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+}
+.lpe-token-variant {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--lpe-bg);
+  border: 1px solid var(--lpe-border);
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+  color: var(--lpe-fg);
+  font: inherit;
+  text-align: left;
+}
+.lpe-token-variant:hover {
+  border-color: color-mix(in srgb, var(--lpe-accent) 50%, var(--lpe-border));
+}
+.lpe-token-variant-swatch {
+  width: 18px; height: 18px; border-radius: 4px;
+  border: 1px solid var(--lpe-border);
+  flex-shrink: 0;
+}
+.lpe-token-variant-meta {
+  display: flex; flex-direction: column; line-height: 1.1; min-width: 0;
+}
+.lpe-token-variant-label { font-size: 9px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.04em; }
+.lpe-token-variant-hex {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lpe-token-selectors > summary {
+  cursor: pointer; font-size: 11px; opacity: 0.8; user-select: none;
+  padding: 2px 0;
+}
+.lpe-token-selector-list {
+  list-style: none; margin: 4px 0 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.lpe-token-selector-list > li {
+  display: flex; flex-direction: column; gap: 2px;
+  border-top: 1px dashed var(--lpe-border);
+  padding-top: 4px;
+}
+.lpe-token-selector-list code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px; color: var(--lpe-fg);
+}
+.lpe-token-selector-prop {
+  font-size: 10px; opacity: 0.6;
+}
+.lpe-token-custom-css {
+  width: 100%; box-sizing: border-box;
+  background: var(--lpe-bg);
+  border: 1px solid var(--lpe-border);
+  border-radius: 4px;
+  color: var(--lpe-fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  padding: 4px 6px;
+  resize: vertical;
+  min-height: 36px;
+}
