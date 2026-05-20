@@ -93,7 +93,10 @@ async function captureVisibleTabWithRetry(
   let lastErr: unknown;
   for (let attempt = 0; attempt <= CAPTURE_RETRY_MAX; attempt++) {
     try {
-      await ensureTabReadyForVisibleCapture(tabId, windowId);
+      // The main capture loop already focuses/activates the tab once before
+      // frame capture begins. Re-check only after a failed attempt; doing the
+      // full readiness wait for every successful frame adds ~600ms per slice.
+      if (attempt > 0) await ensureTabReadyForVisibleCapture(tabId, windowId);
       const opts: chrome.tabs.CaptureVisibleTabOptions = { format };
       if (format === "jpeg") opts.quality = quality;
       return await chrome.tabs.captureVisibleTab(windowId, opts);
@@ -174,6 +177,9 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
   let lastCaptureAt = 0;
 
   try {
+    input.onPhase?.("capture:ready");
+    await ensureTabReadyForVisibleCapture(tabId, windowId);
+
     for (let i = 0; i < steps; i++) {
       throwIfCanceled(input);
       const requestedY = Math.min(i * viewportCssPx.h, Math.max(0, effectivePageH - viewportCssPx.h));
