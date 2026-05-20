@@ -357,12 +357,14 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   // ---- Action handlers ----
   const runAction = useCallback(async (kind: "fullPage" | "pick") => {
     if (disabled) return;
-    // Popup auto-route: focus-stealing actions (Full Page export, element
-    // picker) cause Chrome to close the toolbar popup the moment the page
-    // gets focus. Instead of running them from the popup, mount the in-page
-    // floating panel, hand off the action via session storage, and close
-    // the popup. The floating panel survives because it lives in the page.
-    if (surface === "popup") {
+    // Popup auto-route: the element picker steals focus to the page and
+    // closes the popup immediately, so we hand it off to the in-page
+    // floating panel (which survives focus changes). Full-page export does
+    // NOT need this — running it inline from the popup avoids a second
+    // "disappear" (the floating panel has to hide itself during capture to
+    // stay out of the screenshot). The popup closing is handled gracefully
+    // by the toolbar badge + completion notification from the background.
+    if (surface === "popup" && kind === "pick") {
       try {
         const tid = activeTabId ?? -1;
         await chrome.storage.session.set({
