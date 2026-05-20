@@ -111,11 +111,10 @@ export interface InspectSnapshot {
  * Phase v2.7.5 — Color Tokens v2.
  *
  * Each detected color is promoted to a "token" with a stable name and
- * three variants (tint / base / shade) following the v2 Dark Calendar
- * Palette format the user supplied as the visual source of truth.
+ * one-click copy formats: HEX, RGB, and HSL.
  */
 export interface ColorVariant {
-  /** Variant name suffix, e.g. "tint" / "base" / "shade". */
+  /** Format source name, currently "base". */
   name: string;
   /** `#rrggbb` or `#rrggbbaa` lowercase. */
   hex: string;
