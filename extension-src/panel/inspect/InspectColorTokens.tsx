@@ -120,16 +120,7 @@ export function InspectColorTokens({ snapshot }: InspectColorTokensProps): JSX.E
       {grouped.map(([cat, list]) => (
         <div key={cat} className="lpe-token-group">
           <h4 className="lpe-token-group-title">{SECTION_TITLE[cat]}</h4>
-          <div className="lpe-token-table" role="table" aria-label={SECTION_TITLE[cat]}>
-            <div className="lpe-token-thead" role="row">
-              <span role="columnheader" aria-label="Swatch" />
-              <span role="columnheader">Token</span>
-              <span role="columnheader">Human name</span>
-              <span role="columnheader">HEX</span>
-              <span role="columnheader">RGB</span>
-              <span role="columnheader">HSL</span>
-              <span role="columnheader">All</span>
-            </div>
+          <div className="lpe-token-table" role="list" aria-label={SECTION_TITLE[cat]}>
             {list.map((t) => {
               const allKey = `${t.token}:all`;
               const allText = `${t.token}  ${t.humanName}\n${t.base.hex}\n${t.base.rgb}\n${t.base.hsl}`;
@@ -139,47 +130,49 @@ export function InspectColorTokens({ snapshot }: InspectColorTokensProps): JSX.E
                 { k: "hsl", v: t.base.hsl },
               ];
               return (
-                <div key={t.token} className="lpe-token-trow" role="row">
-                  <span
-                    className="lpe-token-swatch"
-                    style={{ background: t.base.hex }}
-                    aria-hidden="true"
-                  />
-                  <code className="lpe-token-name" role="cell">{t.token}</code>
-                  <input
-                    role="cell"
-                    type="text"
-                    className="lpe-token-rename"
-                    defaultValue={t.humanName}
-                    placeholder={COPY.inspectTokensRenamePh}
-                    onBlur={(e) => {
-                      if (e.target.value !== t.humanName) renameToken(t.token, e.target.value);
-                    }}
-                    aria-label={`Rename ${t.token}`}
-                  />
-                  {cells.map((c) => {
-                    const key = `${t.token}:${c.k}`;
-                    return (
-                      <button
-                        key={c.k}
-                        type="button"
-                        role="cell"
-                        className="lpe-token-cell"
-                        onClick={() => copy(key, c.v)}
-                        title={`Click to copy ${c.k.toUpperCase()}`}
-                      >
-                        <span className="lpe-token-cell-value">{c.v}</span>
-                        {copied === key && <span className="lpe-token-cell-hint">✓</span>}
-                      </button>
-                    );
-                  })}
-                  <button
-                    type="button"
-                    role="cell"
-                    className="lpe-token-cell lpe-token-cell-all"
-                    onClick={() => copy(allKey, allText)}
-                    title="Copy HEX, RGB and HSL"
-                  >{copied === allKey ? "Copied ✓" : "Copy all"}</button>
+                <div key={t.token} className="lpe-token-card" role="listitem">
+                  <div className="lpe-token-card-head">
+                    <span
+                      className="lpe-token-swatch"
+                      style={{ background: t.base.hex }}
+                      aria-hidden="true"
+                    />
+                    <code className="lpe-token-name">{t.token}</code>
+                    <input
+                      type="text"
+                      className="lpe-token-rename"
+                      defaultValue={t.humanName}
+                      placeholder={COPY.inspectTokensRenamePh}
+                      onBlur={(e) => {
+                        if (e.target.value !== t.humanName) renameToken(t.token, e.target.value);
+                      }}
+                      aria-label={`Rename ${t.token}`}
+                    />
+                  </div>
+                  <div className="lpe-token-card-body">
+                    {cells.map((c) => {
+                      const key = `${t.token}:${c.k}`;
+                      return (
+                        <button
+                          key={c.k}
+                          type="button"
+                          className="lpe-token-cell"
+                          onClick={() => copy(key, c.v)}
+                          title={`Click to copy ${c.k.toUpperCase()}`}
+                        >
+                          <span className="lpe-token-cell-label">{c.k.toUpperCase()}</span>
+                          <span className="lpe-token-cell-value">{c.v}</span>
+                          {copied === key && <span className="lpe-token-cell-hint">✓</span>}
+                        </button>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      className="lpe-token-cell lpe-token-cell-all"
+                      onClick={() => copy(allKey, allText)}
+                      title="Copy HEX, RGB and HSL"
+                    >{copied === allKey ? "Copied ✓" : "Copy all"}</button>
+                  </div>
                 </div>
               );
             })}
