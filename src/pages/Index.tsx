@@ -13,6 +13,7 @@ import { WpPlugin } from "@/components/landing/WpPlugin";
 import { Footer } from "@/components/landing/Footer";
 import { Pricing } from "@/components/landing/Pricing";
 import { Faq } from "@/components/landing/Faq";
+import { ThemeSwitcher } from "@/components/landing/ThemeSwitcher";
 
 const ZIP_URL = "/inspect-page.zip";
 
