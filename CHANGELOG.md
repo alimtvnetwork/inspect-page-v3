@@ -1,5 +1,10 @@
 # Changelog
 
+## [Extension 2.7.29] — 2026-05-20
+
+- **Full Page re-download Save As fix.** The Full Page success-section buttons (`HTML`, `CSS`, `JS`, `Screenshot`, and `Download all ZIP`) now route through the background `DownloadBlob` handler with `saveAs: true`, so Chrome asks where to save before writing the file.
+- Repackaged `inspect-page.zip` + sha256.
+
 ## [Extension 2.7.27] — 2026-05-20
 
 - **Inspect Text Typography UI fix.** The section now shows only 2 typography cards by default and uses a clear `See more (N more)` / `Show less` control in the section header instead of dumping all 60 groups.

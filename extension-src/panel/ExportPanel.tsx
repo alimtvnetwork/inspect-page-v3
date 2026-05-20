@@ -51,6 +51,23 @@ import { ElementInspector } from "./element/ElementInspector";
 import { CodeDrawer } from "./element/CodeDrawer";
 import type { ElementSnapshot } from "@element/collectElementSnapshot";
 
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result));
+    fr.onerror = () => reject(fr.error ?? new Error("FileReader failed"));
+    fr.readAsDataURL(blob);
+  });
+}
+
+async function saveBlobWithPrompt(blob: Blob, filename: string): Promise<void> {
+  const dataUrl = await blobToDataUrl(blob);
+  await sendToBackground<
+    { dataUrl: string; filename: string },
+    { downloadId: number; savedPath?: string }
+  >(MessageKind.DownloadBlob, { dataUrl, filename });
+}
+
 type PanelMode = "export" | "pick" | "inspect";
 type PanelTheme = "light" | "dark";
 const THEME_STORAGE_KEY = "inspect-page:theme";
@@ -1182,13 +1199,6 @@ function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }: FullPa
   };
   const tsNow = (): string =>
     new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const triggerDownload = (blob: Blob, filename: string): void => {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  };
   const dataUrlToBlob = async (dataUrl: string): Promise<Blob> =>
     (await fetch(dataUrl)).blob();
   const fenceFor = (k: "html" | "css" | "js"): string =>
@@ -1198,11 +1208,11 @@ function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }: FullPa
   const buildCombinedMd = (): string =>
     `# Page — ${artifacts.meta.url}\n\n_Captured ${artifacts.meta.capturedAtIso}_\n\n## HTML\n\n\`\`\`html\n${artifacts.html}\n\`\`\`\n\n## CSS\n\n\`\`\`css\n${artifacts.css}\n\`\`\`\n\n## JS\n\n\`\`\`javascript\n${artifacts.js}\n\`\`\`\n`;
 
-  const onDownloadOne = useCallback((k: "html" | "css" | "js") => {
+  const onDownloadOne = useCallback(async (k: "html" | "css" | "js") => {
     const safe = domainSafe();
     const ts = tsNow();
     if (fmt === "md") {
-      triggerDownload(
+      await saveBlobWithPrompt(
         new Blob([buildSingleMd(k)], { type: "text/markdown;charset=utf-8" }),
         `inspect-page-fullpage-${safe}-${k}-${ts}.md`,
       );
@@ -1211,7 +1221,7 @@ function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }: FullPa
         k === "html" ? "text/html"
         : k === "css" ? "text/css"
         : "text/javascript";
-      triggerDownload(
+      await saveBlobWithPrompt(
         new Blob([artifacts[k] || ""], { type: `${mime};charset=utf-8` }),
         `inspect-page-fullpage-${safe}-${ts}.${k}`,
       );
@@ -1222,7 +1232,7 @@ function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }: FullPa
     try {
       const blob = await dataUrlToBlob(artifacts.screenshotDataUrl);
       const ext = blob.type.includes("jpeg") ? "jpg" : "png";
-      triggerDownload(blob, `inspect-page-fullpage-${domainSafe()}-${tsNow()}.${ext}`);
+      await saveBlobWithPrompt(blob, `inspect-page-fullpage-${domainSafe()}-${tsNow()}.${ext}`);
     } catch { /* ignore */ }
   }, [artifacts]);
 
@@ -1245,7 +1255,7 @@ function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }: FullPa
       } catch { /* skip screenshot if conversion fails */ }
       zip.file("manifest.json", `${JSON.stringify(artifacts.meta, null, 2)}\n`);
       const blob = await zip.generateAsync({ type: "blob" });
-      triggerDownload(blob, `inspect-page-fullpage-${safe}-${ts}.zip`);
+      await saveBlobWithPrompt(blob, `inspect-page-fullpage-${safe}-${ts}.zip`);
     } catch { /* ignore */ }
   }, [artifacts, fmt]);
 
