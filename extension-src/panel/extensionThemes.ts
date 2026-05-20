@@ -115,6 +115,11 @@ export interface StoredExtTheme {
   customAccent?: string;
 }
 
+function normalizeStoredTheme(value: StoredExtTheme): StoredExtTheme {
+  const presetId = PRESET_ALIASES[value.presetId] ?? value.presetId;
+  return presetId === value.presetId ? value : { ...value, presetId };
+}
+
 export function getPreset(id: string): ExtensionThemePreset {
   const normalizedId = PRESET_ALIASES[id] ?? id;
   return (
@@ -158,7 +163,7 @@ export async function loadStoredExtTheme(): Promise<StoredExtTheme> {
     if (typeof chrome !== "undefined" && chrome?.storage?.local) {
       const out = await chrome.storage.local.get(STORAGE_KEY);
       const v = out?.[STORAGE_KEY] as StoredExtTheme | undefined;
-      if (v?.presetId) return v;
+      if (v?.presetId) return normalizeStoredTheme(v);
     }
   } catch {
     // ignore
@@ -167,7 +172,7 @@ export async function loadStoredExtTheme(): Promise<StoredExtTheme> {
     const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as StoredExtTheme;
-      if (parsed?.presetId) return parsed;
+      if (parsed?.presetId) return normalizeStoredTheme(parsed);
     }
   } catch {
     // ignore
