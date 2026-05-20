@@ -55,3 +55,33 @@ export function formatHsl(c: HslColor): string {
 function trimAlpha(a: number): string {
   return Number(a.toFixed(3)).toString();
 }
+
+/**
+ * HSL → RGB → `#rrggbb` (or `#rrggbbaa` when alpha < 1).
+ * Pure; mirrors the inverse of {@link rgbToHsl} so round-trips are stable.
+ */
+export function hslToHex(c: HslColor): string {
+  const h = ((c.h % 360) + 360) % 360;
+  const s = Math.max(0, Math.min(100, c.s)) / 100;
+  const l = Math.max(0, Math.min(100, c.l)) / 100;
+  const k = (n: number): number => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number): number => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const r = Math.round(f(0) * 255);
+  const g = Math.round(f(8) * 255);
+  const b = Math.round(f(4) * 255);
+  const h2 = (n: number): string => n.toString(16).padStart(2, "0");
+  const base = `#${h2(r)}${h2(g)}${h2(b)}`;
+  if (c.a >= 0.999) return base;
+  return `${base}${h2(Math.max(0, Math.min(255, Math.round(c.a * 255))))}`;
+}
+
+/**
+ * Return a copy of `c` with lightness shifted by `delta` percent points and
+ * clamped to [minL, maxL] so we never produce pure black/white. Preserves
+ * hue, saturation and alpha.
+ */
+export function shiftLightness(c: HslColor, delta: number, minL = 4, maxL = 96): HslColor {
+  const l = Math.max(minL, Math.min(maxL, c.l + delta));
+  return { h: c.h, s: c.s, l, a: c.a };
+}

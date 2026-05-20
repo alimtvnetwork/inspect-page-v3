@@ -106,3 +106,42 @@ export interface InspectSnapshot {
   typography: TypographyGroup[];
   collectedAt: number;
 }
+
+/**
+ * Phase v2.7.5 — Color Tokens v2.
+ *
+ * Each detected color is promoted to a "token" with a stable name and
+ * three variants (tint / base / shade) following the v2 Dark Calendar
+ * Palette format the user supplied as the visual source of truth.
+ */
+export interface ColorVariant {
+  /** Variant name suffix, e.g. "tint" / "base" / "shade". */
+  name: string;
+  /** `#rrggbb` or `#rrggbbaa` lowercase. */
+  hex: string;
+  /** `rgb(...)` / `rgba(...)` formatted string. */
+  rgb: string;
+  /** `hsl(...)` / `hsla(...)` formatted string. */
+  hsl: string;
+}
+
+export interface ColorToken {
+  /** CSS custom property name, e.g. "--ip-color-3". */
+  token: string;
+  /** Human-readable name, e.g. "Accent 1" / "Surface 2". */
+  humanName: string;
+  /** Category inherited from the originating ColorUsage. */
+  category: ColorCategory;
+  base: ColorVariant;
+  tint: ColorVariant;
+  shade: ColorVariant;
+  /** Distinct-element count carried from ColorUsage. */
+  instances: number;
+}
+
+export interface ColorSelectorBinding {
+  /** Short selector path from `ComputedSample.selector`. */
+  selector: string;
+  /** CSS property the color was observed on, e.g. "background-color". */
+  property: string;
+}
