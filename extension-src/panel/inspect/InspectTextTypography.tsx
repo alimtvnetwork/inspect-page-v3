@@ -23,7 +23,7 @@ export function InspectTextTypography({ snapshot }: InspectTextTypographyProps):
   const groups = snapshot.typography ?? [];
   if (groups.length === 0) return null;
   const visible = showAll ? groups : groups.slice(0, COLLAPSED_COUNT);
-  const hidden = groups.length - visible.length;
+  const hidden = groups.length - COLLAPSED_COUNT;
 
   return (
     <section className="lpe-typo lpe-text-typo" aria-label="Text Typography">
@@ -35,7 +35,7 @@ export function InspectTextTypography({ snapshot }: InspectTextTypographyProps):
             className="lpe-link lpe-text-typo-toggle"
             onClick={() => setShowAll((v) => !v)}
           >
-            {showAll ? "Show less" : `See all ${groups.length}`}
+            {showAll ? "Show less" : `See more (${hidden} more)`}
           </button>
         )}
       </header>
@@ -45,16 +45,6 @@ export function InspectTextTypography({ snapshot }: InspectTextTypographyProps):
           <TextTypoCard key={`${g.tag}-${i}`} group={g} onShowDetails={() => setOpen(g)} />
         ))}
       </div>
-
-      {groups.length > COLLAPSED_COUNT && (
-        <button
-          type="button"
-          className="lpe-link lpe-text-typo-toggle"
-          onClick={() => setShowAll((v) => !v)}
-        >
-          {showAll ? "Show less" : `See more (${hidden} more)`}
-        </button>
-      )}
 
       {open && <TextTypoDetailDrawer group={open} onClose={() => setOpen(null)} />}
     </section>
