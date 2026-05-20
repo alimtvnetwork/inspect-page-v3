@@ -4,7 +4,6 @@
  */
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ThemeSwitcher } from "@/components/landing/ThemeSwitcher";
 
 const Privacy = (): JSX.Element => {
   useEffect(() => {
@@ -126,7 +125,6 @@ const Privacy = (): JSX.Element => {
           </p>
         </section>
       </main>
-      <ThemeSwitcher />
     </div>
   );
 };
