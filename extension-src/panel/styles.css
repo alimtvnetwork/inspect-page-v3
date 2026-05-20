@@ -1683,25 +1683,81 @@
   overscroll-behavior: contain;
 }
 .lpe-settings-popover .lpe-settings { border-top: none; }
-.lpe-settings-popover .lpe-settings summary { display: none; }
-.lpe-settings-popover .lpe-settings-body { gap: 16px; padding-top: 10px; }
-.lpe-settings-popover .lpe-field { gap: 8px; }
-.lpe-settings-popover .lpe-field > label { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; }
+.lpe-settings-popover .lpe-settings summary {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lpe-muted);
+  padding: 0 0 8px;
+  cursor: default;
+  list-style: none;
+}
+.lpe-settings-popover .lpe-settings summary::-webkit-details-marker { display: none; }
+.lpe-settings-popover .lpe-settings-body { gap: 10px; padding-top: 4px; }
+.lpe-settings-popover .lpe-field { gap: 6px; }
+.lpe-settings-popover .lpe-field > label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lpe-muted);
+}
 .lpe-settings-popover .lpe-input,
 .lpe-settings-popover .lpe-select {
-  min-height: 52px;
-  padding: 12px 16px;
-  font-size: 18px;
-  border-radius: 10px;
+  min-height: 34px;
+  padding: 7px 10px;
+  font-size: 12px;
+  line-height: 1.3;
+  border-radius: 8px;
+  background: var(--lpe-surface-2);
+  border: 1px solid var(--lpe-border);
+  color: var(--lpe-fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-.lpe-settings-popover .lpe-select { padding-right: 42px; background-position: right 16px center; }
+.lpe-settings-popover .lpe-input:focus,
+.lpe-settings-popover .lpe-select:focus {
+  outline: none;
+  border-color: var(--lpe-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--lpe-accent) 28%, transparent);
+}
+.lpe-settings-popover .lpe-select {
+  padding-right: 28px;
+  background-position: right 10px center;
+  font-family: inherit;
+}
 .lpe-settings-popover .lpe-field-row {
-  min-height: 52px;
-  padding: 12px 16px;
-  border-radius: 10px;
+  min-height: 34px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--lpe-surface-2);
+  border: 1px solid var(--lpe-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: border-color 120ms ease;
 }
-.lpe-settings-popover .lpe-field-row > span { font-size: 15px; }
-.lpe-settings-popover .lpe-field-row input[type="checkbox"] { width: 22px; height: 22px; }
+.lpe-settings-popover .lpe-field-row:hover { border-color: color-mix(in srgb, var(--lpe-accent) 40%, var(--lpe-border)); }
+.lpe-settings-popover .lpe-field-row > span { font-size: 12px; color: var(--lpe-fg); font-weight: 500; }
+.lpe-settings-popover .lpe-field-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--lpe-accent);
+  flex: 0 0 auto;
+}
+
+/* Info/warning card used by Smart Share status + sign-in hint */
+.lpe-settings-popover .lpe-debug-note {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--lpe-fg);
+  background: color-mix(in srgb, var(--lpe-accent) 8%, var(--lpe-surface-2));
+  border: 1px solid color-mix(in srgb, var(--lpe-accent) 28%, var(--lpe-border));
+  border-left: 3px solid var(--lpe-accent);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
 
 /* Phase 5 — palette refresh: route hardcoded surfaces through tokens + add depth */
 .lpe-root { box-shadow: 0 10px 30px rgba(0,0,0,0.18); border-radius: 10px; }
