@@ -826,6 +826,17 @@ async function runFullPageExport(
     );
   }
   logger.info(LogCategory.Download, `bundle saved as ${filename} (id=${downloadId})`);
+  // Toast notification — the popup may have closed during capture, so this
+  // is the user's confirmation that the download succeeded.
+  try {
+    chrome.notifications?.create?.(`inspect-page:done:${downloadId}`, {
+      type: "basic",
+      iconUrl: chrome.runtime.getURL("icons/128.png"),
+      title: "Inspect Page",
+      message: `Saved ${filename}`,
+      priority: 1,
+    });
+  } catch { /* notifications permission optional */ }
   const screenshotDataUrl = await blobToDataUrl(screenshot.blob);
   const response: RunFullPageExportResponse = {
     bundleFilename: filename,
