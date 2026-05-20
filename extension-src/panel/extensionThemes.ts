@@ -61,44 +61,44 @@ export const EXT_THEME_PRESETS: ExtensionThemePreset[] = [
       "#0A0A0A",
   },
   {
-    id: "midnight-indigo",
-    name: "Midnight Indigo",
-    swatch: "#818CF8",
+    id: "violet-noir",
+    name: "Violet Noir",
+    swatch: "#C084FC",
     vars: {
-      "--lpe-bg": "#0B0F1F",
-      "--lpe-fg": "#EEF0FF",
-      "--lpe-muted": "#94A3B8",
-      "--lpe-surface": "#121633",
-      "--lpe-surface-2": "#171C40",
-      "--lpe-border": "rgba(129, 140, 248, 0.18)",
-      "--lpe-accent": "#818CF8",
-      "--lpe-accent-hover": "#A5B4FC",
-      "--lpe-accent-fg": "#0B0F1F",
+      "--lpe-bg": "#100A18",
+      "--lpe-fg": "#FFF7FE",
+      "--lpe-muted": "#BDA8C8",
+      "--lpe-surface": "#17101F",
+      "--lpe-surface-2": "#21152D",
+      "--lpe-border": "rgba(192, 132, 252, 0.22)",
+      "--lpe-accent": "#C084FC",
+      "--lpe-accent-hover": "#E9D5FF",
+      "--lpe-accent-fg": "#16051F",
     },
     background:
-      "radial-gradient(120% 80% at 20% 0%, rgba(129,140,248,0.14) 0%, transparent 55%)," +
-      "radial-gradient(120% 80% at 100% 100%, rgba(99,102,241,0.08) 0%, transparent 55%)," +
-      "#0B0F1F",
+      "radial-gradient(120% 80% at 20% 0%, rgba(192,132,252,0.16) 0%, transparent 55%)," +
+      "radial-gradient(120% 80% at 100% 100%, rgba(236,72,153,0.08) 0%, transparent 55%)," +
+      "#100A18",
   },
   {
-    id: "emerald",
-    name: "Emerald Light",
-    swatch: "#10B981",
+    id: "ruby-noir",
+    name: "Ruby Noir",
+    swatch: "#F43F5E",
     vars: {
-      "--lpe-bg": "#F8FBF9",
-      "--lpe-fg": "#0F2419",
-      "--lpe-muted": "#4B6358",
-      "--lpe-surface": "#FFFFFF",
-      "--lpe-surface-2": "#EEF7F1",
-      "--lpe-border": "rgba(16, 185, 129, 0.18)",
-      "--lpe-accent": "#10B981",
-      "--lpe-accent-hover": "#34D399",
+      "--lpe-bg": "#13090D",
+      "--lpe-fg": "#FFF7F8",
+      "--lpe-muted": "#C9A6AF",
+      "--lpe-surface": "#1B0F14",
+      "--lpe-surface-2": "#26131A",
+      "--lpe-border": "rgba(244, 63, 94, 0.24)",
+      "--lpe-accent": "#F43F5E",
+      "--lpe-accent-hover": "#FDA4AF",
       "--lpe-accent-fg": "#FFFFFF",
     },
     background:
-      "radial-gradient(120% 80% at 20% 0%, rgba(16,185,129,0.10) 0%, transparent 55%)," +
-      "radial-gradient(120% 80% at 100% 100%, rgba(110,231,183,0.10) 0%, transparent 55%)," +
-      "#F8FBF9",
+      "radial-gradient(120% 80% at 20% 0%, rgba(244,63,94,0.15) 0%, transparent 55%)," +
+      "radial-gradient(120% 80% at 100% 100%, rgba(251,113,133,0.08) 0%, transparent 55%)," +
+      "#13090D",
   },
 ];
 
