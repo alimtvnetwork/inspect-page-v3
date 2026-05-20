@@ -74,7 +74,6 @@ const Index = (): JSX.Element => {
         <Privacy />
       </main>
       <Footer version={meta.version} />
-      <ThemeSwitcher />
     </div>
   );
 };
