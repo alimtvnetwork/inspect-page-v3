@@ -31,10 +31,10 @@
   border: none;
   border-radius: 0;
   box-shadow: none;
-  background:
-    radial-gradient(120% 80% at 20% 0%, rgba(45, 212, 168, 0.10) 0%, transparent 55%),
-    radial-gradient(120% 80% at 100% 100%, rgba(92, 225, 230, 0.08) 0%, transparent 55%),
-    #0B0F0E;
+  /* Background comes from the active theme preset (--lpe-panel-bg, set inline by
+     applyExtensionThemeToElement). No hardcoded mint fallback — it caused a
+     green tint to bleed through on other presets. */
+  background: var(--lpe-panel-bg, var(--lpe-bg));
   display: flex;
   flex-direction: column;
 }
