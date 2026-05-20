@@ -37,6 +37,15 @@ import { MessageKind as MK } from "@shared/enums";
 import { getOnboardingState, dismissOnboarding } from "@shared/onboarding";
 import { shareConfigured } from "@shared/shareSettings";
 import { getShareSettings, setShareSettings } from "@shared/shareSettings";
+import {
+  applyExtensionTheme,
+  loadStoredExtTheme,
+  saveStoredExtTheme,
+  subscribeExtTheme,
+  DEFAULT_EXT_PRESET_ID,
+  type StoredExtTheme,
+} from "./extensionThemes";
+import { AppearanceSection } from "./AppearanceSection";
 import { listShareSessions, type ShareSessionSummary } from "../share/listShareSessions";
 import { startBillingCheckout } from "../share/startBillingCheckout";
 import { startBillingPortal } from "../share/startBillingPortal";
