@@ -2347,3 +2347,62 @@
   resize: vertical;
   min-height: 36px;
 }
+
+/* ---------- v2 Dark Calendar-style grouped token tables ---------- */
+.lpe-token-group { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.lpe-token-group-title {
+  margin: 0; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--lpe-fg); opacity: 0.75;
+}
+.lpe-token-table {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--lpe-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--lpe-surface);
+}
+.lpe-token-thead,
+.lpe-token-trow {
+  display: grid;
+  grid-template-columns: 18px 96px minmax(90px, 1fr) 86px 130px 150px 70px;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+}
+.lpe-token-thead {
+  background: var(--lpe-bg);
+  border-bottom: 1px solid var(--lpe-border);
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em;
+  opacity: 0.7;
+}
+.lpe-token-trow + .lpe-token-trow { border-top: 1px solid var(--lpe-border); }
+.lpe-token-swatch {
+  width: 18px; height: 18px; border-radius: 4px;
+  border: 1px solid var(--lpe-border);
+}
+.lpe-token-cell {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--lpe-bg);
+  border: 1px solid var(--lpe-border);
+  border-radius: 4px;
+  padding: 3px 6px;
+  color: var(--lpe-fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+.lpe-token-cell:hover {
+  border-color: color-mix(in srgb, var(--lpe-accent) 55%, var(--lpe-border));
+}
+.lpe-token-cell-value {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  flex: 1 1 auto;
+}
+.lpe-token-cell-hint { opacity: 0.85; font-size: 10px; }
+.lpe-token-cell-all {
+  justify-content: center; font-family: inherit;
+  font-size: 10px; opacity: 0.9;
+}
