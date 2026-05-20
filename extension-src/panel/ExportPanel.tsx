@@ -241,6 +241,31 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     return () => { alive = false; };
   }, []);
 
+  // ---- Load extension theme preset + subscribe to changes ----
+  useEffect(() => {
+    let alive = true;
+    void loadStoredExtTheme().then((v) => {
+      if (!alive) return;
+      setExtTheme(v);
+      applyExtensionTheme(v);
+    });
+    const unsub = subscribeExtTheme((v) => {
+      setExtTheme(v);
+      applyExtensionTheme(v);
+    });
+    return () => { alive = false; unsub(); };
+  }, []);
+
+  // Re-apply on every render where the preset changed (covers fresh mounts of
+  // the floating panel after the popup wrote a new preset).
+  useEffect(() => { applyExtensionTheme(extTheme); }, [extTheme, theme, surface]);
+
+  const onExtThemeChange = useCallback((next: StoredExtTheme) => {
+    setExtTheme(next);
+    applyExtensionTheme(next);
+    void saveStoredExtTheme(next);
+  }, []);
+
   // ---- Step 2 (Pick-into-popup, Option A) ----
   // On popup mount, hydrate the Pick tab from chrome.storage.session if the
   // user picked something since the last popup open. Picks live for ~10 min
