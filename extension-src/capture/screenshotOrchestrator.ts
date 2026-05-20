@@ -256,6 +256,11 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
     try {
       await sendOffscreen<{ sessionId: string }, void>(MessageKind.OffscreenDispose, { sessionId });
     } catch { /* ignore */ }
+    // Clear toolbar badge ~2.5s after capture finishes so success/error tick
+    // stays visible briefly without lingering forever.
+    setTimeout(() => {
+      try { chrome.action?.setBadgeText?.({ text: "" }); } catch { /* no-op */ }
+    }, 2500);
   }
 }
 
