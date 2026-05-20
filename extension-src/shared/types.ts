@@ -397,6 +397,19 @@ export interface ExportArtifacts {
   prelude?: string;
 }
 
+/**
+ * v2.7.5 — optional Color-Token addons attached when an Inspect snapshot is
+ * available. ExportModes weaves these into the MD body and drops the two
+ * CSS files into ZIPs.
+ */
+export interface ColorTokenExportAddons {
+  mdBlock: string;
+  tokensCss: string;
+  selectorsCss: string;
+  customCssBlock: string;
+  tokenCount: number;
+}
+
 /* ---------- Inspect Mode (Phase A3+) ---------- */
 export interface CollectInspectSnapshotPayload { tabId: number }
 export interface CollectInspectSnapshotResponse {
