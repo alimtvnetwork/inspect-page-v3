@@ -41,9 +41,12 @@ function variantFromHsl(name: string, hsl: HslColor): ColorVariant {
 /** Build a ColorVariant directly from RGB (used for the base, to preserve fidelity). */
 function variantFromRgb(name: string, rgb: RgbColor): ColorVariant {
   const hsl = rgbToHsl(rgb);
+  const h2 = (n: number): string => n.toString(16).padStart(2, "0");
+  const baseHex = `#${h2(rgb.r)}${h2(rgb.g)}${h2(rgb.b)}` +
+    (rgb.a < 0.999 ? h2(Math.max(0, Math.min(255, Math.round(rgb.a * 255)))) : "");
   return {
     name,
-    hex: hslToHex(hsl), // canonical lowercase
+    hex: baseHex,
     rgb: formatRgb(rgb),
     hsl: formatHsl(hsl),
   };
