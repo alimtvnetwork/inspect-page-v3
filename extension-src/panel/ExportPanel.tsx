@@ -578,18 +578,43 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
               aria-label={COPY.btnClose}
             >✕</button>
           </div>
+          <div className="lpe-settings-tabs" role="tablist" aria-label="Settings sections">
+            {([
+              ["general", "General"],
+              ["share", "Smart Share"],
+              ["appearance", "Appearance"],
+            ] as const).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={settingsTab === id}
+                className="lpe-settings-tab"
+                data-active={settingsTab === id ? "true" : "false"}
+                onClick={() => setSettingsTab(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <div className="lpe-settings-popover-body">
-            {settings && (
+            {settingsTab === "general" && settings && (
               <SettingsSection
                 settings={settings}
                 error={settingsError}
                 onPatch={onSettingsPatch}
               />
             )}
-            {shareSettings && (
+            {settingsTab === "share" && shareSettings && (
               <ShareSettingsSection
                 settings={shareSettings}
                 onPatch={onShareSettingsPatch}
+              />
+            )}
+            {settingsTab === "appearance" && (
+              <AppearanceSection
+                value={extTheme}
+                onChange={onExtThemeChange}
               />
             )}
           </div>
