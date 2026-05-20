@@ -1,6 +1,6 @@
 /**
  * Appearance tab inside the extension Settings popover. Lets the user pick a
- * theme preset (Dark Mint, Riseup Asia, Midnight Indigo, Emerald) or set a
+ * theme preset (Dark Mint, Riseup Asia, Violet Noir, Ruby Noir) or set a
  * fully custom accent color. Persisted to `chrome.storage.local`.
  */
 import { useCallback } from "react";
