@@ -11,3 +11,4 @@
 
 - `extension-src/manifest.json` + `extension/package.json` → 2.7.27
 - `public/inspect-page.zip` + `public/inspect-page.zip.sha256` repackaged
+- sha256: `1343908ba3819ded2e601ac1da55c2727cb206beea454b915c8d45dd400ad412`
