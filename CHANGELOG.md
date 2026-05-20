@@ -1,5 +1,12 @@
 # Changelog
 
+## [Extension 2.7.27] — 2026-05-20
+
+- **Inspect Text Typography UI fix.** The section now shows only 2 typography cards by default and uses a clear `See more (N more)` / `Show less` control in the section header instead of dumping all 60 groups.
+- **Typography details drawer fix.** The close button now uses a compact fixed-size control instead of inheriting the full-width panel button style.
+- **Inspect Account cleanup.** Removed the account card from the bottom of Inspect Mode; account and billing remain available from Settings / Smart Share.
+- Repackaged `inspect-page.zip` + sha256.
+
 ## [Extension 2.7.26] — 2026-05-20
 
 - **Text Typography section** (CSS Peeper–style). Inspect Mode now lists
