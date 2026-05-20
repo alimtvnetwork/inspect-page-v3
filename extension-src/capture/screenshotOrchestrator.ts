@@ -396,10 +396,13 @@ async function executeRestoreAfterCaptureFallback(tabId: number): Promise<Restor
     target: { tabId, allFrames: false },
     func: () => {
       const key = "__inspectPageCaptureFallbackState";
-      const page = window as typeof window & { __inspectPageCaptureFallbackState?: { x: number; y: number; behavior: string; stuck: Array<[HTMLElement, string]> } };
+      const page = window as typeof window & { __inspectPageCaptureFallbackState?: { x: number; y: number; behavior: string; stuck: Array<[HTMLElement, string]>; overlays?: Array<[HTMLElement, string]> } };
       const state = page[key];
       if (!state) return;
       for (const [el, cssText] of state.stuck) el.style.cssText = cssText;
+      if (state.overlays) {
+        for (const [el, cssText] of state.overlays) el.style.cssText = cssText;
+      }
       document.documentElement.style.scrollBehavior = state.behavior;
       window.scrollTo(state.x, state.y);
       delete page[key];
