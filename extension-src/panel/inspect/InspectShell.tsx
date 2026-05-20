@@ -18,6 +18,7 @@ import { InspectCssInfo } from "./InspectCssInfo";
 import { InspectInspector } from "./InspectInspector";
 import { InspectTextTypography } from "./InspectTextTypography";
 import { ExportMenu } from "./ExportMenu";
+import { snapshotCache } from "./snapshotCache";
 
 interface SnapshotState {
   status: "idle" | "loading" | "ready" | "error";
@@ -31,7 +32,8 @@ interface SnapshotState {
  * Inspect tab paints instantly. Bounded to a single entry — we only ever
  * care about the active tab.
  */
-let cache: { key: string; data: CollectInspectSnapshotResponse } | null = null;
+// Module-scoped cache is delegated to `snapshotCache` so other surfaces
+// (e.g. ExportModes) can read the same snapshot without re-collection.
 
 function scheduleIdle(fn: () => void): void {
   const ric = (globalThis as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
@@ -45,6 +47,7 @@ function scheduleIdle(fn: () => void): void {
 export function InspectShell(): JSX.Element {
   // Seed from module cache so re-opening the tab paints immediately.
   const [state, setState] = useState<SnapshotState>(() => {
+    const cache = snapshotCache.get();
     if (cache) {
       return {
         status: "ready",
@@ -57,11 +60,12 @@ export function InspectShell(): JSX.Element {
   const aliveRef = useRef(true);
 
   const load = useCallback(async (force = false) => {
-    if (!force && cache) {
+    const cached = snapshotCache.get();
+    if (!force && cached) {
       setState({
         status: "ready",
-        snapshot: cache.data.snapshot as InspectSnapshot,
-        thumbnailDataUrl: cache.data.thumbnailDataUrl,
+        snapshot: cached.data.snapshot as InspectSnapshot,
+        thumbnailDataUrl: cached.data.thumbnailDataUrl,
       });
       return;
     }
@@ -70,7 +74,7 @@ export function InspectShell(): JSX.Element {
       const res = await sendToBackground<{ tabId: number }, CollectInspectSnapshotResponse>(
         MessageKind.CollectInspectSnapshot, { tabId: -1 },
       );
-      cache = { key: "_", data: res };
+      snapshotCache.set({ key: "_", data: res });
       if (!aliveRef.current) return;
       setState({
         status: "ready",
@@ -86,7 +90,7 @@ export function InspectShell(): JSX.Element {
   useEffect(() => {
     aliveRef.current = true;
     // Defer the heavy snapshot collection so the skeleton paints first.
-    if (!cache) scheduleIdle(() => { void load(); });
+    if (!snapshotCache.get()) scheduleIdle(() => { void load(); });
     return () => { aliveRef.current = false; };
   }, [load]);
 
