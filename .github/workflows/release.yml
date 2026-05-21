@@ -57,21 +57,146 @@ jobs:
           node scripts/ci/check-version-sync.mjs
           node scripts/ci/check-wp-version-sync.mjs
 
-      - name: Collect assets
+      - name: Stage release assets
         id: assets
         run: |
-          if [ "${{ steps.meta.outputs.kind }}" = "ext" ]; then
-            echo "files=public/inspect-page.zip public/inspect-page.zip.sha256" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          KIND="${{ steps.meta.outputs.kind }}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          TAG="${{ steps.meta.outputs.tag }}"
+          OUT="release-assets"
+          rm -rf "$OUT" && mkdir -p "$OUT"
+
+          if [ "$KIND" = "ext" ]; then
+            BASENAME="inspect-page"
+            PRODUCT="Inspect Page Chrome Extension"
+            SRC="public/inspect-page.zip"
           else
-            echo "files=public/inspect-page-wp.zip public/inspect-page-wp.zip.sha256" >> "$GITHUB_OUTPUT"
+            BASENAME="inspect-page-wp"
+            PRODUCT="Inspect Page WordPress Plugin"
+            SRC="public/inspect-page-wp.zip"
           fi
+
+          VERSIONED="${BASENAME}-v${VERSION}.zip"
+          cp "$SRC" "$OUT/$VERSIONED"
+          echo "$VERSION" > "$OUT/VERSION.txt"
+          if [ -f CHANGELOG.md ]; then cp CHANGELOG.md "$OUT/changelog.md"; fi
+
+          ( cd "$OUT" && sha256sum * > checksums.txt )
+
+          echo "basename=$BASENAME"       >> "$GITHUB_OUTPUT"
+          echo "versioned=$VERSIONED"     >> "$GITHUB_OUTPUT"
+          echo "product=$PRODUCT"         >> "$GITHUB_OUTPUT"
+
+      - name: Assemble release notes
+        id: notes
+        env:
+          KIND: ${{ steps.meta.outputs.kind }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          VERSIONED: ${{ steps.assets.outputs.versioned }}
+          PRODUCT: ${{ steps.assets.outputs.product }}
+        run: |
+          set -euo pipefail
+          BUILD_DATE="$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          SHORT_SHA="$(git rev-parse --short=10 "$GITHUB_SHA")"
+          BRANCH="release/${TAG}"
+
+          # Previous tag of the same kind (ext- or wp-)
+          PREFIX="${KIND}-v"
+          PREV_TAG="$(git tag --sort=-version:refname | grep "^${PREFIX}" | grep -v "^${TAG}$" | head -1 || true)"
+          if [ -n "$PREV_TAG" ]; then RANGE="${PREV_TAG}..${TAG}"; else RANGE="${TAG}"; fi
+
+          FEATS="$(git log $RANGE --pretty=format:'- %s (%h)' --grep='^feat' -i || true)"
+          FIXES="$(git log $RANGE --pretty=format:'- %s (%h)' --grep='^fix' -i || true)"
+          OTHER="$(git log $RANGE --pretty=format:'- %s (%h)' --grep='^refactor\|^chore\|^docs\|^perf\|^ci\|^build\|^style\|^test' -i || true)"
+
+          CHECKSUMS_BLOCK="$(cat release-assets/checksums.txt)"
+
+          if [ "$KIND" = "ext" ]; then
+            ASSET_TABLE=$(cat <<EOF
+| Asset | Description |
+|---|---|
+| \`${VERSIONED}\` | Chrome extension — load unpacked in chrome://extensions |
+| \`changelog.md\` | Full project changelog |
+| \`VERSION.txt\` | Version identifier |
+| \`checksums.txt\` | SHA256 checksums |
+EOF
+)
+            MANUAL_INSTALL=$(cat <<EOF
+## Manual Install (Chromium)
+
+1. Download \`${VERSIONED}\` from this release.
+2. Extract it to a local folder.
+3. Open \`chrome://extensions\`.
+4. Enable **Developer mode**.
+5. Click **Load unpacked** and select the extracted folder.
+EOF
+)
+          else
+            ASSET_TABLE=$(cat <<EOF
+| Asset | Description |
+|---|---|
+| \`${VERSIONED}\` | WordPress plugin — upload via Plugins → Add New → Upload Plugin |
+| \`changelog.md\` | Full project changelog |
+| \`VERSION.txt\` | Version identifier |
+| \`checksums.txt\` | SHA256 checksums |
+EOF
+)
+            MANUAL_INSTALL=$(cat <<EOF
+## Manual Install (WordPress)
+
+1. Download \`${VERSIONED}\` from this release.
+2. In WP Admin, go to **Plugins → Add New → Upload Plugin**.
+3. Choose the zip, click **Install Now**, then **Activate**.
+4. Visit **Tools → Inspect Page** to verify REST + permalinks are healthy.
+EOF
+)
+          fi
+
+          BODY_FILE="release-assets/RELEASE_NOTES.md"
+          {
+            echo "# ${PRODUCT} v${VERSION}"
+            echo
+            echo "## Release Info"
+            echo
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Version | \`v${VERSION}\` |"
+            echo "| Commit | \`${SHORT_SHA}\` |"
+            echo "| Branch | \`${BRANCH}\` |"
+            echo "| Build Date | ${BUILD_DATE} |"
+            echo
+            echo "## What's Changed"
+            echo
+            if [ -n "$FEATS" ]; then echo "### Features"; echo; echo "$FEATS"; echo; fi
+            if [ -n "$FIXES" ]; then echo "### Bug Fixes"; echo; echo "$FIXES"; echo; fi
+            if [ -n "$OTHER" ]; then echo "### Maintenance"; echo; echo "$OTHER"; echo; fi
+            if [ -z "$FEATS$FIXES$OTHER" ]; then echo "_No conventional-commit entries since \`${PREV_TAG:-initial}\`._"; echo; fi
+            echo "## Checksums (SHA256)"
+            echo
+            echo '```'
+            echo "$CHECKSUMS_BLOCK"
+            echo '```'
+            echo
+            echo "## Assets"
+            echo
+            echo "$ASSET_TABLE"
+            echo
+            echo "$MANUAL_INSTALL"
+          } > "$BODY_FILE"
+
+          echo "body_path=$BODY_FILE" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
-          name: "${{ steps.meta.outputs.kind == 'ext' && 'Extension' || 'WP plugin' }} v${{ steps.meta.outputs.version }}"
-          generate_release_notes: true
+          name: "${{ steps.assets.outputs.product }} v${{ steps.meta.outputs.version }}"
+          body_path: ${{ steps.notes.outputs.body_path }}
           files: |
-            ${{ steps.assets.outputs.files }}
+            release-assets/*
           fail_on_unmatched_files: true
+          draft: false
+          prerelease: ${{ contains(steps.meta.outputs.version, '-') }}
+          make_latest: ${{ !contains(steps.meta.outputs.version, '-') && 'true' || 'false' }}
