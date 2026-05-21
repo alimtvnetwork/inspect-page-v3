@@ -25,6 +25,7 @@ export default defineConfig({
       "@zip": path.resolve(srcRoot, "zip"),
       "@element": path.resolve(srcRoot, "element"),
       "@share": path.resolve(srcRoot, "share"),
+      "@inspect": path.resolve(srcRoot, "inspect"),
       jszip: path.resolve(here, "node_modules/jszip/dist/jszip.min.js"),
       "html-to-image": path.resolve(here, "node_modules/html-to-image/dist/html-to-image.js"),
     },
