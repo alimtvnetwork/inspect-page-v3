@@ -18,12 +18,38 @@ Chrome Manifest V3 extension + companion WordPress plugin for Smart Share, billi
 
 ## Install
 
-### Chrome Extension (Load Unpacked)
+### Chrome Extension
+
+#### Option 1 — One-line installer (latest, auto-updates)
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/scripts/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+iwr https://raw.githubusercontent.com/<owner>/<repo>/main/scripts/install.ps1 -UseBasicParsing | iex
+```
+
+The script downloads the latest release zip, verifies its SHA256, extracts to `~/inspect-page-<version>/`, and maintains a stable `~/inspect-page` symlink so you never need to re-point Chrome's "Load unpacked" path after upgrades.
+
+#### Option 2 — Pinned to a specific version
+
+Every GitHub Release ships `install.sh` + `install.ps1` as assets. Curl them from the release URL and the script pins itself to that version automatically:
+
+```bash
+curl -fsSL https://github.com/<owner>/<repo>/releases/download/ext-v2.7.7/install.sh | bash
+```
+
+#### Option 3 — Manual (Load Unpacked)
 
 1. Download [`public/inspect-page.zip`](public/inspect-page.zip) and unzip it.
 2. Open `chrome://extensions` in Chrome (or any Chromium browser: Edge, Brave, Arc, Opera).
 3. Enable **Developer mode** (top-right toggle).
 4. Click **Load unpacked** and select the unzipped folder.
+
+Installer env overrides: `IP_REPO=owner/repo`, `IP_VERSION=ext-v2.7.7`, `IP_DEST=/path` (PowerShell: `$env:IP_REPO`, etc.).
 
 ---
 
