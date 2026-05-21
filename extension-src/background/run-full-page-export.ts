@@ -182,7 +182,12 @@ function mapCollectError(e: unknown): never {
 async function downloadBundle(bundle: Blob, filename: string): Promise<number> {
   const url = await blobToDataUrl(bundle);
   try {
-    return await chrome.downloads.download({ url, filename, saveAs: false });
+    // Full Page export uses `saveAs: true` so Chrome shows the native
+    // location picker. This is scoped to Full Page only (Q4=A); the other
+    // export modes (MD-single, MD+files, ZIP, Smart Share, Inspect-tab
+    // export-report) keep `saveAs: false` to preserve the silent-failure
+    // fix recorded in .lovable/memory/decisions/01-export-download-strategy.md.
+    return await chrome.downloads.download({ url, filename, saveAs: true });
   } catch (e) {
     throw new MessageError(
       ErrorCode.E_DOWNLOAD_FAILED, "chrome.downloads failed",
