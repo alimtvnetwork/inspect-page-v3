@@ -23,10 +23,10 @@ const chromeDriver: StorageDriver = {
 // once per session — no-op after migration is complete.
 const LEGACY_KEYS = ["pageport", "pageport.share"] as const;
 const NEW_KEYS    = ["inspect-page", "inspect-page.share"] as const;
-let legacyMigrationDone = false;
+let hasLegacyMigrationCompleted = false;
 async function migrateLegacyKeys(driver: StorageDriver): Promise<void> {
-  if (legacyMigrationDone) return;
-  legacyMigrationDone = true;
+  if (hasLegacyMigrationCompleted) return;
+  hasLegacyMigrationCompleted = true;
   try {
     for (let i = 0; i < LEGACY_KEYS.length; i++) {
       const oldKey = LEGACY_KEYS[i];

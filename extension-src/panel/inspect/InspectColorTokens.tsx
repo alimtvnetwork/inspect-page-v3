@@ -34,9 +34,9 @@ export function InspectColorTokens({ snapshot }: InspectColorTokensProps): JSX.E
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    void loadOverrides(snapshot).then((o) => { if (!cancelled) setOverrides(o); });
-    return () => { cancelled = true; };
+    let isAborted = false;
+    void loadOverrides(snapshot).then((o) => { if (!isAborted) setOverrides(o); });
+    return () => { isAborted = true; };
   }, [snapshot]);
 
   // Apply user-renamed humanName overrides on top of the generated tokens.

@@ -136,9 +136,9 @@ export function ExportModes({
   }, []);
   useEffect(() => {
     if (!snap) { setAddons(emptyColorTokenAddons()); return; }
-    let cancelled = false;
-    void loadColorTokenAddons(snap).then((a) => { if (!cancelled) setAddons(a); });
-    return () => { cancelled = true; };
+    let isAborted = false;
+    void loadColorTokenAddons(snap).then((a) => { if (!isAborted) setAddons(a); });
+    return () => { isAborted = true; };
   }, [snap]);
 
   useEffect(() => {

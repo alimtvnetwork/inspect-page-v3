@@ -10,11 +10,11 @@ import { SELECTOR_MAX_DEPTH } from "@shared/constants";
 export function selectorPath(target: Element, doc: Document = target.ownerDocument!): string {
   const segments: string[] = [];
   let el: Element | null = target;
-  let truncated = false;
+  let isTruncated = false;
 
   while (el && el.nodeType === 1 && el !== doc.documentElement) {
     if (segments.length >= SELECTOR_MAX_DEPTH) {
-      truncated = true;
+      isTruncated = true;
       break;
     }
     segments.push(segmentFor(el, doc));
@@ -27,7 +27,7 @@ export function selectorPath(target: Element, doc: Document = target.ownerDocume
   if (el === doc.documentElement) segments.push("html");
 
   segments.reverse();
-  return truncated ? `… > ${segments.join(" > ")}` : segments.join(" > ");
+  return isTruncated ? `… > ${segments.join(" > ")}` : segments.join(" > ");
 }
 
 function segmentFor(el: Element, doc: Document): string {

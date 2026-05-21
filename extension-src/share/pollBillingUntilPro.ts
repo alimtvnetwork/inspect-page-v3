@@ -41,7 +41,7 @@ export function pollBillingUntilPro(deps: PollDeps): PollHandle {
     }
   });
 
-  let cancelled = false;
+  let isAborted = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
   const startedAt = Date.now();
   let last: BillingStatus | null = null;
@@ -50,7 +50,7 @@ export function pollBillingUntilPro(deps: PollDeps): PollHandle {
   const done = new Promise<BillingStatus | null>((resolve) => {
     resolveOuter = resolve;
     const tick = async (): Promise<void> => {
-      if (cancelled) { resolve(last); return; }
+      if (isAborted) { resolve(last); return; }
       try {
         const s = await getBillingStatus(deps);
         last = s;
@@ -69,7 +69,7 @@ export function pollBillingUntilPro(deps: PollDeps): PollHandle {
   return {
     done,
     cancel: () => {
-      cancelled = true;
+      isAborted = true;
       if (timer) clearT(timer);
       if (resolveOuter) { resolveOuter(last); resolveOuter = null; }
     },

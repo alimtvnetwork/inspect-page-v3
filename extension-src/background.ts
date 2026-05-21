@@ -424,20 +424,20 @@ function preparePageForInspectThumbnail(): ThumbnailCropRect | null {
     if (!el || el.nodeType !== 1) continue;
     if (saved.some((s) => s.el === el)) continue;
     const tag = el.tagName;
-    let injected = false;
-    if (tag.includes("-")) injected = true; // custom element at root
-    if (!injected) {
+    let isOverlayInjected = false;
+    if (tag.includes("-")) isOverlayInjected = true; // custom element at root
+    if (!isOverlayInjected) {
       let cs: CSSStyleDeclaration | null = null;
       try { cs = window.getComputedStyle(el); } catch { cs = null; }
       const pos = cs?.position ?? "";
       const fixedish = pos === "fixed" || pos === "sticky";
-      if (fixedish && el.shadowRoot) injected = true;
-      if (!injected && fixedish) {
+      if (fixedish && el.shadowRoot) isOverlayInjected = true;
+      if (!isOverlayInjected && fixedish) {
         const z = Number(cs?.zIndex);
-        if (Number.isFinite(z) && z >= HIGH_Z) injected = true;
+        if (Number.isFinite(z) && z >= HIGH_Z) isOverlayInjected = true;
       }
     }
-    if (injected) hide(el);
+    if (isOverlayInjected) hide(el);
   }
   (window as unknown as { __ipThumbHidden?: typeof saved }).__ipThumbHidden = saved;
 
