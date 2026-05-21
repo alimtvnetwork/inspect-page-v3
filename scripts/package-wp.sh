@@ -29,4 +29,5 @@ rm -f "$OUT" "$OUT.sha256"
     >/dev/null
 )
 ( cd "$ROOT/public" && sha256sum "inspect-page-wp.zip" > "inspect-page-wp.zip.sha256" )
+node "$ROOT/scripts/ci/_srchash.mjs" "$ROOT/wp-plugin/inspect-page" > "$ROOT/public/inspect-page-wp.zip.srchash"
 echo "Packaged: $OUT ($(du -h "$OUT" | cut -f1))"
