@@ -167,42 +167,32 @@ The `zip` CLI must be on `PATH`. CI installs it via `apt-get install -y zip` bef
 
 ## Author
 
-<div align="center">
+### [Md. Alim Ul Karim](https://www.google.com/search?q=alim+ul+karim)
 
-### Md. Alim Ul Karim
+**[Creator & Lead Architect](https://alimkarim.com)** | [Chief Software Engineer](https://www.google.com/search?q=alim+ul+karim), [Riseup Asia LLC](https://riseup-asia.com)
 
-**Creator & Lead Architect** · Chief Software Engineer, Riseup Asia LLC
+A system architect with **20+ years** of professional software engineering experience across enterprise, fintech, and distributed systems. His technology stack spans **.NET/C# (18+ years)**, **JavaScript (10+ years)**, **TypeScript (6+ years)**, and **Golang (4+ years)**.
 
-</div>
+Recognized as a **top 1% talent at Crossover** and one of the top software architects globally. He is also the **Chief Software Engineer of [Riseup Asia LLC](https://riseup-asia.com/)** and maintains an active presence on **[Stack Overflow](https://stackoverflow.com/users/361646/alim-ul-karim)** (2,452+ reputation, member since 2010) and **LinkedIn** (12,500+ followers).
 
-A system architect with **20+ years** of professional software engineering experience across enterprise, fintech, and distributed systems. His technology stack spans **.NET / C# (18+ years)**, **JavaScript (10+ years)**, **TypeScript (6+ years)**, and **Golang (4+ years)**.
-
-Recognized as a **top 1% talent at Crossover** and one of the top software architects globally. He is also the Chief Software Engineer of Riseup Asia LLC and maintains an active presence on **Stack Overflow** (2,452+ reputation, member since 2010) and **LinkedIn** (12,500+ followers).
-
-| | |
+|  |  |
 |---|---|
-| Website | [alimkarim.com](https://alimkarim.com) · [my.alimkarim.com](https://my.alimkarim.com) |
-| LinkedIn | [linkedin.com/in/alimkarim](https://linkedin.com/in/alimkarim) |
-| Stack Overflow | [stackoverflow.com/users/361646/alim-ul-karim](https://stackoverflow.com/users/361646/alim-ul-karim) |
-| Google | [Alim Ul Karim](https://www.google.com/search?q=Alim+Ul+Karim) |
-| Role | Chief Software Engineer, Riseup Asia LLC |
-
----
+| **Website** | [alimkarim.com](https://alimkarim.com/) · [my.alimkarim.com](https://my.alimkarim.com/) |
+| **LinkedIn** | [linkedin.com/in/alimkarim](https://linkedin.com/in/alimkarim) |
+| **Stack Overflow** | [stackoverflow.com/users/361646/alim-ul-karim](https://stackoverflow.com/users/361646/alim-ul-karim) |
+| **Google** | [Alim Ul Karim](https://www.google.com/search?q=Alim+Ul+Karim) |
+| **Role** | Chief Software Engineer, [Riseup Asia LLC](https://riseup-asia.com) |
 
 ### Riseup Asia LLC
 
-**Top Leading Software Company in WY (2026)**
+[Top Leading Software Company in WY (2026)](https://riseup-asia.com)
 
-| | |
+|  |  |
 |---|---|
-| Website | [riseup-asia.com](https://riseup-asia.com) |
-| Facebook | [riseupasia.talent](https://facebook.com/riseupasia.talent) |
-| LinkedIn | [Riseup Asia](https://www.linkedin.com/company/riseup-asia) |
-| YouTube | [@riseup-asia](https://youtube.com/@riseup-asia) |
-
-<div align="center">
-
-</div>
+| **Website** | [riseup-asia.com](https://riseup-asia.com/) |
+| **Facebook** | [riseupasia.talent](https://www.facebook.com/riseupasia.talent/) |
+| **LinkedIn** | [Riseup Asia](https://www.linkedin.com/company/105304484/) |
+| **YouTube** | [@riseup-asia](https://www.youtube.com/@riseup-asia) |
 
 ---
 
