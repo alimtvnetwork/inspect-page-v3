@@ -25,4 +25,5 @@ fi
 rm -f "$OUT" "$OUT.sha256"
 ( cd "$DIST" && nix run nixpkgs#zip -- -r "$OUT" . >/dev/null )
 ( cd "$ROOT/public" && sha256sum "inspect-page.zip" > "inspect-page.zip.sha256" )
+node "$ROOT/scripts/ci/_srchash.mjs" "$ROOT/extension-src" > "$ROOT/public/inspect-page.zip.srchash"
 echo "Packaged: $OUT ($(du -h "$OUT" | cut -f1))"
