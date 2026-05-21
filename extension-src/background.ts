@@ -12,6 +12,7 @@ import { startKeepAlive, stopKeepAlive } from "./background/keepAlive";
 import { waitForDownloadPath } from "./background/downloads";
 import { captureInspectThumbnail } from "./background/thumbnail";
 import { sendOffscreen, blobToDataUrl } from "./background/sendOffscreen";
+import { ensureContentScript } from "./background/tabReady";
 import { COLLECT_TIMEOUT_MS } from "@shared/constants";
 import type {
   CollectPageArtifactsResponse,
