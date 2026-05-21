@@ -344,3 +344,32 @@ WP plugin first ships; cookie + nonce auth bridge; 4-URL share dialog with
 
 *End of consolidated docs. Do not split this file back into per-version notes —
 edit in place and append new releases to §9.*
+
+---
+
+## 11. CI/CD pipeline (added 2026-05-21)
+
+Doc-first, AI-portable pipeline modelled on the macro-ahk-v34 reference repo.
+Three artifact streams: extension zip, WP plugin zip, marketing site `dist/`.
+
+### Layout
+- `pipeline/` — 9 markdown files describing architecture, workflows, scripts,
+  build chain, versioning, extending, troubleshooting. **Read this first** to
+  reproduce or debug CI.
+- `scripts/ci/` — 5 Node validators (brand-name, ext-version-sync,
+  wp-version-sync, zip-freshness, axios-pin) + `readme.md`.
+- `.github/workflows/` — 6 workflows: `ci.yml`, `release.yml`,
+  `release-watcher.yml`, `audit-releases.yml`, `installer-tests.yml`,
+  `quality-badges.yml`. Legacy `extension-ci.yml` kept for back-compat.
+- `.gitmap/release/` — machine-readable release registry with seed entries
+  (`ext-v2.7.5.json`, `wp-v2.6.0.json`, `latest.json`). Auto-refreshed by
+  `release-watcher.yml`.
+- `security-notes/` — supply-chain pins (`axios-pin.md`, `wp-plugin-pin.md`).
+
+### Release flow
+1. Bump `extension-src/manifest.json` (or WP plugin header + `INSPECT_PAGE_VERSION`).
+2. Run `bash scripts/release.sh` (extension) or `bash scripts/package-wp.sh` (WP).
+3. Run `for s in scripts/ci/check-*.mjs; do node "$s"; done` locally — all must pass.
+4. Push tag `ext-vX.Y.Z` or `wp-vX.Y.Z` — `release.yml` builds + publishes.
+5. `release-watcher.yml` updates `.gitmap/release/` and commits.
+6. Append release note to §9 above.
