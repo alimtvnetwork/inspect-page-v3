@@ -18,7 +18,7 @@ import {
 } from "./background/run-full-page-export";
 // keepAlive module imported transitively via runFullPageExport for its
 // side-effect listeners (chrome.alarms.onAlarm + chrome.runtime.onConnect).
-import "./background/keepAlive";
+import "./background/keep-alive";
 import type {
   CollectPageArtifactsResponse,
   EnterPickerModePayload,
