@@ -51,6 +51,7 @@ import { pollBillingUntilPro } from "../share/pollBillingUntilPro";
 import { emitBilling } from "../share/billingTelemetry";
 import { InspectShell } from "./inspect/InspectShell";
 import type { ElementSnapshot } from "@element/collectElementSnapshot";
+import { asElementSnapshot } from "@shared/narrow";
 import { ShareSettingsSection, ShareDialog } from "./ShareSettingsSection";
 import { SettingsSection } from "./SettingsSection";
 import { MultiPickChips } from "./MultiPickChips";
@@ -279,7 +280,9 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           status: PanelStatus.Idle,
           message: p.message,
           ...(p.debugPreview ? { debugPreview: p.debugPreview } : {}),
-          ...(p.elementSnapshot ? { elementSnapshot: p.elementSnapshot as ElementSnapshot } : {}),
+          ...(asElementSnapshot(p.elementSnapshot)
+            ? { elementSnapshot: asElementSnapshot(p.elementSnapshot) }
+            : {}),
           ...(p.multiElementSnapshot && p.multiElementSnapshot.length > 0
             ? {
                 multiPicks: p.multiElementSnapshot,
@@ -307,7 +310,9 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           ? { errorCode: p.errorCode, errorDetail: p.errorDetail }
           : {}),
         ...(p.debugPreview ? { debugPreview: p.debugPreview } : {}),
-        ...(p.elementSnapshot ? { elementSnapshot: p.elementSnapshot as ElementSnapshot } : {}),
+        ...(asElementSnapshot(p.elementSnapshot)
+          ? { elementSnapshot: asElementSnapshot(p.elementSnapshot) }
+          : {}),
         ...(p.multiElementSnapshot && p.multiElementSnapshot.length > 0
           ? {
               multiPicks: p.multiElementSnapshot,
@@ -814,7 +819,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                   ...s,
                   activePickIndex: idx,
                   debugPreview: pick.debugPreview,
-                  elementSnapshot: pick.elementSnapshot as ElementSnapshot | undefined,
+                  elementSnapshot: asElementSnapshot(pick.elementSnapshot),
                 };
               })}
               onRemove={(idx) => setState((s) => {
@@ -840,7 +845,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
                   multiPicks: next,
                   activePickIndex: nextActive,
                   debugPreview: pick.debugPreview,
-                  elementSnapshot: pick.elementSnapshot as ElementSnapshot | undefined,
+                  elementSnapshot: asElementSnapshot(pick.elementSnapshot),
                 };
               })}
             />
