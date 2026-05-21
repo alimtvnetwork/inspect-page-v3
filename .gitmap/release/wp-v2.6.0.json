@@ -9,7 +9,7 @@
       "name": "inspect-page-wp.zip",
       "url": "https://github.com/OWNER/REPO/releases/download/wp-v2.6.0/inspect-page-wp.zip",
       "size": 53454,
-      "sha256": "2cfd0b91616cb027486e03b5f772b98c58da497e7fc66d35c1177fc96aa63213"
+      "sha256": "636073a79767570f518518e8612ccc3980d4cdeccfe66bc74364b5f224cbd7ce"
     },
     {
       "name": "inspect-page-wp.zip.sha256",
@@ -23,5 +23,5 @@
   "publishedAt": "2026-05-21T00:00:00Z",
   "isLatest": false,
   "_seed": true,
-  "_note": "Seed entry. Plugin header still v2.5.5 on disk; bump pending. Overwritten by release-watcher.yml on first published release."
+  "_note": "Seed entry. Plugin bumped to 2.6.0 (header + INSPECT_PAGE_VERSION). Overwritten by release-watcher.yml on first published release."
 }
