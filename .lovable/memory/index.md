@@ -29,3 +29,4 @@ Single source of project memory for the next AI session. Every file below is req
 - [.lovable/cicd-issues/01-zip-freshness-stale-wp.md](../cicd-issues/01-zip-freshness-stale-wp.md)
 - [.lovable/cicd-issues/02-eslint-not-found-in-extension.md](../cicd-issues/02-eslint-not-found-in-extension.md)
 - [.lovable/cicd-issues/03-eslint-7-errors-cleanup.md](../cicd-issues/03-eslint-7-errors-cleanup.md)
+- [.lovable/cicd-issues/04-zip-freshness-mtime-fragile.md](../cicd-issues/04-zip-freshness-mtime-fragile.md)
