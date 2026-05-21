@@ -182,11 +182,13 @@ Drive via `bash scripts/smoke-runbook.sh`.
 All scripts are idempotent.
 
 ### Carry-over (manual, all code + scripts on disk)
-- Prod `INSPECT_PAGE_WP_SITE_URL` (still `""` — blocker).
-- Stripe live keys / price / webhook.
-- Re-shoot CWS screenshots.
-- CWS upload of v2.7.5.
-- Git tags `ext-v2.7.5` + `wp-v2.6.0`.
+- [ ] Prod `INSPECT_PAGE_WP_SITE_URL` (still `""` in `extension-src/shared/constants.ts` — **primary blocker**).
+  Provide the origin (e.g. `https://app.inspectpage.com`) and I will set it, rebuild, and repackage.
+- [ ] Stripe live keys / price / webhook.
+  Provide `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `STRIPE_PRICE_ID` via the secrets form.
+- [ ] CWS screenshots re-shoot (script scaffold ready at `store-assets/screenshots-v2.7.5/`).
+- [ ] CWS upload of `public/inspect-page.zip` (v2.7.5).
+- [ ] Git tags `ext-v2.7.5` + `wp-v2.6.0` (requires `git tag` push — I cannot run git commands in this sandbox).
 
 ---
 
