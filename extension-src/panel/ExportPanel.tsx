@@ -55,6 +55,7 @@ import { ElementInspector } from "./element/ElementInspector";
 import { CodeDrawer } from "./element/CodeDrawer";
 import type { ElementSnapshot } from "@element/collectElementSnapshot";
 import { ShareSettingsSection, ShareDialog } from "./ShareSettingsSection";
+import { SettingsSection } from "./SettingsSection";
 import { DebugPreview } from "./DebugPreview";
 import { FullPageActions } from "./FullPageActions";
 import {
