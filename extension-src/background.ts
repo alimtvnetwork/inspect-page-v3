@@ -8,12 +8,17 @@ import { getPanelPosition, getSettings, setPanelPosition, setSettings } from "@s
 import { getShareSettings, normalizeBaseUrl, setShareSettings } from "@shared/shareSettings";
 import { createShareSession as createShareSessionImpl } from "@share/createShareSession";
 import { revokeShareSession as revokeShareSessionImpl } from "@share/revokeShareSession";
-import { startKeepAlive, stopKeepAlive } from "./background/keepAlive";
 import { waitForDownloadPath } from "./background/downloads";
 import { captureInspectThumbnail } from "./background/thumbnail";
 import { sendOffscreen, blobToDataUrl } from "./background/sendOffscreen";
 import { ensureContentScript } from "./background/tabReady";
-import { COLLECT_TIMEOUT_MS } from "@shared/constants";
+import {
+  runFullPageExport,
+  canceledFullPageTabs,
+} from "./background/runFullPageExport";
+// keepAlive module imported transitively via runFullPageExport for its
+// side-effect listeners (chrome.alarms.onAlarm + chrome.runtime.onConnect).
+import "./background/keepAlive";
 import type {
   CollectPageArtifactsResponse,
   EnterPickerModePayload,
