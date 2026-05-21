@@ -1,19 +1,64 @@
-# Release — triggered by tags ext-vX.Y.Z or wp-vX.Y.Z.
-# Builds the relevant artifact, creates a GitHub Release, attaches the zip,
-# and updates .gitmap/release/latest.json via release-watcher.yml.
-# See: pipeline/03-release-workflow.md
+# ──────────────────────────────────────────────────────────────
+# Inspect Page — Release Pipeline
+#
+# Triggers (any path produces a Release with full asset set):
+#   - push tag      ext-vX.Y.Z  | wp-vX.Y.Z
+#   - push branch   release/ext-vX.Y.Z | release/wp-vX.Y.Z
+#   - release event (REST API / gh CLI / web UI publish, edit, release)
+#   - workflow_dispatch (manual replay/recovery against an existing tag)
+#   - workflow_call    (release-watcher recovery)
+#
+# Assets produced per release:
+#   - inspect-page-{VER}.zip     (ext tag) — Chrome extension
+#     OR
+#     inspect-page-wp-{VER}.zip  (wp tag)  — WordPress plugin
+#   - install.sh        — Bash installer (URL-pinned ↔ latest auto-detect, extension only)
+#   - install.ps1       — PowerShell installer (same logic)
+#   - VERSION.txt       — plain-text version string
+#   - changelog.md      — full project changelog (if present)
+#   - checksums.txt     — SHA256 of all assets
+#   - RELEASE_NOTES.md  — used as Release body (not uploaded as asset)
+#
+# `make_latest`: only ext-v* releases ever wear the green "Latest" badge.
+# ──────────────────────────────────────────────────────────────
 name: release
 
 on:
   push:
+    branches:
+      - "release/ext-v*"
+      - "release/wp-v*"
     tags:
       - "ext-v*"
       - "wp-v*"
+  release:
+    types: [published, created, edited, released]
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Tag to release (ext-vX.Y.Z or wp-vX.Y.Z)"
+      version:
+        description: "Existing tag to (re)publish, e.g. ext-v2.7.7 or wp-v2.6.0"
         required: true
+        type: string
+      source_ref:
+        description: "Optional source ref/SHA to build from (recovery only)"
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        description: "Existing tag to (re)publish"
+        required: true
+        type: string
+      source_ref:
+        description: "Optional source ref/SHA to build from"
+        required: false
+        type: string
+        default: ""
+
+# Release builds must NEVER be cancelled.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -31,9 +76,39 @@ jobs:
       - run: sudo apt-get update -y && sudo apt-get install -y --no-install-recommends zip
       - run: bun install --frozen-lockfile
 
-      - id: meta
+      - name: Resolve tag · kind · version (multi-trigger)
+        id: meta
+        env:
+          INPUT_VERSION: ${{ inputs.version || github.event.inputs.version }}
+          INPUT_SOURCE_REF: ${{ inputs.source_ref || github.event.inputs.source_ref }}
+          RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
         run: |
-          TAG="${GITHUB_REF_NAME:-${{ github.event.inputs.tag }}}"
+          set -euo pipefail
+          if [ -n "${INPUT_VERSION:-}" ]; then
+            TAG="$INPUT_VERSION"
+            git fetch origin "refs/tags/${TAG}:refs/tags/${TAG}" 2>/dev/null || true
+            if ! git rev-parse --verify "refs/tags/${TAG}" >/dev/null 2>&1; then
+              echo "::error::recovery tag '${TAG}' not found on remote"; exit 1
+            fi
+            if [ -n "${INPUT_SOURCE_REF:-}" ]; then
+              git fetch origin "$INPUT_SOURCE_REF" --depth=1 2>/dev/null || true
+              git checkout "$INPUT_SOURCE_REF"
+              echo "Recovery: building from $INPUT_SOURCE_REF, publishing to $TAG"
+            else
+              git checkout "refs/tags/${TAG}"
+            fi
+          elif [ "$GITHUB_EVENT_NAME" = "release" ]; then
+            TAG="$RELEASE_TAG_NAME"
+            [ -n "$TAG" ] || { echo "::error::release event without tag_name"; exit 1; }
+            git fetch origin "refs/tags/${TAG}:refs/tags/${TAG}" 2>/dev/null || true
+            git checkout "refs/tags/${TAG}"
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="$GITHUB_REF_NAME"
+          elif [[ "$GITHUB_REF" == refs/heads/release/* ]]; then
+            TAG="${GITHUB_REF_NAME#release/}"
+          else
+            echo "::error::Unexpected ref: $GITHUB_REF"; exit 1
+          fi
           case "$TAG" in
             ext-v*) KIND=ext; VERSION="${TAG#ext-v}";;
             wp-v*)  KIND=wp;  VERSION="${TAG#wp-v}";;
@@ -42,6 +117,7 @@ jobs:
           echo "tag=$TAG"         >> "$GITHUB_OUTPUT"
           echo "kind=$KIND"       >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved: tag=$TAG kind=$KIND version=$VERSION"
 
       - name: Build extension
         if: steps.meta.outputs.kind == 'ext'
@@ -82,6 +158,12 @@ jobs:
           echo "$VERSION" > "$OUT/VERSION.txt"
           if [ -f CHANGELOG.md ]; then cp CHANGELOG.md "$OUT/changelog.md"; fi
 
+          # Installers — extension only (no WP-CLI helper).
+          if [ "$KIND" = "ext" ]; then
+            if [ -f scripts/install.sh ]; then cp scripts/install.sh "$OUT/install.sh"; fi
+            if [ -f scripts/install.ps1 ]; then cp scripts/install.ps1 "$OUT/install.ps1"; fi
+          fi
+
           ( cd "$OUT" && sha256sum * > checksums.txt )
 
           echo "basename=$BASENAME"       >> "$GITHUB_OUTPUT"
@@ -111,49 +193,7 @@ jobs:
           FIXES="$(git log $RANGE --pretty=format:'- %s (%h)' --grep='^fix' -i || true)"
           OTHER="$(git log $RANGE --pretty=format:'- %s (%h)' --grep='^refactor\|^chore\|^docs\|^perf\|^ci\|^build\|^style\|^test' -i || true)"
 
-          CHECKSUMS_BLOCK="$(cat release-assets/checksums.txt)"
-
-          if [ "$KIND" = "ext" ]; then
-            ASSET_TABLE=$(cat <<EOF
-| Asset | Description |
-|---|---|
-| \`${VERSIONED}\` | Chrome extension — load unpacked in chrome://extensions |
-| \`changelog.md\` | Full project changelog |
-| \`VERSION.txt\` | Version identifier |
-| \`checksums.txt\` | SHA256 checksums |
-EOF
-)
-            MANUAL_INSTALL=$(cat <<EOF
-## Manual Install (Chromium)
-
-1. Download \`${VERSIONED}\` from this release.
-2. Extract it to a local folder.
-3. Open \`chrome://extensions\`.
-4. Enable **Developer mode**.
-5. Click **Load unpacked** and select the extracted folder.
-EOF
-)
-          else
-            ASSET_TABLE=$(cat <<EOF
-| Asset | Description |
-|---|---|
-| \`${VERSIONED}\` | WordPress plugin — upload via Plugins → Add New → Upload Plugin |
-| \`changelog.md\` | Full project changelog |
-| \`VERSION.txt\` | Version identifier |
-| \`checksums.txt\` | SHA256 checksums |
-EOF
-)
-            MANUAL_INSTALL=$(cat <<EOF
-## Manual Install (WordPress)
-
-1. Download \`${VERSIONED}\` from this release.
-2. In WP Admin, go to **Plugins → Add New → Upload Plugin**.
-3. Choose the zip, click **Install Now**, then **Activate**.
-4. Visit **Tools → Inspect Page** to verify REST + permalinks are healthy.
-EOF
-)
-          fi
-
+          REPO_SLUG="${GITHUB_REPOSITORY}"
           BODY_FILE="release-assets/RELEASE_NOTES.md"
           {
             echo "# ${PRODUCT} v${VERSION}"
@@ -176,14 +216,58 @@ EOF
             echo "## Checksums (SHA256)"
             echo
             echo '```'
-            echo "$CHECKSUMS_BLOCK"
+            cat release-assets/checksums.txt
             echo '```'
             echo
             echo "## Assets"
             echo
-            echo "$ASSET_TABLE"
+            echo "| Asset | Description |"
+            echo "|---|---|"
+            if [ "$KIND" = "ext" ]; then
+              echo "| \`${VERSIONED}\` | Chrome extension — load unpacked in chrome://extensions |"
+              echo "| \`install.sh\` | Bash installer (download + unzip + print load-unpacked steps) |"
+              echo "| \`install.ps1\` | PowerShell installer (same logic, Windows) |"
+            else
+              echo "| \`${VERSIONED}\` | WordPress plugin — upload via Plugins → Add New → Upload Plugin |"
+            fi
+            echo "| \`changelog.md\` | Full project changelog |"
+            echo "| \`VERSION.txt\` | Version identifier |"
+            echo "| \`checksums.txt\` | SHA256 checksums |"
             echo
-            echo "$MANUAL_INSTALL"
+            if [ "$KIND" = "ext" ]; then
+              echo "## Quick Install (this version, pinned)"
+              echo
+              echo '**Bash / macOS / Linux:**'
+              echo '```bash'
+              echo "curl -fsSL https://github.com/${REPO_SLUG}/releases/download/${TAG}/install.sh | bash"
+              echo '```'
+              echo
+              echo '**PowerShell / Windows:**'
+              echo '```powershell'
+              echo "iwr https://github.com/${REPO_SLUG}/releases/download/${TAG}/install.ps1 -UseBasicParsing | iex"
+              echo '```'
+              echo
+              echo "## Latest channel (auto-updates)"
+              echo
+              echo '```bash'
+              echo "curl -fsSL https://raw.githubusercontent.com/${REPO_SLUG}/main/scripts/install.sh | bash"
+              echo '```'
+              echo
+              echo "## Manual Install (Chromium)"
+              echo
+              echo "1. Download \`${VERSIONED}\` from this release."
+              echo "2. Extract it to a local folder."
+              echo "3. Open \`chrome://extensions\`."
+              echo "4. Enable **Developer mode** (top-right toggle)."
+              echo "5. Click **Load unpacked** and select the extracted folder."
+            else
+              echo "## Manual Install (WordPress)"
+              echo
+              echo "1. Download \`${VERSIONED}\` from this release."
+              echo "2. In WP Admin, go to **Plugins → Add New → Upload Plugin**."
+              echo "3. Choose the zip, click **Install Now**, then **Activate**."
+              echo "4. Visit **Tools → Inspect Page** to verify REST + permalinks are healthy."
+            fi
           } > "$BODY_FILE"
 
           echo "body_path=$BODY_FILE" >> "$GITHUB_OUTPUT"
@@ -199,4 +283,5 @@ EOF
           fail_on_unmatched_files: true
           draft: false
           prerelease: ${{ contains(steps.meta.outputs.version, '-') }}
-          make_latest: ${{ !contains(steps.meta.outputs.version, '-') && 'true' || 'false' }}
+          # Q3 = B: only ext-v* ever wins the "Latest" badge.
+          make_latest: ${{ steps.meta.outputs.kind == 'ext' && !contains(steps.meta.outputs.version, '-') && 'true' || 'false' }}
