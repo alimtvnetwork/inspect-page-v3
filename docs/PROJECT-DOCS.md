@@ -272,7 +272,7 @@ Do **not** use browser tools for artifact QA.
 
 ## 9. Release history (newest first — append new entries here)
 
-### v2.7.8 — Full Page Export "Save As" + release pipeline overhaul (current)
+### v2.7.8 — Full Page Export "Save As" + release pipeline overhaul 
 - **Extension UX:** Export Full Page now opens Chrome's native Save As dialog
   (`saveAs: true` in `background/run-full-page-export.ts`). Other export
   surfaces (Element, panel MD/ZIP/Smart Share, Inspect-tab Export report)
@@ -293,7 +293,7 @@ Do **not** use browser tools for artifact QA.
 - **Docs:** README install section restructured (3 options); pipeline doc
   03 updated with new triggers + asset layout + installer spec.
 
-### v2.7.7 — Inspect report menu click hotfix (current)
+### v2.7.7 — Inspect report menu click hotfix 
 Fixed the actual floating-panel dropdown bug: Shadow DOM retargeting made the
 document capture listener close **Export report** before item clicks reached React.
 Menu items now use the composed event path, so JSON, Markdown, Colors CSV, and
