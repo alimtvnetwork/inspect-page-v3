@@ -14,7 +14,7 @@ STEPS=(
   "verify-prod-build:bash scripts/verify-prod-build.sh"
   "smoke-runbook:bash scripts/smoke-runbook.sh"
   "seed-staging:echo skip seed-staging unless WP_SSH set"
-  "pen-tests:echo 'manual: walk docs/PEN-TEST-v2.7.0.md'"
+  "pen-tests:echo 'manual: walk docs/PROJECT-DOCS.md §5'"
   "acceptance-bill:echo 'manual: AC-BILL-1..5'"
   "acceptance-analytics:echo 'manual: AC-ANALYTICS-1..3'"
   "acceptance-ws:echo 'manual: AC-WS-1..7'"
