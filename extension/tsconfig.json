@@ -23,7 +23,8 @@
       "@capture/*": ["../extension-src/capture/*"],
       "@zip/*": ["../extension-src/zip/*"],
       "@element/*": ["../extension-src/element/*"],
-      "@share/*": ["../extension-src/share/*"]
+      "@share/*": ["../extension-src/share/*"],
+      "@inspect/*": ["../extension-src/inspect/*"]
     }
   },
   "include": ["../extension-src/**/*"]
