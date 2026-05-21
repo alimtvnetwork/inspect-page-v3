@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { rankSamples } from "../InspectInspector";
-import type { ComputedSample } from "../../../inspect/types";
+import type { ComputedSample } from "@inspect/types";
 
 function s(tag: string, w: number, h: number): ComputedSample {
   return {
