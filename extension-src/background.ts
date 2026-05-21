@@ -8,7 +8,7 @@ import { getPanelPosition, getSettings, setPanelPosition, setSettings } from "@s
 import { getShareSettings, normalizeBaseUrl, setShareSettings } from "@shared/shareSettings";
 import { createShareSession as createShareSessionImpl } from "@share/createShareSession";
 import { revokeShareSession as revokeShareSessionImpl } from "@share/revokeShareSession";
-import { KEEPALIVE_INTERVAL_MS } from "@shared/constants";
+import { startKeepAlive, stopKeepAlive } from "./background/keepAlive";
 import { COLLECT_TIMEOUT_MS } from "@shared/constants";
 import type {
   CollectPageArtifactsResponse,
