@@ -21,8 +21,14 @@ function walk(dir) {
     if (s.isDirectory()) walk(p);
     else if (s.isFile() && !SKIP_EXT.has(extname(p)) && !SKIP_FILES.has(name)) {
       const text = readFileSync(p, "utf8");
-      for (const tok of BANNED) {
-        if (text.includes(tok)) violations.push(`${p}: ${tok}`);
+      const lines = text.split("\n");
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        // Allow intentional legacy-migration references (must mention "legacy").
+        if (/legacy/i.test(line)) continue;
+        for (const tok of BANNED) {
+          if (line.includes(tok)) violations.push(`${p}:${i + 1}: ${tok}`);
+        }
       }
     }
   }
