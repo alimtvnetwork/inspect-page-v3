@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# rollback.sh — emergency rollback for Inspect Page v2.7.0 launch.
+# rollback.sh — emergency rollback for Inspect Page v2.7.5 launch.
 # Restores the previous CWS-uploaded zip and prints WP plugin downgrade steps.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
