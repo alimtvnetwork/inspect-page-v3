@@ -59,7 +59,6 @@ const Index = (): JSX.Element => {
     <div className="min-h-screen bg-background text-foreground">
       <script
         type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <main className="mx-auto w-full max-w-[720px] px-5 py-12 sm:py-16 space-y-20">
