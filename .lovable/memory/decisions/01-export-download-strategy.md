@@ -1,12 +1,12 @@
-# Decision: anchor-download for extension exports
+# Decision: chrome.downloads for promptable extension exports
 
-**Context:** Inspect tab "Export report ▾" dropdown (JSON/Markdown/Colors CSV/Fonts CSV) silently did nothing when clicked from the in-page floating panel.
+**Context:** Inspect tab "Export report ▾" dropdown (JSON/Markdown/Colors CSV/Fonts CSV) silently did nothing when clicked from the in-page floating panel, and the user expects Chrome to ask where to save these report files.
 
-**Root cause:** `showSaveFilePicker()` is blocked inside cross-origin iframes (the panel runs in a content-script iframe).
+**Root cause:** `showSaveFilePicker()` and synthetic `<a download>` clicks are unreliable from the content-script iframe used by the floating panel.
 
-**Decision:** Replace `showSaveFilePicker` + `anchorFallback` with a single `anchorDownload()` helper that creates a synthetic `<a download>` and clicks it. Browser writes straight to the default Downloads folder, honoring Chrome's preference.
+**Decision:** Route panel text/blob exports through the background `DownloadBlob` message and `chrome.downloads.download({ saveAs: true })` when the UX requires a visible Save As picker. Keep anchor download only as a last-resort fallback if the background round-trip fails.
 
-**Side effect:** Flipped `saveAs: true → false` on every `chrome.downloads.download` call to stop forcing the Save As… dialog.
+**Side effect:** `DownloadBlob` now accepts optional `saveAs`; callers that want promptable downloads pass `saveAs: true`.
 
 **Files:**
 - `extension-src/panel/inspect/download-blob.ts` — anchor download helper (replaces picker)
