@@ -1,6 +1,6 @@
 # Active Roadmap
 
-Current shipped: Extension **v2.7.5** + WP plugin **v2.6.0**. See `.lovable/memory/workflow/01-launch-state.md` for full state.
+Current shipped: Extension **v2.7.6** + WP plugin **v2.6.0**. See `.lovable/memory/workflow/01-launch-state.md` for full state.
 
 ## ⏳ Pending (manual / external, non-WP-plugin)
 - [ ] Capture CWS screenshots (1280×800) → `store-assets/screenshots-v2.7.5/`
