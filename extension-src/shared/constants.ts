@@ -73,7 +73,8 @@ export const README_TXT =
 // The official Inspect Page WordPress backend. Baked into the extension so users
 // never have to type a site URL. Leave empty until the production site is
 // chosen; the Share Links export mode stays disabled while empty.
-// TODO: set this to the production WordPress URL before publishing.
+// TODO (blocking): set this to the production WordPress URL before publishing.
+//   Current value "" = Share Links disabled.
 export const INSPECT_PAGE_WP_SITE_URL = "" as const;
 
 // ---- Landing page (marketing) ----
