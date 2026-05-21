@@ -123,15 +123,15 @@ router.on<OffscreenRenderIsolatedPayload, OffscreenRenderIsolatedResponse>(
 
 function waitForLoad(iframe: HTMLIFrameElement): Promise<void> {
   return new Promise((resolve, reject) => {
-    let done = false;
+    let isDone = false;
     const t = setTimeout(() => {
-      if (done) return;
-      done = true;
+      if (isDone) return;
+      isDone = true;
       reject(new MessageError(ErrorCode.E_ISOLATED_TIMEOUT, "iframe.onload timeout"));
     }, ISOLATED_LOAD_TIMEOUT_MS);
     iframe.addEventListener("load", () => {
-      if (done) return;
-      done = true;
+      if (isDone) return;
+      isDone = true;
       clearTimeout(t);
       resolve();
     }, { once: true });

@@ -370,20 +370,20 @@ async function executeBeginScrollCaptureFallback(
           const el = node as HTMLElement;
           if (!el || el.nodeType !== 1) continue;
           if (overlays.some(([h]) => h === el)) continue;
-          let injected = false;
-          if (el.tagName.includes("-")) injected = true;
-          if (!injected) {
+          let isOverlayInjected = false;
+          if (el.tagName.includes("-")) isOverlayInjected = true;
+          if (!isOverlayInjected) {
             let cs: CSSStyleDeclaration | null = null;
             try { cs = window.getComputedStyle(el); } catch { cs = null; }
             const pos = cs?.position ?? "";
             const fixedish = pos === "fixed" || pos === "sticky";
-            if (fixedish && el.shadowRoot) injected = true;
-            if (!injected && fixedish) {
+            if (fixedish && el.shadowRoot) isOverlayInjected = true;
+            if (!isOverlayInjected && fixedish) {
               const z = Number(cs?.zIndex);
-              if (Number.isFinite(z) && z >= HIGH_Z) injected = true;
+              if (Number.isFinite(z) && z >= HIGH_Z) isOverlayInjected = true;
             }
           }
-          if (injected) hideOverlay(el);
+          if (isOverlayInjected) hideOverlay(el);
         }
         const stuck: Array<[HTMLElement, string]> = [];
         for (const el of Array.from(document.querySelectorAll("*"))) {

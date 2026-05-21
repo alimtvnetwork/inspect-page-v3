@@ -16,7 +16,7 @@ export async function matchedCss(target: Element, opts: MatchedCssOptions): Prom
   if (!opts.include) return { css: "" };
 
   const out: string[] = [];
-  let atRuleSkipped = false;
+  let hasAtRuleSkipped = false;
   const sheets = Array.from(document.styleSheets) as CSSStyleSheet[];
 
   for (let i = 0; i < sheets.length; i++) {
@@ -41,11 +41,11 @@ export async function matchedCss(target: Element, opts: MatchedCssOptions): Prom
     }
 
     if (rules) {
-      walkRules(rules, target, header, out, () => { atRuleSkipped = true; });
+      walkRules(rules, target, header, out, () => { hasAtRuleSkipped = true; });
     }
   }
 
-  if (atRuleSkipped) {
+  if (hasAtRuleSkipped) {
     logger.warn(LogCategory.Element, ErrorCode.W_AT_RULE_SKIPPED, "ignored @supports/@layer/@container");
   }
 

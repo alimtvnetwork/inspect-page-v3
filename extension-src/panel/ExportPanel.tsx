@@ -200,42 +200,42 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
 
   // ---- Load onboarding state ----
   useEffect(() => {
-    let alive = true;
+    let isMounted = true;
     getOnboardingState()
-      .then((s) => { if (alive) setOnboardingDismissed(s.dismissed); })
+      .then((s) => { if (isMounted) setOnboardingDismissed(s.dismissed); })
       .catch(() => { /* ignore */ });
-    return () => { alive = false; };
+    return () => { isMounted = false; };
   }, []);
 
   // onDismissOnboarding removed alongside Smart Share banner (UX request).
 
   // ---- Load settings on mount ----
   useEffect(() => {
-    let alive = true;
+    let isMounted = true;
     sendToBackground<Record<string, never>, GetSettingsResponse>(MessageKind.GetSettings, {})
-      .then((s) => { if (alive) setSettings(s); })
+      .then((s) => { if (isMounted) setSettings(s); })
       .catch((e: unknown) => {
-        if (!alive) return;
+        if (!isMounted) return;
         const msg = e instanceof Error ? e.message : String(e);
         setSettingsError(msg);
       });
-    return () => { alive = false; };
+    return () => { isMounted = false; };
   }, []);
 
   // ---- Load Share Links credentials ----
   useEffect(() => {
-    let alive = true;
+    let isMounted = true;
     sendToBackground<Record<string, never>, ShareSettings>(MessageKind.GetShareSettings, {})
-      .then((s) => { if (alive) setShareSettingsState(s); })
+      .then((s) => { if (isMounted) setShareSettingsState(s); })
       .catch(() => { /* non-fatal */ });
-    return () => { alive = false; };
+    return () => { isMounted = false; };
   }, []);
 
   // ---- Load extension theme preset + subscribe to changes ----
   useEffect(() => {
-    let alive = true;
+    let isMounted = true;
     void loadStoredExtTheme().then((v) => {
-      if (!alive) return;
+      if (!isMounted) return;
       setExtTheme(v);
       applyExtensionTheme(v);
     });
@@ -243,7 +243,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
       setExtTheme(v);
       applyExtensionTheme(v);
     });
-    return () => { alive = false; unsub(); };
+    return () => { isMounted = false; unsub(); };
   }, []);
 
   // Re-apply before paint so clicking a preset visibly recolors the active
@@ -265,14 +265,14 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   // and are cleared once consumed so they don't haunt unrelated tabs.
   useEffect(() => {
     if (surface !== "popup") return;
-    let alive = true;
+    let isMounted = true;
     (async () => {
       try {
         const r = await chrome.storage.session.get("inspect-page:last-pick");
         const entry = r["inspect-page:last-pick"] as
           | { ts: number; pageUrl: string; payload: StatusUpdatePayload }
           | undefined;
-        if (!alive || !entry) return;
+        if (!isMounted || !entry) return;
         const fresh = Date.now() - entry.ts < 10 * 60 * 1000;
         if (!fresh) {
           await chrome.storage.session.remove("inspect-page:last-pick");
@@ -297,7 +297,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         await chrome.storage.session.remove("inspect-page:last-pick");
       } catch { /* session storage unavailable */ }
     })();
-    return () => { alive = false; };
+    return () => { isMounted = false; };
   }, [surface]);
 
   // ---- Listen for StatusUpdate broadcasts from SW (stages 5+) ----
@@ -449,14 +449,14 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
   useEffect(() => {
     if (surface !== "floating") return;
     if (settings === null) return; // wait for settings before dispatching
-    let alive = true;
+    let isMounted = true;
     (async () => {
       try {
         const r = await chrome.storage.session.get("inspect-page:pending-action");
         const entry = r["inspect-page:pending-action"] as
           | { kind: "fullPage" | "pick"; ts: number }
           | undefined;
-        if (!alive || !entry) return;
+        if (!isMounted || !entry) return;
         // Only honor very recent handoffs (10 s) to avoid stale auto-runs.
         const fresh = Date.now() - entry.ts < 10_000;
         await chrome.storage.session.remove("inspect-page:pending-action");
@@ -466,7 +466,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         runActionRef.current?.(entry.kind);
       } catch { /* session storage unavailable */ }
     })();
-    return () => { alive = false; };
+    return () => { isMounted = false; };
   }, [surface, settings]);
 
   const onCancel = useCallback(async () => {
@@ -1460,12 +1460,12 @@ function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
   const [justFlippedPro, setJustFlippedPro] = useState(false);
   useEffect(() => {
     if (!signedIn) { setStatus(null); return; }
-    let cancelled = false;
+    let isAborted = false;
     let prevPlan: string | null = null;
     const refresh = async () => {
       try {
         const s = await getBillingStatus({ getShareSettings });
-        if (!cancelled) {
+        if (!isAborted) {
           if (detectProFlip(prevPlan, s.plan)) {
             setJustFlippedPro(true);
             if (typeof window !== "undefined") {
@@ -1475,16 +1475,16 @@ function BillingPanel({ signedIn }: { signedIn: boolean }): JSX.Element | null {
           prevPlan = s.plan;
           setStatus(s);
         }
-      } catch { if (!cancelled) setStatus(null); }
+      } catch { if (!isAborted) setStatus(null); }
     };
     void refresh();
-    if (typeof window === "undefined") return () => { cancelled = true; };
+    if (typeof window === "undefined") return () => { isAborted = true; };
     const onFocus = () => { void refresh(); };
     const onChanged = () => { void refresh(); };
     window.addEventListener("focus", onFocus);
     window.addEventListener(BILLING_CHANGED_EVENT, onChanged);
     return () => {
-      cancelled = true;
+      isAborted = true;
       window.removeEventListener("focus", onFocus);
       window.removeEventListener(BILLING_CHANGED_EVENT, onChanged);
     };
@@ -1601,7 +1601,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
   // sign-out + sign-in cycle.
   useEffect(() => {
     if (!signedIn) return;
-    let cancelled = false;
+    let isAborted = false;
     const refresh = async () => {
       try {
         const r = await sendToBackground<Record<string, never>, {
@@ -1611,7 +1611,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
             lifetimeUsed: number; freeLimit: number; hasLicense: boolean;
           };
         }>(MK.CheckShareAuth, {});
-        if (!cancelled && r.loggedIn && r.quota) {
+        if (!isAborted && r.loggedIn && r.quota) {
           setQuota({
             lifetimeUsed: r.quota.lifetimeUsed,
             freeLimit: r.quota.freeLimit,
@@ -1621,7 +1621,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
       } catch { /* ignore */ }
     };
     refresh();
-    if (typeof window === "undefined") return () => { cancelled = true; };
+    if (typeof window === "undefined") return () => { isAborted = true; };
     const onFocus = () => { void refresh(); };
     const onVisibility = () => {
       if (typeof document !== "undefined" && !document.hidden) void refresh();
@@ -1633,7 +1633,7 @@ function ShareSettingsSection({ settings, onPatch }: ShareSettingsSectionProps):
     const onBillingChanged = () => { void refresh(); };
     window.addEventListener(BILLING_CHANGED_EVENT, onBillingChanged);
     return () => {
-      cancelled = true;
+      isAborted = true;
       window.removeEventListener("focus", onFocus);
       if (typeof document !== "undefined") {
         document.removeEventListener("visibilitychange", onVisibility);
