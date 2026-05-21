@@ -4,7 +4,7 @@
  */
 import { useState } from "react";
 import type { StatusUpdatePayload, ExportArtifacts } from "@shared/types";
-import type { ElementSnapshot } from "@element/collectElementSnapshot";
+import type { ElementSnapshot } from "@element/collect-element-snapshot";
 import { ElementInspector } from "./element/ElementInspector";
 import { CodeDrawer } from "./element/CodeDrawer";
 import { ExportModes } from "./ExportModes";

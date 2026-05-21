@@ -13,8 +13,8 @@ import {
 } from "@shared/constants";
 import { LogCategory } from "@shared/enums";
 import { logger } from "@shared/logger";
-import { buildPickerDom } from "./pickerDom";
-import { updateOverlay, showTarget } from "./pickerOverlay";
+import { buildPickerDom } from "./picker-dom";
+import { updateOverlay, showTarget } from "./picker-overlay";
 
 export interface PickerHandlers {
   onSelect(detail: { element: Element; rect: DOMRect }): void | Promise<void>;

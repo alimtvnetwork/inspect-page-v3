@@ -8,7 +8,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { COPY } from "@shared/copy";
 import type { ColorUsage } from "../../inspect/types";
-import { parseHex, rgbToHsl, formatRgb, formatHsl, type RgbColor, type HslColor } from "../../inspect/colorMath";
+import { parseHex, rgbToHsl, formatRgb, formatHsl, type RgbColor, type HslColor } from "../../inspect/color-math";
 
 export interface DetailDrawerProps {
   color: ColorUsage;

@@ -19,18 +19,18 @@ import type {
   RestoreAfterCaptureResponse,
   Settings,
 } from "@shared/types";
-import { collectArtifacts } from "@capture/collectArtifacts";
-import { beginScrollCapture, restoreAfterCapture } from "@capture/scrollCapture";
+import { collectArtifacts } from "@capture/collect-artifacts";
+import { beginScrollCapture, restoreAfterCapture } from "@capture/scroll-capture";
 import { describe, enterPicker, exitPicker } from "@picker/picker";
 import type {
   EnterPickerModePayload, EnterPickerModeResponse,
   ExitPickerModePayload, ExitPickerModeResponse,
   StatusUpdatePayload,
 } from "@shared/types";
-import { collectElement } from "@element/collectElement";
-import { collectElementSnapshot } from "@element/collectElementSnapshot";
-import { collectSnapshot } from "./inspect/collectSnapshot";
-import { locateColor, locateElement } from "./inspect/locateColor";
+import { collectElement } from "@element/collect-element";
+import { collectElementSnapshot } from "@element/collect-element-snapshot";
+import { collectSnapshot } from "./inspect/collect-snapshot";
+import { locateColor, locateElement } from "./inspect/locate-color";
 import { mountFloatingPanel } from "@panel/mountFloatingPanel";
 
 logger.debug(LogCategory.Lifecycle, "Content script loaded");

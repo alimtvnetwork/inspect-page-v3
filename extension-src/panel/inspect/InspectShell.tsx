@@ -19,7 +19,7 @@ import { InspectCssInfo } from "./InspectCssInfo";
 import { InspectInspector } from "./InspectInspector";
 import { InspectTextTypography } from "./InspectTextTypography";
 import { ExportMenu } from "./ExportMenu";
-import { snapshotCache } from "./snapshotCache";
+import { snapshotCache } from "./snapshot-cache";
 
 interface SnapshotState {
   status: "idle" | "loading" | "ready" | "error";

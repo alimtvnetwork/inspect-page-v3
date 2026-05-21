@@ -3,7 +3,7 @@
  * Environment: jsdom (configured via environmentMatchGlobs).
  */
 import { describe, it, expect, beforeEach } from "vitest";
-import { serializeWithShadow, countOpenShadowRoots } from "../shadowSerializer";
+import { serializeWithShadow, countOpenShadowRoots } from "../shadow-serializer";
 
 function el(html: string): HTMLElement {
   const wrap = document.createElement("div");

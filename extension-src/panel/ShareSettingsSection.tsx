@@ -16,16 +16,16 @@ import { INSPECT_PAGE_WP_SITE_URL, INSPECT_PAGE_PRICING_URL } from "@shared/cons
 import { MessageKind as MK } from "@shared/enums";
 import { sendToBackground } from "@shared/messaging";
 import type { ShareSettings, CreateShareSessionResponse } from "@shared/types";
-import { getShareSettings, setShareSettings } from "@shared/shareSettings";
-import { listShareSessions, type ShareSessionSummary } from "../share/listShareSessions";
-import { startBillingCheckout } from "../share/startBillingCheckout";
-import { startBillingPortal } from "../share/startBillingPortal";
-import { getBillingStatus, type BillingStatus } from "../share/getBillingStatus";
-import { formatBillingPriceTagline } from "../share/formatPrice";
-import { detectProFlip } from "../share/detectProFlip";
-import { pollBillingUntilPro, BILLING_CHANGED_EVENT } from "../share/pollBillingUntilPro";
-import { emitBilling } from "../share/billingTelemetry";
-import { revokeShareSession } from "../share/revokeShareSession";
+import { getShareSettings, setShareSettings } from "@shared/share-settings";
+import { listShareSessions, type ShareSessionSummary } from "../share/list-share-sessions";
+import { startBillingCheckout } from "../share/start-billing-checkout";
+import { startBillingPortal } from "../share/start-billing-portal";
+import { getBillingStatus, type BillingStatus } from "../share/get-billing-status";
+import { formatBillingPriceTagline } from "../share/format-price";
+import { detectProFlip } from "../share/detect-pro-flip";
+import { pollBillingUntilPro, BILLING_CHANGED_EVENT } from "../share/poll-billing-until-pro";
+import { emitBilling } from "../share/billing-telemetry";
+import { revokeShareSession } from "../share/revoke-share-session";
 
 export interface ShareSettingsSectionProps {
   settings: ShareSettings;

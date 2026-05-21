@@ -9,7 +9,7 @@
  * call site; anything that fails is returned as `undefined` so callers can
  * skip rendering instead of crashing on `cannot read property of undefined`.
  */
-import type { ElementSnapshot } from "../element/collectElementSnapshot";
+import type { ElementSnapshot } from "../element/collect-element-snapshot";
 import type { InspectSnapshot } from "../inspect/types";
 
 const isObj = (x: unknown): x is Record<string, unknown> =>

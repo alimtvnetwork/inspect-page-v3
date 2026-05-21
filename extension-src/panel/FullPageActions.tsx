@@ -8,7 +8,7 @@ import { COPY } from "@shared/copy";
 import type { ExportArtifacts } from "@shared/types";
 import { ExportModes } from "./ExportModes";
 import { buildFullPageArtifacts, type FullPageArtifactSource } from "./artifacts";
-import { saveBlobWithPrompt } from "./saveBlobWithPrompt";
+import { saveBlobWithPrompt } from "./save-blob-with-prompt";
 
 export interface FullPageActionsProps {
   artifacts: FullPageArtifactSource;

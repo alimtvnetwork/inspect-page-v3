@@ -7,7 +7,7 @@
  * with a copy-to-clipboard button per pane.
  */
 import { useCallback, useMemo, useState } from "react";
-import type { ElementSnapshot } from "@element/collectElementSnapshot";
+import type { ElementSnapshot } from "@element/collect-element-snapshot";
 
 export interface CodeDrawerProps {
   snapshot: ElementSnapshot;

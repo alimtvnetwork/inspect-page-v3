@@ -8,7 +8,7 @@ import {
   DEFAULT_EXT_PRESET_ID,
   EXT_THEME_PRESETS,
   type StoredExtTheme,
-} from "./extensionThemes";
+} from "./extension-themes";
 
 interface AppearanceSectionProps {
   value: StoredExtTheme;
