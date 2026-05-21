@@ -10,11 +10,11 @@
 import {
   PICKER_THROTTLE_MS,
   PICKER_TOOLTIP_MAX_CHARS,
-  Z_INDEX_PICKER,
 } from "@shared/constants";
 import { LogCategory } from "@shared/enums";
 import { logger } from "@shared/logger";
-import { contrastRatio, isLargeText, verdict } from "../inspect/contrast";
+import { PICKER_STYLE as STYLE, PICKER_SEL_STYLE as SEL_STYLE } from "./pickerStyles";
+import { buildDetailHtml } from "./tooltipDetail";
 
 export interface PickerHandlers {
   onSelect(detail: { element: Element; rect: DOMRect }): void | Promise<void>;
