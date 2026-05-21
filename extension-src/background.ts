@@ -9,6 +9,9 @@ import { getShareSettings, normalizeBaseUrl, setShareSettings } from "@shared/sh
 import { createShareSession as createShareSessionImpl } from "@share/createShareSession";
 import { revokeShareSession as revokeShareSessionImpl } from "@share/revokeShareSession";
 import { startKeepAlive, stopKeepAlive } from "./background/keepAlive";
+import { waitForDownloadPath } from "./background/downloads";
+import { captureInspectThumbnail } from "./background/thumbnail";
+import { sendOffscreen, blobToDataUrl } from "./background/sendOffscreen";
 import { COLLECT_TIMEOUT_MS } from "@shared/constants";
 import type {
   CollectPageArtifactsResponse,
