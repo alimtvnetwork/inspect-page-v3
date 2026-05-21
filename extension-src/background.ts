@@ -8,7 +8,7 @@ import { getPanelPosition, getSettings, setPanelPosition, setSettings } from "@s
 import { getShareSettings, normalizeBaseUrl, setShareSettings } from "@shared/shareSettings";
 import { createShareSession as createShareSessionImpl } from "@share/createShareSession";
 import { revokeShareSession as revokeShareSessionImpl } from "@share/revokeShareSession";
-import { KEEPALIVE_INTERVAL_MS } from "@shared/constants";
+import { startKeepAlive, stopKeepAlive } from "./background/keepAlive";
 import { COLLECT_TIMEOUT_MS } from "@shared/constants";
 import type {
   CollectPageArtifactsResponse,
@@ -613,47 +613,9 @@ chrome.commands?.onCommand?.addListener(async (command) => {
 // Toolbar icon now uses manifest `default_popup`, which anchors the popup to
 // the current tab (toolbar dropdown) instead of a detached window.
 
-// ---- Stage 9: SW keep-alive during exports (E20) ----
-// Spec R12 / E20: use chrome.alarms (NOT setInterval) to keep the MV3 service
-// worker alive across long exports. A self-loop Port additionally pins the SW
-// while the alarm cadence (30s) covers Chromium's 30s idle-suspend window.
-const KEEPALIVE_ALARM_NAME = "inspect-page-keepalive";
-const KEEPALIVE_ALARM_PERIOD_MIN = Math.max(KEEPALIVE_INTERVAL_MS / 60_000, 0.5);
-let keepAliveCount = 0;
-let keepAlivePort: chrome.runtime.Port | null = null;
-function startKeepAlive(): void {
-  keepAliveCount++;
-  if (keepAlivePort) return;
-  const openPort = (): void => {
-    try {
-      keepAlivePort = chrome.runtime.connect({ name: KEEPALIVE_ALARM_NAME });
-      keepAlivePort.onDisconnect.addListener(() => {
-        keepAlivePort = null;
-        if (keepAliveCount > 0) openPort();
-      });
-    } catch { /* alarm-based fallback handles it */ }
-  };
-  openPort();
-  chrome.alarms.create(KEEPALIVE_ALARM_NAME, { periodInMinutes: KEEPALIVE_ALARM_PERIOD_MIN });
-}
-function stopKeepAlive(): void {
-  keepAliveCount = Math.max(0, keepAliveCount - 1);
-  if (keepAliveCount === 0) {
-    chrome.alarms.clear(KEEPALIVE_ALARM_NAME).catch(() => undefined);
-    if (keepAlivePort) { try { keepAlivePort.disconnect(); } catch { /* noop */ } keepAlivePort = null; }
-  }
-}
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name !== KEEPALIVE_ALARM_NAME) return;
-  // Wake the SW with a cheap async chrome.* call.
-  chrome.runtime.getPlatformInfo().catch(() => undefined);
-});
-// Absorb the no-op port on the receiving end so Chromium keeps it alive.
-chrome.runtime.onConnect.addListener((port) => {
-  if (port.name === KEEPALIVE_ALARM_NAME) {
-    port.onMessage.addListener(() => undefined);
-  }
-});
+// SW keep-alive moved to ./background/keepAlive.ts (R7 split). The module
+// import above also registers chrome.alarms.onAlarm + chrome.runtime.onConnect
+// listeners as a side-effect.
 
 /**
  * Stage 5 orchestrator — collect artifacts via CS, build ZIP with placeholder
