@@ -18,18 +18,32 @@ $ErrorActionPreference = 'Stop'
 function Write-Log($msg)  { Write-Host "[inspect-page] $msg" -ForegroundColor Cyan }
 function Write-Fail($msg) { Write-Host "[inspect-page] $msg" -ForegroundColor Red; exit 1 }
 
-$Repo    = if ($env:IP_REPO)    { $env:IP_REPO }    else { 'alimtvnetwork/inspect-page' }
+$Repo    = if ($env:IP_REPO)    { $env:IP_REPO }    else { '' }
 $Dest    = if ($env:IP_DEST)    { $env:IP_DEST }    else { Join-Path $env:USERPROFILE 'inspect-page' }
 $Version = if ($env:IP_VERSION) { $env:IP_VERSION } else { '' }
 
-# 1. Resolve version: explicit env > self-URL pin (PSCommandPath / MyInvocation) > latest API
-if (-not $Version) {
-    $selfUrl = $MyInvocation.MyCommand.Definition
-    if ($selfUrl -match '/releases/download/(ext-v[\d\w\.\+-]+)/install\.ps1') {
-        $Version = $Matches[1]
-        Write-Log "URL-pinned version detected: $Version"
-    }
+# 1. Self-URL inspection. When run via `iwr ... | iex`, the source URL is
+#    available in $MyInvocation.MyCommand.Definition (PowerShell stores the
+#    fetched script text plus, in some hosts, the source URL via PSCommandPath).
+#    As a backstep, scan the parent command line for the URL.
+$selfUrl = ''
+try { $selfUrl = $PSCommandPath } catch {}
+if (-not $selfUrl) {
+    try {
+        $ppid = (Get-CimInstance Win32_Process -Filter "ProcessId=$PID").ParentProcessId
+        $selfUrl = (Get-CimInstance Win32_Process -Filter "ProcessId=$ppid").CommandLine
+    } catch {}
 }
+if ($selfUrl -match 'github\.com/([\w.-]+/[\w.-]+)/releases/download/(ext-v[\d\w\.\+-]+)/install\.ps1') {
+    if (-not $Repo)    { $Repo    = $Matches[1] }
+    if (-not $Version) { $Version = $Matches[2] }
+    Write-Log "URL-pinned: repo=$Repo version=$Version"
+} elseif ($selfUrl -match 'raw\.githubusercontent\.com/([\w.-]+/[\w.-]+)/[^/]+/scripts/install\.ps1') {
+    if (-not $Repo) { $Repo = $Matches[1] }
+    Write-Log "Latest channel: repo=$Repo"
+}
+
+if (-not $Repo) { Write-Fail "Cannot determine repository. Set `$env:IP_REPO='owner/repo'." }
 
 if (-not $Version) {
     Write-Log "Resolving latest ext-v* release from GitHub API…"

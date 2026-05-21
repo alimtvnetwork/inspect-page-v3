@@ -19,7 +19,7 @@
 #   IP_DEST=/path        (default: ~/inspect-page)
 set -euo pipefail
 
-REPO="${IP_REPO:-alimtvnetwork/inspect-page}"
+REPO="${IP_REPO:-}"
 DEST="${IP_DEST:-$HOME/inspect-page}"
 VERSION="${IP_VERSION:-}"
 
@@ -30,15 +30,19 @@ need() { command -v "$1" >/dev/null 2>&1 || die "missing required tool: $1"; }
 need curl
 need unzip
 
-# 1. Resolve version: explicit env > self-URL pin > latest API
-if [ -z "$VERSION" ] && [ -n "${BASH_SOURCE[0]:-}" ]; then
-  # Detect URL-pin when piped via curl: parent process command line contains tag
-  PARENT_CMD="$(ps -o args= -p $PPID 2>/dev/null || true)"
-  if [[ "$PARENT_CMD" =~ /releases/download/(ext-v[0-9A-Za-z.+-]+)/install\.sh ]]; then
-    VERSION="${BASH_REMATCH[1]}"
-    log "URL-pinned version detected: $VERSION"
-  fi
+# 1. Self-URL inspection (works when piped via curl): the parent shell's
+#    command line contains the source URL. Parse REPO and VERSION from it.
+PARENT_CMD="$(ps -o args= -p $PPID 2>/dev/null || true)"
+if [[ "$PARENT_CMD" =~ github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/releases/download/(ext-v[0-9A-Za-z.+-]+)/install\.sh ]]; then
+  [ -z "$REPO" ]    && REPO="${BASH_REMATCH[1]}"
+  [ -z "$VERSION" ] && VERSION="${BASH_REMATCH[2]}"
+  log "URL-pinned: repo=$REPO version=$VERSION"
+elif [[ "$PARENT_CMD" =~ raw\.githubusercontent\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/[^/]+/scripts/install\.sh ]]; then
+  [ -z "$REPO" ] && REPO="${BASH_REMATCH[1]}"
+  log "Latest channel: repo=$REPO"
 fi
+
+[ -n "$REPO" ] || die "Cannot determine repository. Set IP_REPO=owner/repo (e.g. IP_REPO=foo/inspect-page)."
 
 if [ -z "$VERSION" ]; then
   log "Resolving latest ext-v* release from GitHub API…"
