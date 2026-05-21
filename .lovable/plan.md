@@ -1,4 +1,24 @@
-## Feature: Color Tokens v2 — Variants, Selector Mapping & Custom CSS
+# Active Roadmap
+
+Current shipped: Extension **v2.7.5** + WP plugin **v2.6.0**. See `.lovable/memory/workflow/01-launch-state.md` for full state.
+
+## ⏳ Pending (manual / external, non-WP-plugin)
+- [ ] Capture CWS screenshots (1280×800) → `store-assets/screenshots-v2.7.5/`
+- [ ] Upload `public/inspect-page.zip` to Chrome Web Store dashboard
+- [ ] Git tag `ext-v2.7.5` (`git tag ext-v2.7.5 && git push origin ext-v2.7.5`)
+
+## 🚫 Blocked — deferred by user (WP plugin out-of-scope for now)
+- [ ] Prod `INSPECT_PAGE_WP_SITE_URL` (still `""`)
+- [ ] Stripe live keys / price / webhook
+- [ ] Git tag `wp-v2.6.0`
+
+See `.lovable/memory/decisions/03-skip-wp-plugin-for-now.md` — do not act on the above without re-confirming.
+
+---
+
+# Completed
+
+## ✅ Color Tokens v2 — Variants, Selector Mapping & Custom CSS (shipped in v2.7.5)
 
 A new first-class "Color Tokens" surface that turns each detected color into a v2-style token (HEX + RGB + HSL + 3 variants), maps it to the selectors that use it, and lets the user edit per-selector custom CSS before export. Shown in Inspect Mode and embedded in every export artifact (MD single, ZIP `prompt.md`, Smart Share, element MD).
 
