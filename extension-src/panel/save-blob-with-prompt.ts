@@ -20,5 +20,5 @@ export async function saveBlobWithPrompt(blob: Blob, filename: string): Promise<
   await sendToBackground<
     { dataUrl: string; filename: string },
     { downloadId: number; savedPath?: string }
-  >(MessageKind.DownloadBlob, { dataUrl, filename });
+  >(MessageKind.DownloadBlob, { dataUrl, filename, saveAs: true });
 }

@@ -57,7 +57,7 @@ async function triggerDownload(blob: Blob, filename: string): Promise<string | u
       { dataUrl: string; filename: string },
       { downloadId: number; savedPath?: string }
     >(
-      MessageKind.DownloadBlob, { dataUrl, filename },
+      MessageKind.DownloadBlob, { dataUrl, filename, saveAs: true },
     );
     return res.savedPath;
   } catch {
