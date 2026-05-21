@@ -36,7 +36,7 @@ import { interpolateAi } from "@shared/copy";
 import { MessageKind as MK } from "@shared/enums";
 import { getOnboardingState, dismissOnboarding } from "@shared/onboarding";
 import { shareConfigured } from "@shared/shareSettings";
-import { getShareSettings, setShareSettings } from "@shared/shareSettings";
+import { getShareSettings } from "@shared/shareSettings";
 import {
   applyExtensionTheme,
   applyExtensionThemeToElement,
@@ -47,24 +47,14 @@ import {
   type StoredExtTheme,
 } from "./extensionThemes";
 import { AppearanceSection } from "./AppearanceSection";
-import { listShareSessions, type ShareSessionSummary } from "../share/listShareSessions";
 import { startBillingCheckout } from "../share/startBillingCheckout";
-import { startBillingPortal } from "../share/startBillingPortal";
-import { getBillingStatus, type BillingStatus } from "../share/getBillingStatus";
-import { formatBillingPriceTagline } from "../share/formatPrice";
-import { detectProFlip } from "../share/detectProFlip";
-import { pollBillingUntilPro, BILLING_CHANGED_EVENT } from "../share/pollBillingUntilPro";
+import { pollBillingUntilPro } from "../share/pollBillingUntilPro";
 import { emitBilling } from "../share/billingTelemetry";
-import { revokeShareSession } from "../share/revokeShareSession";
 import { InspectShell } from "./inspect/InspectShell";
 import { ElementInspector } from "./element/ElementInspector";
 import { CodeDrawer } from "./element/CodeDrawer";
 import type { ElementSnapshot } from "@element/collectElementSnapshot";
-import {
-  ShareSettingsSection,
-  ShareDialog,
-  formatRemaining,
-} from "./ShareSettingsSection";
+import { ShareSettingsSection, ShareDialog } from "./ShareSettingsSection";
 
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
