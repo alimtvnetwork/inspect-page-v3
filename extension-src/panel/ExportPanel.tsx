@@ -60,6 +60,11 @@ import { InspectShell } from "./inspect/InspectShell";
 import { ElementInspector } from "./element/ElementInspector";
 import { CodeDrawer } from "./element/CodeDrawer";
 import type { ElementSnapshot } from "@element/collectElementSnapshot";
+import {
+  ShareSettingsSection,
+  ShareDialog,
+  formatRemaining,
+} from "./ShareSettingsSection";
 
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
