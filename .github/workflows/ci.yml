@@ -1,0 +1,128 @@
+# CI — runs on every PR + push to main.
+# Mirrors the macro-ahk-v34 doc-first pattern adapted to Inspect Page's
+# 3 build artifacts: extension zip, WP plugin zip, marketing site.
+# See: pipeline/02-ci-workflow.md
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    name: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      ext-version: ${{ steps.versions.outputs.ext }}
+      wp-version:  ${{ steps.versions.outputs.wp }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+      - run: bun install --frozen-lockfile
+      - id: versions
+        run: |
+          ext=$(node -p "require('./extension-src/manifest.json').version")
+          wp=$(grep -oE 'Version:[[:space:]]*[0-9.]+' wp-plugin/inspect-page/inspect-page.php | awk '{print $2}')
+          echo "ext=$ext" >> "$GITHUB_OUTPUT"
+          echo "wp=$wp"   >> "$GITHUB_OUTPUT"
+
+  validate:
+    name: validate (brand · versions · zips · axios)
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+      - run: bun install --frozen-lockfile
+      - run: node scripts/ci/check-brand-name.mjs
+      - run: node scripts/ci/check-version-sync.mjs
+      - run: node scripts/ci/check-wp-version-sync.mjs
+      - run: node scripts/ci/check-axios-version.mjs
+      - run: node scripts/ci/check-zip-freshness.mjs
+
+  lint-test:
+    name: lint + test
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run test
+
+  build-site:
+    name: build marketing site
+    needs: [validate, lint-test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: marketing-site-dist
+          path: dist/
+          retention-days: 14
+
+  build-extension:
+    name: build extension zip (v${{ needs.setup.outputs.ext-version }})
+    needs: [validate, lint-test, setup]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+      - run: bun install --frozen-lockfile
+      - run: bash scripts/release.sh
+      - run: ls -la public/inspect-page.zip public/inspect-page.zip.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: inspect-page-ext-v${{ needs.setup.outputs.ext-version }}
+          path: |
+            public/inspect-page.zip
+            public/inspect-page.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+  package-wp:
+    name: package WP plugin zip (v${{ needs.setup.outputs.wp-version }})
+    needs: [validate, setup]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -y && sudo apt-get install -y --no-install-recommends zip
+      - run: bash scripts/package-wp.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: inspect-page-wp-v${{ needs.setup.outputs.wp-version }}
+          path: |
+            public/inspect-page-wp.zip
+            public/inspect-page-wp.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+  verify:
+    name: verify (all artifacts present)
+    needs: [build-site, build-extension, package-wp]
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - run: echo "All CI artifacts built successfully."
