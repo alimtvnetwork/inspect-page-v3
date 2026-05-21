@@ -5,3 +5,4 @@ Saved prompts the user has explicitly asked to persist. Trigger names are listed
 | Trigger | File |
 |---------|------|
 | `Write memory` / `end memory` | [.lovable/prompts/01-write-memory.md](prompts/01-write-memory.md) |
+| `Read memory` | [.lovable/prompts/02-read-memory.md](prompts/02-read-memory.md) |
