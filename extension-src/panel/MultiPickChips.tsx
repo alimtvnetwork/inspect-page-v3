@@ -3,7 +3,7 @@
  * Extracted from ExportPanel.tsx (B1 r10).
  */
 import type { StatusUpdatePayload } from "@shared/types";
-import type { ElementSnapshot } from "@element/collectElementSnapshot";
+import { asElementSnapshot } from "@shared/narrow";
 
 function compactSelectorLabel(selectorPath: string): string {
   const parts = selectorPath.split(" > ").map((part) => part.trim()).filter(Boolean);
@@ -13,7 +13,7 @@ function compactSelectorLabel(selectorPath: string): string {
 export function pickDisplayLabel(
   pick: NonNullable<StatusUpdatePayload["multiElementSnapshot"]>[number],
 ): { title: string; selector: string } {
-  const snapshot = pick.elementSnapshot as ElementSnapshot | undefined;
+  const snapshot = asElementSnapshot(pick.elementSnapshot);
   const friendly = snapshot?.identity?.label?.trim();
   const chip = snapshot?.identity?.selectorChip?.trim();
   const compact = compactSelectorLabel(pick.selectorPath).trim();
