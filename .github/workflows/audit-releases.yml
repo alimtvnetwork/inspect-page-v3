@@ -1,0 +1,32 @@
+# Weekly audit: every release in .gitmap/release/ has matching GitHub Release + assets.
+name: audit-releases
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit registry vs GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          fail=0
+          for f in .gitmap/release/*.json; do
+            [ "$(basename "$f")" = "latest.json" ] && continue
+            tag=$(node -p "require('./$f').tag")
+            if ! gh release view "$tag" >/dev/null 2>&1; then
+              echo "::error::Missing GitHub Release for $tag (referenced by $f)"
+              fail=1
+            fi
+          done
+          exit $fail

@@ -1,0 +1,59 @@
+# Release watcher — when a GitHub Release is published, refresh
+# .gitmap/release/latest.json + .gitmap/release/<tag>.json and commit.
+# Mirrors the macro-ahk-v34 release registry pattern.
+name: release-watcher
+
+on:
+  release:
+    types: [published, edited]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-registry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update .gitmap/release registry
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p .gitmap/release
+          TAG="${{ github.event.release.tag_name }}"
+          if [ -z "$TAG" ]; then echo "no tag — skipping"; exit 0; fi
+          NODE_SCRIPT=$(cat <<'JS'
+          const fs = require("fs");
+          const r = JSON.parse(process.env.RELEASE_JSON);
+          const out = {
+            version: r.tag_name.replace(/^(ext|wp)-v/, ""),
+            tag: r.tag_name,
+            kind: r.tag_name.startsWith("ext-") ? "ext" : "wp",
+            commit: r.target_commitish,
+            branch: r.target_commitish,
+            assets: (r.assets || []).map(a => ({ name: a.name, url: a.browser_download_url, size: a.size })),
+            isDraft: r.draft,
+            isPreRelease: r.prerelease,
+            createdAt: r.created_at,
+            publishedAt: r.published_at,
+            isLatest: !r.draft && !r.prerelease,
+          };
+          fs.writeFileSync(`.gitmap/release/${r.tag_name}.json`, JSON.stringify(out, null, 2) + "\n");
+          if (out.isLatest) fs.writeFileSync(".gitmap/release/latest.json", JSON.stringify(out, null, 2) + "\n");
+          JS
+          )
+          RELEASE_JSON=$(gh release view "$TAG" --json tag_name,target_commitish,assets,draft,prerelease,created_at,published_at)
+          export RELEASE_JSON
+          node -e "$NODE_SCRIPT"
+      - name: Commit registry update
+        run: |
+          if [ -n "$(git status --porcelain .gitmap)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .gitmap
+            git commit -m "chore(release): update registry for ${{ github.event.release.tag_name }}"
+            git push
+          fi

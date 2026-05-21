@@ -1,0 +1,40 @@
+# Smoke-test the shipped zips: structure + brand guard + sha256 match.
+name: installer-tests
+
+on:
+  pull_request:
+    paths:
+      - "public/inspect-page.zip"
+      - "public/inspect-page-wp.zip"
+      - "extension-src/**"
+      - "wp-plugin/**"
+      - ".github/workflows/installer-tests.yml"
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify extension zip structure
+        run: |
+          set -euo pipefail
+          unzip -l public/inspect-page.zip | grep -q "manifest.json" || { echo "::error::extension zip missing manifest.json"; exit 1; }
+          ( cd public && sha256sum -c inspect-page.zip.sha256 )
+      - name: Verify WP plugin zip structure
+        run: |
+          set -euo pipefail
+          unzip -l public/inspect-page-wp.zip | grep -q "inspect-page/inspect-page.php" || { echo "::error::WP zip missing main plugin file"; exit 1; }
+          ( cd public && sha256sum -c inspect-page-wp.zip.sha256 )
+      - name: Brand-guard zip contents
+        run: |
+          set -euo pipefail
+          tmp=$(mktemp -d)
+          unzip -q public/inspect-page.zip    -d "$tmp/ext"
+          unzip -q public/inspect-page-wp.zip -d "$tmp/wp"
+          if grep -rEn "PagePort|LLM Export|LLM Page Export|llm-export" "$tmp" \
+               | grep -viE "legacy"; then
+            echo "::error::Banned tokens found in shipped zip"
+            exit 1
+          fi

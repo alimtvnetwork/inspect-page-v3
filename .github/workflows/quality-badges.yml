@@ -1,0 +1,21 @@
+# Lightweight aggregate workflow used by README badges.
+name: quality-badges
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run test
+      - run: |
+          for s in scripts/ci/check-*.mjs; do node "$s"; done
