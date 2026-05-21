@@ -24,12 +24,14 @@ User requested that **Export Full Page** prompt the native Chrome Save As
 dialog. Other export modes keep silent download to preserve the silent-
 failure fix above.
 
-| Export surface | `saveAs` |
-|---|---|
-| **Full Page Export** (`background/run-full-page-export.ts`) | `true` — user picks location |
-| Element Export (`element/run-element-export.ts`) | `false` |
-| Panel `ExportModes` (MD-single, MD+files, ZIP, Smart Share) | `false` |
-| Inspect-tab "Export report ▾" (JSON / MD / CSVs) | `false` |
+Actual on-disk policy as of this amendment:
+
+| Export surface | `saveAs` | Path |
+|---|---|---|
+| **Full Page Export** (changed by this amendment) | `true` | `background/run-full-page-export.ts:190` |
+| Element Export | `false` | `element/run-element-export.ts:120` |
+| Panel `ExportModes` (MD-single, MD+files, ZIP, Smart Share) | `true` | via `DownloadBlob` message (`ExportModes.tsx:57`) |
+| Inspect-tab "Export report ▾" (JSON / MD / CSVs) | `true` | via `DownloadBlob` message (`panel/inspect/download-blob.ts:35`) |
 
 Rule: only flip a single call site at a time when adjusting this. Never
 flip them all globally — that is what caused the original silent-failure
