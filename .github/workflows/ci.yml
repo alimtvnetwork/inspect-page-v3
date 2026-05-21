@@ -89,6 +89,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: latest }
+      - run: sudo apt-get update -y && sudo apt-get install -y --no-install-recommends zip
       - run: bun install --frozen-lockfile
       - run: bash scripts/release.sh
       - run: ls -la public/inspect-page.zip public/inspect-page.zip.sha256

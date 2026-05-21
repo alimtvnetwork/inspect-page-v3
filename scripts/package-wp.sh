@@ -19,10 +19,15 @@ VERSION="$(grep -E "^[[:space:]]*\*[[:space:]]*Version:" "$SRC/inspect-page.php"
   | head -1 | sed -E 's/.*Version:[[:space:]]*//')"
 echo "Packaging WP plugin v$VERSION"
 
+if ! command -v zip >/dev/null 2>&1; then
+  echo "zip is required to package the WordPress plugin." >&2
+  exit 1
+fi
+
 rm -f "$OUT" "$OUT.sha256"
 (
   cd "$ROOT/wp-plugin"
-  nix run nixpkgs#zip -- -r "$OUT" inspect-page \
+  zip -r "$OUT" inspect-page \
     -x "inspect-page/tests/*" \
     -x "inspect-page/**/.DS_Store" \
     -x "inspect-page/**/*.log" \
