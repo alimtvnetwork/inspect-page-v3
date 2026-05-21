@@ -313,9 +313,10 @@ router.on<RunElementExportPayload, RunElementExportResponse>(
   },
 );
 
-// DownloadBlob — used by the panel/inspector "Export for AI" buttons so the
-// user always gets a Save As… dialog instead of an auto-download to the
-// default Downloads folder.
+// DownloadBlob — used by the panel/inspector "Export for AI" buttons.
+// We respect Chrome's user preference for download location (no forced
+// Save As… prompt). Users who want to be asked every time can enable
+// "Ask where to save each file before downloading" in chrome://settings.
 router.on<{ dataUrl: string; filename: string }, { downloadId: number; savedPath?: string }>(
   MessageKind.DownloadBlob,
   async ({ dataUrl, filename }) => {
@@ -323,7 +324,7 @@ router.on<{ dataUrl: string; filename: string }, { downloadId: number; savedPath
       const downloadId = await chrome.downloads.download({
         url: dataUrl,
         filename,
-        saveAs: true,
+        saveAs: false,
       });
       const savedPath = await waitForDownloadPath(downloadId).catch(() => undefined);
       return savedPath ? { downloadId, savedPath } : { downloadId };

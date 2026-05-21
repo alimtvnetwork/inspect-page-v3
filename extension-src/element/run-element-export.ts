@@ -117,7 +117,7 @@ export async function runElementExport(
   const url = await blobToDataUrl(blob);
   let downloadId: number;
   try {
-    downloadId = await chrome.downloads.download({ url, filename, saveAs: true });
+    downloadId = await chrome.downloads.download({ url, filename, saveAs: false });
   } catch (e) {
     throw new MessageError(
       ErrorCode.E_DOWNLOAD_FAILED, "chrome.downloads failed",
