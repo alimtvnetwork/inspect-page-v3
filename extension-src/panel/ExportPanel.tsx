@@ -60,6 +60,15 @@ import { ExportDiagnostics } from "./ExportDiagnostics";
 import { DebugPreview } from "./DebugPreview";
 import { FullPageActions } from "./FullPageActions";
 import {
+  requestFullPageExport,
+  requestEnterPicker,
+  requestExitPicker,
+  requestCancelFullPage,
+  requestSettingsPatch,
+  requestShareSettingsPatch,
+  requestCreateShareSession,
+} from "./panelActions";
+import {
   buildElementArtifacts,
   buildFullPageArtifacts,
 } from "./artifacts";
@@ -372,24 +381,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     setState({ status: PanelStatus.Collecting, lastAction: kind });
     try {
       if (kind === "fullPage") {
-        const res = await sendToBackground<
-          { tabId: number; settings: Settings },
-          {
-            bundleFilename: string;
-            downloadId: number;
-            telemetry?: ExportMeta["counts"];
-            artifacts?: {
-              html: string;
-              css: string;
-              js: string;
-              screenshotDataUrl: string;
-              meta: ExportMeta;
-            };
-          }
-        >(
-          MessageKind.RunFullPageExport,
-          { tabId: tid, settings: settings! },
-        );
+        const res = await requestFullPageExport(tid, settings!);
         setState({
           status: PanelStatus.Success,
           successFilename: res.bundleFilename,
@@ -398,10 +390,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           lastAction: kind,
         });
       } else {
-        await sendToBackground<{ tabId: number }, void>(
-          MessageKind.EnterPickerMode,
-          { tabId: tid },
-        );
+        await requestEnterPicker(tid);
         setState({ status: PanelStatus.PickerActive, lastAction: kind });
         // Option A — close the popup so the user can click an element on the
         // page. When they re-open the popup, the mount effect above hydrates
@@ -457,21 +446,9 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
 
   const onCancel = useCallback(async () => {
     if (state.lastAction === "pick") {
-      try {
-        await sendToBackground<{ tabId: number }, void>(
-          MessageKind.ExitPickerMode, { tabId: activeTabId ?? -1 },
-        );
-      } catch {
-        // best effort
-      }
+      try { await requestExitPicker(activeTabId ?? -1); } catch { /* best effort */ }
     } else if (state.lastAction === "fullPage") {
-      try {
-        await sendToBackground<{ tabId: number }, void>(
-          MessageKind.CancelFullPageExport, { tabId: activeTabId ?? -1 },
-        );
-      } catch {
-        // best effort
-      }
+      try { await requestCancelFullPage(activeTabId ?? -1); } catch { /* best effort */ }
     }
     setState({ status: PanelStatus.Idle });
   }, [activeTabId, state.lastAction]);
@@ -489,7 +466,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
 
   const onSettingsPatch = useCallback(async (patch: Partial<Settings>) => {
     try {
-      const next = await sendToBackground<Partial<Settings>, Settings>(MessageKind.SetSettings, patch);
+      const next = await requestSettingsPatch(patch);
       setSettings(next);
     } catch (e) {
       setSettingsError(e instanceof Error ? e.message : String(e));
@@ -498,34 +475,16 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
 
   const onShareSettingsPatch = useCallback(async (patch: Partial<ShareSettings>) => {
     try {
-      const next = await sendToBackground<Partial<ShareSettings>, ShareSettings>(
-        MessageKind.SetShareSettings, patch,
-      );
+      const next = await requestShareSettingsPatch(patch);
       setShareSettingsState(next);
     } catch { /* ignore */ }
   }, []);
 
   const onShare = useCallback(async (artifacts: ExportArtifacts): Promise<void> => {
-    const primary = artifacts.images[0];
-    if (!primary) {
-      throw new Error("No image to upload — Share Links requires a screenshot.");
-    }
-    const res = await sendToBackground<
-      {
-        kind: string; sourceUrl: string;
-        html: string; css: string; js: string;
-        imageBase64: string; imageMime: string;
-      },
-      CreateShareSessionResponse
-    >(MessageKind.CreateShareSession, {
-      kind: artifacts.flow,
-      sourceUrl: activeUrl ?? artifacts.meta?.url ?? "",
-      html: artifacts.html,
-      css: artifacts.css,
-      js: artifacts.js,
-      imageBase64: primary.base64,
-      imageMime: primary.mime,
-    });
+    const res = await requestCreateShareSession(
+      artifacts,
+      activeUrl ?? artifacts.meta?.url ?? "",
+    );
     setShareResult(res);
     return;
   }, [activeUrl]);
