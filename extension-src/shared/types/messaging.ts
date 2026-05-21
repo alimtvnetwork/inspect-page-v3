@@ -226,3 +226,6 @@ export interface CollectInspectSnapshotResponse {
   /** PNG data URL of the visible viewport. */
   thumbnailDataUrl: string;
 }
+
+export interface DownloadBlobPayload { dataUrl: string; filename: string; saveAs?: boolean }
+export interface DownloadBlobResponse { downloadId: number; savedPath?: string }
