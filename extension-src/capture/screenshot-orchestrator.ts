@@ -144,7 +144,7 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
 
   let effectivePageH = pageCssPx.h;
   const effectivePageW = pageCssPx.w;
-  let canvasW = Math.round(effectivePageW * dpr);
+  const canvasW = Math.round(effectivePageW * dpr);
   let canvasH = Math.round(effectivePageH * dpr);
 
   // Width too wide → hard fail (we can't shrink horizontally without distortion).
