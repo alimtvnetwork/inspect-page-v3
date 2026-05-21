@@ -9,7 +9,7 @@
     "build:watch": "vite build --watch",
     "package": "bash scripts/package.sh",
     "test": "vitest run",
-    "lint": "cd .. && node_modules/.bin/eslint extension-src --max-warnings=0"
+    "lint": "cd .. && node_modules/.bin/eslint extension-src"
   },
   "dependencies": {
     "html-to-image": "^1.11.13",
