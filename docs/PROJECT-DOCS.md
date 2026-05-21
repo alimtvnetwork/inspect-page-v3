@@ -11,7 +11,7 @@
 ## 1. Product snapshot
 
 - **Name:** Inspect Page (two words, capital I + P).
-- **Shipped:** Extension `v2.7.7` + WordPress plugin `v2.6.0`.
+- **Shipped:** Extension `v2.7.8` + WordPress plugin `v2.6.0`.
 - **Stack:** MV3 Chrome extension (TypeScript) + WordPress plugin (PHP).
 - **Backend decision:** WordPress plugin (locked). Auth = WP login cookie + `X-WP-Nonce`.
 - **Brand-name rule:** never use "PagePort", "LLM Export", "LLM Page Export", or
