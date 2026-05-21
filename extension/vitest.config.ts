@@ -32,6 +32,8 @@ export default defineConfig({
       "@capture": path.resolve(srcRoot, "capture"),
       "@zip": path.resolve(srcRoot, "zip"),
       "@share": path.resolve(srcRoot, "share"),
+      "@inspect": path.resolve(srcRoot, "inspect"),
+      "@element": path.resolve(srcRoot, "element"),
     },
   },
   define: {
