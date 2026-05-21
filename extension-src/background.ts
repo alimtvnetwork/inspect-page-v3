@@ -60,6 +60,8 @@ import type {
   StatusUpdatePayload,
   CollectInspectSnapshotPayload,
   CollectInspectSnapshotResponse,
+  DownloadBlobPayload,
+  DownloadBlobResponse,
 } from "@shared/types";
 import { PanelStatus } from "@shared/enums";
 import { ensureOffscreen } from "@capture/screenshot-orchestrator";
@@ -314,17 +316,16 @@ router.on<RunElementExportPayload, RunElementExportResponse>(
 );
 
 // DownloadBlob — used by the panel/inspector "Export for AI" buttons.
-// We respect Chrome's user preference for download location (no forced
-// Save As… prompt). Users who want to be asked every time can enable
-// "Ask where to save each file before downloading" in chrome://settings.
-router.on<{ dataUrl: string; filename: string }, { downloadId: number; savedPath?: string }>(
+// Defaults to Chrome's normal download behavior, but panel callers may pass
+// `saveAs: true` when a visible location picker is part of the workflow.
+router.on<DownloadBlobPayload, DownloadBlobResponse>(
   MessageKind.DownloadBlob,
-  async ({ dataUrl, filename }) => {
+  async ({ dataUrl, filename, saveAs = false }) => {
     try {
       const downloadId = await chrome.downloads.download({
         url: dataUrl,
         filename,
-        saveAs: false,
+        saveAs,
       });
       const savedPath = await waitForDownloadPath(downloadId).catch(() => undefined);
       return savedPath ? { downloadId, savedPath } : { downloadId };

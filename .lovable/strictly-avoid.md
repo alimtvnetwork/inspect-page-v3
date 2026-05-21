@@ -8,5 +8,5 @@ Hard rules. Violating any of these breaks the project.
 - **Popup geometry:** never remove the `.lpe-btn-hero` / `.lpe-btn-ico` size guards or the hero SVG intrinsic `18×18` attrs. If popup balloons → History-revert, do not patch CSS further.
 - **Extension theme:** never repaint the dark-mint palette without explicit user approval.
 - **`.lovable/memories/`:** wrong path. Always `.lovable/memory/`.
-- **`showSaveFilePicker` in extension downloads:** blocked inside in-page iframe panel. Always use anchor download or `chrome.downloads` with `saveAs: false`. See: `.lovable/solved-issues/01-export-dropdown-silent.md`.
+- **`showSaveFilePicker` in extension downloads:** blocked inside in-page iframe panel. Use background `chrome.downloads`; set `saveAs: true` only for user-facing prompt flows. See: `.lovable/solved-issues/01-export-dropdown-silent.md`.
 - **WP plugin work:** deferred per user request — see `.lovable/memory/avoid/01-deferred-scope.md`.

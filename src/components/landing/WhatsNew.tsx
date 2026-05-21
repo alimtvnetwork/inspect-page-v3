@@ -1,5 +1,5 @@
 /**
- * "What's new in v2.7.5" block — surfaces the Color Tokens v2 milestone on
+ * "What's new in v2.7.6" block — surfaces the Color Tokens v2 milestone on
  * top of the v2.7 Team Workspaces baseline.
  */
 import { Palette, FileCode2, Pencil, Users, Mail, ShieldCheck } from "lucide-react";
@@ -21,9 +21,9 @@ export const WhatsNew = (): JSX.Element => (
       </h2>
       <span
         className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
-        aria-label="Version 2.7.5"
+        aria-label="Version 2.7.6"
       >
-        v2.7.5
+        v2.7.6
       </span>
     </div>
     <div className="grid gap-3 sm:grid-cols-2">

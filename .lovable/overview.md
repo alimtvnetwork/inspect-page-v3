@@ -3,7 +3,7 @@
 Chrome extension + WordPress plugin that exports any web page (or a single element) into LLM-ready Markdown / ZIP / Smart Share artifacts.
 
 ## Shipped versions
-- **Chrome extension:** v2.7.5
+- **Chrome extension:** v2.7.6
 - **WordPress plugin:** v2.6.0
 
 ## Brand (strict)
