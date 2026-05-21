@@ -68,7 +68,6 @@ import { runElementExport } from "@element/runElementExport";
 logger.info(LogCategory.Lifecycle, `Service worker booted v${__EXT_VERSION__}`);
 
 const router = new MessageRouter();
-const canceledFullPageTabs = new Set<number>();
 
 chrome.action.onClicked.addListener(async (tab) => {
   try {
