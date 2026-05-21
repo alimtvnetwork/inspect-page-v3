@@ -1,6 +1,6 @@
 # Launch State (carry-over)
 
-Current shipped: Extension **v2.7.6** + WP plugin **v2.6.0**.
+Current shipped: Extension **v2.7.7** + WP plugin **v2.6.0**.
 
 ## ✅ Done this session
 - Export dropdown silent-failure fix (`chrome.downloads` Save As path instead of blocked iframe anchor/file picker paths)
@@ -10,9 +10,9 @@ Current shipped: Extension **v2.7.6** + WP plugin **v2.6.0**.
 - CI/CD zip freshness fixed by repackaging WP plugin
 
 ## ⏳ Pending (manual / external, all non-WP-plugin)
-- CWS screenshots (1280×800) → `store-assets/screenshots-v2.7.6/`
+- CWS screenshots (1280×800) → `store-assets/screenshots-v2.7.7/`
 - Upload `public/inspect-page.zip` to Chrome Web Store dashboard
-- Git tag `ext-v2.7.6` (`git tag ext-v2.7.6 && git push origin ext-v2.7.6`)
+- Git tag `ext-v2.7.7` (`git tag ext-v2.7.7 && git push origin ext-v2.7.7`)
 
 ## 🚫 Blocked — deferred by user
 - All WP plugin tasks (prod `INSPECT_PAGE_WP_SITE_URL`, Stripe live keys/price/webhook, WP-side launch items, `wp-v2.6.0` tag). User said "in future i tink apout wp plugin for now you can skip it".
