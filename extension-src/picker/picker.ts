@@ -10,12 +10,11 @@
 import {
   PICKER_THROTTLE_MS,
   PICKER_TOOLTIP_MAX_CHARS,
-  Z_INDEX_PICKER,
 } from "@shared/constants";
 import { LogCategory } from "@shared/enums";
 import { logger } from "@shared/logger";
-import { PICKER_STYLE as STYLE, PICKER_SEL_STYLE as SEL_STYLE } from "./pickerStyles";
-import { buildDetailHtml } from "./tooltipDetail";
+import { buildPickerDom } from "./pickerDom";
+import { updateOverlay, showTarget } from "./pickerOverlay";
 
 export interface PickerHandlers {
   onSelect(detail: { element: Element; rect: DOMRect }): void | Promise<void>;
@@ -31,7 +30,7 @@ export interface PickerHandlers {
 /** Hard cap on simultaneously-picked elements. */
 export const MAX_PICKS = 11;
 
-interface PickerState {
+export interface PickerState {
   host: HTMLDivElement;
   shadow: ShadowRoot;
   box: HTMLDivElement;
@@ -81,112 +80,7 @@ export function isPickerActive(): boolean {
 export function enterPicker(handlers: PickerHandlers): void {
   if (state) return;
 
-  const host = document.createElement("div");
-  host.id = HOST_ID;
-  host.style.cssText = `position:fixed;inset:0;width:0;height:0;pointer-events:none;z-index:${Z_INDEX_PICKER};`;
-  document.documentElement.appendChild(host);
-
-  const shadow = host.attachShadow({ mode: "open" });
-  const styleEl = document.createElement("style");
-  styleEl.textContent = STYLE + SEL_STYLE;
-  shadow.appendChild(styleEl);
-
-  const box = document.createElement("div");
-  box.className = "lpe-pk-box";
-  shadow.appendChild(box);
-
-  const marginBox = document.createElement("div");
-  marginBox.className = "lpe-pk-margin";
-  shadow.appendChild(marginBox);
-
-  const paddingBox = document.createElement("div");
-  paddingBox.className = "lpe-pk-padding";
-  shadow.appendChild(paddingBox);
-
-  const size = document.createElement("div");
-  size.className = "lpe-pk-size";
-  // (size now lives inside the chip group below)
-
-  // P1: chip group — size badge + action icons (Select / Copy / Cancel)
-  const chip = document.createElement("div");
-  chip.className = "lpe-pk-chip";
-  chip.appendChild(size);
-
-  const mkChipBtn = (label: string, glyph: string, variant: string): HTMLButtonElement => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "lpe-pk-chip-btn";
-    b.dataset.variant = variant;
-    b.setAttribute("aria-label", label);
-    b.title = label;
-    b.textContent = glyph;
-    return b;
-  };
-  const chipBtnSelect = mkChipBtn("Add to selection", "✓", "select");
-  const chipBtnCopy = mkChipBtn("Copy selector", "⧉", "copy");
-  const chipBtnCancel = mkChipBtn("Cancel picker", "✕", "cancel");
-  const chipFlash = document.createElement("span");
-  chipFlash.className = "lpe-pk-chip-flash";
-  chipFlash.textContent = "Copied";
-  chip.append(chipBtnSelect, chipBtnCopy, chipBtnCancel, chipFlash);
-  shadow.appendChild(chip);
-
-  const mkBadge = (): HTMLDivElement => {
-    const b = document.createElement("div");
-    b.className = "lpe-pk-badge";
-    shadow.appendChild(b);
-    return b;
-  };
-  const badges = [mkBadge(), mkBadge(), mkBadge(), mkBadge()];
-  const mBadges = [mkBadge(), mkBadge(), mkBadge(), mkBadge()];
-
-  const mkGuide = (orient: "h" | "v"): HTMLDivElement => {
-    const g = document.createElement("div");
-    g.className = `lpe-pk-guide ${orient}`;
-    shadow.appendChild(g);
-    return g;
-  };
-  // [top, right, bottom, left] — top/bottom are vertical lines, left/right are horizontal
-  const guides = [mkGuide("v"), mkGuide("h"), mkGuide("v"), mkGuide("h")];
-  const mkGLabel = (): HTMLDivElement => {
-    const l = document.createElement("div");
-    l.className = "lpe-pk-glabel";
-    shadow.appendChild(l);
-    return l;
-  };
-  const gBadges = [mkGLabel(), mkGLabel(), mkGLabel(), mkGLabel()];
-
-  const tip = document.createElement("div");
-  tip.className = "lpe-pk-tip";
-  shadow.appendChild(tip);
-
-  // Phase 1 multi-pick — persistent selection layer + top bar + toast
-  const selLayer = document.createElement("div");
-  selLayer.style.cssText = "position:fixed;inset:0;pointer-events:none;";
-  shadow.appendChild(selLayer);
-
-  const bar = document.createElement("div");
-  bar.className = "lpe-pk-bar";
-  const barDone = document.createElement("button");
-  barDone.type = "button";
-  barDone.className = "lpe-pk-bar-btn";
-  barDone.dataset.variant = "done";
-  barDone.textContent = "Done";
-  barDone.disabled = true;
-  const barCount = document.createElement("span");
-  barCount.className = "lpe-pk-bar-count";
-  barCount.textContent = `0 / ${MAX_PICKS}`;
-  const barCancel = document.createElement("button");
-  barCancel.type = "button";
-  barCancel.className = "lpe-pk-bar-btn";
-  barCancel.dataset.variant = "cancel";
-  barCancel.textContent = "Cancel";
-  bar.append(barDone, barCount, barCancel);
-  shadow.appendChild(bar);
-
-  const toast = document.createElement("div");
-  toast.className = "lpe-pk-toast";
-  shadow.appendChild(toast);
+  const dom = buildPickerDom();
 
   const prevCursor = document.body?.style.cursor ?? "";
   if (document.body) document.body.style.cursor = "crosshair";
@@ -208,7 +102,8 @@ export function enterPicker(handlers: PickerHandlers): void {
       const evt = state.pendingEvent;
       state.pendingEvent = null;
       if (!evt) return;
-      updateOverlay(evt.clientX, evt.clientY);
+      const target = pickTarget(evt.clientX, evt.clientY);
+      updateOverlay(state, evt.clientX, evt.clientY, target);
     });
   };
 
@@ -227,7 +122,7 @@ export function enterPicker(handlers: PickerHandlers): void {
     const t = e.target as Element | null;
     if (t?.closest?.("#inspect-page-panel-host")) return;
     // Don't hijack right-clicks on our chip either.
-    if (e.composedPath().includes(chip)) return;
+    if (e.composedPath().includes(dom.chip)) return;
     e.preventDefault(); e.stopPropagation();
     const target = pickTarget(e.clientX, e.clientY);
     if (!target) return;
@@ -244,9 +139,9 @@ export function enterPicker(handlers: PickerHandlers): void {
     const t = e.target as Element | null;
     if (t?.closest?.("#inspect-page-panel-host")) return;
     // Let chip-button clicks through to their own handlers.
-    if (e.composedPath().includes(chip)) return;
+    if (e.composedPath().includes(dom.chip)) return;
     // Let bar-button clicks through to their own handlers.
-    if (e.composedPath().includes(bar)) return;
+    if (e.composedPath().includes(dom.bar)) return;
     e.preventDefault(); e.stopPropagation();
     const target = pickTarget(e.clientX, e.clientY);
     if (!target) return;
@@ -257,8 +152,8 @@ export function enterPicker(handlers: PickerHandlers): void {
   // P1: short-circuit overlay re-targeting while pointer is on the chip
   const onChipEnter = (): void => { if (state) state.chipHover = true; };
   const onChipLeave = (): void => { if (state) state.chipHover = false; };
-  chip.addEventListener("pointerenter", onChipEnter);
-  chip.addEventListener("pointerleave", onChipLeave);
+  dom.chip.addEventListener("pointerenter", onChipEnter);
+  dom.chip.addEventListener("pointerleave", onChipLeave);
 
   // P2: chip button handlers — operate on the last highlighted target.
   const fireSelect = (e: Event): void => {
@@ -287,9 +182,9 @@ export function enterPicker(handlers: PickerHandlers): void {
     handlers.onCancel();
     exitPicker();
   };
-  chipBtnSelect.addEventListener("click", fireSelect);
-  chipBtnCopy.addEventListener("click", (e) => { void fireCopy(e); });
-  chipBtnCancel.addEventListener("click", fireCancel);
+  dom.chipBtnSelect.addEventListener("click", fireSelect);
+  dom.chipBtnCopy.addEventListener("click", (e) => { void fireCopy(e); });
+  dom.chipBtnCancel.addEventListener("click", fireCancel);
 
   const onKeyDown = (e: KeyboardEvent): void => {
     if (e.key === "Escape") {
@@ -300,7 +195,8 @@ export function enterPicker(handlers: PickerHandlers): void {
     }
     if ((e.key === "Alt" || e.altKey) && state && !state.altDown) {
       state.altDown = true;
-      updateOverlay(state.lastX, state.lastY);
+      const t = state.navTarget ?? pickTarget(state.lastX, state.lastY);
+      updateOverlay(state, state.lastX, state.lastY, t);
     }
     if (!state) return;
     const navKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"];
@@ -320,12 +216,13 @@ export function enterPicker(handlers: PickerHandlers): void {
     const next = walkDom(current, e.key as "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight");
     if (!next) return;
     state.navTarget = next;
-    showTarget(next);
+    showTarget(state, next);
   };
   const onKeyUp = (e: KeyboardEvent): void => {
     if (e.key === "Alt" && state && state.altDown) {
       state.altDown = false;
-      updateOverlay(state.lastX, state.lastY);
+      const t = state.navTarget ?? pickTarget(state.lastX, state.lastY);
+      updateOverlay(state, state.lastX, state.lastY, t);
     }
   };
 
@@ -363,8 +260,8 @@ export function enterPicker(handlers: PickerHandlers): void {
     handlers.onCancel();
     exitPicker();
   };
-  barDone.addEventListener("click", fireDone);
-  barCancel.addEventListener("click", fireBarCancel);
+  dom.barDone.addEventListener("click", fireDone);
+  dom.barCancel.addEventListener("click", fireBarCancel);
 
   const cleanup = (): void => {
     window.removeEventListener("mousemove", onMoveThrottled, true);
@@ -375,24 +272,30 @@ export function enterPicker(handlers: PickerHandlers): void {
     window.removeEventListener("keyup", onKeyUp, true);
     window.removeEventListener("scroll", onScrollOrResize, true);
     window.removeEventListener("resize", onScrollOrResize, true);
-    chip.removeEventListener("pointerenter", onChipEnter);
-    chip.removeEventListener("pointerleave", onChipLeave);
-    barDone.removeEventListener("click", fireDone);
-    barCancel.removeEventListener("click", fireBarCancel);
+    dom.chip.removeEventListener("pointerenter", onChipEnter);
+    dom.chip.removeEventListener("pointerleave", onChipLeave);
+    dom.barDone.removeEventListener("click", fireDone);
+    dom.barCancel.removeEventListener("click", fireBarCancel);
     if (state?.toastTimer) window.clearTimeout(state.toastTimer);
   };
 
   state = {
-    host, shadow, box, marginBox, paddingBox, size,
-    chip, chipBtnSelect, chipBtnCopy, chipBtnCancel, chipFlash,
+    host: dom.host, shadow: dom.shadow, box: dom.box,
+    marginBox: dom.marginBox, paddingBox: dom.paddingBox, size: dom.size,
+    chip: dom.chip, chipBtnSelect: dom.chipBtnSelect,
+    chipBtnCopy: dom.chipBtnCopy, chipBtnCancel: dom.chipBtnCancel,
+    chipFlash: dom.chipFlash,
     chipHover: false, currentTarget: null,
-    badges, mBadges, tip,
-    guides, gBadges, altDown: false, lastX: -1, lastY: -1, navTarget: null,
+    badges: dom.badges, mBadges: dom.mBadges, tip: dom.tip,
+    guides: dom.guides, gBadges: dom.gBadges, altDown: false,
+    lastX: -1, lastY: -1, navTarget: null,
     prevCursor,
     rafScheduled: false,
     pendingEvent: null,
-    selections: [], selLayer, bar, barDone, barCancel, barCount,
-    toast, toastTimer: null, onScrollOrResize,
+    selections: [], selLayer: dom.selLayer,
+    bar: dom.bar, barDone: dom.barDone, barCancel: dom.barCancel,
+    barCount: dom.barCount,
+    toast: dom.toast, toastTimer: null, onScrollOrResize,
     cleanup,
   };
 
@@ -478,172 +381,6 @@ function pickTarget(x: number, y: number): Element | null {
   return el;
 }
 
-function updateOverlay(x: number, y: number): void {
-  if (!state) return;
-  state.lastX = x; state.lastY = y;
-  const target = state.navTarget ?? pickTarget(x, y);
-  if (!target) {
-    hideAll();
-    return;
-  }
-  const r = target.getBoundingClientRect();
-  if (r.width === 0 && r.height === 0) {
-    hideAll();
-    return;
-  }
-  state.currentTarget = target;
-  state.box.style.left = `${r.left}px`;
-  state.box.style.top = `${r.top}px`;
-  state.box.style.width = `${r.width}px`;
-  state.box.style.height = `${r.height}px`;
-  state.box.style.display = "block";
-
-  // Box-model rulers (margin + padding)
-  let cs: CSSStyleDeclaration | null = null;
-  try { cs = getComputedStyle(target); } catch { cs = null; }
-  const num = (v: string | undefined): number => {
-    const n = parseFloat(v ?? "0");
-    return Number.isFinite(n) ? n : 0;
-  };
-  const mt = num(cs?.marginTop), mr = num(cs?.marginRight),
-        mb = num(cs?.marginBottom), ml = num(cs?.marginLeft);
-  const pt = num(cs?.paddingTop), pr = num(cs?.paddingRight),
-        pb = num(cs?.paddingBottom), pl = num(cs?.paddingLeft);
-
-  if (mt || mr || mb || ml) {
-    state.marginBox.style.left = `${r.left - ml}px`;
-    state.marginBox.style.top = `${r.top - mt}px`;
-    state.marginBox.style.width = `${r.width + ml + mr}px`;
-    state.marginBox.style.height = `${r.height + mt + mb}px`;
-    state.marginBox.style.display = "block";
-  } else {
-    state.marginBox.style.display = "none";
-  }
-
-  if (pt || pr || pb || pl) {
-    state.paddingBox.style.left = `${r.left + pl}px`;
-    state.paddingBox.style.top = `${r.top + pt}px`;
-    state.paddingBox.style.width = `${Math.max(0, r.width - pl - pr)}px`;
-    state.paddingBox.style.height = `${Math.max(0, r.height - pt - pb)}px`;
-    state.paddingBox.style.display = "block";
-  } else {
-    state.paddingBox.style.display = "none";
-  }
-
-  positionBadge(state.badges[0]!, pt, r.left + r.width / 2, r.top + 2, "cx");
-  positionBadge(state.badges[1]!, pr, r.right - 2, r.top + r.height / 2, "rx");
-  positionBadge(state.badges[2]!, pb, r.left + r.width / 2, r.bottom - 2, "cx");
-  positionBadge(state.badges[3]!, pl, r.left + 2, r.top + r.height / 2, "lx");
-
-  positionBadge(state.mBadges[0]!, mt, r.left + r.width / 2, r.top - mt / 2, "cx");
-  positionBadge(state.mBadges[1]!, mr, r.right + mr / 2, r.top + r.height / 2, "cx");
-  positionBadge(state.mBadges[2]!, mb, r.left + r.width / 2, r.bottom + mb / 2, "cx");
-  positionBadge(state.mBadges[3]!, ml, r.left - ml / 2, r.top + r.height / 2, "cx");
-
-  // Chip — size badge + action icons, anchored bottom-right of element with
-  // viewport-edge collision flips so it never overlaps the highlighted box.
-  state.size.textContent = `${Math.round(r.width)} × ${Math.round(r.height)}`;
-  state.chip.style.display = "inline-flex";
-  // Measure first to flip cleanly
-  const cw = state.chip.offsetWidth || 120;
-  const ch = state.chip.offsetHeight || 28;
-  let chipLeft = Math.min(window.innerWidth - cw - 4, Math.max(4, r.right - cw));
-  let chipTop = r.bottom + 6;
-  if (chipTop + ch > window.innerHeight) chipTop = Math.max(4, r.top - ch - 6);
-  // Avoid covering the element if it's tall and chip would land inside it.
-  if (chipTop > r.top && chipTop < r.bottom) chipTop = r.bottom + 6;
-  state.chip.style.left = `${chipLeft}px`;
-  state.chip.style.top = `${chipTop}px`;
-
-  // Tooltip — tag + id + classes (rich markup)
-  state.tip.innerHTML = buildDetailHtml(target);
-  state.tip.style.display = "block";
-  // Position: prefer cursor + (12,12), flip if overflows.
-  const tipRect = state.tip.getBoundingClientRect();
-  let tx = x + 12;
-  let ty = y + 12;
-  if (tx + tipRect.width > window.innerWidth) tx = x - 12 - tipRect.width;
-  if (ty + tipRect.height > window.innerHeight) ty = y - 12 - tipRect.height;
-  state.tip.style.left = `${Math.max(0, tx)}px`;
-  state.tip.style.top = `${Math.max(0, ty)}px`;
-
-  // ---- B3: distance guides (Alt held) — distance to viewport edges ----
-  if (state.altDown) {
-    const vw = window.innerWidth, vh = window.innerHeight;
-    const cx = r.left + r.width / 2;
-    const cy = r.top + r.height / 2;
-    // top guide: vertical line from element top to y=0
-    setGuide(state.guides[0]!, "v", cx, 0, r.top, "v");
-    setGLabel(state.gBadges[0]!, Math.round(r.top), cx + 6, r.top / 2);
-    // right guide: horizontal line from r.right to vw
-    setGuide(state.guides[1]!, "h", r.right, cy, vw - r.right, "h");
-    setGLabel(state.gBadges[1]!, Math.round(vw - r.right), (r.right + vw) / 2, cy - 14);
-    // bottom guide: vertical line from r.bottom to vh
-    setGuide(state.guides[2]!, "v", cx, r.bottom, vh - r.bottom, "v");
-    setGLabel(state.gBadges[2]!, Math.round(vh - r.bottom), cx + 6, (r.bottom + vh) / 2);
-    // left guide: horizontal line from x=0 to r.left
-    setGuide(state.guides[3]!, "h", 0, cy, r.left, "h");
-    setGLabel(state.gBadges[3]!, Math.round(r.left), r.left / 2, cy - 14);
-  } else {
-    for (const g of state.guides) g.style.display = "none";
-    for (const b of state.gBadges) b.style.display = "none";
-  }
-}
-
-function hideAll(): void {
-  if (!state) return;
-  state.box.style.display = "none";
-  state.tip.style.display = "none";
-  state.marginBox.style.display = "none";
-  state.paddingBox.style.display = "none";
-  state.chip.style.display = "none";
-  state.currentTarget = null;
-  for (const b of state.badges) b.style.display = "none";
-  for (const b of state.mBadges) b.style.display = "none";
-  for (const g of state.guides) g.style.display = "none";
-  for (const b of state.gBadges) b.style.display = "none";
-}
-
-function setGuide(
-  el: HTMLDivElement,
-  orient: "h" | "v",
-  x: number,
-  y: number,
-  length: number,
-  _kind: "h" | "v",
-): void {
-  if (length < 1) { el.style.display = "none"; return; }
-  el.style.display = "block";
-  if (orient === "v") {
-    el.style.left = `${Math.round(x)}px`;
-    el.style.top = `${Math.round(y)}px`;
-    el.style.height = `${Math.round(length)}px`;
-    el.style.width = "1px";
-  } else {
-    el.style.left = `${Math.round(x)}px`;
-    el.style.top = `${Math.round(y)}px`;
-    el.style.width = `${Math.round(length)}px`;
-    el.style.height = "1px";
-  }
-}
-
-function setGLabel(el: HTMLDivElement, value: number, cx: number, cy: number): void {
-  if (value < 1) { el.style.display = "none"; return; }
-  el.textContent = `${value}px`;
-  el.style.display = "block";
-  const rect = el.getBoundingClientRect();
-  el.style.left = `${Math.max(0, Math.round(cx - rect.width / 2))}px`;
-  el.style.top = `${Math.max(0, Math.round(cy - rect.height / 2))}px`;
-}
-
-/** B4: re-render overlay anchored on a keyboard-selected element. */
-function showTarget(el: Element): void {
-  if (!state) return;
-  const r = el.getBoundingClientRect();
-  // Anchor cursor coordinates near the element so the tooltip lands sensibly.
-  updateOverlay(r.left + Math.min(40, r.width / 2), r.top + Math.min(20, r.height / 2));
-}
-
 /** B4: walk the DOM by arrow direction, skipping non-element nodes. */
 function walkDom(
   el: Element,
@@ -663,17 +400,6 @@ function walkDom(
   // ArrowRight
   return el.nextElementSibling ?? null;
 }
-
-function positionBadge(el: HTMLDivElement, value: number, cx: number, cy: number, _anchor: string): void {
-  if (!value || value < 1) { el.style.display = "none"; return; }
-  el.textContent = `${Math.round(value)}px`;
-  el.style.display = "block";
-  // measure + center
-  const rect = el.getBoundingClientRect();
-  el.style.left = `${Math.max(0, cx - rect.width / 2)}px`;
-  el.style.top = `${Math.max(0, cy - rect.height / 2)}px`;
-}
-
 
 export function describe(el: Element): string {
   const tag = el.tagName.toLowerCase();
