@@ -1,0 +1,27 @@
+# Coding-Guidelines Linter Pack — Azure DevOps Pipelines
+
+trigger:
+  - main
+
+pool:
+  vmImage: "ubuntu-latest"
+
+steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: "3.11"
+
+  - bash: |
+      curl -fsSL https://github.com/alimtvnetwork/coding-guidelines-v23/releases/latest/download/install.sh | bash
+    displayName: "Install coding-guidelines linter pack"
+
+  - bash: |
+      bash ./linters-cicd/run-all.sh --path . --output $(Build.ArtifactStagingDirectory)/coding-guidelines.sarif
+    displayName: "Run coding-guidelines checks"
+    continueOnError: false
+
+  - task: PublishBuildArtifacts@1
+    condition: always()
+    inputs:
+      pathToPublish: "$(Build.ArtifactStagingDirectory)/coding-guidelines.sarif"
+      artifactName: "coding-guidelines-sarif"

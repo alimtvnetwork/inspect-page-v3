@@ -1,0 +1,14 @@
+# Coding-Guidelines Linter Pack — Bitbucket Pipelines
+
+image: python:3.11-slim
+
+pipelines:
+  default:
+    - step:
+        name: Coding-Guidelines Lint
+        script:
+          - apt-get update && apt-get install -y --no-install-recommends curl unzip
+          - curl -fsSL https://github.com/alimtvnetwork/coding-guidelines-v23/releases/latest/download/install.sh | bash
+          - bash ./linters-cicd/run-all.sh --path . --output coding-guidelines.sarif
+        artifacts:
+          - coding-guidelines.sarif

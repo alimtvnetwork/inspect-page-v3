@@ -1,0 +1,26 @@
+// Coding-Guidelines Linter Pack — Jenkins (declarative pipeline)
+
+pipeline {
+    agent { docker { image 'python:3.11-slim' } }
+
+    stages {
+        stage('Install linter pack') {
+            steps {
+                sh 'apt-get update && apt-get install -y --no-install-recommends curl unzip'
+                sh 'curl -fsSL https://github.com/alimtvnetwork/coding-guidelines-v23/releases/latest/download/install.sh | bash'
+            }
+        }
+        stage('Run coding-guidelines') {
+            steps {
+                sh 'bash ./linters-cicd/run-all.sh --path . --output coding-guidelines.sarif'
+            }
+        }
+    }
+    post {
+        always {
+            archiveArtifacts artifacts: 'coding-guidelines.sarif', fingerprint: true
+            // Optional: requires Warnings-NG plugin
+            // recordIssues tool: sarif(pattern: 'coding-guidelines.sarif')
+        }
+    }
+}

@@ -1,0 +1,24 @@
+# Coding-Guidelines Linter Pack — GitHub Actions
+
+name: Coding Guidelines
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # required for SARIF upload to Security tab
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run coding-guidelines linters
+        uses: alimtvnetwork/coding-guidelines-v23/linters-cicd@v3.9.0
+        with:
+          path: .
+          languages: go,typescript        # remove to auto-detect
+          fail-on-warning: false

@@ -1,0 +1,40 @@
+{
+  "tool": {
+    "name": "coding-guidelines-template-leftover-debug-php",
+    "version": "1.0.0"
+  },
+  "rules": [
+    {
+      "id": "TEMPLATE-001",
+      "name": "LeftoverDebugCall",
+      "short_description": "Remove var_dump() / print_r() / error_log() debug calls before merging to main.",
+      "help_uri_relative": "02-coding-guidelines/06-cicd-integration/02-plugin-model.md"
+    }
+  ],
+  "results": [
+    {
+      "rule_id": "TEMPLATE-001",
+      "level": "warning",
+      "message": "`var_dump()` debug call left in source — remove before merging.",
+      "file_path": "dirty.php",
+      "start_line": 6,
+      "start_column": 1
+    },
+    {
+      "rule_id": "TEMPLATE-001",
+      "level": "warning",
+      "message": "`print_r()` debug call left in source — remove before merging.",
+      "file_path": "dirty.php",
+      "start_line": 7,
+      "start_column": 1
+    },
+    {
+      "rule_id": "TEMPLATE-001",
+      "level": "warning",
+      "message": "`error_log()` debug call left in source — remove before merging.",
+      "file_path": "dirty.php",
+      "start_line": 8,
+      "start_column": 1
+    }
+  ]
+}

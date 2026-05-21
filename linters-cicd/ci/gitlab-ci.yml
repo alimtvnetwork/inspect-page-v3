@@ -1,0 +1,21 @@
+# Coding-Guidelines Linter Pack — GitLab CI
+#
+# Runs the linter pack and exposes findings as a GitLab Code Quality
+# report (renders inline in MR widgets).
+
+coding-guidelines:
+  image: python:3.11-slim
+  stage: test
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends curl unzip
+    - curl -fsSL https://github.com/alimtvnetwork/coding-guidelines-v23/releases/latest/download/install.sh | bash
+  script:
+    - bash ./linters-cicd/run-all.sh --path . --output coding-guidelines.sarif
+  artifacts:
+    when: always
+    reports:
+      sast: coding-guidelines.sarif
+    paths:
+      - coding-guidelines.sarif
+    expire_in: 30 days
+  allow_failure: false

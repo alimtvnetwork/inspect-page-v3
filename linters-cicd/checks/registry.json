@@ -1,0 +1,147 @@
+{
+  "CODE-RED-001": {
+    "name": "NoNestedIf",
+    "level": "error",
+    "spec": "01-cross-language/04-code-style/00-overview.md",
+    "languages": {
+      "go": "checks/nested-if/go.py",
+      "typescript": "checks/nested-if/typescript.py",
+      "php": "checks/nested-if/php.py"
+    }
+  },
+  "CODE-RED-002": {
+    "name": "BooleanNaming",
+    "level": "error",
+    "spec": "01-cross-language/02-boolean-principles/00-overview.md",
+    "languages": {
+      "go": "checks/boolean-naming/go.py",
+      "typescript": "checks/boolean-naming/typescript.py",
+      "php": "checks/boolean-naming/php.py"
+    }
+  },
+  "CODE-RED-003": {
+    "name": "MagicStrings",
+    "level": "error",
+    "spec": "01-cross-language/04-code-style/00-overview.md",
+    "languages": {
+      "go": "checks/magic-strings/go.py",
+      "typescript": "checks/magic-strings/typescript.py",
+      "php": "checks/magic-strings/php.py"
+    }
+  },
+  "CODE-RED-004": {
+    "name": "FunctionLength",
+    "level": "error",
+    "spec": "01-cross-language/04-code-style/00-overview.md",
+    "languages": {
+      "go": "checks/function-length/go.py",
+      "typescript": "checks/function-length/typescript.py",
+      "php": "checks/function-length/php.py"
+    }
+  },
+  "CODE-RED-005": {
+    "name": "FunctionLengthPrefer8",
+    "level": "error",
+    "spec": "01-cross-language/04-code-style/00-overview.md",
+    "languages": {
+      "go": "checks/function-length-prefer8/go.py",
+      "typescript": "checks/function-length-prefer8/typescript.py",
+      "php": "checks/function-length-prefer8/php.py",
+      "python": "checks/function-length-prefer8/python.py",
+      "rust": "checks/function-length-prefer8/rust.py"
+    }
+  },
+  "CODE-RED-006": {
+    "name": "FileLength",
+    "level": "error",
+    "spec": "01-cross-language/04-code-style/00-overview.md",
+    "languages": {
+      "universal": "checks/file-length/universal.py"
+    }
+  },
+  "CODE-RED-008": {
+    "name": "PositiveConditions",
+    "level": "error",
+    "spec": "01-cross-language/12-no-negatives.md",
+    "languages": {
+      "go": "checks/positive-conditions/go.py",
+      "typescript": "checks/positive-conditions/typescript.py"
+    }
+  },
+  "STYLE-002": {
+    "name": "NoElseAfterReturn",
+    "level": "warning",
+    "spec": "01-cross-language/04-code-style/00-overview.md",
+    "languages": {
+      "go": "checks/no-else-after-return/go.py",
+      "typescript": "checks/no-else-after-return/typescript.py"
+    }
+  },
+  "STYLE-099": {
+    "name": "SuppressionWithoutReason",
+    "level": "warning",
+    "spec": "02-coding-guidelines/06-cicd-integration/98-faq.md",
+    "synthetic": true,
+    "languages": {}
+  },
+  "BOOL-NEG-001": {
+    "name": "BooleanColumnNegativePrefix",
+    "level": "error",
+    "spec": "04-database-conventions/01-naming-conventions.md",
+    "languages": {
+      "sql": "checks/boolean-column-negative/sql.py",
+      "go": "checks/boolean-column-negative/go.py"
+    }
+  },
+  "DB-FREETEXT-001": {
+    "name": "FreeTextColumnsRequired",
+    "level": "error",
+    "spec": "04-database-conventions/02-schema-design.md",
+    "languages": {
+      "sql": "checks/free-text-columns/sql.py"
+    }
+  },
+  "MISSING-DESC-001": {
+    "name": "MissingOrInvalidFreeTextColumns",
+    "level": "error",
+    "spec": "04-database-conventions/02-schema-design.md",
+    "languages": {
+      "sql": "checks/missing-desc/sql.py"
+    }
+  },
+  "SPEC-LINK-001": {
+    "name": "BrokenSpecCrossLink",
+    "level": "error",
+    "spec": "04-database-conventions/01-naming-conventions.md",
+    "languages": {
+      "markdown": "checks/spec-links/markdown.py"
+    }
+  },
+  "SQLI-RAW-001": {
+    "name": "RawExecuteConcatenation",
+    "level": "error",
+    "spec": "18-wp-plugin-how-to/19-micro-orm-and-root-db.md",
+    "languages": {
+      "php": "checks/sqli-raw-execute/php.py",
+      "typescript": "checks/sqli-raw-execute/typescript.py"
+    }
+  },
+  "SQLI-RAW-002": {
+    "name": "WhereRawWithoutStrictParams",
+    "level": "error",
+    "spec": "18-wp-plugin-how-to/19-micro-orm-and-root-db.md",
+    "languages": {
+      "php": "checks/sqli-where-raw/php.py",
+      "typescript": "checks/sqli-where-raw/typescript.py"
+    }
+  },
+  "SQLI-ORDER-001": {
+    "name": "UnvalidatedOrderOrGroupByIdentifier",
+    "level": "error",
+    "spec": "18-wp-plugin-how-to/19-micro-orm-and-root-db.md",
+    "languages": {
+      "php": "checks/sqli-order-group-by/php.py",
+      "typescript": "checks/sqli-order-group-by/typescript.py"
+    }
+  }
+}

@@ -1,0 +1,69 @@
+name: "Coding Guidelines Linter"
+description: "Run CODE RED coding-guidelines checks (Go + TypeScript) and upload SARIF results."
+author: "Md. Alim Ul Karim · Riseup Asia LLC"
+branding:
+  icon: "shield"
+  color: "red"
+
+inputs:
+  path:
+    description: "Directory to scan"
+    required: false
+    default: "."
+  languages:
+    description: "Comma-separated list (go,typescript). Empty = all available."
+    required: false
+    default: ""
+  output:
+    description: "SARIF output file path"
+    required: false
+    default: "coding-guidelines.sarif"
+  fail-on-warning:
+    description: "Treat warnings as errors (set to true to block on STYLE rules)"
+    required: false
+    default: "false"
+  upload-sarif:
+    description: "Upload SARIF to GitHub Code Scanning automatically"
+    required: false
+    default: "true"
+
+outputs:
+  findings-count:
+    description: "Total number of findings emitted"
+    value: ${{ steps.run.outputs.count }}
+  sarif-file:
+    description: "Path to merged SARIF file"
+    value: ${{ inputs.output }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Run linters-cicd
+      id: run
+      shell: bash
+      run: |
+        set +e
+        bash "${{ github.action_path }}/run-all.sh" \
+          --path "${{ inputs.path }}" \
+          --languages "${{ inputs.languages }}" \
+          --output "${{ inputs.output }}" \
+          --format sarif
+        rc=$?
+        COUNT=$(python3 -c "import json; d=json.load(open('${{ inputs.output }}')); print(sum(len(r.get('results', [])) for r in d['runs']))" 2>/dev/null || echo 0)
+        echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+        if [ "${{ inputs.fail-on-warning }}" = "true" ] && [ "$rc" -eq 0 ] && [ "$COUNT" -gt 0 ]; then
+          rc=1
+        fi
+        exit "$rc"
+
+    - name: Upload SARIF to Code Scanning
+      if: ${{ always() && inputs.upload-sarif == 'true' }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.output }}
+        category: coding-guidelines
