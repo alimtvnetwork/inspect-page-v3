@@ -92,20 +92,6 @@ Per-WP-user limits: **30** active sessions, **60** uploads/hour, lifetime free q
 
 ---
 
-## What it does NOT do
-
-Just as important as the feature list — these are intentional non-goals:
-
-- ❌ **No Facebook share / OAuth.** Out of scope. Only Smart Share via the user's own WordPress site is supported.
-- ❌ **No third-party hosting of your captures.** Smart Share uploads go to *your* WordPress install, never to an Inspect Page server.
-- ❌ **No pairing tokens, no Application Passwords.** Auth is the standard WP login cookie + REST nonce.
-- ❌ **No telemetry or page-content exfiltration.** The extension only talks to the WP site URL baked into `INSPECT_PAGE_WP_SITE_URL` and to Stripe for billing status.
-- ❌ **No Chrome Web Store auto-update for the WP plugin.** The plugin ships as a zip from this repo.
-- ❌ **No Manifest V2.** Chrome 116+ only.
-- ❌ **Do not call this anything other than "Inspect Page".** Never "PagePort", "LLM Export", or "LLM Page Export" — those names are forbidden brand legacy.
-
----
-
 ## Repository layout
 
 ```
@@ -179,23 +165,42 @@ The `zip` CLI must be on `PATH`. CI installs it via `apt-get install -y zip` bef
 
 ---
 
-## Specs & docs
-
-- [`spec/21-app/24-export-modes.md`](spec/21-app/24-export-modes.md) — Export modes
-- [`spec/21-app/25-share-links.md`](spec/21-app/25-share-links.md) — WP plugin layout, REST routes, security
-- [`spec/21-app/26-implementation-order-v2.md`](spec/21-app/26-implementation-order-v2.md) — V1–V8 build order
-- [`spec/21-app/11-acceptance-criteria.md`](spec/21-app/11-acceptance-criteria.md) — Acceptance criteria
-- [`docs/PROJECT-DOCS.md`](docs/PROJECT-DOCS.md) — Single source of truth: capabilities, ACs, launch runbook, pen-test, Phase 7 plan, comms, QA, release history
-
----
-
 ## Author
 
 <div align="center">
 
-**Built by the Inspect Page team.**
+### Md. Alim Ul Karim
 
-Issues, feature requests, and contributions are welcome via GitHub Issues and Pull Requests.
+**Creator & Lead Architect** · Chief Software Engineer, Riseup Asia LLC
+
+</div>
+
+A system architect with **20+ years** of professional software engineering experience across enterprise, fintech, and distributed systems. His technology stack spans **.NET / C# (18+ years)**, **JavaScript (10+ years)**, **TypeScript (6+ years)**, and **Golang (4+ years)**.
+
+Recognized as a **top 1% talent at Crossover** and one of the top software architects globally. He is also the Chief Software Engineer of Riseup Asia LLC and maintains an active presence on **Stack Overflow** (2,452+ reputation, member since 2010) and **LinkedIn** (12,500+ followers).
+
+| | |
+|---|---|
+| Website | [alimkarim.com](https://alimkarim.com) · [my.alimkarim.com](https://my.alimkarim.com) |
+| LinkedIn | [linkedin.com/in/alimkarim](https://linkedin.com/in/alimkarim) |
+| Stack Overflow | [stackoverflow.com/users/361646/alim-ul-karim](https://stackoverflow.com/users/361646/alim-ul-karim) |
+| Google | [Alim Ul Karim](https://www.google.com/search?q=Alim+Ul+Karim) |
+| Role | Chief Software Engineer, Riseup Asia LLC |
+
+---
+
+### Riseup Asia LLC
+
+**Top Leading Software Company in WY (2026)**
+
+| | |
+|---|---|
+| Website | [riseup-asia.com](https://riseup-asia.com) |
+| Facebook | [riseupasia.talent](https://facebook.com/riseupasia.talent) |
+| LinkedIn | [Riseup Asia](https://www.linkedin.com/company/riseup-asia) |
+| YouTube | [@riseup-asia](https://youtube.com/@riseup-asia) |
+
+<div align="center">
 
 </div>
 
