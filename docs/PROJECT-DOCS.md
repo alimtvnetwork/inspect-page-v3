@@ -276,6 +276,9 @@ Do **not** use browser tools for artifact QA.
 Dark-Calendar token palette, `## Color tokens` + `## Variants` + `## Selector map`
 MD blocks, `tokens.css` + `selectors.css` in zips, per-selector custom CSS UI under
 **Inspect → Colors → Tokens**. 212/212 vitest.
+**Also completed:** CI/CD pipeline (5 validators), `shared/types` split into domain modules,
+typed JSON narrowing (`shared/narrow.ts`), kebab-case file rename sweep (83 `.ts` files),
+`ExportPanel` decomposition (927 → 968 lines → sub-components). Build + all validators green.
 
 ### v2.7.4 — Offscreen packaging hotfix
 Packaged required MV3 offscreen capture files; Export Full Page no longer fails at
