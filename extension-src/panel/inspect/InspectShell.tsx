@@ -10,6 +10,7 @@ import { MessageKind } from "@shared/enums";
 import { sendToBackground } from "@shared/messaging";
 import type { CollectInspectSnapshotResponse } from "@shared/types";
 import type { InspectSnapshot } from "../../inspect/types";
+import { asInspectSnapshot } from "@shared/narrow";
 import { InspectOverview } from "./InspectOverview";
 import { InspectTypography } from "./InspectTypography";
 import { InspectColors } from "./InspectColors";
@@ -51,7 +52,7 @@ export function InspectShell(): JSX.Element {
     if (cache) {
       return {
         status: "ready",
-        snapshot: cache.data.snapshot as InspectSnapshot,
+        snapshot: asInspectSnapshot(cache.data.snapshot),
         thumbnailDataUrl: cache.data.thumbnailDataUrl,
       };
     }
@@ -64,7 +65,7 @@ export function InspectShell(): JSX.Element {
     if (!force && cached) {
       setState({
         status: "ready",
-        snapshot: cached.data.snapshot as InspectSnapshot,
+        snapshot: asInspectSnapshot(cached.data.snapshot),
         thumbnailDataUrl: cached.data.thumbnailDataUrl,
       });
       return;
@@ -78,7 +79,7 @@ export function InspectShell(): JSX.Element {
       if (!aliveRef.current) return;
       setState({
         status: "ready",
-        snapshot: res.snapshot as InspectSnapshot,
+        snapshot: asInspectSnapshot(res.snapshot),
         thumbnailDataUrl: res.thumbnailDataUrl,
       });
     } catch (e) {
