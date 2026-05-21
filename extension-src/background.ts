@@ -62,9 +62,7 @@ import type {
   CollectInspectSnapshotResponse,
 } from "@shared/types";
 import { PanelStatus } from "@shared/enums";
-import { buildBundle } from "@zip/buildBundle";
-import { applyTemplate, domainFromUrl, localTimestamp } from "@zip/filename";
-import { captureFullPage, ensureOffscreen } from "@capture/screenshotOrchestrator";
+import { ensureOffscreen } from "@capture/screenshotOrchestrator";
 import { runElementExport } from "@element/runElementExport";
 
 logger.info(LogCategory.Lifecycle, `Service worker booted v${__EXT_VERSION__}`);
