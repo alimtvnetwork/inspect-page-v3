@@ -11,11 +11,11 @@ import { COPY } from "@shared/copy";
 import { ExportFlow, MessageKind } from "@shared/enums";
 import { sendToBackground } from "@shared/messaging";
 import type { ExportArtifacts } from "@shared/types";
-import { buildPromptMd } from "@share/buildPromptMd";
+import { buildPromptMd } from "@share/build-prompt-md";
 import {
   loadColorTokenAddons, emptyColorTokenAddons, type ColorTokenAddons,
-} from "../inspect/colorTokensExport";
-import { snapshotCache } from "./inspect/snapshotCache";
+} from "../inspect/color-tokens-export";
+import { snapshotCache } from "./inspect/snapshot-cache";
 import type { InspectSnapshot } from "../inspect/types";
 import { asInspectSnapshot } from "@shared/narrow";
 

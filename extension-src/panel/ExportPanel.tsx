@@ -34,8 +34,8 @@ import { ExportFlow } from "@shared/enums";
 import { interpolateAi } from "@shared/copy";
 import { MessageKind as MK } from "@shared/enums";
 import { getOnboardingState, dismissOnboarding } from "@shared/onboarding";
-import { shareConfigured } from "@shared/shareSettings";
-import { getShareSettings } from "@shared/shareSettings";
+import { shareConfigured } from "@shared/share-settings";
+import { getShareSettings } from "@shared/share-settings";
 import {
   applyExtensionTheme,
   applyExtensionThemeToElement,
@@ -44,13 +44,13 @@ import {
   subscribeExtTheme,
   DEFAULT_EXT_PRESET_ID,
   type StoredExtTheme,
-} from "./extensionThemes";
+} from "./extension-themes";
 import { AppearanceSection } from "./AppearanceSection";
-import { startBillingCheckout } from "../share/startBillingCheckout";
-import { pollBillingUntilPro } from "../share/pollBillingUntilPro";
-import { emitBilling } from "../share/billingTelemetry";
+import { startBillingCheckout } from "../share/start-billing-checkout";
+import { pollBillingUntilPro } from "../share/poll-billing-until-pro";
+import { emitBilling } from "../share/billing-telemetry";
 import { InspectShell } from "./inspect/InspectShell";
-import type { ElementSnapshot } from "@element/collectElementSnapshot";
+import type { ElementSnapshot } from "@element/collect-element-snapshot";
 import { asElementSnapshot } from "@shared/narrow";
 import { ShareSettingsSection, ShareDialog } from "./ShareSettingsSection";
 import { SettingsSection } from "./SettingsSection";
@@ -68,7 +68,7 @@ import {
   requestSettingsPatch,
   requestShareSettingsPatch,
   requestCreateShareSession,
-} from "./panelActions";
+} from "./panel-actions";
 import {
   buildElementArtifacts,
   buildFullPageArtifacts,

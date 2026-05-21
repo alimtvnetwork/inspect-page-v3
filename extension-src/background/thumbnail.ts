@@ -9,8 +9,8 @@
 import { makeRequestId } from "@shared/messaging";
 import { ErrorCode, LogCategory, MessageKind } from "@shared/enums";
 import { logger } from "@shared/logger";
-import { ensureOffscreen } from "@capture/screenshotOrchestrator";
-import { blobToDataUrl, sendOffscreen } from "./sendOffscreen";
+import { ensureOffscreen } from "@capture/screenshot-orchestrator";
+import { blobToDataUrl, sendOffscreen } from "./send-offscreen";
 
 interface ThumbnailCropRect { x: number; y: number; w: number; h: number; dpr: number }
 

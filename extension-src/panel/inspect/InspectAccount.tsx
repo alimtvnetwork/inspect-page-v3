@@ -11,10 +11,10 @@ import { useEffect, useState, useCallback } from "react";
 import { MessageKind as MK } from "@shared/enums";
 import { sendToBackground } from "@shared/messaging";
 import { INSPECT_PAGE_WP_SITE_URL } from "@shared/constants";
-import { getShareSettings, setShareSettings, shareConfigured } from "@shared/shareSettings";
-import { getBillingStatus, type BillingStatus } from "../../share/getBillingStatus";
-import { startBillingPortal } from "../../share/startBillingPortal";
-import { startBillingCheckout } from "../../share/startBillingCheckout";
+import { getShareSettings, setShareSettings, shareConfigured } from "@shared/share-settings";
+import { getBillingStatus, type BillingStatus } from "../../share/get-billing-status";
+import { startBillingPortal } from "../../share/start-billing-portal";
+import { startBillingCheckout } from "../../share/start-billing-checkout";
 import type { ShareSettings } from "@shared/types";
 
 export function InspectAccount(): JSX.Element {

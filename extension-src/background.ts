@@ -5,20 +5,20 @@ import { ErrorCode, LogCategory, MessageKind } from "@shared/enums";
 import { logger } from "@shared/logger";
 import { MessageError, MessageRouter, makeRequestId, sendToTab } from "@shared/messaging";
 import { getPanelPosition, getSettings, setPanelPosition, setSettings } from "@shared/settings";
-import { getShareSettings, normalizeBaseUrl, setShareSettings } from "@shared/shareSettings";
-import { createShareSession as createShareSessionImpl } from "@share/createShareSession";
-import { revokeShareSession as revokeShareSessionImpl } from "@share/revokeShareSession";
+import { getShareSettings, normalizeBaseUrl, setShareSettings } from "@shared/share-settings";
+import { createShareSession as createShareSessionImpl } from "@share/create-share-session";
+import { revokeShareSession as revokeShareSessionImpl } from "@share/revoke-share-session";
 import { waitForDownloadPath } from "./background/downloads";
 import { captureInspectThumbnail } from "./background/thumbnail";
-import { sendOffscreen, blobToDataUrl } from "./background/sendOffscreen";
-import { ensureContentScript } from "./background/tabReady";
+import { sendOffscreen, blobToDataUrl } from "./background/send-offscreen";
+import { ensureContentScript } from "./background/tab-ready";
 import {
   runFullPageExport,
   canceledFullPageTabs,
-} from "./background/runFullPageExport";
+} from "./background/run-full-page-export";
 // keepAlive module imported transitively via runFullPageExport for its
 // side-effect listeners (chrome.alarms.onAlarm + chrome.runtime.onConnect).
-import "./background/keepAlive";
+import "./background/keep-alive";
 import type {
   CollectPageArtifactsResponse,
   EnterPickerModePayload,
@@ -62,8 +62,8 @@ import type {
   CollectInspectSnapshotResponse,
 } from "@shared/types";
 import { PanelStatus } from "@shared/enums";
-import { ensureOffscreen } from "@capture/screenshotOrchestrator";
-import { runElementExport } from "@element/runElementExport";
+import { ensureOffscreen } from "@capture/screenshot-orchestrator";
+import { runElementExport } from "@element/run-element-export";
 
 logger.info(LogCategory.Lifecycle, `Service worker booted v${__EXT_VERSION__}`);
 

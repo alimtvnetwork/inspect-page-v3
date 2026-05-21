@@ -12,8 +12,8 @@ import type { InspectSnapshot } from "../../inspect/types";
 import {
   toJson, toMarkdown, colorsToCsv, fontsToCsv,
   safeBaseName, mimeFor,
-} from "../../inspect/exportSnapshot";
-import { downloadText } from "./downloadBlob";
+} from "../../inspect/export-snapshot";
+import { downloadText } from "./download-blob";
 
 export interface ExportMenuProps { snapshot: InspectSnapshot }
 

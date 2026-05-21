@@ -8,7 +8,7 @@
  * Pure presentational — receives an already-collected `ElementSnapshot`.
  */
 import { useCallback, useState } from "react";
-import type { ElementSnapshot } from "@element/collectElementSnapshot";
+import type { ElementSnapshot } from "@element/collect-element-snapshot";
 
 export interface ElementInspectorProps {
   snapshot: ElementSnapshot;

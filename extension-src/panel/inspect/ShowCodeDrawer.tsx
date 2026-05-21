@@ -7,7 +7,7 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { COPY } from "@shared/copy";
 import type { ComputedSample } from "../../inspect/types";
-import { synthesizeCode } from "../../inspect/synthesizeCode";
+import { synthesizeCode } from "../../inspect/synthesize-code";
 
 export interface ShowCodeDrawerProps {
   sample: ComputedSample;

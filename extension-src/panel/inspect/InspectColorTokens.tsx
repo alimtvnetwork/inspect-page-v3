@@ -11,16 +11,16 @@ import { COPY } from "@shared/copy";
 import { format } from "../format";
 import type { InspectSnapshot } from "../../inspect/types";
 import type { ColorCategory, ColorToken } from "../../inspect/types";
-import { buildTokens } from "../../inspect/colorVariants";
-import { buildColorSelectorIndex } from "../../inspect/colorSelectorIndex";
+import { buildTokens } from "../../inspect/color-variants";
+import { buildColorSelectorIndex } from "../../inspect/color-selector-index";
 import {
   tokensToMarkdown, tokensToCssTokens, tokensToPerSelectorCss, tokensToJson,
   safeBaseName, mimeFor,
-} from "../../inspect/exportSnapshot";
-import { downloadText } from "./downloadBlob";
+} from "../../inspect/export-snapshot";
+import { downloadText } from "./download-blob";
 import {
   loadOverrides, saveOverrides, emptyOverrides, type ColorTokenOverrides,
-} from "../../inspect/colorTokenStorage";
+} from "../../inspect/color-token-storage";
 
 export interface InspectColorTokensProps { snapshot: InspectSnapshot }
 
