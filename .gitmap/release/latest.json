@@ -1,0 +1,21 @@
+{
+  "version": "2.7.5",
+  "tag": "ext-v2.7.5",
+  "kind": "ext",
+  "commit": "main",
+  "branch": "main",
+  "assets": [
+    {
+      "name": "inspect-page.zip",
+      "url": "https://github.com/OWNER/REPO/releases/download/ext-v2.7.5/inspect-page.zip",
+      "size": 332256,
+      "sha256": "756e5fa7d06470289c82c726d2a0abee71261d7b4d2cbaa8de3b08c410b92892"
+    }
+  ],
+  "isDraft": false,
+  "isPreRelease": false,
+  "createdAt": "2026-05-21T00:00:00Z",
+  "publishedAt": "2026-05-21T00:00:00Z",
+  "isLatest": true,
+  "_seed": true
+}
