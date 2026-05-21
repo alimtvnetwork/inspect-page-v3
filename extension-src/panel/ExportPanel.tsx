@@ -56,6 +56,10 @@ import { CodeDrawer } from "./element/CodeDrawer";
 import type { ElementSnapshot } from "@element/collectElementSnapshot";
 import { ShareSettingsSection, ShareDialog } from "./ShareSettingsSection";
 import { SettingsSection } from "./SettingsSection";
+import { MultiPickChips } from "./MultiPickChips";
+import { ElementInspectorWithCode } from "./ElementInspectorWithCode";
+import { ShareLinksButton } from "./ShareLinksButton";
+import { ExportDiagnostics } from "./ExportDiagnostics";
 import { DebugPreview } from "./DebugPreview";
 import { FullPageActions } from "./FullPageActions";
 import {
