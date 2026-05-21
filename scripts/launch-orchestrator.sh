@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# launch-orchestrator.sh — resumable 11-step driver for the v2.7.0 launch.
+# launch-orchestrator.sh — resumable 11-step driver for the v2.7.5 launch.
 # Checkpoints live in .lovable/launch-state.json. Idempotent.
 # Flags: --status   show current step
 #        --reset    clear checkpoints
