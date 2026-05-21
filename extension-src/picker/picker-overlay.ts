@@ -80,7 +80,7 @@ export function updateOverlay(
   // Measure first to flip cleanly
   const cw = state.chip.offsetWidth || 120;
   const ch = state.chip.offsetHeight || 28;
-  let chipLeft = Math.min(window.innerWidth - cw - 4, Math.max(4, r.right - cw));
+  const chipLeft = Math.min(window.innerWidth - cw - 4, Math.max(4, r.right - cw));
   let chipTop = r.bottom + 6;
   if (chipTop + ch > window.innerHeight) chipTop = Math.max(4, r.top - ch - 6);
   // Avoid covering the element if it's tall and chip would land inside it.
