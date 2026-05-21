@@ -25,15 +25,6 @@ Chrome Manifest V3 extension + companion WordPress plugin for Smart Share, billi
 3. Enable **Developer mode** (top-right toggle).
 4. Click **Load unpacked** and select the unzipped folder.
 
-### WordPress Plugin (Smart Share backend)
-
-1. Download [`public/inspect-page-wp.zip`](public/inspect-page-wp.zip).
-2. In your WP admin, go to **Plugins → Add New → Upload Plugin**.
-3. Choose the zip, install, then **Activate**.
-4. Go to **Tools → Inspect Page** to confirm REST + permalinks are healthy.
-
-> The WordPress site URL is baked into the extension at build time via the `INSPECT_PAGE_WP_SITE_URL` constant. Production must set this before publishing to the Chrome Web Store.
-
 ---
 
 ## About Inspect Page
