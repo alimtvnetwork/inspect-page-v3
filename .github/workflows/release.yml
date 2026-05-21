@@ -193,49 +193,7 @@ jobs:
           FIXES="$(git log $RANGE --pretty=format:'- %s (%h)' --grep='^fix' -i || true)"
           OTHER="$(git log $RANGE --pretty=format:'- %s (%h)' --grep='^refactor\|^chore\|^docs\|^perf\|^ci\|^build\|^style\|^test' -i || true)"
 
-          CHECKSUMS_BLOCK="$(cat release-assets/checksums.txt)"
-
-          if [ "$KIND" = "ext" ]; then
-            ASSET_TABLE=$(cat <<EOF
-| Asset | Description |
-|---|---|
-| \`${VERSIONED}\` | Chrome extension — load unpacked in chrome://extensions |
-| \`changelog.md\` | Full project changelog |
-| \`VERSION.txt\` | Version identifier |
-| \`checksums.txt\` | SHA256 checksums |
-EOF
-)
-            MANUAL_INSTALL=$(cat <<EOF
-## Manual Install (Chromium)
-
-1. Download \`${VERSIONED}\` from this release.
-2. Extract it to a local folder.
-3. Open \`chrome://extensions\`.
-4. Enable **Developer mode**.
-5. Click **Load unpacked** and select the extracted folder.
-EOF
-)
-          else
-            ASSET_TABLE=$(cat <<EOF
-| Asset | Description |
-|---|---|
-| \`${VERSIONED}\` | WordPress plugin — upload via Plugins → Add New → Upload Plugin |
-| \`changelog.md\` | Full project changelog |
-| \`VERSION.txt\` | Version identifier |
-| \`checksums.txt\` | SHA256 checksums |
-EOF
-)
-            MANUAL_INSTALL=$(cat <<EOF
-## Manual Install (WordPress)
-
-1. Download \`${VERSIONED}\` from this release.
-2. In WP Admin, go to **Plugins → Add New → Upload Plugin**.
-3. Choose the zip, click **Install Now**, then **Activate**.
-4. Visit **Tools → Inspect Page** to verify REST + permalinks are healthy.
-EOF
-)
-          fi
-
+          REPO_SLUG="${GITHUB_REPOSITORY}"
           BODY_FILE="release-assets/RELEASE_NOTES.md"
           {
             echo "# ${PRODUCT} v${VERSION}"
@@ -258,14 +216,58 @@ EOF
             echo "## Checksums (SHA256)"
             echo
             echo '```'
-            echo "$CHECKSUMS_BLOCK"
+            cat release-assets/checksums.txt
             echo '```'
             echo
             echo "## Assets"
             echo
-            echo "$ASSET_TABLE"
+            echo "| Asset | Description |"
+            echo "|---|---|"
+            if [ "$KIND" = "ext" ]; then
+              echo "| \`${VERSIONED}\` | Chrome extension — load unpacked in chrome://extensions |"
+              echo "| \`install.sh\` | Bash installer (download + unzip + print load-unpacked steps) |"
+              echo "| \`install.ps1\` | PowerShell installer (same logic, Windows) |"
+            else
+              echo "| \`${VERSIONED}\` | WordPress plugin — upload via Plugins → Add New → Upload Plugin |"
+            fi
+            echo "| \`changelog.md\` | Full project changelog |"
+            echo "| \`VERSION.txt\` | Version identifier |"
+            echo "| \`checksums.txt\` | SHA256 checksums |"
             echo
-            echo "$MANUAL_INSTALL"
+            if [ "$KIND" = "ext" ]; then
+              echo "## Quick Install (this version, pinned)"
+              echo
+              echo '**Bash / macOS / Linux:**'
+              echo '```bash'
+              echo "curl -fsSL https://github.com/${REPO_SLUG}/releases/download/${TAG}/install.sh | bash"
+              echo '```'
+              echo
+              echo '**PowerShell / Windows:**'
+              echo '```powershell'
+              echo "iwr https://github.com/${REPO_SLUG}/releases/download/${TAG}/install.ps1 -UseBasicParsing | iex"
+              echo '```'
+              echo
+              echo "## Latest channel (auto-updates)"
+              echo
+              echo '```bash'
+              echo "curl -fsSL https://raw.githubusercontent.com/${REPO_SLUG}/main/scripts/install.sh | bash"
+              echo '```'
+              echo
+              echo "## Manual Install (Chromium)"
+              echo
+              echo "1. Download \`${VERSIONED}\` from this release."
+              echo "2. Extract it to a local folder."
+              echo "3. Open \`chrome://extensions\`."
+              echo "4. Enable **Developer mode** (top-right toggle)."
+              echo "5. Click **Load unpacked** and select the extracted folder."
+            else
+              echo "## Manual Install (WordPress)"
+              echo
+              echo "1. Download \`${VERSIONED}\` from this release."
+              echo "2. In WP Admin, go to **Plugins → Add New → Upload Plugin**."
+              echo "3. Choose the zip, click **Install Now**, then **Activate**."
+              echo "4. Visit **Tools → Inspect Page** to verify REST + permalinks are healthy."
+            fi
           } > "$BODY_FILE"
 
           echo "body_path=$BODY_FILE" >> "$GITHUB_OUTPUT"
