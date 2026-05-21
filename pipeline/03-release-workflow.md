@@ -1,12 +1,15 @@
 # 03 — Release Workflow
 
 **File**: `.github/workflows/release.yml`
-**Triggers**:
-- push to `release/ext-vX.Y.Z` branches **or** `ext-vX.Y.Z` tags → Chrome extension release
-- push to `release/wp-vX.Y.Z` branches **or** `wp-vX.Y.Z` tags → WP plugin release
+**Triggers** (any of these produces a Release with the full asset set):
+- push tag `ext-vX.Y.Z` or `wp-vX.Y.Z`
+- push branch `release/ext-vX.Y.Z` or `release/wp-vX.Y.Z`
+- GitHub `release` event (REST API / `gh` CLI / web UI — `published`, `created`, `edited`, `released`) — catches releases created via API that do not fire push/create webhooks
+- `workflow_dispatch` with `version` (+ optional `source_ref`) — manual replay/recovery
+- `workflow_call` with same inputs — used by `release-watcher.yml`
 
 **Concurrency**: never cancelled — every release commit must produce a
-GitHub Release.
+GitHub Release (`cancel-in-progress: false`).
 
 ## Pipeline Architecture
 
@@ -76,18 +79,41 @@ folder to match the release version, and refreshes the sibling `.sha256`.
 
 ## Asset Naming
 
-Release assets keep stable, predictable filenames so the marketing site's
-download buttons never break:
+Release assets carry the version in the filename (matching the macro-ahk-v34
+convention) so users can identify what they downloaded:
 
-| Target | Asset                          |
+| Target | Assets attached to the Release |
 |--------|--------------------------------|
-| ext    | `inspect-page.zip`             |
-| ext    | `inspect-page.zip.sha256`      |
-| wp     | `inspect-page-wp.zip`          |
-| wp     | `inspect-page-wp.zip.sha256`   |
+| ext    | `inspect-page-vX.Y.Z.zip`, `install.sh`, `install.ps1`, `VERSION.txt`, `changelog.md`, `checksums.txt` |
+| wp     | `inspect-page-wp-vX.Y.Z.zip`, `VERSION.txt`, `changelog.md`, `checksums.txt` |
 
-The version is encoded in the **tag and release title**, not in the
-filename. This is intentional: the marketing site always serves "latest".
+The marketing site still serves the stable filenames `public/inspect-page.zip`
+and `public/inspect-page-wp.zip` from the repo root for the landing-page
+download buttons; those are the source files the workflow copies and renames
+into the versioned release assets.
+
+## Latest Badge
+
+Only `ext-v*` non-prerelease tags receive GitHub's green **"Latest"** badge
+(`make_latest: true`). `wp-v*` releases never claim it. Rationale: the
+extension is the user-facing product; the WP plugin is a supporting backend.
+
+## Installers (extension only)
+
+`scripts/install.{sh,ps1}` are committed to `main` (for the "latest channel"
+one-liner) and also attached to every `ext-v*` release (for version-pinned
+one-liners). Both scripts:
+
+1. Auto-derive `REPO` + `VERSION` from their own download URL (parent
+   process command line on Bash, `$PSCommandPath` / parent CIM on PS).
+2. Fall back to the GitHub API for "latest ext-v\*" when run from `main`.
+3. Download `inspect-page-vX.Y.Z.zip`, verify SHA256 against
+   `checksums.txt`, extract to `~/inspect-page-<X.Y.Z>/`, and maintain a
+   stable `~/inspect-page` symlink so Chrome's "Load unpacked" path
+   survives upgrades.
+4. Print "Load unpacked" instructions on success.
+
+Env overrides: `IP_REPO`, `IP_VERSION`, `IP_DEST`.
 
 ## Post-Release Side-Effects
 
