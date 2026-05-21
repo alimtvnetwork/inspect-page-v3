@@ -17,6 +17,7 @@ import {
 } from "../inspect/colorTokensExport";
 import { snapshotCache } from "./inspect/snapshotCache";
 import type { InspectSnapshot } from "../inspect/types";
+import { asInspectSnapshot } from "@shared/narrow";
 
 export interface ExportModesProps {
   artifacts: ExportArtifacts;
@@ -132,7 +133,7 @@ export function ExportModes({
   // Pull addons from the most-recent Inspect snapshot when one exists.
   const snap = useMemo<InspectSnapshot | null>(() => {
     const c = snapshotCache.get();
-    return c ? (c.data.snapshot as InspectSnapshot) : null;
+    return c ? (asInspectSnapshot(c.data.snapshot) ?? null) : null;
   }, []);
   useEffect(() => {
     if (!snap) { setAddons(emptyColorTokenAddons()); return; }
