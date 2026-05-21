@@ -143,7 +143,7 @@ export async function captureFullPage(input: ScreenshotInput): Promise<Screensho
   const { tabId, windowId, pageCssPx, viewportCssPx, dpr, format, jpegQuality } = input;
 
   let effectivePageH = pageCssPx.h;
-  let effectivePageW = pageCssPx.w;
+  const effectivePageW = pageCssPx.w;
   let canvasW = Math.round(effectivePageW * dpr);
   let canvasH = Math.round(effectivePageH * dpr);
 
