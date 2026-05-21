@@ -7,7 +7,7 @@
 Chrome Manifest V3 extension + companion WordPress plugin for Smart Share, billing, and analytics.
 
 [![CI](https://img.shields.io/badge/CI-passing-2DD4A8?style=flat-square&logo=github)](.github/workflows/ci.yml)
-[![Extension](https://img.shields.io/badge/extension-v2.7.6-2DD4A8?style=flat-square&logo=googlechrome)](public/inspect-page.zip)
+[![Extension](https://img.shields.io/badge/extension-v2.7.7-2DD4A8?style=flat-square&logo=googlechrome)](public/inspect-page.zip)
 [![WP Plugin](https://img.shields.io/badge/wp--plugin-v2.6.0-21759b?style=flat-square&logo=wordpress)](public/inspect-page-wp.zip)
 [![Manifest V3](https://img.shields.io/badge/manifest-v3-4285F4?style=flat-square&logo=googlechrome)](extension-src/manifest.json)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](#license)
@@ -116,7 +116,7 @@ Just as important as the feature list — these are intentional non-goals:
 │   └── vite.config.ts
 │
 ├── extension-src/                  # Chrome MV3 source
-│   ├── manifest.json               # v2.7.6
+│   ├── manifest.json               # v2.7.7
 │   ├── background.ts               # MV3 service worker
 │   ├── content.ts                  # Content-script entry (floating panel)
 │   ├── capture/                    # Full-page + element capture pipeline
@@ -207,6 +207,6 @@ MIT — see [`LICENSE`](LICENSE).
 
 <div align="center">
 
-*README v1.0 · Extension v2.7.6 · WP Plugin v2.6.0*
+*README v1.0 · Extension v2.7.7 · WP Plugin v2.6.0*
 
 </div>
