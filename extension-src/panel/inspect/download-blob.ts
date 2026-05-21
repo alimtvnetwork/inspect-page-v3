@@ -1,5 +1,6 @@
 import { MessageKind } from "@shared/enums";
 import { sendToBackground } from "@shared/messaging";
+import type { DownloadBlobPayload, DownloadBlobResponse } from "@shared/types";
 
 /**
  * Phase A11 — text download helper for Inspect Mode exports.
@@ -30,10 +31,9 @@ function anchorDownload(text: string, filename: string, mime: string): void {
 export async function downloadText(text: string, filename: string, mime: string): Promise<void> {
   try {
     const dataUrl = await blobToDataUrl(new Blob([text], { type: mime }));
-    await sendToBackground<
-      { dataUrl: string; filename: string; saveAs?: boolean },
-      { downloadId: number; savedPath?: string }
-    >(MessageKind.DownloadBlob, { dataUrl, filename, saveAs: true });
+    await sendToBackground<DownloadBlobPayload, DownloadBlobResponse>(
+      MessageKind.DownloadBlob, { dataUrl, filename, saveAs: true },
+    );
   } catch {
     anchorDownload(text, filename, mime);
   }
