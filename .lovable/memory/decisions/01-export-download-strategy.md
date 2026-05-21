@@ -15,3 +15,22 @@
 - `extension-src/element/run-element-export.ts` — Element Export
 
 **Never repeat:** Do not reintroduce `showSaveFilePicker` in any extension surface. See `.lovable/strictly-avoid.md`.
+
+---
+
+## Amendment (2026-05-21) — Per-mode `saveAs` policy
+
+User requested that **Export Full Page** prompt the native Chrome Save As
+dialog. Other export modes keep silent download to preserve the silent-
+failure fix above.
+
+| Export surface | `saveAs` |
+|---|---|
+| **Full Page Export** (`background/run-full-page-export.ts`) | `true` — user picks location |
+| Element Export (`element/run-element-export.ts`) | `false` |
+| Panel `ExportModes` (MD-single, MD+files, ZIP, Smart Share) | `false` |
+| Inspect-tab "Export report ▾" (JSON / MD / CSVs) | `false` |
+
+Rule: only flip a single call site at a time when adjusting this. Never
+flip them all globally — that is what caused the original silent-failure
+regression.
