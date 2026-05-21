@@ -381,24 +381,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     setState({ status: PanelStatus.Collecting, lastAction: kind });
     try {
       if (kind === "fullPage") {
-        const res = await sendToBackground<
-          { tabId: number; settings: Settings },
-          {
-            bundleFilename: string;
-            downloadId: number;
-            telemetry?: ExportMeta["counts"];
-            artifacts?: {
-              html: string;
-              css: string;
-              js: string;
-              screenshotDataUrl: string;
-              meta: ExportMeta;
-            };
-          }
-        >(
-          MessageKind.RunFullPageExport,
-          { tabId: tid, settings: settings! },
-        );
+        const res = await requestFullPageExport(tid, settings!);
         setState({
           status: PanelStatus.Success,
           successFilename: res.bundleFilename,
@@ -407,10 +390,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           lastAction: kind,
         });
       } else {
-        await sendToBackground<{ tabId: number }, void>(
-          MessageKind.EnterPickerMode,
-          { tabId: tid },
-        );
+        await requestEnterPicker(tid);
         setState({ status: PanelStatus.PickerActive, lastAction: kind });
         // Option A — close the popup so the user can click an element on the
         // page. When they re-open the popup, the mount effect above hydrates
