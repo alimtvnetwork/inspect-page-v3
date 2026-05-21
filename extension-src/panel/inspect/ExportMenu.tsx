@@ -24,7 +24,15 @@ export function ExportMenu({ snapshot }: ExportMenuProps): JSX.Element {
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent): void => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+      const root = ref.current;
+      if (!root) return;
+
+      // The floating panel is rendered inside a ShadowRoot. Events that reach
+      // `document` are retargeted to the shadow host, so `contains(e.target)`
+      // incorrectly treats clicks on dropdown items as outside clicks and
+      // unmounts the menu before React can fire the item `onClick` handler.
+      if (e.composedPath().includes(root)) return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent): void => { if (e.key === "Escape") setOpen(false); };
     document.addEventListener("mousedown", onDoc, true);

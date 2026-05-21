@@ -1,11 +1,11 @@
 # Active Roadmap
 
-Current shipped: Extension **v2.7.6** + WP plugin **v2.6.0**. See `.lovable/memory/workflow/01-launch-state.md` for full state.
+Current shipped: Extension **v2.7.7** + WP plugin **v2.6.0**. See `.lovable/memory/workflow/01-launch-state.md` for full state.
 
 ## ⏳ Pending (manual / external, non-WP-plugin)
-- [ ] Capture CWS screenshots (1280×800) → `store-assets/screenshots-v2.7.6/`
+- [ ] Capture CWS screenshots (1280×800) → `store-assets/screenshots-v2.7.7/`
 - [ ] Upload `public/inspect-page.zip` to Chrome Web Store dashboard
-- [ ] Git tag `ext-v2.7.6` (`git tag ext-v2.7.6 && git push origin ext-v2.7.6`)
+- [ ] Git tag `ext-v2.7.7` (`git tag ext-v2.7.7 && git push origin ext-v2.7.7`)
 
 ## 🚫 Blocked — deferred by user (WP plugin out-of-scope for now)
 - [ ] Prod `INSPECT_PAGE_WP_SITE_URL` (still `""`)
