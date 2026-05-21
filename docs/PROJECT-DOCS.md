@@ -272,7 +272,7 @@ Do **not** use browser tools for artifact QA.
 
 ## 9. Release history (newest first — append new entries here)
 
-### v2.7.8 — Full Page Export "Save As" + release pipeline overhaul 
+### v2.7.8 — Full Page Export "Save As" + release pipeline overhaul (current) 
 - **Extension UX:** Export Full Page now opens Chrome's native Save As dialog
   (`saveAs: true` in `background/run-full-page-export.ts`). Other export
   surfaces (Element, panel MD/ZIP/Smart Share, Inspect-tab Export report)
