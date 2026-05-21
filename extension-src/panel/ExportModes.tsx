@@ -10,7 +10,7 @@ import JSZip from "jszip";
 import { COPY } from "@shared/copy";
 import { ExportFlow, MessageKind } from "@shared/enums";
 import { sendToBackground } from "@shared/messaging";
-import type { ExportArtifacts } from "@shared/types";
+import type { DownloadBlobPayload, DownloadBlobResponse, ExportArtifacts } from "@shared/types";
 import { buildPromptMd } from "@share/build-prompt-md";
 import {
   loadColorTokenAddons, emptyColorTokenAddons, type ColorTokenAddons,
@@ -53,10 +53,7 @@ function blobToDataUrl(blob: Blob): Promise<string> {
 async function triggerDownload(blob: Blob, filename: string): Promise<string | undefined> {
   try {
     const dataUrl = await blobToDataUrl(blob);
-    const res = await sendToBackground<
-      { dataUrl: string; filename: string },
-      { downloadId: number; savedPath?: string }
-    >(
+    const res = await sendToBackground<DownloadBlobPayload, DownloadBlobResponse>(
       MessageKind.DownloadBlob, { dataUrl, filename, saveAs: true },
     );
     return res.savedPath;

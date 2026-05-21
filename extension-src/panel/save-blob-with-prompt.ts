@@ -5,6 +5,7 @@
  */
 import { MessageKind } from "@shared/enums";
 import { sendToBackground } from "@shared/messaging";
+import type { DownloadBlobPayload, DownloadBlobResponse } from "@shared/types";
 
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -17,8 +18,7 @@ function blobToDataUrl(blob: Blob): Promise<string> {
 
 export async function saveBlobWithPrompt(blob: Blob, filename: string): Promise<void> {
   const dataUrl = await blobToDataUrl(blob);
-  await sendToBackground<
-    { dataUrl: string; filename: string },
-    { downloadId: number; savedPath?: string }
-  >(MessageKind.DownloadBlob, { dataUrl, filename, saveAs: true });
+  await sendToBackground<DownloadBlobPayload, DownloadBlobResponse>(
+    MessageKind.DownloadBlob, { dataUrl, filename, saveAs: true },
+  );
 }
