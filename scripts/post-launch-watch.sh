@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# post-launch-watch.sh — first-24h monitor for the v2.7.0 launch.
+# post-launch-watch.sh — first-24h monitor for the v2.7.5 launch.
 # Polls WP /me + a billing/status echo and prints a row per hour.
 # Flags: --once   run a single check and exit
 # Trips (exit 1 + beep) on: /me unreachable, billing/status 5xx, or 0 sessions/hr after warmup.
