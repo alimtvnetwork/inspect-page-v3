@@ -272,6 +272,27 @@ Do **not** use browser tools for artifact QA.
 
 ## 9. Release history (newest first — append new entries here)
 
+### v2.7.8 — Full Page Export "Save As" + release pipeline overhaul (current)
+- **Extension UX:** Export Full Page now opens Chrome's native Save As dialog
+  (`saveAs: true` in `background/run-full-page-export.ts`). Other export
+  surfaces (Element, panel MD/ZIP/Smart Share, Inspect-tab Export report)
+  keep their existing per-mode `saveAs` settings — see
+  `.lovable/memory/decisions/01-export-download-strategy.md`.
+- **Release pipeline:** `.github/workflows/release.yml` rewritten to mirror
+  the macro-ahk-v34 convention. Adds `release` event + `workflow_dispatch` +
+  `workflow_call` triggers (catches API-created releases that silently
+  shipped empty asset pages on prior tags), versioned filenames
+  (`inspect-page-vX.Y.Z.zip`), rich release notes (Release Info / What's
+  Changed / Checksums / Assets / Quick Install / Manual Install), and
+  `make_latest` scoped to `ext-v*` only.
+- **Installers:** `scripts/install.sh` + `scripts/install.ps1` ship with
+  every `ext-v*` release. Auto-derive REPO + VERSION from their own
+  download URL; fall back to the GitHub API for the latest channel. Verify
+  SHA256, extract to `~/inspect-page-<ver>/`, maintain a stable
+  `~/inspect-page` symlink so Chrome's Load Unpacked path survives upgrades.
+- **Docs:** README install section restructured (3 options); pipeline doc
+  03 updated with new triggers + asset layout + installer spec.
+
 ### v2.7.7 — Inspect report menu click hotfix (current)
 Fixed the actual floating-panel dropdown bug: Shadow DOM retargeting made the
 document capture listener close **Export report** before item clicks reached React.
