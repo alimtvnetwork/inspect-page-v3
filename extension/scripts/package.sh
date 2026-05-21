@@ -22,8 +22,13 @@ if [ ! -f "$DIST/offscreen.html" ]; then
   exit 1
 fi
 
+if ! command -v zip >/dev/null 2>&1; then
+  echo "zip is required to package the extension." >&2
+  exit 1
+fi
+
 rm -f "$OUT" "$OUT.sha256"
-( cd "$DIST" && nix run nixpkgs#zip -- -r "$OUT" . >/dev/null )
+( cd "$DIST" && zip -r "$OUT" . >/dev/null )
 ( cd "$ROOT/public" && sha256sum "inspect-page.zip" > "inspect-page.zip.sha256" )
 node "$ROOT/scripts/ci/_srchash.mjs" "$ROOT/extension-src" > "$ROOT/public/inspect-page.zip.srchash"
 echo "Packaged: $OUT ($(du -h "$OUT" | cut -f1))"
