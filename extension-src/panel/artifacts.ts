@@ -68,7 +68,7 @@ export function buildCombinedElementArtifacts(
       jsParts.push(`/* ${header} */`, p.debugPreview.js, "");
     }
     const s = p.source;
-    const snap = p.elementSnapshot as ElementSnapshot | undefined;
+    const snap = asElementSnapshot(p.elementSnapshot);
     const cssSel = snap?.identity.selectorPath ?? p.selectorPath;
     const xpath = snap?.identity.xpath ?? "";
     preludeParts.push(`## Source — Element ${n}`);
