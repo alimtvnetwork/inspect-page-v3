@@ -182,7 +182,7 @@ function mapCollectError(e: unknown): never {
 async function downloadBundle(bundle: Blob, filename: string): Promise<number> {
   const url = await blobToDataUrl(bundle);
   try {
-    return await chrome.downloads.download({ url, filename, saveAs: true });
+    return await chrome.downloads.download({ url, filename, saveAs: false });
   } catch (e) {
     throw new MessageError(
       ErrorCode.E_DOWNLOAD_FAILED, "chrome.downloads failed",
