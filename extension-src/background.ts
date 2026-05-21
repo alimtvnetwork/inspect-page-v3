@@ -614,39 +614,43 @@ chrome.commands?.onCommand?.addListener(async (command) => {
 // the current tab (toolbar dropdown) instead of a detached window.
 
 // ---- Stage 9: SW keep-alive during exports (E20) ----
+// Spec R12 / E20: use chrome.alarms (NOT setInterval) to keep the MV3 service
+// worker alive across long exports. A self-loop Port additionally pins the SW
+// while the alarm cadence (30s) covers Chromium's 30s idle-suspend window.
+const KEEPALIVE_ALARM_NAME = "inspect-page-keepalive";
+const KEEPALIVE_ALARM_PERIOD_MIN = Math.max(KEEPALIVE_INTERVAL_MS / 60_000, 0.5);
 let keepAliveCount = 0;
 let keepAlivePort: chrome.runtime.Port | null = null;
-let keepAliveTimer: ReturnType<typeof setInterval> | null = null;
 function startKeepAlive(): void {
   keepAliveCount++;
-  if (keepAliveTimer || keepAlivePort) return;
-  // MV3 service workers are kept alive by an open Port (not by setInterval +
-  // chrome.runtime.getPlatformInfo, which Chromium throttles aggressively).
-  // We open a self-loop port; if Chromium ever closes it we reopen.
+  if (keepAlivePort) return;
   const openPort = (): void => {
     try {
-      keepAlivePort = chrome.runtime.connect({ name: "inspect-page-keepalive" });
+      keepAlivePort = chrome.runtime.connect({ name: KEEPALIVE_ALARM_NAME });
       keepAlivePort.onDisconnect.addListener(() => {
         keepAlivePort = null;
         if (keepAliveCount > 0) openPort();
       });
-    } catch { /* fall back to interval below */ }
+    } catch { /* alarm-based fallback handles it */ }
   };
   openPort();
-  keepAliveTimer = setInterval(() => {
-    chrome.runtime.getPlatformInfo().catch(() => undefined);
-  }, KEEPALIVE_INTERVAL_MS);
+  chrome.alarms.create(KEEPALIVE_ALARM_NAME, { periodInMinutes: KEEPALIVE_ALARM_PERIOD_MIN });
 }
 function stopKeepAlive(): void {
   keepAliveCount = Math.max(0, keepAliveCount - 1);
   if (keepAliveCount === 0) {
-    if (keepAliveTimer) { clearInterval(keepAliveTimer); keepAliveTimer = null; }
+    chrome.alarms.clear(KEEPALIVE_ALARM_NAME).catch(() => undefined);
     if (keepAlivePort) { try { keepAlivePort.disconnect(); } catch { /* noop */ } keepAlivePort = null; }
   }
 }
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name !== KEEPALIVE_ALARM_NAME) return;
+  // Wake the SW with a cheap async chrome.* call.
+  chrome.runtime.getPlatformInfo().catch(() => undefined);
+});
 // Absorb the no-op port on the receiving end so Chromium keeps it alive.
 chrome.runtime.onConnect.addListener((port) => {
-  if (port.name === "inspect-page-keepalive") {
+  if (port.name === KEEPALIVE_ALARM_NAME) {
     port.onMessage.addListener(() => undefined);
   }
 });
