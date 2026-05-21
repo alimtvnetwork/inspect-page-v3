@@ -182,11 +182,13 @@ Drive via `bash scripts/smoke-runbook.sh`.
 All scripts are idempotent.
 
 ### Carry-over (manual, all code + scripts on disk)
-- Prod `INSPECT_PAGE_WP_SITE_URL` (still `""` — blocker).
-- Stripe live keys / price / webhook.
-- Re-shoot CWS screenshots.
-- CWS upload of v2.7.5.
-- Git tags `ext-v2.7.5` + `wp-v2.6.0`.
+- [ ] Prod `INSPECT_PAGE_WP_SITE_URL` (still `""` in `extension-src/shared/constants.ts` — **primary blocker**).
+  Provide the origin (e.g. `https://app.inspectpage.com`) and I will set it, rebuild, and repackage.
+- [ ] Stripe live keys / price / webhook.
+  Provide `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `STRIPE_PRICE_ID` via the secrets form.
+- [ ] CWS screenshots re-shoot (script scaffold ready at `store-assets/screenshots-v2.7.5/`).
+- [ ] CWS upload of `public/inspect-page.zip` (v2.7.5).
+- [ ] Git tags `ext-v2.7.5` + `wp-v2.6.0` (requires `git tag` push — I cannot run git commands in this sandbox).
 
 ---
 
@@ -274,6 +276,9 @@ Do **not** use browser tools for artifact QA.
 Dark-Calendar token palette, `## Color tokens` + `## Variants` + `## Selector map`
 MD blocks, `tokens.css` + `selectors.css` in zips, per-selector custom CSS UI under
 **Inspect → Colors → Tokens**. 212/212 vitest.
+**Also completed:** CI/CD pipeline (5 validators), `shared/types` split into domain modules,
+typed JSON narrowing (`shared/narrow.ts`), kebab-case file rename sweep (83 `.ts` files),
+`ExportPanel` decomposition (927 → 968 lines → sub-components). Build + all validators green.
 
 ### v2.7.4 — Offscreen packaging hotfix
 Packaged required MV3 offscreen capture files; Export Full Page no longer fails at

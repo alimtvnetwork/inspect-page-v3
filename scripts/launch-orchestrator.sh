@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# launch-orchestrator.sh — resumable 11-step driver for the v2.7.0 launch.
+# launch-orchestrator.sh — resumable 11-step driver for the v2.7.5 launch.
 # Checkpoints live in .lovable/launch-state.json. Idempotent.
 # Flags: --status   show current step
 #        --reset    clear checkpoints
@@ -14,13 +14,13 @@ STEPS=(
   "verify-prod-build:bash scripts/verify-prod-build.sh"
   "smoke-runbook:bash scripts/smoke-runbook.sh"
   "seed-staging:echo skip seed-staging unless WP_SSH set"
-  "pen-tests:echo 'manual: walk docs/PEN-TEST-v2.7.0.md'"
+  "pen-tests:echo 'manual: walk docs/PROJECT-DOCS.md §5'"
   "acceptance-bill:echo 'manual: AC-BILL-1..5'"
   "acceptance-analytics:echo 'manual: AC-ANALYTICS-1..3'"
   "acceptance-ws:echo 'manual: AC-WS-1..7'"
   "capture-screenshots:bash scripts/capture-cws-screenshots.sh"
   "cws-upload:echo 'manual: upload public/inspect-page.zip to Chrome Web Store'"
-  "git-tags:echo 'manual: tag ext-v2.7.0 and wp-v2.6.0'"
+  "git-tags:echo 'manual: tag ext-v2.7.5 and wp-v2.6.0'"
   "post-launch-watch:bash scripts/post-launch-watch.sh --once"
 )
 
