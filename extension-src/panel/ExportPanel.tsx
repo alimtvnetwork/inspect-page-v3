@@ -60,6 +60,15 @@ import { ExportDiagnostics } from "./ExportDiagnostics";
 import { DebugPreview } from "./DebugPreview";
 import { FullPageActions } from "./FullPageActions";
 import {
+  requestFullPageExport,
+  requestEnterPicker,
+  requestExitPicker,
+  requestCancelFullPage,
+  requestSettingsPatch,
+  requestShareSettingsPatch,
+  requestCreateShareSession,
+} from "./panelActions";
+import {
   buildElementArtifacts,
   buildFullPageArtifacts,
 } from "./artifacts";
