@@ -11,7 +11,7 @@
 ## 1. Product snapshot
 
 - **Name:** Inspect Page (two words, capital I + P).
-- **Shipped:** Extension `v2.7.6` + WordPress plugin `v2.6.0`.
+- **Shipped:** Extension `v2.7.7` + WordPress plugin `v2.6.0`.
 - **Stack:** MV3 Chrome extension (TypeScript) + WordPress plugin (PHP).
 - **Backend decision:** WordPress plugin (locked). Auth = WP login cookie + `X-WP-Nonce`.
 - **Brand-name rule:** never use "PagePort", "LLM Export", "LLM Page Export", or
@@ -23,7 +23,7 @@
 
 ---
 
-## 2. Current capabilities (v2.7.6 baseline)
+## 2. Current capabilities (v2.7.7 baseline)
 
 ### Export modes
 1. **MD single** — base64-embedded Markdown.
@@ -166,8 +166,8 @@ Drive via `bash scripts/smoke-runbook.sh`.
 3. Walk the pen-test checklist (§5).
 4. Walk AC-BILL-1..5 + AC-ANALYTICS + AC-UI-259 + AC-WS-1..7 against the live env.
 5. Re-shoot Chrome Web Store screenshots (dark-mint popup, NOT white/blue).
-6. CWS upload of latest zip (currently v2.7.6).
-7. Git tags `ext-v2.7.6` + `wp-v2.6.0`.
+6. CWS upload of latest zip (currently v2.7.7).
+7. Git tags `ext-v2.7.7` + `wp-v2.6.0`.
 
 ### Orchestration
 - `scripts/launch-orchestrator.sh` — resumable 11-step launch.
