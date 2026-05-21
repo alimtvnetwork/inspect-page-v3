@@ -9,7 +9,7 @@ import type {
   ExportMeta,
   StatusUpdatePayload,
 } from "@shared/types";
-import type { ElementSnapshot } from "@element/collectElementSnapshot";
+import { asElementSnapshot } from "@shared/narrow";
 
 export interface FullPageArtifactSource {
   html: string;
