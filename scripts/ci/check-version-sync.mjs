@@ -15,7 +15,7 @@ function check(label, file, regex) {
 }
 
 check("WhatsNew", "src/components/landing/WhatsNew.tsx", /v(\d+\.\d+\.\d+)/);
-check("PROJECT-DOCS", "docs/PROJECT-DOCS.md", /Extension v(\d+\.\d+\.\d+)/);
+check("PROJECT-DOCS", "docs/PROJECT-DOCS.md", /Extension\s+`?v(\d+\.\d+\.\d+)`?/);
 
 if (errors.length) {
   console.error("[check-version-sync] Version drift:");
