@@ -60,6 +60,8 @@ import type {
   StatusUpdatePayload,
   CollectInspectSnapshotPayload,
   CollectInspectSnapshotResponse,
+  DownloadBlobPayload,
+  DownloadBlobResponse,
 } from "@shared/types";
 import { PanelStatus } from "@shared/enums";
 import { ensureOffscreen } from "@capture/screenshot-orchestrator";
@@ -316,7 +318,7 @@ router.on<RunElementExportPayload, RunElementExportResponse>(
 // DownloadBlob — used by the panel/inspector "Export for AI" buttons.
 // Defaults to Chrome's normal download behavior, but panel callers may pass
 // `saveAs: true` when a visible location picker is part of the workflow.
-router.on<{ dataUrl: string; filename: string; saveAs?: boolean }, { downloadId: number; savedPath?: string }>(
+router.on<DownloadBlobPayload, DownloadBlobResponse>(
   MessageKind.DownloadBlob,
   async ({ dataUrl, filename, saveAs = false }) => {
     try {
