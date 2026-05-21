@@ -1,0 +1,77 @@
+# Release — triggered by tags ext-vX.Y.Z or wp-vX.Y.Z.
+# Builds the relevant artifact, creates a GitHub Release, attaches the zip,
+# and updates .gitmap/release/latest.json via release-watcher.yml.
+# See: pipeline/03-release-workflow.md
+name: release
+
+on:
+  push:
+    tags:
+      - "ext-v*"
+      - "wp-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (ext-vX.Y.Z or wp-vX.Y.Z)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: build · sign · publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+      - run: sudo apt-get update -y && sudo apt-get install -y --no-install-recommends zip
+      - run: bun install --frozen-lockfile
+
+      - id: meta
+        run: |
+          TAG="${GITHUB_REF_NAME:-${{ github.event.inputs.tag }}}"
+          case "$TAG" in
+            ext-v*) KIND=ext; VERSION="${TAG#ext-v}";;
+            wp-v*)  KIND=wp;  VERSION="${TAG#wp-v}";;
+            *) echo "::error::Unknown tag format: $TAG"; exit 1;;
+          esac
+          echo "tag=$TAG"         >> "$GITHUB_OUTPUT"
+          echo "kind=$KIND"       >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build extension
+        if: steps.meta.outputs.kind == 'ext'
+        run: bash scripts/release.sh
+
+      - name: Build WP plugin
+        if: steps.meta.outputs.kind == 'wp'
+        run: bash scripts/package-wp.sh
+
+      - name: Validate
+        run: |
+          node scripts/ci/check-brand-name.mjs
+          node scripts/ci/check-version-sync.mjs
+          node scripts/ci/check-wp-version-sync.mjs
+
+      - name: Collect assets
+        id: assets
+        run: |
+          if [ "${{ steps.meta.outputs.kind }}" = "ext" ]; then
+            echo "files=public/inspect-page.zip public/inspect-page.zip.sha256" >> "$GITHUB_OUTPUT"
+          else
+            echo "files=public/inspect-page-wp.zip public/inspect-page-wp.zip.sha256" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: "${{ steps.meta.outputs.kind == 'ext' && 'Extension' || 'WP plugin' }} v${{ steps.meta.outputs.version }}"
+          generate_release_notes: true
+          files: |
+            ${{ steps.assets.outputs.files }}
+          fail_on_unmatched_files: true
