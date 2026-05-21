@@ -31,7 +31,6 @@ import { format } from "./format";
 import { telemetryRows } from "./telemetry";
 import JSZip from "jszip";
 import { ExportFlow } from "@shared/enums";
-import { ExportModes } from "./ExportModes";
 import { interpolateAi } from "@shared/copy";
 import { MessageKind as MK } from "@shared/enums";
 import { getOnboardingState, dismissOnboarding } from "@shared/onboarding";
@@ -51,8 +50,6 @@ import { startBillingCheckout } from "../share/startBillingCheckout";
 import { pollBillingUntilPro } from "../share/pollBillingUntilPro";
 import { emitBilling } from "../share/billingTelemetry";
 import { InspectShell } from "./inspect/InspectShell";
-import { ElementInspector } from "./element/ElementInspector";
-import { CodeDrawer } from "./element/CodeDrawer";
 import type { ElementSnapshot } from "@element/collectElementSnapshot";
 import { ShareSettingsSection, ShareDialog } from "./ShareSettingsSection";
 import { SettingsSection } from "./SettingsSection";
@@ -64,7 +61,6 @@ import { DebugPreview } from "./DebugPreview";
 import { FullPageActions } from "./FullPageActions";
 import {
   buildElementArtifacts,
-  buildCombinedElementArtifacts,
   buildFullPageArtifacts,
 } from "./artifacts";
 
