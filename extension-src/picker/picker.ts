@@ -10,6 +10,7 @@
 import {
   PICKER_THROTTLE_MS,
   PICKER_TOOLTIP_MAX_CHARS,
+  Z_INDEX_PICKER,
 } from "@shared/constants";
 import { LogCategory } from "@shared/enums";
 import { logger } from "@shared/logger";
