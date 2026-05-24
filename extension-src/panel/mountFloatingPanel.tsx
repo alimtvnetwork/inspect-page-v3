@@ -26,6 +26,16 @@ export interface MountFloatingPanelOptions {
 }
 
 export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
+  // Guard: only mount in the top frame. The content script runs in every
+  // frame (`all_frames: true`), so without this check the panel appears
+  // twice on pages that embed the same app in an iframe (e.g. Lovable
+  // preview).
+  try {
+    if (window.top !== window) return;
+  } catch {
+    // Cross-origin access denied → we're inside an iframe, bail out.
+    return;
+  }
   const existing = document.getElementById(HOST_ID) as HTMLDivElement | null;
   if (existing) {
     void refreshTabZoom(options.tabId).then(() => repositionExisting(existing));
