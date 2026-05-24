@@ -140,7 +140,6 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
         <input
           type="text"
           className="lpe-input"
-          style={{ flex: 1 }}
           value={customName}
           onChange={(e) => setCustomName(e.target.value)}
           placeholder={ready ? `inspect-page-fullpage-${domainSafeFor(artifacts)}-${tsNow()}` : "my-export-name"}
