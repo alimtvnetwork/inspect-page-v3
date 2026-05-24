@@ -208,11 +208,10 @@ function removeLauncher(): void {
   if (el) el.remove();
 }
 
-function getPanelCssSize(pageZoom = 1): { w: number; h: number } {
-  const zoom = Number.isFinite(pageZoom) && pageZoom > 0 ? pageZoom : 1;
+function getPanelCssSize(_pageZoom = 1): { w: number; h: number } {
   return {
-    w: Math.round(userVisualW / zoom),
-    h: Math.round(userVisualH / zoom),
+    w: Math.round(userVisualW),
+    h: Math.round(userVisualH),
   };
 }
 
@@ -249,16 +248,13 @@ function applyPanelFrame(host: HTMLDivElement, w = DEFAULT_VISUAL_W, h = DEFAULT
   host.style.setProperty("overflow", "hidden", "important");
   host.style.setProperty("box-sizing", "border-box", "important");
   // Zoom-invariant inner UI: keep the floating panel's text/buttons the
-  // same visual size regardless of browser zoom. The host frame already
-  // compensates via getPanelCssSize() (host = userVisualW / zoom). Here we
-  // upscale the inner mount by `zoom` and then transform-scale it by
-  // `1/zoom`, so the inner layout uses the user's chosen logical size
-  // while the browser zoom multiplication cancels out.
+  // same visual size regardless of browser zoom without changing the user's
+  // chosen panel width/height. Only the mounted React UI is downscaled.
   const mount = host.shadowRoot?.getElementById("inspect-page-floating-root") as HTMLDivElement | null;
   if (mount) {
     const z = Number.isFinite(activeTabZoom) && activeTabZoom > 0 ? activeTabZoom : 1;
-    mount.style.width = `${userVisualW}px`;
-    mount.style.height = `${userVisualH}px`;
+    mount.style.width = `${Math.round(w * z)}px`;
+    mount.style.height = `${Math.round(h * z)}px`;
     mount.style.transformOrigin = "top left";
     mount.style.transform = `scale(${1 / z})`;
   }
@@ -304,19 +300,18 @@ function wireResize(host: HTMLDivElement, grip: HTMLElement, onDone: () => void)
   });
   grip.addEventListener("pointermove", (event) => {
     if (!start) return;
-    const zoom = activeTabZoom || 1;
     const cssW = clamp(
       start.w + (event.clientX - start.x),
-      Math.round(MIN_VISUAL_W / zoom),
+      MIN_VISUAL_W,
       Math.max(MIN_VISUAL_W, window.innerWidth - host.offsetLeft - EDGE_GAP),
     );
     const cssH = clamp(
       start.h + (event.clientY - start.y),
-      Math.round(MIN_VISUAL_H / zoom),
+      MIN_VISUAL_H,
       Math.max(MIN_VISUAL_H, window.innerHeight - host.offsetTop - EDGE_GAP),
     );
-    userVisualW = Math.round(cssW * zoom);
-    userVisualH = Math.round(cssH * zoom);
+    userVisualW = Math.round(cssW);
+    userVisualH = Math.round(cssH);
     applyPanelFrame(host, cssW, cssH);
   });
   const end = (event: PointerEvent): void => {

@@ -8,9 +8,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import JSZip from "jszip";
 import { COPY } from "@shared/copy";
-import { ExportFlow, MessageKind } from "@shared/enums";
-import { sendToBackground } from "@shared/messaging";
-import type { DownloadBlobPayload, DownloadBlobResponse, ExportArtifacts } from "@shared/types";
+import { ExportFlow } from "@shared/enums";
+import type { ExportArtifacts } from "@shared/types";
 import { buildPromptMd } from "@share/build-prompt-md";
 import {
   loadColorTokenAddons, emptyColorTokenAddons, type ColorTokenAddons,
@@ -38,37 +37,22 @@ function safeDomain(d: string): string {
   return (d || "page").replace(/^www\./, "").replace(/[^a-z0-9_-]+/gi, "_");
 }
 
-function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const fr = new FileReader();
-    fr.onload = () => resolve(String(fr.result));
-    fr.onerror = () => reject(fr.error ?? new Error("FileReader failed"));
-    fr.readAsDataURL(blob);
-  });
-}
-
 /**
- * Route the download through the background service worker so the user
- * always sees a Save As… dialog (`saveAs: true`) instead of having the
- * file land silently in the default Downloads folder.
- * Falls back to the anchor-click path if the background round-trip fails
- * (e.g. content-script context invalidated).
+ * Trigger from the panel DOM. This avoids the MV3 `chrome.downloads.download`
+ * Save As flake where the background worker can acknowledge but never start
+ * a visible download on some Chrome settings.
  */
 async function triggerDownload(blob: Blob, filename: string): Promise<string | undefined> {
-  try {
-    const dataUrl = await blobToDataUrl(blob);
-    const res = await sendToBackground<DownloadBlobPayload, DownloadBlobResponse>(
-      MessageKind.DownloadBlob, { dataUrl, filename, saveAs: true },
-    );
-    return res.savedPath;
-  } catch {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    return undefined;
-  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.style.display = "none";
+  (document.body ?? document.documentElement).appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return filename;
 }
 
 function flowSlug(f: ExportFlow): string {

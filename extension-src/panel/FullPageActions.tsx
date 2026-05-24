@@ -135,12 +135,11 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
           ? <>Tip: set a custom file name below — leave blank to use the auto name <code>{`inspect-page-fullpage-${domainSafeFor(artifacts)}-…`}</code>.</>
           : <>Run <strong>Export Full Page</strong> above first — these become active once the capture lands.</>}
       </div>
-      <label className="lpe-field-row" style={{ display: "flex", gap: 8, alignItems: "center", margin: "6px 0 8px" }}>
-        <span style={{ fontSize: 12, opacity: 0.85, minWidth: 72 }}>File name:</span>
+      <label className="lpe-field-row lpe-file-name-row">
+        <span className="lpe-file-name-label">File name</span>
         <input
           type="text"
           className="lpe-input"
-          style={{ flex: 1 }}
           value={customName}
           onChange={(e) => setCustomName(e.target.value)}
           placeholder={ready ? `inspect-page-fullpage-${domainSafeFor(artifacts)}-${tsNow()}` : "my-export-name"}

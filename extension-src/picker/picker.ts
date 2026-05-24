@@ -95,6 +95,7 @@ export function enterPicker(handlers: PickerHandlers): void {
   let isTopFrame = true;
   try { isTopFrame = window.top === window; } catch { isTopFrame = false; }
   const hideChrome = (): void => {
+    dom.host.dataset.chromeHidden = "true";
     dom.bar.style.display = "none";
     dom.chip.style.display = "none";
     dom.toast.style.display = "none";
