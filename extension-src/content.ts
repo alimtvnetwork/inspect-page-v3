@@ -125,10 +125,8 @@ router.on<RestoreAfterCapturePayload, RestoreAfterCaptureResponse>(
   () => { restoreAfterCapture(); },
 );
 
-router.on<EnterPickerModePayload, EnterPickerModeResponse>(
-  MessageKind.EnterPickerMode,
-  () => {
-    enterPicker({
+function startPicker(): void {
+  enterPicker({
       onSelect: async ({ element, rect }) => {
         logger.info(LogCategory.Picker, `Picked ${describe(element)}`);
         exitPicker();
@@ -326,9 +324,19 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
           } catch { /* panel may be closed */ }
         }
       },
-    });
-  },
+  });
+}
+
+router.on<EnterPickerModePayload, EnterPickerModeResponse>(
+  MessageKind.EnterPickerMode,
+  () => { startPicker(); },
 );
+
+window.addEventListener(LPE_PICKER_COMMAND_EVENT, (event) => {
+  const detail = (event as CustomEvent<{ action?: string }>).detail;
+  if (detail?.action === "enter") startPicker();
+  if (detail?.action === "exit") exitPicker();
+});
 
 router.on<ExitPickerModePayload, ExitPickerModeResponse>(
   MessageKind.ExitPickerMode,
