@@ -2092,6 +2092,31 @@
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
+.lpe-appearance-presets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.lpe-appearance-preset {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--lpe-border);
+  background: var(--lpe-surface-2);
+  color: var(--lpe-fg);
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.lpe-appearance-preset:hover { border-color: var(--lpe-accent); }
+.lpe-appearance-preset.is-active {
+  border-color: var(--lpe-accent);
+  box-shadow: 0 0 0 1px var(--lpe-accent);
+}
 .lpe-appearance-card {
   appearance: none;
   display: flex;
