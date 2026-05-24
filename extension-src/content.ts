@@ -332,15 +332,18 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
   () => { startPicker(); },
 );
 
-window.addEventListener(LPE_PICKER_COMMAND_EVENT, (event) => {
-  const detail = (event as CustomEvent<{ action?: string }>).detail;
-  if (detail?.action === "enter") startPicker();
-  if (detail?.action === "exit") exitPicker();
-});
-
 router.on<ExitPickerModePayload, ExitPickerModeResponse>(
   MessageKind.ExitPickerMode,
   () => { exitPicker(); },
 );
 
-router.attach();
+const contentGlobal = globalThis as { __INSPECT_PAGE_CONTENT_READY__?: boolean };
+if (!contentGlobal.__INSPECT_PAGE_CONTENT_READY__) {
+  contentGlobal.__INSPECT_PAGE_CONTENT_READY__ = true;
+  window.addEventListener(LPE_PICKER_COMMAND_EVENT, (event) => {
+    const detail = (event as CustomEvent<{ action?: string }>).detail;
+    if (detail?.action === "enter") startPicker();
+    if (detail?.action === "exit") exitPicker();
+  });
+  router.attach();
+}
