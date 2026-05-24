@@ -40,14 +40,33 @@ export const EXT_THEME_PRESETS: ExtensionThemePreset[] = [
       "radial-gradient(120% 80% at 100% 100%, rgba(92,225,230,0.08) 0%, transparent 55%)," +
       "#0B0F0E",
   },
+  {
+    id: "riseup-asia",
+    name: "Riseup Asia",
+    swatch: "#F59E0B",
+    vars: {
+      "--lpe-bg": "#0C0905",
+      "--lpe-fg": "#FFF8EF",
+      "--lpe-muted": "#A39280",
+      "--lpe-surface": "#15110A",
+      "--lpe-surface-2": "#1E180E",
+      "--lpe-border": "rgba(245, 158, 11, 0.14)",
+      "--lpe-accent": "#F59E0B",
+      "--lpe-accent-hover": "#FBBF24",
+      "--lpe-accent-fg": "#1A1208",
+    },
+    background:
+      "radial-gradient(120% 80% at 20% 0%, rgba(245,158,11,0.12) 0%, transparent 55%)," +
+      "radial-gradient(120% 80% at 100% 100%, rgba(251,191,36,0.07) 0%, transparent 55%)," +
+      "#0C0905",
+  },
 ];
 
 export const DEFAULT_EXT_PRESET_ID = "dark-mint";
 const STORAGE_KEY = "inspect-page.ext-theme";
-// v2.7.6 — theme is locked to dark-mint. Any legacy preset id (amber, orange,
-// sky, indigo, violet, ruby, emerald, paper) migrates back to dark-mint.
+// v2.7.10 — dark-mint + Riseup Asia are first-class presets again. Legacy
+// ids from removed experiments still migrate to dark-mint.
 const PRESET_ALIASES: Record<string, string> = {
-  "riseup-asia": "dark-mint",
   "midnight-orange": "dark-mint",
   "slate-sky": "dark-mint",
   "midnight-indigo": "dark-mint",
@@ -65,25 +84,11 @@ export interface StoredExtTheme {
 
 function normalizeStoredTheme(value: StoredExtTheme): StoredExtTheme {
   const presetId = PRESET_ALIASES[value.presetId] ?? value.presetId;
-  // v2.7.6 hard reset: drop any custom accent that drifted off-brand (amber/
-  // gold/orange ranges). Mint accent comes back automatically from the preset.
   const next: StoredExtTheme = { presetId };
-  if (value.customAccent && isMintFriendly(value.customAccent)) {
+  if (value.customAccent && /^#?[0-9a-f]{6}$/i.test(value.customAccent)) {
     next.customAccent = value.customAccent;
   }
   return next;
-}
-
-/** Allow only accents in the green/teal/blue cool range; reject amber/red/gold. */
-function isMintFriendly(hex: string): boolean {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return false;
-  const n = parseInt(m[1]!, 16);
-  const r = (n >> 16) & 0xff;
-  const g = (n >> 8) & 0xff;
-  const b = n & 0xff;
-  // Cool accents have green or blue dominance; reject anything where red rules.
-  return g >= r - 20 || b >= r - 20;
 }
 
 export function getPreset(id: string): ExtensionThemePreset {
