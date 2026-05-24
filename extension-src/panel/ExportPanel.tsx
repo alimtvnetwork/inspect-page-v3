@@ -354,6 +354,21 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     };
   }, []);
 
+  // Reset to a fresh Export state whenever the floating panel is (re-)opened.
+  // mountFloatingPanel dispatches `inspect-page:reset-panel-state` on every
+  // open path so the Export tab never shows a stale "Saved …zip" / Re-download
+  // block from a previous export.
+  useEffect(() => {
+    if (surface !== "floating") return;
+    const onReset = (): void => {
+      setState({ status: PanelStatus.Idle });
+      setShareResult(null);
+      setMode("export");
+    };
+    window.addEventListener("inspect-page:reset-panel-state", onReset);
+    return () => window.removeEventListener("inspect-page:reset-panel-state", onReset);
+  }, [surface]);
+
   // ---- Action handlers ----
   const runAction = useCallback(async (kind: "fullPage" | "pick") => {
     if (disabled) return;
