@@ -44,6 +44,12 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
     existing.style.display = "block";
     existing.style.pointerEvents = "auto";
     existing.focus({ preventScroll: true });
+    // User asked: every time the panel opens, the Export tab should start
+    // fresh (no leftover "Saved …zip" / Re-download block from a previous
+    // export). Broadcast a reset event the ExportPanel listens for.
+    try {
+      window.dispatchEvent(new CustomEvent("inspect-page:reset-panel-state"));
+    } catch { /* ignore */ }
     return;
   }
 
