@@ -2050,6 +2050,35 @@
 
 /* ---------- Appearance section ---------- */
 .lpe-appearance { padding: 4px 0 8px; }
+.lpe-appearance-locked {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--lpe-accent) 32%, var(--lpe-border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--lpe-surface) 88%, transparent);
+  color: var(--lpe-fg);
+  font-weight: 700;
+}
+.lpe-appearance-locked-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 999px;
+  background: color-mix(in srgb, var(--lpe-accent) 18%, transparent);
+  color: var(--lpe-accent-hover);
+}
+/* v2.7.6 — Re-download card spacing fixes so the section header no longer
+ * collides with the Format toggle row underneath. */
+.lpe-debug { gap: 0; }
+.lpe-debug-header { padding: 10px 12px 8px; }
+.lpe-debug + .lpe-debug, .lpe-debug-actions { row-gap: 8px; }
+.lpe-debug[data-ready="false"] .lpe-debug-actions { opacity: 0.85; }
+.lpe-debug[data-ready="false"] .lpe-export-modes { opacity: 0.85; }
+/* Keep button text legible on hover under every preset (no black-on-black). */
+.lpe-btn:hover:not([disabled]),
+.lpe-btn-primary:hover:not([disabled]),
+.lpe-root[data-lpe-preset] .lpe-btn:hover:not([disabled]) {
+  color: var(--lpe-fg) !important;
+}
+.lpe-btn[disabled] { color: var(--lpe-muted); }
 .lpe-appearance-label {
   font-size: 11px;
   font-weight: 700;
