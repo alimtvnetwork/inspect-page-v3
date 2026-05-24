@@ -10,6 +10,26 @@ import type { ExportArtifacts, StatusUpdatePayload } from "@shared/types";
 import { ExportModes } from "./ExportModes";
 import { buildElementArtifacts } from "./artifacts";
 
+const safeNameFor = (selectorPath: string): string =>
+  (selectorPath || "element")
+    .split(" > ").pop()!
+    .replace(/[^a-z0-9_-]+/gi, "_").slice(0, 40) || "element";
+const tsNow = (): string =>
+  new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+const triggerDownload = (blob: Blob, filename: string): void => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+const fenceFor = (k: "html" | "css" | "js"): string =>
+  k === "js" ? "javascript" : k;
+const buildSingleMd = (selectorPath: string, k: "html" | "css" | "js", v: string): string =>
+  `# Element — ${selectorPath}\n\n## ${k.toUpperCase()}\n\n\`\`\`${fenceFor(k)}\n${v}\n\`\`\`\n`;
+const buildCombinedMd = (preview: NonNullable<StatusUpdatePayload["debugPreview"]>): string =>
+  `# Element — ${preview.selectorPath}\n\n## HTML\n\n\`\`\`html\n${preview.html || ""}\n\`\`\`\n\n## CSS\n\n\`\`\`css\n${preview.css || ""}\n\`\`\`\n\n## JS\n\n\`\`\`javascript\n${preview.js || ""}\n\`\`\`\n`;
+
 export interface DebugPreviewProps {
   preview: NonNullable<StatusUpdatePayload["debugPreview"]>;
   activeUrl?: string;
@@ -26,33 +46,12 @@ export function DebugPreview({ preview, activeUrl, shareEnabled, onShare, onClea
     try { await navigator.clipboard.writeText(value); } catch { /* ignore */ }
   }, [value]);
 
-  const safeName = (): string => {
-    return (preview.selectorPath || "element")
-      .split(" > ").pop()!
-      .replace(/[^a-z0-9_-]+/gi, "_").slice(0, 40) || "element";
-  };
-  const tsNow = (): string =>
-    new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const triggerDownload = (blob: Blob, filename: string): void => {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  };
-  const fenceFor = (k: "html" | "css" | "js"): string =>
-    k === "js" ? "javascript" : k;
-  const buildSingleMd = (k: "html" | "css" | "js", v: string): string =>
-    `# Element — ${preview.selectorPath}\n\n## ${k.toUpperCase()}\n\n\`\`\`${fenceFor(k)}\n${v}\n\`\`\`\n`;
-  const buildCombinedMd = (): string =>
-    `# Element — ${preview.selectorPath}\n\n## HTML\n\n\`\`\`html\n${preview.html || ""}\n\`\`\`\n\n## CSS\n\n\`\`\`css\n${preview.css || ""}\n\`\`\`\n\n## JS\n\n\`\`\`javascript\n${preview.js || ""}\n\`\`\`\n`;
-
   const onDownloadCurrent = useCallback(() => {
     try {
-      const safe = safeName();
+      const safe = safeNameFor(preview.selectorPath);
       const ts = tsNow();
       if (fmt === "md") {
-        const md = buildSingleMd(tab, value || "");
+        const md = buildSingleMd(preview.selectorPath, tab, value || "");
         triggerDownload(
           new Blob([md], { type: "text/markdown;charset=utf-8" }),
           `inspect-page-element-${safe}-${tab}-${ts}.md`,
@@ -72,11 +71,11 @@ export function DebugPreview({ preview, activeUrl, shareEnabled, onShare, onClea
 
   const onDownloadAll = useCallback(async () => {
     try {
-      const safe = safeName();
+      const safe = safeNameFor(preview.selectorPath);
       const ts = tsNow();
       const zip = new JSZip();
       if (fmt === "md") {
-        zip.file("element.md", buildCombinedMd());
+        zip.file("element.md", buildCombinedMd(preview));
       } else {
         zip.file("element.html", preview.html || "");
         zip.file("element.css", preview.css || "");

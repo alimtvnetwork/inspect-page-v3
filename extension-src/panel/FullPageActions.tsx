@@ -11,6 +11,30 @@ import { ExportModes } from "./ExportModes";
 import { buildFullPageArtifacts, type FullPageArtifactSource } from "./artifacts";
 import { saveBlobWithPrompt } from "./save-blob-with-prompt";
 
+const domainSafeFor = (artifacts: FullPageArtifactSource | null | undefined): string => {
+  if (!artifacts) return "page";
+  try {
+    const u = new URL(artifacts.meta.url);
+    return u.hostname.replace(/^www\./, "").replace(/[^a-z0-9_-]+/gi, "_");
+  } catch {
+    return "page";
+  }
+};
+const tsNow = (): string =>
+  new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+const dataUrlToBlob = async (dataUrl: string): Promise<Blob> =>
+  (await fetch(dataUrl)).blob();
+const fenceFor = (k: "html" | "css" | "js"): string =>
+  k === "js" ? "javascript" : k;
+const buildSingleMd = (artifacts: FullPageArtifactSource | null | undefined, k: "html" | "css" | "js"): string =>
+  artifacts
+    ? `# Page — ${artifacts.meta.url}\n\n## ${k.toUpperCase()}\n\n\`\`\`${fenceFor(k)}\n${artifacts[k] || ""}\n\`\`\`\n`
+    : "";
+const buildCombinedMd = (artifacts: FullPageArtifactSource | null | undefined): string =>
+  artifacts
+    ? `# Page — ${artifacts.meta.url}\n\n_Captured ${artifacts.meta.capturedAtIso}_\n\n## HTML\n\n\`\`\`html\n${artifacts.html}\n\`\`\`\n\n## CSS\n\n\`\`\`css\n${artifacts.css}\n\`\`\`\n\n## JS\n\n\`\`\`javascript\n${artifacts.js}\n\`\`\`\n`
+    : "";
+
 export interface FullPageActionsProps {
   /** Captured artifacts. When null/undefined the section renders in a
    *  ghost/disabled state — buttons are visible but inert with a one-line
@@ -25,37 +49,13 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
   const [fmt, setFmt] = useState<"raw" | "md">("raw");
   const ready = !!artifacts;
 
-  const domainSafe = (): string => {
-    if (!artifacts) return "page";
-    try {
-      const u = new URL(artifacts.meta.url);
-      return u.hostname.replace(/^www\./, "").replace(/[^a-z0-9_-]+/gi, "_");
-    } catch {
-      return "page";
-    }
-  };
-  const tsNow = (): string =>
-    new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const dataUrlToBlob = async (dataUrl: string): Promise<Blob> =>
-    (await fetch(dataUrl)).blob();
-  const fenceFor = (k: "html" | "css" | "js"): string =>
-    k === "js" ? "javascript" : k;
-  const buildSingleMd = (k: "html" | "css" | "js"): string =>
-    artifacts
-      ? `# Page — ${artifacts.meta.url}\n\n## ${k.toUpperCase()}\n\n\`\`\`${fenceFor(k)}\n${artifacts[k] || ""}\n\`\`\`\n`
-      : "";
-  const buildCombinedMd = (): string =>
-    artifacts
-      ? `# Page — ${artifacts.meta.url}\n\n_Captured ${artifacts.meta.capturedAtIso}_\n\n## HTML\n\n\`\`\`html\n${artifacts.html}\n\`\`\`\n\n## CSS\n\n\`\`\`css\n${artifacts.css}\n\`\`\`\n\n## JS\n\n\`\`\`javascript\n${artifacts.js}\n\`\`\`\n`
-      : "";
-
   const onDownloadOne = useCallback(async (k: "html" | "css" | "js") => {
     if (!artifacts) return;
-    const safe = domainSafe();
+    const safe = domainSafeFor(artifacts);
     const ts = tsNow();
     if (fmt === "md") {
       await saveBlobWithPrompt(
-        new Blob([buildSingleMd(k)], { type: "text/markdown;charset=utf-8" }),
+        new Blob([buildSingleMd(artifacts, k)], { type: "text/markdown;charset=utf-8" }),
         `inspect-page-fullpage-${safe}-${k}-${ts}.md`,
       );
     } else {
@@ -75,18 +75,18 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
     try {
       const blob = await dataUrlToBlob(artifacts.screenshotDataUrl);
       const ext = blob.type.includes("jpeg") ? "jpg" : "png";
-      await saveBlobWithPrompt(blob, `inspect-page-fullpage-${domainSafe()}-${tsNow()}.${ext}`);
+      await saveBlobWithPrompt(blob, `inspect-page-fullpage-${domainSafeFor(artifacts)}-${tsNow()}.${ext}`);
     } catch { /* ignore */ }
   }, [artifacts]);
 
   const onDownloadAll = useCallback(async () => {
     if (!artifacts) return;
     try {
-      const safe = domainSafe();
+      const safe = domainSafeFor(artifacts);
       const ts = tsNow();
       const zip = new JSZip();
       if (fmt === "md") {
-        zip.file("page.md", buildCombinedMd());
+        zip.file("page.md", buildCombinedMd(artifacts));
       } else {
         zip.file("page.html", artifacts.html);
         zip.file("styles.css", artifacts.css);

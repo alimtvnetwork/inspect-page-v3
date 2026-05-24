@@ -414,7 +414,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
         lastAction: kind,
       });
     }
-  }, [disabled, activeTabId, settings]);
+  }, [disabled, activeTabId, settings, surface]);
 
   const onFullPage = useCallback(() => void runAction("fullPage"), [runAction]);
   const onPick = useCallback(() => void runAction("pick"), [runAction]);
