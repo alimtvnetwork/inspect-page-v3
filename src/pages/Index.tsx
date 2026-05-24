@@ -2,7 +2,6 @@
  * Distribution landing page for the Inspect Page Chrome extension.
  * Source: spec/21-app/18-distribution-page.md.
  */
-import { useEffect, useState } from "react";
 import { Hero } from "@/components/landing/Hero";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { InstallSteps } from "@/components/landing/InstallSteps";
@@ -15,33 +14,11 @@ import { Pricing } from "@/components/landing/Pricing";
 import { Faq } from "@/components/landing/Faq";
 
 const ZIP_URL = "/inspect-page.zip";
+const ZIP_SIZE_KB = 325;
+const VERSION = "2.7.9";
 
 const Index = (): JSX.Element => {
-  const [meta, setMeta] = useState<{ version: string; sizeKb: number | null }>({
-    version: "2.6.0",
-    sizeKb: null,
-  });
-
-  useEffect(() => {
-    document.title = "Inspect Page — Chrome extension";
-    // Best-effort metadata fetch (HEAD). If the build is missing, we keep
-    // sizeKb=null and the Hero hides the size pill.
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(ZIP_URL, { method: "HEAD" });
-        if (!res.ok) return;
-        const len = res.headers.get("content-length");
-        if (cancelled || !len) return;
-        setMeta((m) => ({ ...m, sizeKb: Math.round(parseInt(len, 10) / 1024) }));
-      } catch {
-        // Ignore — landing still renders.
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  document.title = "Inspect Page — Chrome extension";
 
   // JSON-LD SoftwareApplication for SEO.
   const jsonLd = {
@@ -52,7 +29,7 @@ const Index = (): JSX.Element => {
     operatingSystem: "Chromium",
     description:
       "Export any webpage as HTML, CSS, JS and a full-page screenshot, ready for your LLM.",
-    softwareVersion: meta.version,
+    softwareVersion: VERSION,
   };
 
   return (
@@ -62,7 +39,7 @@ const Index = (): JSX.Element => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <main className="mx-auto w-full max-w-[720px] px-5 py-12 sm:py-16 space-y-20">
-        <Hero zipUrl={ZIP_URL} version={meta.version} sizeKb={meta.sizeKb} />
+        <Hero zipUrl={ZIP_URL} version={VERSION} sizeKb={ZIP_SIZE_KB} />
         <HowItWorks />
         <InstallSteps />
         <WhatYouGet />
@@ -72,7 +49,7 @@ const Index = (): JSX.Element => {
         <Faq />
         <Privacy />
       </main>
-      <Footer version={meta.version} />
+      <Footer version={VERSION} />
     </div>
   );
 };
