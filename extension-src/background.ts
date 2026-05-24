@@ -203,6 +203,16 @@ router.on<CancelFullPageExportPayload, CancelFullPageExportResponse>(
   },
 );
 
+router.on<StatusUpdatePayload, void>(MessageKind.StatusUpdate, (payload, sender) => {
+  const tabId = sender.tab?.id;
+  if (tabId === undefined) return;
+  void chrome.tabs.sendMessage(tabId, {
+    kind: MessageKind.StatusUpdate,
+    requestId: makeRequestId(),
+    payload,
+  }).catch(() => undefined);
+});
+
 router.on<EnterPickerModePayload, EnterPickerModeResponse>(
   MessageKind.EnterPickerMode,
   async ({ tabId }, sender) => {
