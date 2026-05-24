@@ -1,7 +1,10 @@
 /**
- * Appearance tab inside the extension Settings popover. Lets the user pick a
- * theme preset (Dark Mint, Riseup Asia, Violet Noir, Ruby Noir) or set a
- * fully custom accent color. Persisted to `chrome.storage.local`.
+ * Appearance tab inside the extension Settings popover.
+ *
+ * v2.7.6 — the extension theme is **locked to Dark Mint** (memory:
+ * `mem://design/extension-theme`). The preset switcher has been removed; the
+ * only knob exposed to the user is an optional custom accent in the cool
+ * (green / teal / blue) range. Reset returns to the locked Dark Mint accent.
  */
 import { useCallback } from "react";
 import {
@@ -19,10 +22,6 @@ export function AppearanceSection({
   value,
   onChange,
 }: AppearanceSectionProps): JSX.Element {
-  const setPreset = useCallback(
-    (id: string) => onChange({ presetId: id }),
-    [onChange],
-  );
   const setCustomAccent = useCallback(
     (hex: string) => onChange({ presetId: value.presetId, customAccent: hex }),
     [onChange, value.presetId],
@@ -39,30 +38,11 @@ export function AppearanceSection({
 
   return (
     <div className="lpe-appearance">
-      <div className="lpe-appearance-label">Theme preset</div>
-      <div className="lpe-appearance-grid" role="radiogroup" aria-label="Theme preset">
-        {EXT_THEME_PRESETS.map((preset) => {
-          const selected = preset.id === value.presetId && !value.customAccent;
-          return (
-            <button
-              key={preset.id}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              className="lpe-appearance-card"
-              data-selected={selected ? "true" : "false"}
-              onClick={() => setPreset(preset.id)}
-            >
-              <span
-                aria-hidden
-                className="lpe-appearance-swatch"
-                style={{ background: preset.swatch }}
-              />
-              <span className="lpe-appearance-name">{preset.name}</span>
-              {selected ? <span className="lpe-appearance-check">✓</span> : null}
-            </button>
-          );
-        })}
+      <div className="lpe-appearance-label">Theme</div>
+      <div className="lpe-appearance-locked">
+        <span aria-hidden className="lpe-appearance-swatch" style={{ background: "#2DD4A8" }} />
+        <span className="lpe-appearance-name">Dark Mint</span>
+        <span className="lpe-appearance-locked-tag">Locked</span>
       </div>
 
       <div className="lpe-appearance-label" style={{ marginTop: 14 }}>
@@ -85,7 +65,9 @@ export function AppearanceSection({
         </button>
       </div>
       <p className="lpe-appearance-hint">
-        Overrides the preset's accent. Reset returns to Dark Mint.
+        Pick a custom accent in the cool (green / teal / blue) range. Warm
+        accents are rejected so the panel stays on-brand. Reset returns to
+        the locked Dark Mint accent.
       </p>
     </div>
   );
