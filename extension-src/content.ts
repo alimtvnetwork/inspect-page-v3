@@ -47,10 +47,19 @@ logger.debug(LogCategory.Lifecycle, "Content script loaded");
  * the popup path.
  */
 export const LPE_STATUS_EVENT = "inspect-page:status";
+const LPE_PICKER_COMMAND_EVENT = "inspect-page:picker-command";
 function dispatchStatusLocal(payload: StatusUpdatePayload): void {
   try {
     window.dispatchEvent(new CustomEvent(LPE_STATUS_EVENT, { detail: payload }));
   } catch { /* ignore */ }
+}
+
+function notifyPickerClosed(): void {
+  void chrome.runtime.sendMessage({
+    kind: MessageKind.ExitPickerMode,
+    requestId: `cs_picker_closed_${Date.now()}`,
+    payload: { tabId: -1 } as ExitPickerModePayload,
+  }).catch(() => undefined);
 }
 
 const router = new MessageRouter();
@@ -116,13 +125,12 @@ router.on<RestoreAfterCapturePayload, RestoreAfterCaptureResponse>(
   () => { restoreAfterCapture(); },
 );
 
-router.on<EnterPickerModePayload, EnterPickerModeResponse>(
-  MessageKind.EnterPickerMode,
-  () => {
-    enterPicker({
+function startPicker(): void {
+  enterPicker({
       onSelect: async ({ element, rect }) => {
         logger.info(LogCategory.Picker, `Picked ${describe(element)}`);
         exitPicker();
+        notifyPickerClosed();
         dispatchStatusLocal({ status: PanelStatus.Selecting });
         void chrome.runtime.sendMessage({
           kind: MessageKind.StatusUpdate,
@@ -213,6 +221,7 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
       },
       onCancel: () => {
         logger.info(LogCategory.Picker, "Picker cancelled");
+          notifyPickerClosed();
           dispatchStatusLocal({ status: PanelStatus.Idle });
           void chrome.runtime.sendMessage({
             kind: MessageKind.StatusUpdate,
@@ -223,6 +232,7 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
       onCommit: async (elements) => {
         logger.info(LogCategory.Picker, `Committed ${elements.length} elements`);
         exitPicker();
+        notifyPickerClosed();
         try {
           const settings = await sendToBackground<Record<string, never>, GetSettingsResponse>(
             MessageKind.GetSettings, {},
@@ -314,8 +324,12 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
           } catch { /* panel may be closed */ }
         }
       },
-    });
-  },
+  });
+}
+
+router.on<EnterPickerModePayload, EnterPickerModeResponse>(
+  MessageKind.EnterPickerMode,
+  () => { startPicker(); },
 );
 
 router.on<ExitPickerModePayload, ExitPickerModeResponse>(
@@ -323,4 +337,13 @@ router.on<ExitPickerModePayload, ExitPickerModeResponse>(
   () => { exitPicker(); },
 );
 
-router.attach();
+const contentGlobal = globalThis as { __INSPECT_PAGE_CONTENT_READY__?: boolean };
+if (!contentGlobal.__INSPECT_PAGE_CONTENT_READY__) {
+  contentGlobal.__INSPECT_PAGE_CONTENT_READY__ = true;
+  window.addEventListener(LPE_PICKER_COMMAND_EVENT, (event) => {
+    const detail = (event as CustomEvent<{ action?: string }>).detail;
+    if (detail?.action === "enter") startPicker();
+    if (detail?.action === "exit") exitPicker();
+  });
+  router.attach();
+}

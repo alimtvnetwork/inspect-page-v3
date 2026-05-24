@@ -11,7 +11,7 @@ import { revokeShareSession as revokeShareSessionImpl } from "@share/revoke-shar
 import { waitForDownloadPath } from "./background/downloads";
 import { captureInspectThumbnail } from "./background/thumbnail";
 import { sendOffscreen, blobToDataUrl } from "./background/send-offscreen";
-import { ensureContentScript } from "./background/tab-ready";
+import { ensureAllFrameContentScripts, ensureContentScript } from "./background/tab-ready";
 import {
   runFullPageExport,
   canceledFullPageTabs,
@@ -221,8 +221,13 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
       throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, "Cannot resolve tab for picker");
     }
     try {
-      await ensureContentScript(tid);
-      await sendToTab<{ tabId: number }, void>(tid, MessageKind.EnterPickerMode, { tabId: tid });
+      await ensureAllFrameContentScripts(tid);
+      await chrome.scripting.executeScript({
+        target: { tabId: tid, allFrames: true },
+        func: () => {
+          window.dispatchEvent(new CustomEvent("inspect-page:picker-command", { detail: { action: "enter" } }));
+        },
+      });
     } catch (e) {
       throw new MessageError(
         ErrorCode.E_NOT_AVAILABLE_HERE,
@@ -239,7 +244,12 @@ router.on<ExitPickerModePayload, ExitPickerModeResponse>(
     const tid = tabId > 0 ? tabId : sender.tab?.id;
     if (tid === undefined) return;
     try {
-      await sendToTab<{ tabId: number }, void>(tid, MessageKind.ExitPickerMode, { tabId: tid });
+      await chrome.scripting.executeScript({
+        target: { tabId: tid, allFrames: true },
+        func: () => {
+          window.dispatchEvent(new CustomEvent("inspect-page:picker-command", { detail: { action: "exit" } }));
+        },
+      });
     } catch {
       // Tab may be closed; ignore.
     }
@@ -365,7 +375,13 @@ chrome.commands?.onCommand?.addListener(async (command) => {
       const settings = await getSettings();
       await runFullPageExport(tab.id, settings);
     } else if (command === "trigger-pick-element") {
-      await sendToTab<{ tabId: number }, void>(tab.id, MessageKind.EnterPickerMode, { tabId: tab.id });
+      await ensureAllFrameContentScripts(tab.id);
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id, allFrames: true },
+        func: () => {
+          window.dispatchEvent(new CustomEvent("inspect-page:picker-command", { detail: { action: "enter" } }));
+        },
+      });
     }
   } catch (e) {
     logger.error(LogCategory.Lifecycle, "CMD_FAIL", `command ${command} failed`, e);
