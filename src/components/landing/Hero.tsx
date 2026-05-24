@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Download, Chrome } from "lucide-react";
+import { downloadStaticFile } from "@/lib/downloadStaticFile";
 
 interface HeroProps {
   zipUrl: string;
@@ -18,20 +19,7 @@ export const Hero = ({ zipUrl, version, sizeKb }: HeroProps): JSX.Element => {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch(zipUrl);
-      if (!res.ok) {
-        setError(`Download failed: ${res.status}`);
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "inspect-page.zip";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1_000);
+      await downloadStaticFile(zipUrl, "inspect-page.zip");
       toast({ title: "Downloaded inspect-page.zip" });
     } catch (e) {
       setError(`Download failed: ${e instanceof Error ? e.message : "network error"}`);
