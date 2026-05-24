@@ -208,7 +208,7 @@ function removeLauncher(): void {
   if (el) el.remove();
 }
 
-function getPanelCssSize(pageZoom = 1): { w: number; h: number } {
+function getPanelCssSize(_pageZoom = 1): { w: number; h: number } {
   return {
     w: Math.round(userVisualW),
     h: Math.round(userVisualH),
@@ -300,19 +300,18 @@ function wireResize(host: HTMLDivElement, grip: HTMLElement, onDone: () => void)
   });
   grip.addEventListener("pointermove", (event) => {
     if (!start) return;
-    const zoom = activeTabZoom || 1;
     const cssW = clamp(
       start.w + (event.clientX - start.x),
-      Math.round(MIN_VISUAL_W / zoom),
+      MIN_VISUAL_W,
       Math.max(MIN_VISUAL_W, window.innerWidth - host.offsetLeft - EDGE_GAP),
     );
     const cssH = clamp(
       start.h + (event.clientY - start.y),
-      Math.round(MIN_VISUAL_H / zoom),
+      MIN_VISUAL_H,
       Math.max(MIN_VISUAL_H, window.innerHeight - host.offsetTop - EDGE_GAP),
     );
-    userVisualW = Math.round(cssW * zoom);
-    userVisualH = Math.round(cssH * zoom);
+    userVisualW = Math.round(cssW);
+    userVisualH = Math.round(cssH);
     applyPanelFrame(host, cssW, cssH);
   });
   const end = (event: PointerEvent): void => {
