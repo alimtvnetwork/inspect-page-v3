@@ -228,7 +228,8 @@
 }
 .lpe-text-typo-sample {
   padding: 8px 10px; border-radius: 6px;
-  background: var(--lpe-surface-2); color: var(--lpe-fg);
+  background: #ffffff; color: #111111;
+  border: 1px solid var(--lpe-border);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .lpe-text-typo-details {
@@ -246,7 +247,7 @@
 .lpe-text-typo-preview {
   padding: 12px; margin-bottom: 12px;
   border: 1px solid var(--lpe-border); border-radius: 6px;
-  background: var(--lpe-surface-2);
+  background: #ffffff; color: #111111;
   word-break: break-word;
 }
 
