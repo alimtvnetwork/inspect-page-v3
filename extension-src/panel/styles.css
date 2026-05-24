@@ -1969,12 +1969,10 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
-/* Fixed compact floating surface: keep the visual UI inside 412 × 820 even when old saved sizes exist. */
+/* Floating surface: fill the host (which is resized by the drag grip). */
 .lpe-root[data-lpe-surface="floating"] {
   width: 100% !important;
   height: 100% !important;
-  max-width: 412px !important;
-  max-height: 820px !important;
   overflow: hidden !important;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-header {
