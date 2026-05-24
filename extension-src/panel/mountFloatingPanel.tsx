@@ -74,17 +74,30 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
       overflow: hidden !important;
     }
     .lpe-floating-grip {
-      position: absolute; right: 2px; bottom: 2px;
-      width: 18px; height: 18px;
+      position: absolute; right: 0; bottom: 0;
+      width: 22px; height: 22px;
       cursor: nwse-resize;
       z-index: 2147483647;
       background:
-        linear-gradient(135deg, transparent 0 45%, #2DD4A8 45% 55%, transparent 55% 65%, #2DD4A8 65% 75%, transparent 75% 85%, #73FFB8 85% 95%, transparent 95% 100%);
-      opacity: 0.55;
+        linear-gradient(135deg,
+          transparent 0 30%,
+          #2DD4A8 30% 42%,
+          transparent 42% 52%,
+          #2DD4A8 52% 64%,
+          transparent 64% 74%,
+          #73FFB8 74% 86%,
+          transparent 86% 100%);
+      opacity: 0.95;
       border-bottom-right-radius: 10px;
+      box-shadow: 0 0 0 1px rgba(45,212,168,0.35) inset;
       touch-action: none;
     }
-    .lpe-floating-grip:hover { opacity: 1; }
+    .lpe-floating-grip:hover { opacity: 1; box-shadow: 0 0 0 1px #73FFB8 inset; }
+    .lpe-edge-resize {
+      position: absolute; z-index: 2147483647; background: transparent;
+    }
+    .lpe-edge-resize.e { right: 0; top: 0; width: 6px; height: 100%; cursor: ew-resize; }
+    .lpe-edge-resize.s { left: 0; bottom: 0; width: 100%; height: 6px; cursor: ns-resize; }
     ${stylesText}
   `;
   const mount = document.createElement("div");
