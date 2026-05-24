@@ -1,16 +1,16 @@
 /**
- * "What's new in v2.7.8" block — surfaces the Color Tokens v2 milestone on
- * top of the v2.7 Team Workspaces baseline.
+ * "What's new in v2.7.9" block — surfaces the dark-mint theme restore, picker
+ * stability fix, and Export panel UX polish on top of the v2.7 baseline.
  */
-import { Palette, FileCode2, Pencil, Users, Mail, ShieldCheck } from "lucide-react";
+import { Palette, MousePointerClick, LayoutPanelTop, Sparkles, Users, ShieldCheck } from "lucide-react";
 
 const ITEMS = [
-  { icon: Palette, title: "Color Tokens v2", body: "Every detected color is emitted as a token with tint / base / shade variants (\u00b112% lightness) so designers get a ready-to-use 3-stop palette per hue." },
-  { icon: FileCode2, title: "tokens.css + selectors.css", body: "MD+files and ZIP downloads now drop two extra files: a `:root { --ip-color-N }` block and per-selector rules using `var(--ip-color-N)`. Smart Share bakes the same CSS into its hosted pages." },
-  { icon: Pencil, title: "Per-selector custom CSS", body: "Inspect \u2192 Colors \u2192 Tokens lets you rename any token and attach arbitrary CSS declarations to any selector. Edits persist per snapshot in chrome.storage.local." },
+  { icon: Palette, title: "Dark-mint theme restored", body: "Locked the extension popup + floating panel to the approved dark-mint palette (#2DD4A8 on #0B0F0E). Legacy amber/gold/orange presets removed; custom accents are now constrained to cool greens, teals, and blues." },
+  { icon: MousePointerClick, title: "Picker no longer disappears", body: "Clicking a non-pickable area (iframes, blank space, the panel itself) keeps the picker active and shows a tiny \u201cNot pickable \u2014 try another element\u201d hint instead of collapsing to a lone Cancel bar." },
+  { icon: LayoutPanelTop, title: "Export tab shows everything", body: "Re-download and Export for AI groups render fully expanded by default. Buttons stay visible in a ghost/disabled state with an inline hint before the first capture \u2014 no more hidden options." },
+  { icon: Sparkles, title: "Hover + spacing polish", body: "Fixed black-on-black hover states on secondary buttons, tightened the Export header so the Format toggle no longer overlaps the title, and softened the disabled Share Links button." },
   { icon: Users, title: "Team Workspaces", body: "Owner / admin / member roles, per-workspace Stripe license, and a Workspace switcher in the popup. Legacy single-seat Pro keeps working." },
-  { icon: Mail, title: "Email invites", body: "Invite teammates by email \u2014 64-hex single-use tokens, 7-day TTL, accepted from a hidden WP admin landing page." },
-  { icon: ShieldCheck, title: "Backwards-compat billing", body: "Existing Pro users are auto-migrated into a solo workspace, and the webhook keeps legacy user-meta in parallel during the transition." },
+  { icon: ShieldCheck, title: "Backwards-compat billing", body: "Existing Pro users stay in a solo workspace, and the webhook keeps legacy user-meta in parallel during the transition." },
 ];
 
 export const WhatsNew = (): JSX.Element => (
@@ -21,9 +21,9 @@ export const WhatsNew = (): JSX.Element => (
       </h2>
       <span
         className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
-        aria-label="Version 2.7.8"
+        aria-label="Version 2.7.9"
       >
-        v2.7.8
+        v2.7.9
       </span>
     </div>
     <div className="grid gap-3 sm:grid-cols-2">
