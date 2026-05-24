@@ -26,6 +26,8 @@ export interface ExportModesProps {
   onShare?: (artifacts: ExportArtifacts) => Promise<void>;
   /** v2.7.6 — when true every action button is disabled (no capture yet). */
   disabled?: boolean;
+  /** v2.7.10 — user-supplied base file name (without extension). */
+  customBaseName?: string;
 }
 
 function tsNow(): string {
@@ -119,6 +121,7 @@ export function ExportModes({
   shareEnabled = false,
   onShare,
   disabled = false,
+  customBaseName,
 }: ExportModesProps): JSX.Element {
   const [shareState, setShareState] = useState<
     | { phase: "idle" }
@@ -148,14 +151,19 @@ export function ExportModes({
     return () => clearInterval(t);
   }, [shareState.phase]);
 
+  const baseName = (suffix?: string): string => {
+    const base = customBaseName?.trim() || fileBaseName(artifacts);
+    return suffix ? `${base}-${suffix}` : base;
+  };
+
   const onMd = useCallback(async () => {
     const md = buildSingleMd(artifacts, addons);
     const saved = await triggerDownload(
       new Blob([md], { type: "text/markdown;charset=utf-8" }),
-      `${fileBaseName(artifacts)}.md`,
+      `${baseName()}.md`,
     );
     if (saved) setLastSavedPath(saved);
-  }, [artifacts, addons]);
+  }, [artifacts, addons, customBaseName]);
 
   const handleShare = useCallback(async () => {
     if (!onShare) return;
@@ -187,9 +195,9 @@ export function ExportModes({
       zip.file(`images/${img.name}`, base64ToUint8(img.base64));
     }
     const blob = await zip.generateAsync({ type: "blob" });
-    const saved = await triggerDownload(blob, `${fileBaseName(artifacts)}-mdfiles.zip`);
+    const saved = await triggerDownload(blob, `${baseName("mdfiles")}.zip`);
     if (saved) setLastSavedPath(saved);
-  }, [artifacts, addons]);
+  }, [artifacts, addons, customBaseName]);
 
   const onZip = useCallback(async () => {
     const zip = new JSZip();
@@ -208,9 +216,9 @@ export function ExportModes({
     }
     zip.file("manifest.json", `${JSON.stringify(artifacts.meta, null, 2)}\n`);
     const blob = await zip.generateAsync({ type: "blob" });
-    const saved = await triggerDownload(blob, `${fileBaseName(artifacts)}.zip`);
+    const saved = await triggerDownload(blob, `${baseName()}.zip`);
     if (saved) setLastSavedPath(saved);
-  }, [artifacts, addons]);
+  }, [artifacts, addons, customBaseName]);
 
   return (
     <div className="lpe-export-modes" aria-label={COPY.exportModesHeader}>

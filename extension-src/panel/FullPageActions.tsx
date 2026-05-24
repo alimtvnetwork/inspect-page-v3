@@ -22,6 +22,8 @@ const domainSafeFor = (artifacts: FullPageArtifactSource | null | undefined): st
 };
 const tsNow = (): string =>
   new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+const sanitizeFileBase = (s: string): string =>
+  s.replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, "_").replace(/^\.+/, "").slice(0, 120);
 const dataUrlToBlob = async (dataUrl: string): Promise<Blob> =>
   (await fetch(dataUrl)).blob();
 const fenceFor = (k: "html" | "css" | "js"): string =>
@@ -47,16 +49,22 @@ export interface FullPageActionsProps {
 
 export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }: FullPageActionsProps): JSX.Element {
   const [fmt, setFmt] = useState<"raw" | "md">("raw");
+  const [customName, setCustomName] = useState<string>("");
   const ready = !!artifacts;
+  const effectiveBase = (suffix?: string): string => {
+    const safe = domainSafeFor(artifacts);
+    const ts = tsNow();
+    const cleaned = sanitizeFileBase(customName.trim());
+    const base = cleaned || `inspect-page-fullpage-${safe}-${ts}`;
+    return suffix ? `${base}-${suffix}` : base;
+  };
 
   const onDownloadOne = useCallback(async (k: "html" | "css" | "js") => {
     if (!artifacts) return;
-    const safe = domainSafeFor(artifacts);
-    const ts = tsNow();
     if (fmt === "md") {
       await saveBlobWithPrompt(
         new Blob([buildSingleMd(artifacts, k)], { type: "text/markdown;charset=utf-8" }),
-        `inspect-page-fullpage-${safe}-${k}-${ts}.md`,
+        `${effectiveBase(k)}.md`,
       );
     } else {
       const mime =
@@ -65,25 +73,23 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
         : "text/javascript";
       await saveBlobWithPrompt(
         new Blob([artifacts[k] || ""], { type: `${mime};charset=utf-8` }),
-        `inspect-page-fullpage-${safe}-${ts}.${k}`,
+        `${effectiveBase()}.${k}`,
       );
     }
-  }, [artifacts, fmt]);
+  }, [artifacts, fmt, customName]);
 
   const onDownloadScreenshot = useCallback(async () => {
     if (!artifacts) return;
     try {
       const blob = await dataUrlToBlob(artifacts.screenshotDataUrl);
       const ext = blob.type.includes("jpeg") ? "jpg" : "png";
-      await saveBlobWithPrompt(blob, `inspect-page-fullpage-${domainSafeFor(artifacts)}-${tsNow()}.${ext}`);
+      await saveBlobWithPrompt(blob, `${effectiveBase("screenshot")}.${ext}`);
     } catch { /* ignore */ }
-  }, [artifacts]);
+  }, [artifacts, customName]);
 
   const onDownloadAll = useCallback(async () => {
     if (!artifacts) return;
     try {
-      const safe = domainSafeFor(artifacts);
-      const ts = tsNow();
       const zip = new JSZip();
       if (fmt === "md") {
         zip.file("page.md", buildCombinedMd(artifacts));
@@ -99,9 +105,9 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
       } catch { /* skip screenshot if conversion fails */ }
       zip.file("manifest.json", `${JSON.stringify(artifacts.meta, null, 2)}\n`);
       const blob = await zip.generateAsync({ type: "blob" });
-      await saveBlobWithPrompt(blob, `inspect-page-fullpage-${safe}-${ts}.zip`);
+      await saveBlobWithPrompt(blob, `${effectiveBase()}.zip`);
     } catch { /* ignore */ }
-  }, [artifacts, fmt]);
+  }, [artifacts, fmt, customName]);
 
   // Stub artifacts for ExportModes when nothing has been captured yet — gives
   // the user a preview of every export mode button without forcing a capture.
@@ -124,11 +130,24 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
       <div className="lpe-debug-header">
         <span className="lpe-debug-title">{COPY.fullPageActionsHeader}</span>
       </div>
-      {!ready && (
-        <div className="lpe-debug-note" role="note">
-          Run <strong>Export Full Page</strong> above first — these become active once the capture lands.
-        </div>
-      )}
+      <div className="lpe-debug-note" role="note">
+        {ready
+          ? <>Tip: set a custom file name below — leave blank to use the auto name <code>{`inspect-page-fullpage-${domainSafeFor(artifacts)}-…`}</code>.</>
+          : <>Run <strong>Export Full Page</strong> above first — these become active once the capture lands.</>}
+      </div>
+      <label className="lpe-field-row" style={{ display: "flex", gap: 8, alignItems: "center", margin: "6px 0 8px" }}>
+        <span style={{ fontSize: 12, opacity: 0.85, minWidth: 72 }}>File name:</span>
+        <input
+          type="text"
+          className="lpe-input"
+          style={{ flex: 1 }}
+          value={customName}
+          onChange={(e) => setCustomName(e.target.value)}
+          placeholder={ready ? `inspect-page-fullpage-${domainSafeFor(artifacts)}-${tsNow()}` : "my-export-name"}
+          aria-label="Custom file name (without extension)"
+          spellCheck={false}
+        />
+      </label>
       <div className="lpe-debug-actions">
         <span className="lpe-debug-fmt" role="group" aria-label={COPY.debugFormatLabel}>
           <span>{COPY.debugFormatLabel}:</span>
@@ -169,6 +188,7 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
         shareEnabled={ready && shareEnabled}
         onShare={onShare}
         disabled={!ready}
+        customBaseName={sanitizeFileBase(customName.trim()) || undefined}
       />
     </div>
   );
