@@ -24,6 +24,8 @@ export interface ExportModesProps {
   shareEnabled?: boolean;
   /** Async — returns once URLs are copied. Errors surface inline. */
   onShare?: (artifacts: ExportArtifacts) => Promise<void>;
+  /** v2.7.6 — when true every action button is disabled (no capture yet). */
+  disabled?: boolean;
 }
 
 function tsNow(): string {
@@ -116,6 +118,7 @@ export function ExportModes({
   artifacts,
   shareEnabled = false,
   onShare,
+  disabled = false,
 }: ExportModesProps): JSX.Element {
   const [shareState, setShareState] = useState<
     | { phase: "idle" }
@@ -213,20 +216,20 @@ export function ExportModes({
     <div className="lpe-export-modes" aria-label={COPY.exportModesHeader}>
       <div className="lpe-debug-title">{COPY.exportModesHeader}</div>
       <div className="lpe-debug-actions">
-        <button type="button" className="lpe-btn" onClick={onMd}>
+        <button type="button" className="lpe-btn" onClick={onMd} disabled={disabled}>
           {COPY.exportModeMd}
         </button>
-        <button type="button" className="lpe-btn" onClick={onMdFiles}>
+        <button type="button" className="lpe-btn" onClick={onMdFiles} disabled={disabled}>
           {COPY.exportModeMdFiles}
         </button>
-        <button type="button" className="lpe-btn lpe-btn-primary" onClick={onZip}>
+        <button type="button" className="lpe-btn lpe-btn-primary" onClick={onZip} disabled={disabled}>
           {COPY.exportModeZip}
         </button>
         <button
           type="button"
           className="lpe-btn"
           onClick={handleShare}
-          disabled={!shareEnabled || shareState.phase === "uploading"}
+          disabled={disabled || !shareEnabled || shareState.phase === "uploading"}
           title={shareEnabled ? undefined : COPY.exportModeShareDisabledTip}
         >
           {shareState.phase === "uploading" ? COPY.shareUploading : COPY.exportModeShare}

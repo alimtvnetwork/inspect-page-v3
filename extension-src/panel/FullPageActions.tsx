@@ -6,12 +6,16 @@ import { useCallback, useState } from "react";
 import JSZip from "jszip";
 import { COPY } from "@shared/copy";
 import type { ExportArtifacts } from "@shared/types";
+import { ExportFlow } from "@shared/enums";
 import { ExportModes } from "./ExportModes";
 import { buildFullPageArtifacts, type FullPageArtifactSource } from "./artifacts";
 import { saveBlobWithPrompt } from "./save-blob-with-prompt";
 
 export interface FullPageActionsProps {
-  artifacts: FullPageArtifactSource;
+  /** Captured artifacts. When null/undefined the section renders in a
+   *  ghost/disabled state — buttons are visible but inert with a one-line
+   *  hint so the user can preview the full Export surface upfront. */
+  artifacts?: FullPageArtifactSource | null;
   activeUrl?: string;
   shareEnabled?: boolean;
   onShare?: (artifacts: ExportArtifacts) => Promise<void>;
@@ -19,8 +23,10 @@ export interface FullPageActionsProps {
 
 export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }: FullPageActionsProps): JSX.Element {
   const [fmt, setFmt] = useState<"raw" | "md">("raw");
+  const ready = !!artifacts;
 
   const domainSafe = (): string => {
+    if (!artifacts) return "page";
     try {
       const u = new URL(artifacts.meta.url);
       return u.hostname.replace(/^www\./, "").replace(/[^a-z0-9_-]+/gi, "_");
@@ -35,11 +41,16 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
   const fenceFor = (k: "html" | "css" | "js"): string =>
     k === "js" ? "javascript" : k;
   const buildSingleMd = (k: "html" | "css" | "js"): string =>
-    `# Page — ${artifacts.meta.url}\n\n## ${k.toUpperCase()}\n\n\`\`\`${fenceFor(k)}\n${artifacts[k] || ""}\n\`\`\`\n`;
+    artifacts
+      ? `# Page — ${artifacts.meta.url}\n\n## ${k.toUpperCase()}\n\n\`\`\`${fenceFor(k)}\n${artifacts[k] || ""}\n\`\`\`\n`
+      : "";
   const buildCombinedMd = (): string =>
-    `# Page — ${artifacts.meta.url}\n\n_Captured ${artifacts.meta.capturedAtIso}_\n\n## HTML\n\n\`\`\`html\n${artifacts.html}\n\`\`\`\n\n## CSS\n\n\`\`\`css\n${artifacts.css}\n\`\`\`\n\n## JS\n\n\`\`\`javascript\n${artifacts.js}\n\`\`\`\n`;
+    artifacts
+      ? `# Page — ${artifacts.meta.url}\n\n_Captured ${artifacts.meta.capturedAtIso}_\n\n## HTML\n\n\`\`\`html\n${artifacts.html}\n\`\`\`\n\n## CSS\n\n\`\`\`css\n${artifacts.css}\n\`\`\`\n\n## JS\n\n\`\`\`javascript\n${artifacts.js}\n\`\`\`\n`
+      : "";
 
   const onDownloadOne = useCallback(async (k: "html" | "css" | "js") => {
+    if (!artifacts) return;
     const safe = domainSafe();
     const ts = tsNow();
     if (fmt === "md") {
@@ -60,6 +71,7 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
   }, [artifacts, fmt]);
 
   const onDownloadScreenshot = useCallback(async () => {
+    if (!artifacts) return;
     try {
       const blob = await dataUrlToBlob(artifacts.screenshotDataUrl);
       const ext = blob.type.includes("jpeg") ? "jpg" : "png";
@@ -68,6 +80,7 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
   }, [artifacts]);
 
   const onDownloadAll = useCallback(async () => {
+    if (!artifacts) return;
     try {
       const safe = domainSafe();
       const ts = tsNow();
@@ -90,11 +103,32 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
     } catch { /* ignore */ }
   }, [artifacts, fmt]);
 
+  // Stub artifacts for ExportModes when nothing has been captured yet — gives
+  // the user a preview of every export mode button without forcing a capture.
+  const stubExportArtifacts: ExportArtifacts = {
+    flow: ExportFlow.FullPage,
+    domain: "page",
+    html: "",
+    css: "",
+    js: "",
+    images: [],
+    prelude: "",
+    meta: {
+      url: activeUrl ?? "",
+      capturedAtIso: new Date().toISOString(),
+    } as ExportArtifacts["meta"],
+  };
+
   return (
-    <div className="lpe-debug" aria-label={COPY.fullPageActionsHeader}>
+    <div className="lpe-debug" data-ready={ready ? "true" : "false"} aria-label={COPY.fullPageActionsHeader}>
       <div className="lpe-debug-header">
         <span className="lpe-debug-title">{COPY.fullPageActionsHeader}</span>
       </div>
+      {!ready && (
+        <div className="lpe-debug-note" role="note">
+          Run <strong>Export Full Page</strong> above first — these become active once the capture lands.
+        </div>
+      )}
       <div className="lpe-debug-actions">
         <span className="lpe-debug-fmt" role="group" aria-label={COPY.debugFormatLabel}>
           <span>{COPY.debugFormatLabel}:</span>
@@ -103,35 +137,38 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
             className="lpe-debug-fmt-btn"
             aria-pressed={fmt === "raw"}
             onClick={() => setFmt("raw")}
+            disabled={!ready}
           >{COPY.debugFormatRaw}</button>
           <button
             type="button"
             className="lpe-debug-fmt-btn"
             aria-pressed={fmt === "md"}
             onClick={() => setFmt("md")}
+            disabled={!ready}
           >{COPY.debugFormatMd}</button>
         </span>
         <span className="lpe-spacer" />
-        <button type="button" className="lpe-btn" onClick={() => onDownloadOne("html")}>
+        <button type="button" className="lpe-btn" onClick={() => onDownloadOne("html")} disabled={!ready}>
           {COPY.fullPageDownloadHtml}
         </button>
-        <button type="button" className="lpe-btn" onClick={() => onDownloadOne("css")}>
+        <button type="button" className="lpe-btn" onClick={() => onDownloadOne("css")} disabled={!ready}>
           {COPY.fullPageDownloadCss}
         </button>
-        <button type="button" className="lpe-btn" onClick={() => onDownloadOne("js")}>
+        <button type="button" className="lpe-btn" onClick={() => onDownloadOne("js")} disabled={!ready}>
           {COPY.fullPageDownloadJs}
         </button>
-        <button type="button" className="lpe-btn" onClick={onDownloadScreenshot}>
+        <button type="button" className="lpe-btn" onClick={onDownloadScreenshot} disabled={!ready}>
           {COPY.fullPageDownloadScreenshot}
         </button>
-        <button type="button" className="lpe-btn lpe-btn-primary" onClick={onDownloadAll}>
+        <button type="button" className="lpe-btn lpe-btn-primary" onClick={onDownloadAll} disabled={!ready}>
           {COPY.fullPageDownloadAllZip}
         </button>
       </div>
       <ExportModes
-        artifacts={buildFullPageArtifacts(artifacts, activeUrl)}
-        shareEnabled={shareEnabled}
+        artifacts={ready ? buildFullPageArtifacts(artifacts!, activeUrl) : stubExportArtifacts}
+        shareEnabled={ready && shareEnabled}
         onShare={onShare}
+        disabled={!ready}
       />
     </div>
   );

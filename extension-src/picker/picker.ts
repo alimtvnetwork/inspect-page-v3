@@ -144,7 +144,12 @@ export function enterPicker(handlers: PickerHandlers): void {
     if (e.composedPath().includes(dom.bar)) return;
     e.preventDefault(); e.stopPropagation();
     const target = pickTarget(e.clientX, e.clientY);
-    if (!target) return;
+    if (!target) {
+      // v2.7.6 — surface a hint so the user knows the picker is still active
+      // after clicking a non-pickable region (iframe gap, blank area, overlay).
+      showToast("Not pickable — try another element");
+      return;
+    }
     // Phase 1: toggle into multi-pick selections; commit happens on Done.
     toggleSelection(target);
   };

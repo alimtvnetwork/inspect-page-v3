@@ -40,76 +40,21 @@ export const EXT_THEME_PRESETS: ExtensionThemePreset[] = [
       "radial-gradient(120% 80% at 100% 100%, rgba(92,225,230,0.08) 0%, transparent 55%)," +
       "#0B0F0E",
   },
-  {
-    id: "riseup-asia",
-    name: "Riseup Asia",
-    swatch: "#F59E0B",
-    vars: {
-      "--lpe-bg": "#0A0A0A",
-      "--lpe-fg": "#FAF7F0",
-      "--lpe-muted": "#A8A29E",
-      "--lpe-surface": "#121212",
-      "--lpe-surface-2": "#1A1A1A",
-      "--lpe-border": "rgba(245, 158, 11, 0.18)",
-      "--lpe-accent": "#F59E0B",
-      "--lpe-accent-hover": "#FBBF24",
-      "--lpe-accent-fg": "#1A1206",
-    },
-    background:
-      "radial-gradient(120% 80% at 20% 0%, rgba(245,158,11,0.12) 0%, transparent 55%)," +
-      "radial-gradient(120% 80% at 100% 100%, rgba(251,191,36,0.06) 0%, transparent 55%)," +
-      "#0A0A0A",
-  },
-  {
-    id: "midnight-orange",
-    name: "Midnight Orange",
-    swatch: "#FF6600",
-    vars: {
-      "--lpe-bg": "#04101F",
-      "--lpe-fg": "#FFE5C4",
-      "--lpe-muted": "#9AB0C4",
-      "--lpe-surface": "#0A1A2E",
-      "--lpe-surface-2": "#0F243D",
-      "--lpe-border": "rgba(255, 102, 0, 0.22)",
-      "--lpe-accent": "#FF6600",
-      "--lpe-accent-hover": "#FFB870",
-      "--lpe-accent-fg": "#1A0A00",
-    },
-    background:
-      "radial-gradient(120% 80% at 20% 0%, rgba(255,102,0,0.14) 0%, transparent 55%)," +
-      "radial-gradient(120% 80% at 100% 100%, rgba(0,51,102,0.35) 0%, transparent 55%)," +
-      "#04101F",
-  },
-  {
-    id: "slate-sky",
-    name: "Slate Sky",
-    swatch: "#6BA3D6",
-    vars: {
-      "--lpe-bg": "#0E1620",
-      "--lpe-fg": "#F1F6FB",
-      "--lpe-muted": "#9FB2C4",
-      "--lpe-surface": "#162130",
-      "--lpe-surface-2": "#1E2C3E",
-      "--lpe-border": "rgba(107, 163, 214, 0.22)",
-      "--lpe-accent": "#6BA3D6",
-      "--lpe-accent-hover": "#A8CBE8",
-      "--lpe-accent-fg": "#06121F",
-    },
-    background:
-      "radial-gradient(120% 80% at 20% 0%, rgba(107,163,214,0.16) 0%, transparent 55%)," +
-      "radial-gradient(120% 80% at 100% 100%, rgba(52,73,94,0.40) 0%, transparent 55%)," +
-      "#0E1620",
-  },
 ];
 
 export const DEFAULT_EXT_PRESET_ID = "dark-mint";
 const STORAGE_KEY = "inspect-page.ext-theme";
+// v2.7.6 — theme is locked to dark-mint. Any legacy preset id (amber, orange,
+// sky, indigo, violet, ruby, emerald, paper) migrates back to dark-mint.
 const PRESET_ALIASES: Record<string, string> = {
-  "midnight-indigo": "midnight-orange",
-  "violet-noir": "midnight-orange",
-  emerald: "slate-sky",
-  "ruby-noir": "slate-sky",
-  "paper-light": "slate-sky",
+  "riseup-asia": "dark-mint",
+  "midnight-orange": "dark-mint",
+  "slate-sky": "dark-mint",
+  "midnight-indigo": "dark-mint",
+  "violet-noir": "dark-mint",
+  emerald: "dark-mint",
+  "ruby-noir": "dark-mint",
+  "paper-light": "dark-mint",
 };
 
 export interface StoredExtTheme {
@@ -120,7 +65,25 @@ export interface StoredExtTheme {
 
 function normalizeStoredTheme(value: StoredExtTheme): StoredExtTheme {
   const presetId = PRESET_ALIASES[value.presetId] ?? value.presetId;
-  return presetId === value.presetId ? value : { ...value, presetId };
+  // v2.7.6 hard reset: drop any custom accent that drifted off-brand (amber/
+  // gold/orange ranges). Mint accent comes back automatically from the preset.
+  const next: StoredExtTheme = { presetId };
+  if (value.customAccent && isMintFriendly(value.customAccent)) {
+    next.customAccent = value.customAccent;
+  }
+  return next;
+}
+
+/** Allow only accents in the green/teal/blue cool range; reject amber/red/gold. */
+function isMintFriendly(hex: string): boolean {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return false;
+  const n = parseInt(m[1]!, 16);
+  const r = (n >> 16) & 0xff;
+  const g = (n >> 8) & 0xff;
+  const b = n & 0xff;
+  // Cool accents have green or blue dominance; reject anything where red rules.
+  return g >= r - 20 || b >= r - 20;
 }
 
 export function getPreset(id: string): ExtensionThemePreset {
