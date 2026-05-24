@@ -55,7 +55,7 @@ async function pingUntilReachable(
 
 async function injectContentScript(tabId: number): Promise<void> {
   await chrome.scripting.executeScript({
-    target: { tabId, allFrames: false },
+    target: { tabId, allFrames: true },
     files: ["content.js"],
   });
   await pingUntilReachable(tabId, PING_ATTEMPTS_AFTER_INJECT, PING_ATTEMPT_DELAY_MS);

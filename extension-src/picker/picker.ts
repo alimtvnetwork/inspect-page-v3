@@ -15,6 +15,7 @@ import { LogCategory } from "@shared/enums";
 import { logger } from "@shared/logger";
 import { buildPickerDom } from "./picker-dom";
 import { updateOverlay, showTarget } from "./picker-overlay";
+import { collectInjectedOverlays, isInjectedOverlay } from "@inspect/overlay-filter";
 
 export interface PickerHandlers {
   onSelect(detail: { element: Element; rect: DOMRect }): void | Promise<void>;
@@ -369,21 +370,46 @@ function showToast(msg: string): void {
   }, 1600);
 }
 
-/** Returns the host-page element under (x,y), excluding our overlay host. */
+/** Returns the host-page element under (x,y), excluding extension/Lovable overlays. */
 function pickTarget(x: number, y: number): Element | null {
   if (!state) return null;
-  // hide our overlay temporarily so elementFromPoint can see what's beneath.
+  // Hide our UI and other top-level extension/dev overlays temporarily so
+  // elementFromPoint can see the actual page beneath Lovable/AI sidebars.
   const prevDisplay = state.host.style.display;
   state.host.style.display = "none";
-  const el = document.elementFromPoint(x, y);
-  state.host.style.display = prevDisplay;
+  const hidden = collectInjectedOverlays(document, window)
+    .filter((el) => el !== state?.host && el.id !== "inspect-page-panel-host")
+    .map((el) => ({ el, visibility: el.style.visibility }));
+  let el: Element | null = null;
+  try {
+    for (const item of hidden) item.el.style.visibility = "hidden";
+    el = deepElementFromPoint(document, x, y);
+  } finally {
+    for (const item of hidden) item.el.style.visibility = item.visibility;
+    state.host.style.display = prevDisplay;
+  }
   if (!el) return null;
   if (el === state.host) return null;
   // Reject anything inside our shadow host (for any other extension overlay
   // we own). The check above covers the picker; the panel host is also
   // skipped via `closest`.
   if ((el as Element).closest("#inspect-page-panel-host")) return null;
+  if (isInjectedOverlay(el, window)) return null;
   return el;
+}
+
+function deepElementFromPoint(doc: Document, x: number, y: number, depth = 0): Element | null {
+  const el = doc.elementFromPoint(x, y);
+  if (!el || depth > 4) return el;
+  if (!(el instanceof HTMLIFrameElement)) return el;
+  try {
+    const childDoc = el.contentDocument;
+    if (!childDoc) return el;
+    const r = el.getBoundingClientRect();
+    return deepElementFromPoint(childDoc, x - r.left, y - r.top, depth + 1) ?? el;
+  } catch {
+    return el;
+  }
 }
 
 /** B4: walk the DOM by arrow direction, skipping non-element nodes. */
