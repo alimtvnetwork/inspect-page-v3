@@ -86,12 +86,19 @@ function TextTypoCard({ group, onShowDetails }: {
           fontFamily: group.fontStack || group.fontFamily,
           fontSize: `${Math.max(12, Math.min(group.fontSizePx, 22))}px`,
           fontWeight: group.fontWeight,
-          color: group.color || undefined,
+          color: group.color || "#111111",
+          background: "#ffffff",
           lineHeight: group.lineHeightPx ? `${group.lineHeightPx}px` : undefined,
           letterSpacing: group.letterSpacing !== "normal" ? group.letterSpacing : undefined,
         }}
         title={sample}
       >{sample}</div>
+      {group.color && (
+        <span className="lpe-text-typo-color-chip">
+          <span className="swatch" style={{ background: group.color }} />
+          {group.color}
+        </span>
+      )}
       <button type="button" className="lpe-link lpe-text-typo-details" onClick={onShowDetails}>
         Show details ›
       </button>
@@ -117,7 +124,8 @@ function TextTypoDetailDrawer({ group, onClose }: {
               fontFamily: group.fontStack || group.fontFamily,
               fontSize: `${Math.max(14, Math.min(group.fontSizePx, 28))}px`,
               fontWeight: group.fontWeight,
-              color: group.color || undefined,
+              color: group.color || "#111111",
+              background: "#ffffff",
               lineHeight: group.lineHeightPx ? `${group.lineHeightPx}px` : undefined,
               letterSpacing: group.letterSpacing !== "normal" ? group.letterSpacing : undefined,
             }}

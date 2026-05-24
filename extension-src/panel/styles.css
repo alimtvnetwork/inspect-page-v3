@@ -43,8 +43,6 @@
   height: 100%;
   min-width: 0;
   min-height: 0;
-  max-width: 412px !important;
-  max-height: 820px !important;
   display: flex;
   flex-direction: column;
   /* Background + accent border come from the active theme preset via
@@ -228,8 +226,19 @@
 }
 .lpe-text-typo-sample {
   padding: 8px 10px; border-radius: 6px;
-  background: var(--lpe-surface-2); color: var(--lpe-fg);
+  background: #ffffff;
+  color: #111111;
+  border: 1px solid var(--lpe-border);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lpe-text-typo-sample[data-has-inline-color="true"] { /* inline style takes over */ }
+.lpe-text-typo-color-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--lpe-muted);
+}
+.lpe-text-typo-color-chip .swatch {
+  width: 12px; height: 12px; border-radius: 3px;
+  border: 1px solid var(--lpe-border);
 }
 .lpe-text-typo-details {
   align-self: flex-start; padding: 2px 0; font-size: 12px;
@@ -246,7 +255,7 @@
 .lpe-text-typo-preview {
   padding: 12px; margin-bottom: 12px;
   border: 1px solid var(--lpe-border); border-radius: 6px;
-  background: var(--lpe-surface-2);
+  background: #ffffff; color: #111111;
   word-break: break-word;
 }
 
@@ -1960,12 +1969,10 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
-/* Fixed compact floating surface: keep the visual UI inside 412 × 820 even when old saved sizes exist. */
+/* Floating surface: fill the host (which is resized by the drag grip). */
 .lpe-root[data-lpe-surface="floating"] {
   width: 100% !important;
   height: 100% !important;
-  max-width: 412px !important;
-  max-height: 820px !important;
   overflow: hidden !important;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-header {

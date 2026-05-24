@@ -74,17 +74,30 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
       overflow: hidden !important;
     }
     .lpe-floating-grip {
-      position: absolute; right: 2px; bottom: 2px;
-      width: 18px; height: 18px;
+      position: absolute; right: 0; bottom: 0;
+      width: 22px; height: 22px;
       cursor: nwse-resize;
       z-index: 2147483647;
       background:
-        linear-gradient(135deg, transparent 0 45%, #2DD4A8 45% 55%, transparent 55% 65%, #2DD4A8 65% 75%, transparent 75% 85%, #73FFB8 85% 95%, transparent 95% 100%);
-      opacity: 0.55;
+        linear-gradient(135deg,
+          transparent 0 30%,
+          #2DD4A8 30% 42%,
+          transparent 42% 52%,
+          #2DD4A8 52% 64%,
+          transparent 64% 74%,
+          #73FFB8 74% 86%,
+          transparent 86% 100%);
+      opacity: 0.95;
       border-bottom-right-radius: 10px;
+      box-shadow: 0 0 0 1px rgba(45,212,168,0.35) inset;
       touch-action: none;
     }
-    .lpe-floating-grip:hover { opacity: 1; }
+    .lpe-floating-grip:hover { opacity: 1; box-shadow: 0 0 0 1px #73FFB8 inset; }
+    .lpe-edge-resize {
+      position: absolute; z-index: 2147483647; background: transparent;
+    }
+    .lpe-edge-resize.e { right: 0; top: 0; width: 6px; height: 100%; cursor: ew-resize; }
+    .lpe-edge-resize.s { left: 0; bottom: 0; width: 100%; height: 6px; cursor: ns-resize; }
     ${stylesText}
   `;
   const mount = document.createElement("div");
@@ -93,7 +106,15 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
   grip.className = "lpe-floating-grip";
   grip.setAttribute("aria-label", "Resize panel");
   grip.setAttribute("title", "Drag to resize");
-  shadow.append(style, mount, grip);
+  const edgeE = document.createElement("div");
+  edgeE.className = "lpe-edge-resize e";
+  edgeE.setAttribute("aria-label", "Resize width");
+  edgeE.title = "Drag to resize width";
+  const edgeS = document.createElement("div");
+  edgeS.className = "lpe-edge-resize s";
+  edgeS.setAttribute("aria-label", "Resize height");
+  edgeS.title = "Drag to resize height";
+  shadow.append(style, mount, edgeE, edgeS, grip);
 
   document.documentElement.appendChild(host);
 
@@ -131,6 +152,8 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
 
   wireDrag(host, persist);
   wireResize(host, grip, persist);
+  wireEdgeResize(host, edgeE, "x", persist);
+  wireEdgeResize(host, edgeS, "y", persist);
   const onWindowResize = (): void => {
     void refreshTabZoom(options.tabId).finally(() => place({
       xPx: host.offsetLeft,
@@ -322,4 +345,53 @@ function wireResize(host: HTMLDivElement, grip: HTMLElement, onDone: () => void)
   };
   grip.addEventListener("pointerup", end);
   grip.addEventListener("pointercancel", end);
+}
+
+function wireEdgeResize(
+  host: HTMLDivElement,
+  handle: HTMLElement,
+  axis: "x" | "y",
+  onDone: () => void,
+): void {
+  let start: { x: number; y: number; w: number; h: number } | null = null;
+  handle.addEventListener("pointerdown", (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    start = {
+      x: event.clientX,
+      y: event.clientY,
+      w: host.offsetWidth,
+      h: host.offsetHeight,
+    };
+    try { handle.setPointerCapture(event.pointerId); } catch { /* ignore */ }
+  });
+  handle.addEventListener("pointermove", (event) => {
+    if (!start) return;
+    let w = start.w;
+    let h = start.h;
+    if (axis === "x") {
+      w = clamp(
+        start.w + (event.clientX - start.x),
+        MIN_VISUAL_W,
+        Math.max(MIN_VISUAL_W, window.innerWidth - host.offsetLeft - EDGE_GAP),
+      );
+    } else {
+      h = clamp(
+        start.h + (event.clientY - start.y),
+        MIN_VISUAL_H,
+        Math.max(MIN_VISUAL_H, window.innerHeight - host.offsetTop - EDGE_GAP),
+      );
+    }
+    userVisualW = Math.round(w);
+    userVisualH = Math.round(h);
+    applyPanelFrame(host, w, h);
+  });
+  const end = (event: PointerEvent): void => {
+    if (!start) return;
+    start = null;
+    try { handle.releasePointerCapture(event.pointerId); } catch { /* ignore */ }
+    onDone();
+  };
+  handle.addEventListener("pointerup", end);
+  handle.addEventListener("pointercancel", end);
 }
