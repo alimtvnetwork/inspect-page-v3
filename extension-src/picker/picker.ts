@@ -83,6 +83,41 @@ export function enterPicker(handlers: PickerHandlers): void {
 
   const dom = buildPickerDom();
 
+  // Cross-frame coordination: when the picker is also active inside an
+  // iframe, the in-iframe chrome (Done/Cancel bar, chip, toast) is the one
+  // the user actually interacts with. The top frame's identical chrome
+  // would render as a duplicate behind the host page (visible in the
+  // Lovable preview). We resolve this by:
+  //   - non-top frames announce themselves to window.top on mount
+  //   - the top frame hides its own chrome whenever such an announcement
+  //     arrives. It still highlights elements under the cursor for the
+  //     non-iframe case.
+  let isTopFrame = true;
+  try { isTopFrame = window.top === window; } catch { isTopFrame = false; }
+  const hideChrome = (): void => {
+    dom.bar.style.display = "none";
+    dom.chip.style.display = "none";
+    dom.toast.style.display = "none";
+    dom.selLayer.style.display = "none";
+  };
+  let chromeListener: ((e: MessageEvent) => void) | null = null;
+  if (isTopFrame) {
+    chromeListener = (e: MessageEvent) => {
+      const data = e?.data as { __inspect_page_picker_iframe?: boolean } | null;
+      if (data && data.__inspect_page_picker_iframe) hideChrome();
+    };
+    window.addEventListener("message", chromeListener);
+  } else {
+    try {
+      window.top?.postMessage({ __inspect_page_picker_iframe: true }, "*");
+    } catch { /* ignore */ }
+    // Re-announce periodically in case top mounted later.
+    const ping = window.setInterval(() => {
+      try { window.top?.postMessage({ __inspect_page_picker_iframe: true }, "*"); } catch { /* ignore */ }
+    }, 500);
+    chromeListener = () => window.clearInterval(ping);
+  }
+
   const prevCursor = document.body?.style.cursor ?? "";
   if (document.body) document.body.style.cursor = "crosshair";
 
@@ -283,6 +318,12 @@ export function enterPicker(handlers: PickerHandlers): void {
     dom.barDone.removeEventListener("click", fireDone);
     dom.barCancel.removeEventListener("click", fireBarCancel);
     if (state?.toastTimer) window.clearTimeout(state.toastTimer);
+    if (chromeListener && isTopFrame) {
+      window.removeEventListener("message", chromeListener as EventListener);
+    } else if (chromeListener) {
+      // For iframes, chromeListener wraps the ping interval cleanup
+      (chromeListener as () => void)();
+    }
   };
 
   state = {

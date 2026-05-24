@@ -44,6 +44,12 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
     existing.style.display = "block";
     existing.style.pointerEvents = "auto";
     existing.focus({ preventScroll: true });
+    // User asked: every time the panel opens, the Export tab should start
+    // fresh (no leftover "Saved …zip" / Re-download block from a previous
+    // export). Broadcast a reset event the ExportPanel listens for.
+    try {
+      window.dispatchEvent(new CustomEvent("inspect-page:reset-panel-state"));
+    } catch { /* ignore */ }
     return;
   }
 
@@ -148,6 +154,9 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
           showLauncher(() => {
             host.style.display = "block";
             host.focus({ preventScroll: true });
+            try {
+              window.dispatchEvent(new CustomEvent("inspect-page:reset-panel-state"));
+            } catch { /* ignore */ }
           });
         }}
         onClose={() => {
@@ -239,6 +248,20 @@ function applyPanelFrame(host: HTMLDivElement, w = DEFAULT_VISUAL_W, h = DEFAULT
   host.style.setProperty("transform", "none", "important");
   host.style.setProperty("overflow", "hidden", "important");
   host.style.setProperty("box-sizing", "border-box", "important");
+  // Zoom-invariant inner UI: keep the floating panel's text/buttons the
+  // same visual size regardless of browser zoom. The host frame already
+  // compensates via getPanelCssSize() (host = userVisualW / zoom). Here we
+  // upscale the inner mount by `zoom` and then transform-scale it by
+  // `1/zoom`, so the inner layout uses the user's chosen logical size
+  // while the browser zoom multiplication cancels out.
+  const mount = host.shadowRoot?.getElementById("inspect-page-floating-root") as HTMLDivElement | null;
+  if (mount) {
+    const z = Number.isFinite(activeTabZoom) && activeTabZoom > 0 ? activeTabZoom : 1;
+    mount.style.width = `${userVisualW}px`;
+    mount.style.height = `${userVisualH}px`;
+    mount.style.transformOrigin = "top left";
+    mount.style.transform = `scale(${1 / z})`;
+  }
 }
 
 function wireDrag(host: HTMLDivElement, onDone: () => void): void {
