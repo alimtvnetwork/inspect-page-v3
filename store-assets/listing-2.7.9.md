@@ -1,6 +1,6 @@
 # Inspect Page — Chrome Web Store listing copy (v2.7.9)
 
-_Submit this version when uploading `public/inspect-page.zip` (extension manifest 2.7.9) to the Chrome Web Store. Diff vs `listing-2.5.1.md`: short-description tweak + a new "On-page picker chip" bullet under the inspector section + Privacy/Permissions unchanged._
+_Submit this version when uploading `public/inspect-page.zip` (extension manifest 2.7.9) to the Chrome Web Store. Diff vs `listing-2.5.1.md`: dark-mint theme locked, picker robustness fix (non-pickable clicks no longer kill picker), Export tab fully expanded by default, hover-contrast + Export-header polish, Color Tokens v2 + Team Workspaces from v2.7.x carried in. Privacy/Permissions unchanged._
 
 ## Name
 Inspect Page — Export pages for ChatGPT, Claude & Gemini
