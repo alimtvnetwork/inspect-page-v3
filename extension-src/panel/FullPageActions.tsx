@@ -6,6 +6,7 @@ import { useCallback, useState } from "react";
 import JSZip from "jszip";
 import { COPY } from "@shared/copy";
 import type { ExportArtifacts } from "@shared/types";
+import { ExportFlow } from "@shared/enums";
 import { ExportModes } from "./ExportModes";
 import { buildFullPageArtifacts, type FullPageArtifactSource } from "./artifacts";
 import { saveBlobWithPrompt } from "./save-blob-with-prompt";
@@ -105,7 +106,7 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
   // Stub artifacts for ExportModes when nothing has been captured yet — gives
   // the user a preview of every export mode button without forcing a capture.
   const stubExportArtifacts: ExportArtifacts = {
-    flow: "fullPage" as ExportArtifacts["flow"],
+    flow: ExportFlow.FullPage,
     domain: "page",
     html: "",
     css: "",
