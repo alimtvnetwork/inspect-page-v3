@@ -790,9 +790,16 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
           );
         })()}
 
-        {mode === "export" && state.status === PanelStatus.Success && state.fullPageArtifacts && (
+        {/*
+         * v2.7.6 — Always render the Re-download + Export for AI surface in
+         * the Export tab so the user can see every export option upfront.
+         * Before a capture lands, every button renders in a ghost/disabled
+         * state with a "Run Export Full Page first" hint. Once
+         * `fullPageArtifacts` is populated the same buttons light up.
+         */}
+        {mode === "export" && !disabled && (
           <FullPageActions
-            artifacts={state.fullPageArtifacts}
+            artifacts={state.fullPageArtifacts ?? null}
             activeUrl={activeUrl}
             shareEnabled={!!shareSettings && !!shareSettings.nonce && !!shareSettings.siteUrl}
             onShare={onShare}
