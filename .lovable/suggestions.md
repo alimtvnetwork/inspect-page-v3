@@ -4,10 +4,10 @@ Single source for all suggestions. Move items between sections; never delete.
 
 ## Active Suggestions
 
-### Clear the 19 pre-existing ESLint warnings
+### Clear remaining 13 ESLint warnings (shadcn fast-refresh)
 - **Status:** Pending
-- **Priority:** Low
-- **Description:** 10 extension + 9 root warnings (react-hooks/exhaustive-deps, react-refresh/only-export-components). Split shadcn UI files so they only export components, and audit the useCallback dep arrays in `ExportPanel`, `FullPageActions`, `DebugPreview`.
+- **Priority:** Very low
+- **Description:** 6 react-hooks/exhaustive-deps warnings cleared this session by hoisting helpers to module scope in `DebugPreview`, `FullPageActions`, and adding `surface` to `ExportPanel`'s runAction deps. Remaining 13 are all `react-refresh/only-export-components` in shadcn UI primitives + `ThemeProvider` — require splitting each file into `{component}.tsx` + `{component}-helpers.ts`. High churn for an HMR-only cosmetic warning.
 - **Added:** this session
 
 ## Implemented Suggestions
