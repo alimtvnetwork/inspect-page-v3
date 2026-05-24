@@ -10,13 +10,11 @@ Single source for all suggestions. Move items between sections; never delete.
 - **Description:** 10 extension + 9 root warnings (react-hooks/exhaustive-deps, react-refresh/only-export-components). Split shadcn UI files so they only export components, and audit the useCallback dep arrays in `ExportPanel`, `FullPageActions`, `DebugPreview`.
 - **Added:** this session
 
-### Auto-touch zips in pre-commit
-- **Status:** Pending
-- **Priority:** Low
-- **Description:** Add a Git pre-commit hook that runs `scripts/release.sh` (or `package-wp.sh`) whenever files under `wp-plugin/` or `extension-src/` are staged, to avoid `check-zip-freshness` failures in CI.
-- **Added:** this session
-
 ## Implemented Suggestions
+
+### Auto-touch zips in pre-commit
+- **Implemented:** this session
+- **Notes:** `scripts/hooks/pre-commit` rebuilds `public/inspect-page.zip` (via `scripts/release.sh`) and/or `public/inspect-page-wp.zip` (via `scripts/package-wp.sh`) when matching paths are staged, then auto-stages the zip + `.sha256` + `.srchash`. Install once via `bash scripts/hooks/install.sh`. Bypass with `git commit --no-verify`.
 
 ### Drop `--max-warnings=0` from extension lint script
 - **Implemented:** this session
