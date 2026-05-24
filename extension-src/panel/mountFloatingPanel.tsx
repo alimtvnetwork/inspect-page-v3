@@ -106,7 +106,15 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
   grip.className = "lpe-floating-grip";
   grip.setAttribute("aria-label", "Resize panel");
   grip.setAttribute("title", "Drag to resize");
-  shadow.append(style, mount, grip);
+  const edgeE = document.createElement("div");
+  edgeE.className = "lpe-edge-resize e";
+  edgeE.setAttribute("aria-label", "Resize width");
+  edgeE.title = "Drag to resize width";
+  const edgeS = document.createElement("div");
+  edgeS.className = "lpe-edge-resize s";
+  edgeS.setAttribute("aria-label", "Resize height");
+  edgeS.title = "Drag to resize height";
+  shadow.append(style, mount, edgeE, edgeS, grip);
 
   document.documentElement.appendChild(host);
 
@@ -144,6 +152,8 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
 
   wireDrag(host, persist);
   wireResize(host, grip, persist);
+  wireEdgeResize(host, edgeE, "x", persist);
+  wireEdgeResize(host, edgeS, "y", persist);
   const onWindowResize = (): void => {
     void refreshTabZoom(options.tabId).finally(() => place({
       xPx: host.offsetLeft,
