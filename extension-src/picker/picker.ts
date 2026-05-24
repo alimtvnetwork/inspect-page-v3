@@ -109,7 +109,6 @@ export function enterPicker(handlers: PickerHandlers): void {
     };
     window.addEventListener("message", chromeListener);
   } else {
-    hideChrome();
     try {
       window.top?.postMessage({ __inspect_page_picker_iframe: true }, "*");
     } catch { /* ignore */ }
