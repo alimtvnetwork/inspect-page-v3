@@ -380,10 +380,14 @@ function pickTarget(x: number, y: number): Element | null {
   const hidden = collectInjectedOverlays(document, window)
     .filter((el) => el !== state?.host && el.id !== "inspect-page-panel-host")
     .map((el) => ({ el, visibility: el.style.visibility }));
-  for (const item of hidden) item.el.style.visibility = "hidden";
-  const el = deepElementFromPoint(document, x, y);
-  for (const item of hidden) item.el.style.visibility = item.visibility;
-  state.host.style.display = prevDisplay;
+  let el: Element | null = null;
+  try {
+    for (const item of hidden) item.el.style.visibility = "hidden";
+    el = deepElementFromPoint(document, x, y);
+  } finally {
+    for (const item of hidden) item.el.style.visibility = item.visibility;
+    state.host.style.display = prevDisplay;
+  }
   if (!el) return null;
   if (el === state.host) return null;
   // Reject anything inside our shadow host (for any other extension overlay
