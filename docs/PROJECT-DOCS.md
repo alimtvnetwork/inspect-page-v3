@@ -11,7 +11,7 @@
 ## 1. Product snapshot
 
 - **Name:** Inspect Page (two words, capital I + P).
-- **Shipped:** Extension `v2.7.8` + WordPress plugin `v2.6.0`.
+- **Shipped:** Extension `v2.7.9` + WordPress plugin `v2.6.0`.
 - **Stack:** MV3 Chrome extension (TypeScript) + WordPress plugin (PHP).
 - **Backend decision:** WordPress plugin (locked). Auth = WP login cookie + `X-WP-Nonce`.
 - **Brand-name rule:** never use "PagePort", "LLM Export", "LLM Page Export", or
@@ -271,6 +271,33 @@ Do **not** use browser tools for artifact QA.
 ---
 
 ## 9. Release history (newest first — append new entries here)
+
+### v2.7.9 — Dark-mint theme lock + picker / Export UX hotfix (current)
+- **Theme:** Re-locked the extension to the approved dark-mint palette
+  (`#2DD4A8` on `#0B0F0E`). Removed `riseup-asia`, `midnight-orange`, and
+  `slate-sky` presets from `extension-themes.ts`; added a one-time
+  migration that resets any stored legacy preset to `dark-mint` on load.
+  Custom-accent picker in `AppearanceSection.tsx` is now constrained to
+  cool hues (green / teal / blue) so users can't reintroduce the
+  black-and-gold combo that triggered this release.
+- **Picker:** Clicking a non-pickable target (iframe, panel, blank space,
+  shadow host) no longer collapses the picker to a lone Cancel bar.
+  `picker.ts` swallows the no-op click, keeps `PickerActive` state, and
+  surfaces an auto-dismissing "Not pickable — try another element"
+  hint inside the shadow root.
+- **Export tab:** `ExportPanel.tsx` + `FullPageActions.tsx` +
+  `ExportModes.tsx` now render Re-download AND Export for AI groups
+  expanded by default. Pre-capture, buttons stay visible in a ghost /
+  disabled state with a single inline hint instead of being hidden
+  behind a "capture first" warning.
+- **CSS polish:** Fixed `.lpe-btn:hover` / `.lpe-btn-secondary:hover` so
+  foreground stays mint-tinted off-white on hover (no more black-on-black
+  text). Tightened the Export header so the Format toggle no longer
+  overlaps the title, and bumped disabled "Share Links" opacity to the
+  muted token.
+- **Out of scope:** No changes to `.lpe-btn-hero` / `.lpe-btn-ico`
+  geometry guards, no new per-version `docs/RELEASE-NOTES-*` files,
+  WP plugin stays on `v2.6.0`.
 
 ### v2.7.8 — Full Page Export "Save As" + release pipeline overhaul (current) 
 - **Extension UX:** Export Full Page now opens Chrome's native Save As dialog
