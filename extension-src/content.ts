@@ -47,10 +47,19 @@ logger.debug(LogCategory.Lifecycle, "Content script loaded");
  * the popup path.
  */
 export const LPE_STATUS_EVENT = "inspect-page:status";
+const LPE_PICKER_COMMAND_EVENT = "inspect-page:picker-command";
 function dispatchStatusLocal(payload: StatusUpdatePayload): void {
   try {
     window.dispatchEvent(new CustomEvent(LPE_STATUS_EVENT, { detail: payload }));
   } catch { /* ignore */ }
+}
+
+function notifyPickerClosed(): void {
+  void chrome.runtime.sendMessage({
+    kind: MessageKind.ExitPickerMode,
+    requestId: `cs_picker_closed_${Date.now()}`,
+    payload: { tabId: -1 } as ExitPickerModePayload,
+  }).catch(() => undefined);
 }
 
 const router = new MessageRouter();
@@ -123,6 +132,7 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
       onSelect: async ({ element, rect }) => {
         logger.info(LogCategory.Picker, `Picked ${describe(element)}`);
         exitPicker();
+        notifyPickerClosed();
         dispatchStatusLocal({ status: PanelStatus.Selecting });
         void chrome.runtime.sendMessage({
           kind: MessageKind.StatusUpdate,
@@ -213,6 +223,7 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
       },
       onCancel: () => {
         logger.info(LogCategory.Picker, "Picker cancelled");
+          notifyPickerClosed();
           dispatchStatusLocal({ status: PanelStatus.Idle });
           void chrome.runtime.sendMessage({
             kind: MessageKind.StatusUpdate,
@@ -223,6 +234,7 @@ router.on<EnterPickerModePayload, EnterPickerModeResponse>(
       onCommit: async (elements) => {
         logger.info(LogCategory.Picker, `Committed ${elements.length} elements`);
         exitPicker();
+        notifyPickerClosed();
         try {
           const settings = await sendToBackground<Record<string, never>, GetSettingsResponse>(
             MessageKind.GetSettings, {},
