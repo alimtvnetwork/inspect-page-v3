@@ -299,7 +299,7 @@ Do **not** use browser tools for artifact QA.
   geometry guards, no new per-version `docs/RELEASE-NOTES-*` files,
   WP plugin stays on `v2.6.0`.
 
-### v2.7.8 — Full Page Export "Save As" + release pipeline overhaul (current) 
+### v2.7.8 — Full Page Export "Save As" + release pipeline overhaul
 - **Extension UX:** Export Full Page now opens Chrome's native Save As dialog
   (`saveAs: true` in `background/run-full-page-export.ts`). Other export
   surfaces (Element, panel MD/ZIP/Smart Share, Inspect-tab Export report)
