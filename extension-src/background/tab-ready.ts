@@ -86,3 +86,16 @@ export async function ensureContentScript(tabId: number): Promise<void> {
     );
   }
 }
+
+export async function ensureAllFrameContentScripts(tabId: number): Promise<void> {
+  await waitForTabReady(tabId);
+  try {
+    await injectContentScript(tabId);
+  } catch (e) {
+    throw new MessageError(
+      ErrorCode.E_NOT_AVAILABLE_HERE,
+      "This page can't be exported. Open a regular http(s):// site and try again.",
+      e instanceof Error ? e.message : String(e),
+    );
+  }
+}
