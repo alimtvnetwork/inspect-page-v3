@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Inspect Page pre-commit hook.
+# Auto-repackages zips whenever source under extension-src/ or wp-plugin/
+# is staged, so `scripts/ci/check-zip-freshness.mjs` cannot fail in CI.
+# Install: bash scripts/hooks/install.sh
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+
+ext_changed=0
+wp_changed=0
+echo "$staged" | grep -qE '^extension-src/' && ext_changed=1 || true
+echo "$staged" | grep -qE '^wp-plugin/'     && wp_changed=1 || true
+
+if [ "$ext_changed" = "0" ] && [ "$wp_changed" = "0" ]; then
+  exit 0
+fi
+
+if [ "$ext_changed" = "1" ]; then
+  echo "[pre-commit] extension-src/ changed → rebuilding public/inspect-page.zip"
+  bash scripts/release.sh >/dev/null
+  git add public/inspect-page.zip public/inspect-page.zip.sha256 public/inspect-page.zip.srchash
+fi
+
+if [ "$wp_changed" = "1" ]; then
+  echo "[pre-commit] wp-plugin/ changed → repackaging public/inspect-page-wp.zip"
+  bash scripts/package-wp.sh >/dev/null
+  git add public/inspect-page-wp.zip public/inspect-page-wp.zip.sha256 public/inspect-page-wp.zip.srchash
+fi
+
+echo "[pre-commit] zip(s) refreshed and staged."
