@@ -3,7 +3,7 @@
 # Real capture is manual (1280x800 Chrome profile, see store/screenshots.md).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-OUT="$ROOT/store-assets/screenshots-v2.7.5"
+OUT="$ROOT/store-assets/screenshots-v2.7.9"
 mkdir -p "$OUT"
 cat <<EOF
 [cws-screenshots] Output dir: $OUT
