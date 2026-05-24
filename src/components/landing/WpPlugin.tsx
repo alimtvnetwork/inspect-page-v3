@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Loader2, Server } from "lucide-react";
+import { downloadStaticFile } from "@/lib/downloadStaticFile";
 
 const WP_ZIP_URL = "/inspect-page-wp.zip";
 
@@ -32,20 +33,7 @@ export const WpPlugin = (): JSX.Element => {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch(WP_ZIP_URL);
-      if (!res.ok) {
-        setError(`Download failed: ${res.status}`);
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "inspect-page-wp.zip";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1_000);
+      await downloadStaticFile(WP_ZIP_URL, "inspect-page-wp.zip");
       toast({ title: "Downloaded inspect-page-wp.zip" });
     } catch (e) {
       setError(`Download failed: ${e instanceof Error ? e.message : "network error"}`);
