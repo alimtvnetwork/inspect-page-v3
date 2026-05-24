@@ -375,7 +375,13 @@ chrome.commands?.onCommand?.addListener(async (command) => {
       const settings = await getSettings();
       await runFullPageExport(tab.id, settings);
     } else if (command === "trigger-pick-element") {
-      await sendToTab<{ tabId: number }, void>(tab.id, MessageKind.EnterPickerMode, { tabId: tab.id });
+      await ensureAllFrameContentScripts(tab.id);
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id, allFrames: true },
+        func: () => {
+          window.dispatchEvent(new CustomEvent("inspect-page:picker-command", { detail: { action: "enter" } }));
+        },
+      });
     }
   } catch (e) {
     logger.error(LogCategory.Lifecycle, "CMD_FAIL", `command ${command} failed`, e);
