@@ -9,12 +9,16 @@ import stylesText from "./styles.css?inline";
 
 const HOST_ID = "inspect-page-panel-host";
 const LAUNCHER_ID = "inspect-page-launcher-host";
-const TARGET_VISUAL_W = 412;
-const TARGET_VISUAL_H = 820;
+const DEFAULT_VISUAL_W = 412;
+const DEFAULT_VISUAL_H = 820;
+const MIN_VISUAL_W = 340;
+const MIN_VISUAL_H = 380;
 const EDGE_GAP = 16;
 
 let root: Root | null = null;
 let activeTabZoom = 1;
+let userVisualW = DEFAULT_VISUAL_W;
+let userVisualH = DEFAULT_VISUAL_H;
 
 export interface MountFloatingPanelOptions {
   tabId: number;
@@ -49,21 +53,37 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
   style.textContent = `
     :host { all: initial; contain: layout style; }
     #inspect-page-floating-root {
-      width: var(--lpe-panel-w, 412px) !important;
-      height: var(--lpe-panel-h, 820px) !important;
-      transform: scale(var(--lpe-panel-scale, 1)) !important;
-      transform-origin: top left !important;
+      width: 100% !important;
+      height: 100% !important;
       overflow: hidden !important;
     }
+    .lpe-floating-grip {
+      position: absolute; right: 2px; bottom: 2px;
+      width: 18px; height: 18px;
+      cursor: nwse-resize;
+      z-index: 2147483647;
+      background:
+        linear-gradient(135deg, transparent 0 45%, #2DD4A8 45% 55%, transparent 55% 65%, #2DD4A8 65% 75%, transparent 75% 85%, #73FFB8 85% 95%, transparent 95% 100%);
+      opacity: 0.55;
+      border-bottom-right-radius: 10px;
+      touch-action: none;
+    }
+    .lpe-floating-grip:hover { opacity: 1; }
     ${stylesText}
   `;
   const mount = document.createElement("div");
   mount.id = "inspect-page-floating-root";
-  shadow.append(style, mount);
+  const grip = document.createElement("div");
+  grip.className = "lpe-floating-grip";
+  grip.setAttribute("aria-label", "Resize panel");
+  grip.setAttribute("title", "Drag to resize");
+  shadow.append(style, mount, grip);
 
   document.documentElement.appendChild(host);
 
   const place = (position?: PanelPosition): void => {
+    if (position?.wPx && position.wPx > 0) userVisualW = clamp(position.wPx, MIN_VISUAL_W, 2400);
+    if (position?.hPx && position.hPx > 0) userVisualH = clamp(position.hPx, MIN_VISUAL_H, 2400);
     const size = getPanelCssSize(activeTabZoom);
     const maxX = Math.max(EDGE_GAP, window.innerWidth - size.w - EDGE_GAP);
     const maxY = Math.max(EDGE_GAP, window.innerHeight - size.h - EDGE_GAP);
@@ -80,8 +100,8 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
     void sendToBackground<Partial<PanelPosition>, PanelPosition>(MessageKind.SetPanelPosition, {
       xPx: Math.round(host.offsetLeft),
       yPx: Math.round(host.offsetTop),
-      wPx: TARGET_VISUAL_W,
-      hPx: TARGET_VISUAL_H,
+      wPx: Math.round(userVisualW),
+      hPx: Math.round(userVisualH),
       minimized: false,
     }).catch(() => undefined);
   };
@@ -94,6 +114,7 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
     .catch(() => place());
 
   wireDrag(host, persist);
+  wireResize(host, grip, persist);
   const onWindowResize = (): void => {
     void refreshTabZoom(options.tabId).finally(() => place({
       xPx: host.offsetLeft,
@@ -171,8 +192,8 @@ function removeLauncher(): void {
 function getPanelCssSize(pageZoom = 1): { w: number; h: number } {
   const zoom = Number.isFinite(pageZoom) && pageZoom > 0 ? pageZoom : 1;
   return {
-    w: Math.round(TARGET_VISUAL_W / zoom),
-    h: Math.round(TARGET_VISUAL_H / zoom),
+    w: Math.round(userVisualW / zoom),
+    h: Math.round(userVisualH / zoom),
   };
 }
 
@@ -197,16 +218,12 @@ function repositionExisting(host: HTMLDivElement): void {
   host.style.top = `${clamp(host.offsetTop, EDGE_GAP, maxY)}px`;
 }
 
-function applyPanelFrame(host: HTMLDivElement, w = TARGET_VISUAL_W, h = TARGET_VISUAL_H): void {
-  host.style.setProperty("--lpe-panel-w", `${TARGET_VISUAL_W}px`);
-  host.style.setProperty("--lpe-panel-h", `${TARGET_VISUAL_H}px`);
-  host.style.setProperty("--lpe-panel-scale", `${w / TARGET_VISUAL_W}`);
-  host.style.setProperty("min-width", `${w}px`, "important");
-  host.style.setProperty("min-height", `${h}px`, "important");
+function applyPanelFrame(host: HTMLDivElement, w = DEFAULT_VISUAL_W, h = DEFAULT_VISUAL_H): void {
+  host.style.setProperty("--lpe-panel-w", `${w}px`);
+  host.style.setProperty("--lpe-panel-h", `${h}px`);
+  host.style.setProperty("--lpe-panel-scale", `1`);
   host.style.setProperty("width", `${w}px`, "important");
   host.style.setProperty("height", `${h}px`, "important");
-  host.style.setProperty("max-width", `${w}px`, "important");
-  host.style.setProperty("max-height", `${h}px`, "important");
   host.style.setProperty("right", "auto", "important");
   host.style.setProperty("bottom", "auto", "important");
   host.style.setProperty("transform", "none", "important");
@@ -218,6 +235,7 @@ function wireDrag(host: HTMLDivElement, onDone: () => void): void {
   let start: { x: number; y: number; left: number; top: number } | null = null;
   host.shadowRoot?.addEventListener("pointerdown", (event) => {
     const target = event.target as HTMLElement | null;
+    if (target?.classList?.contains?.("lpe-floating-grip")) return;
     if (!target?.closest?.("[data-drag-handle='true']")) return;
     if (target.closest("button, input, select, textarea, a")) return;
     start = { x: event.clientX, y: event.clientY, left: host.offsetLeft, top: host.offsetTop };
@@ -236,4 +254,44 @@ function wireDrag(host: HTMLDivElement, onDone: () => void): void {
     start = null;
     onDone();
   });
+}
+
+function wireResize(host: HTMLDivElement, grip: HTMLElement, onDone: () => void): void {
+  let start: { x: number; y: number; w: number; h: number } | null = null;
+  grip.addEventListener("pointerdown", (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    start = {
+      x: event.clientX,
+      y: event.clientY,
+      w: host.offsetWidth,
+      h: host.offsetHeight,
+    };
+    try { grip.setPointerCapture(event.pointerId); } catch { /* ignore */ }
+  });
+  grip.addEventListener("pointermove", (event) => {
+    if (!start) return;
+    const zoom = activeTabZoom || 1;
+    const cssW = clamp(
+      start.w + (event.clientX - start.x),
+      Math.round(MIN_VISUAL_W / zoom),
+      Math.max(MIN_VISUAL_W, window.innerWidth - host.offsetLeft - EDGE_GAP),
+    );
+    const cssH = clamp(
+      start.h + (event.clientY - start.y),
+      Math.round(MIN_VISUAL_H / zoom),
+      Math.max(MIN_VISUAL_H, window.innerHeight - host.offsetTop - EDGE_GAP),
+    );
+    userVisualW = Math.round(cssW * zoom);
+    userVisualH = Math.round(cssH * zoom);
+    applyPanelFrame(host, cssW, cssH);
+  });
+  const end = (event: PointerEvent): void => {
+    if (!start) return;
+    start = null;
+    try { grip.releasePointerCapture(event.pointerId); } catch { /* ignore */ }
+    onDone();
+  };
+  grip.addEventListener("pointerup", end);
+  grip.addEventListener("pointercancel", end);
 }
