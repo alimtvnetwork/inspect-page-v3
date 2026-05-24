@@ -346,3 +346,52 @@ function wireResize(host: HTMLDivElement, grip: HTMLElement, onDone: () => void)
   grip.addEventListener("pointerup", end);
   grip.addEventListener("pointercancel", end);
 }
+
+function wireEdgeResize(
+  host: HTMLDivElement,
+  handle: HTMLElement,
+  axis: "x" | "y",
+  onDone: () => void,
+): void {
+  let start: { x: number; y: number; w: number; h: number } | null = null;
+  handle.addEventListener("pointerdown", (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    start = {
+      x: event.clientX,
+      y: event.clientY,
+      w: host.offsetWidth,
+      h: host.offsetHeight,
+    };
+    try { handle.setPointerCapture(event.pointerId); } catch { /* ignore */ }
+  });
+  handle.addEventListener("pointermove", (event) => {
+    if (!start) return;
+    let w = start.w;
+    let h = start.h;
+    if (axis === "x") {
+      w = clamp(
+        start.w + (event.clientX - start.x),
+        MIN_VISUAL_W,
+        Math.max(MIN_VISUAL_W, window.innerWidth - host.offsetLeft - EDGE_GAP),
+      );
+    } else {
+      h = clamp(
+        start.h + (event.clientY - start.y),
+        MIN_VISUAL_H,
+        Math.max(MIN_VISUAL_H, window.innerHeight - host.offsetTop - EDGE_GAP),
+      );
+    }
+    userVisualW = Math.round(w);
+    userVisualH = Math.round(h);
+    applyPanelFrame(host, w, h);
+  });
+  const end = (event: PointerEvent): void => {
+    if (!start) return;
+    start = null;
+    try { handle.releasePointerCapture(event.pointerId); } catch { /* ignore */ }
+    onDone();
+  };
+  handle.addEventListener("pointerup", end);
+  handle.addEventListener("pointercancel", end);
+}
