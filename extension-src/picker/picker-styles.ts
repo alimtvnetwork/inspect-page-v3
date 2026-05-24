@@ -110,6 +110,11 @@ export const PICKER_STYLE = `
 `;
 
 export const PICKER_SEL_STYLE = `
+:host([data-chrome-hidden="true"]) .lpe-pk-chip,
+:host([data-chrome-hidden="true"]) .lpe-pk-bar,
+:host([data-chrome-hidden="true"]) .lpe-pk-toast {
+  display: none !important;
+}
 .lpe-pk-sel-ring {
   position: fixed; pointer-events: none;
   outline: 2px solid #2DD4A8;
