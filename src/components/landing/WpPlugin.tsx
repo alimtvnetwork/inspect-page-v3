@@ -1,33 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Loader2, Server } from "lucide-react";
 import { downloadStaticFile } from "@/lib/downloadStaticFile";
 
 const WP_ZIP_URL = "/inspect-page-wp.zip";
+const WP_ZIP_SIZE_KB = 52;
 
 export const WpPlugin = (): JSX.Element => {
   const [loading, setLoading] = useState(false);
-  const [sizeKb, setSizeKb] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(WP_ZIP_URL, { method: "HEAD" });
-        if (!res.ok || cancelled) return;
-        const len = res.headers.get("content-length");
-        if (len) setSizeKb(Math.round(parseInt(len, 10) / 1024));
-      } catch {
-        // landing still renders
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const handleDownload = async (): Promise<void> => {
     setError(null);
@@ -71,8 +54,7 @@ export const WpPlugin = (): JSX.Element => {
           Download WP plugin
         </Button>
         <span className="text-sm text-muted-foreground">
-          WordPress 6.4+ · PHP 8.1+
-          {sizeKb !== null ? ` · ${sizeKb} KB` : ""}
+          WordPress 6.4+ · PHP 8.1+ · {WP_ZIP_SIZE_KB} KB
         </span>
       </div>
       <ol className="list-decimal pl-5 text-sm text-muted-foreground space-y-1">
