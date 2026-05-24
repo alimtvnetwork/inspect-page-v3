@@ -154,6 +154,9 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
           showLauncher(() => {
             host.style.display = "block";
             host.focus({ preventScroll: true });
+            try {
+              window.dispatchEvent(new CustomEvent("inspect-page:reset-panel-state"));
+            } catch { /* ignore */ }
           });
         }}
         onClose={() => {
