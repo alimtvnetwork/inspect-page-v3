@@ -164,7 +164,7 @@ function TextTypoDetailDrawer({ group, onClose }: {
               fontSize: `${Math.max(14, Math.min(group.fontSizePx, 28))}px`,
               fontWeight: group.fontWeight,
               color: group.color || "#111111",
-              background: "#ffffff",
+              background: contrastingBg(group.color || "#111111"),
               lineHeight: group.lineHeightPx ? `${group.lineHeightPx}px` : undefined,
               letterSpacing: group.letterSpacing !== "normal" ? group.letterSpacing : undefined,
             }}
