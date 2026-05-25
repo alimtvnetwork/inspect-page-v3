@@ -71,7 +71,7 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare, o
     if (fmt === "md") {
       await saveBlobWithPrompt(
         new Blob([buildSingleMd(current, k)], { type: "text/markdown;charset=utf-8" }),
-        `${effectiveBase(k)}.md`,
+        `${effectiveBase(k, current)}.md`,
       );
     } else {
       const mime =
@@ -80,7 +80,7 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare, o
         : "text/javascript";
       await saveBlobWithPrompt(
         new Blob([current[k] || ""], { type: `${mime};charset=utf-8` }),
-        `${effectiveBase()}.${k}`,
+        `${effectiveBase(undefined, current)}.${k}`,
       );
     }
   }, [resolveArtifacts, fmt, customName]);
@@ -91,7 +91,7 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare, o
     try {
       const blob = await dataUrlToBlob(current.screenshotDataUrl);
       const ext = blob.type.includes("jpeg") ? "jpg" : "png";
-      await saveBlobWithPrompt(blob, `${effectiveBase("screenshot")}.${ext}`);
+      await saveBlobWithPrompt(blob, `${effectiveBase("screenshot", current)}.${ext}`);
     } catch { /* ignore */ }
   }, [resolveArtifacts, customName]);
 
@@ -114,7 +114,7 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare, o
       } catch { /* skip screenshot if conversion fails */ }
       zip.file("manifest.json", `${JSON.stringify(current.meta, null, 2)}\n`);
       const blob = await zip.generateAsync({ type: "blob" });
-      await saveBlobWithPrompt(blob, `${effectiveBase()}.zip`);
+      await saveBlobWithPrompt(blob, `${effectiveBase(undefined, current)}.zip`);
     } catch { /* ignore */ }
   }, [resolveArtifacts, fmt, customName]);
 
@@ -193,7 +193,7 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare, o
       </div>
       <ExportModes
         artifacts={ready ? buildFullPageArtifacts(artifacts!, activeUrl) : stubExportArtifacts}
-        shareEnabled={ready && shareEnabled}
+        shareEnabled={shareEnabled}
         onShare={onShare}
         disabled={!ready}
         onEnsureArtifacts={onEnsureArtifacts
