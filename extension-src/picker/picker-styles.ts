@@ -47,7 +47,11 @@ export const PICKER_STYLE = `
   background: rgba(13,17,23,0.92); color: #f6f8fa;
   box-shadow: 0 4px 12px rgba(0,0,0,0.35);
   border: 1px solid rgba(255,255,255,0.08);
-  pointer-events: auto;
+  /* v2.7.10 — Fix #6: the chip body is pointer-transparent so that
+     small targets sitting underneath remain hoverable/clickable.
+     The action buttons inside re-enable pointer-events so they
+     stay clickable. */
+  pointer-events: none;
   font: 11px ui-sans-serif, system-ui, sans-serif;
 }
 .lpe-pk-chip-btn {
@@ -55,6 +59,7 @@ export const PICKER_STYLE = `
   display: inline-flex; align-items: center; justify-content: center;
   width: 22px; height: 22px; border-radius: 4px;
   cursor: pointer; color: #f6f8fa;
+  pointer-events: auto;
   font: 12px ui-sans-serif, system-ui, sans-serif;
 }
 .lpe-pk-chip-btn:hover { background: rgba(255,255,255,0.12); }
