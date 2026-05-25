@@ -214,8 +214,13 @@ export function enterPicker(handlers: PickerHandlers): void {
     }
     if ((e.key === "Alt" || e.altKey) && state && !state.altDown) {
       state.altDown = true;
-      const t = state.navTarget ?? pickTarget(state.lastX, state.lastY);
-      updateOverlay(state, state.lastX, state.lastY, t);
+      // v2.7.10 — Fix #7: if Alt is pressed before the user has moved
+      // the mouse, lastX/lastY are still -1 and updateOverlay would paint
+      // off-screen. Skip the repaint until we have real coordinates.
+      if (state.lastX >= 0 && state.lastY >= 0) {
+        const t = state.navTarget ?? pickTarget(state.lastX, state.lastY);
+        updateOverlay(state, state.lastX, state.lastY, t);
+      }
     }
     if (!state) return;
     const navKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"];
@@ -255,8 +260,10 @@ export function enterPicker(handlers: PickerHandlers): void {
   const onKeyUp = (e: KeyboardEvent): void => {
     if (e.key === "Alt" && state && state.altDown) {
       state.altDown = false;
-      const t = state.navTarget ?? pickTarget(state.lastX, state.lastY);
-      updateOverlay(state, state.lastX, state.lastY, t);
+      if (state.lastX >= 0 && state.lastY >= 0) {
+        const t = state.navTarget ?? pickTarget(state.lastX, state.lastY);
+        updateOverlay(state, state.lastX, state.lastY, t);
+      }
     }
   };
 
