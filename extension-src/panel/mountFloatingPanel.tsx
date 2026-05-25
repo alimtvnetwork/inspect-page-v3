@@ -70,7 +70,7 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
     :host { all: initial; contain: layout style; }
     #inspect-page-floating-root {
       width: 100% !important;
-      height: 100% !important;
+      height: var(--lpe-visible-h, 100%) !important;
       overflow: hidden !important;
     }
     .lpe-floating-grip {
@@ -291,8 +291,9 @@ function updateVisiblePanelArea(host: HTMLDivElement, w = host.offsetWidth, h = 
   const top = Number.isFinite(host.offsetTop) ? host.offsetTop : EDGE_GAP;
   const visibleW = clamp(window.innerWidth - left - EDGE_GAP, MIN_VISUAL_W, Math.max(MIN_VISUAL_W, w));
   const visibleH = clamp(window.innerHeight - top - EDGE_GAP, MIN_VISUAL_H, Math.max(MIN_VISUAL_H, h));
-  host.style.setProperty("--lpe-visible-w", `${Math.round(visibleW)}px`);
-  host.style.setProperty("--lpe-visible-h", `${Math.round(visibleH)}px`);
+  const z = Number.isFinite(activeTabZoom) && activeTabZoom > 0 ? activeTabZoom : 1;
+  host.style.setProperty("--lpe-visible-w", `${Math.round(visibleW * z)}px`);
+  host.style.setProperty("--lpe-visible-h", `${Math.round(visibleH * z)}px`);
 }
 
 function wireDrag(host: HTMLDivElement, onDone: () => void): void {

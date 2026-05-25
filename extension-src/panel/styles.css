@@ -679,21 +679,20 @@
   min-width: 0;
 }
 .lpe-error-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   width: 100%;
-  margin: 0 0 8px;
+  margin: 0;
 }
 .lpe-error-actions .lpe-btn {
   width: 100%;
-  min-height: 28px;
-  padding: 4px 10px;
+  min-height: 30px;
+  padding: 5px 10px;
   border-radius: 7px;
   font-size: 12px;
   line-height: 1.2;
 }
-.lpe-error-actions .lpe-btn:nth-child(n + 3) { grid-column: 1 / -1; }
 .lpe-status[data-status="Error"] .lpe-status-message {
   padding: 10px 12px;
   border-radius: 8px;
@@ -876,7 +875,7 @@
 }
 .lpe-export-diagnostics {
   display: block;
-  margin: 0;
+  margin: 0 0 8px;
   padding-top: 8px;
   border-top: 1px solid rgba(245, 255, 250, 0.18);
   color: var(--lpe-fg);
@@ -916,8 +915,9 @@
   font-size: 12px;
   line-height: 1.5;
   max-height: none;
-  overflow: visible;
+  overflow: hidden;
   overscroll-behavior: contain;
+  position: static;
 }
 .lpe-export-diagnostics-message {
   margin-bottom: 8px;
@@ -942,7 +942,7 @@
   overflow-wrap: anywhere;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-.lpe-export-diagnostics[open] { margin-bottom: 2px; }
+.lpe-export-diagnostics[open] { margin-bottom: 10px; }
 .lpe-field { display: flex; flex-direction: column; gap: 5px; }
 .lpe-field > label {
   font-size: 11px; font-weight: 500; letter-spacing: 0.02em;
@@ -1200,7 +1200,7 @@
   grid-template-columns: 84px minmax(0, 1fr);
   gap: 0;
   align-items: center;
-  margin: 6px 4px 10px;
+  margin: 6px 0 10px;
   padding: 0;
   overflow: hidden;
 }
@@ -1215,7 +1215,8 @@
   min-height: 42px;
   border: 0 !important;
   border-left: 1px solid color-mix(in srgb, var(--lpe-accent) 28%, var(--lpe-border)) !important;
-  border-radius: 0;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 .lpe-export-modes .lpe-debug-title { margin-bottom: 6px; color: inherit; }
 .lpe-root[data-lpe-theme="dark"] .lpe-debug,
@@ -2054,12 +2055,12 @@
   font-weight: 650;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-body {
-  padding: 10px 0 40px;
+  padding: 10px 0 56px;
   gap: 8px;
   max-height: none;
-  overflow-y: auto;
+  overflow-y: scroll;
   overflow-x: hidden;
-  scroll-padding-bottom: 40px;
+  scroll-padding-bottom: 56px;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-btn {
   min-height: 38px;
@@ -2068,8 +2069,8 @@
   font-size: 13px;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-error-actions .lpe-btn {
-  min-height: 28px;
-  padding: 4px 10px;
+  min-height: 30px;
+  padding: 5px 10px;
   border-radius: 7px;
   font-size: 12px;
 }
