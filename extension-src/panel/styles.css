@@ -844,9 +844,11 @@
 }
 .lpe-export-diagnostics {
   margin-top: 10px;
+  margin-bottom: 12px;
   padding-top: 10px;
   border-top: 1px solid rgba(245, 255, 250, 0.18);
   color: var(--lpe-fg);
+  overflow: visible;
 }
 .lpe-export-diagnostics summary {
   cursor: pointer;
@@ -905,6 +907,22 @@
   word-break: break-word;
   overflow-wrap: anywhere;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+/* v2.7.10 — Error action row (Copy details / Retry) must render visibly
+ * below the diagnostics card, even when FullPageActions sits underneath. */
+.lpe-export-diagnostics + .lpe-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 14px;
+  padding: 0 2px;
+  position: relative;
+  z-index: 2;
+}
+.lpe-export-diagnostics + .lpe-row > .lpe-btn {
+  flex: 1 1 auto;
+  min-height: 34px;
 }
 .lpe-field { display: flex; flex-direction: column; gap: 5px; }
 .lpe-field > label {
