@@ -131,6 +131,7 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
       left: `${x}px`,
       top: `${y}px`,
     });
+    updateVisiblePanelArea(host, size.w, size.h);
   };
 
   const persist = (): void => {
@@ -311,6 +312,7 @@ function wireDrag(host: HTMLDivElement, onDone: () => void): void {
     const top = clamp(start.top + event.clientY - start.y, EDGE_GAP, window.innerHeight - host.offsetHeight - EDGE_GAP);
     host.style.left = `${left}px`;
     host.style.top = `${top}px`;
+    updateVisiblePanelArea(host);
   });
   host.shadowRoot?.addEventListener("pointerup", () => {
     if (!start) return;
