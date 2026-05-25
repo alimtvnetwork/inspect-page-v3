@@ -1197,24 +1197,15 @@
 .lpe-file-name-row {
   display: grid;
   grid-template-columns: 84px minmax(0, 1fr);
-  gap: 0;
+  gap: 12px;
   align-items: center;
   margin: 6px 4px 10px;
-  padding: 0;
-  overflow: hidden;
+  padding: 0 4px;
 }
 .lpe-file-name-label {
   font-size: 12px;
   font-weight: 700;
   color: var(--lpe-muted);
-  padding-left: 10px;
-}
-.lpe-file-name-row .lpe-input {
-  min-width: 0;
-  min-height: 42px;
-  border: 0 !important;
-  border-left: 1px solid color-mix(in srgb, var(--lpe-accent) 28%, var(--lpe-border)) !important;
-  border-radius: 0;
 }
 .lpe-export-modes .lpe-debug-title { margin-bottom: 6px; color: inherit; }
 .lpe-root[data-lpe-theme="dark"] .lpe-debug,
