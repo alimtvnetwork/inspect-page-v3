@@ -876,10 +876,12 @@
   padding: 8px 10px;
   border: 1px solid rgba(115, 255, 184, 0.22);
   border-radius: 8px;
-  background: rgba(11, 15, 14, 0.78);
+  background: #0B0F0E;
   color: var(--lpe-fg);
   font-size: 12px;
   line-height: 1.5;
+  position: relative;
+  z-index: 1;
 }
 .lpe-export-diagnostics-message {
   margin-bottom: 8px;
@@ -1147,7 +1149,7 @@
 
 .lpe-export-modes {
   margin-top: 10px;
-  padding-top: 10px;
+  padding: 10px 10px 10px;
   border-top: 1px dashed rgba(245, 255, 250, 0.62);
   color: #F5FFFA;
 }
@@ -1157,6 +1159,7 @@
   gap: 8px;
   align-items: center;
   margin: 6px 0 8px;
+  padding: 0 10px;
 }
 .lpe-file-name-label {
   font-size: 12px;
