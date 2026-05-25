@@ -2092,6 +2092,15 @@
 .lpe-root *::-webkit-scrollbar { width: 0 !important; height: 0 !important; background: transparent !important; }
 .lpe-root *::-webkit-scrollbar-thumb { background: transparent !important; }
 .lpe-root, .lpe-root * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+.lpe-root .lpe-body {
+  scrollbar-width: thin !important;
+  scrollbar-color: color-mix(in srgb, var(--lpe-accent) 55%, transparent) transparent !important;
+}
+.lpe-root .lpe-body::-webkit-scrollbar { width: 8px !important; height: 8px !important; }
+.lpe-root .lpe-body::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--lpe-accent) 55%, transparent) !important;
+  border-radius: 999px !important;
+}
 
 /* ---------- Settings tabs (Appearance feature) ---------- */
 .lpe-settings-tabs {
