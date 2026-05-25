@@ -49,8 +49,10 @@ function relativeLuminance(r: number, g: number, b: number): number {
  */
 function contrastingBg(color: string): string {
   const rgb = parseColorToRgb(color);
-  if (!rgb) return "#ffffff";
-  return relativeLuminance(rgb.r, rgb.g, rgb.b) > 0.5 ? "#1a1a1a" : "#ffffff";
+  if (!rgb) return "#1a2420";
+  // Soft theme-friendly surfaces — avoid stark pure white/black that clashes
+  // with the dark-mint panel chrome.
+  return relativeLuminance(rgb.r, rgb.g, rgb.b) > 0.5 ? "#1a2420" : "#eef2ef";
 }
 
 export interface InspectTextTypographyProps { snapshot: InspectSnapshot }
@@ -123,11 +125,11 @@ function TextTypoCard({ group, onShowDetails }: {
         className="lpe-text-typo-sample"
         style={{
           fontFamily: group.fontStack || group.fontFamily,
-          fontSize: `${Math.max(12, Math.min(group.fontSizePx, 22))}px`,
+          fontSize: `${Math.max(11, Math.min(group.fontSizePx, 15))}px`,
           fontWeight: group.fontWeight,
-          color: group.color || "#111111",
+          color: group.color || "var(--lpe-fg)",
           background: bg,
-          lineHeight: group.lineHeightPx ? `${group.lineHeightPx}px` : undefined,
+          lineHeight: 1.35,
           letterSpacing: group.letterSpacing !== "normal" ? group.letterSpacing : undefined,
         }}
         title={sample}
