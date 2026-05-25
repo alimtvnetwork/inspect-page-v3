@@ -27,9 +27,13 @@ export interface FullPageExportResponse {
   };
 }
 
-export function requestFullPageExport(tabId: number, settings: Settings): Promise<FullPageExportResponse> {
-  return sendToBackground<{ tabId: number; settings: Settings }, FullPageExportResponse>(
-    MessageKind.RunFullPageExport, { tabId, settings },
+export function requestFullPageExport(
+  tabId: number,
+  settings: Settings,
+  captureOnly = false,
+): Promise<FullPageExportResponse> {
+  return sendToBackground<{ tabId: number; settings: Settings; captureOnly?: boolean }, FullPageExportResponse>(
+    MessageKind.RunFullPageExport, { tabId, settings, captureOnly },
   );
 }
 
