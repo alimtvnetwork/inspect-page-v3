@@ -535,10 +535,12 @@
 .lpe-root[data-lpe-surface="floating"] .lpe-body {
   flex: 1;
   min-height: 0;
-  max-height: none;
+  max-height: min(calc(var(--lpe-visible-h, 100%) - 86px), calc(100% - 86px), calc(100vh - 112px));
   overflow-y: auto;
-  padding: 10px 10px 32px;
+  overflow-x: hidden;
+  padding: 10px 10px 40px;
   gap: 8px;
+  scroll-padding-bottom: 40px;
 }
 .lpe-btn {
   display: block; width: 100%;
@@ -668,6 +670,28 @@
   width: auto;
   min-height: 34px;
   padding: 6px 14px;
+}
+.lpe-error-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  min-width: 0;
+}
+.lpe-error-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  width: 100%;
+  margin: 0 0 2px;
+}
+.lpe-error-actions .lpe-btn {
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.2;
 }
 .lpe-status[data-status="Error"] .lpe-status-message {
   padding: 10px 12px;
@@ -850,12 +874,13 @@
   padding: 10px 2px 4px;
 }
 .lpe-export-diagnostics {
-  margin-top: 10px;
-  margin-bottom: 12px;
-  padding-top: 10px;
+  display: block;
+  margin: 0;
+  padding-top: 8px;
   border-top: 1px solid rgba(245, 255, 250, 0.18);
   color: var(--lpe-fg);
-  overflow: visible;
+  overflow: hidden;
+  min-width: 0;
 }
 .lpe-export-diagnostics summary {
   cursor: pointer;
@@ -889,8 +914,9 @@
   color: var(--lpe-fg);
   font-size: 12px;
   line-height: 1.5;
-  position: relative;
-  z-index: 1;
+  max-height: 190px;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 .lpe-export-diagnostics-message {
   margin-bottom: 8px;
@@ -915,22 +941,7 @@
   overflow-wrap: anywhere;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-/* v2.7.10 — Error action row (Copy details / Retry) must render visibly
- * below the diagnostics card, even when FullPageActions sits underneath. */
-.lpe-export-diagnostics + .lpe-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-  margin-bottom: 14px;
-  padding: 0 2px;
-  position: relative;
-  z-index: 2;
-}
-.lpe-export-diagnostics + .lpe-row > .lpe-btn {
-  flex: 1 1 auto;
-  min-height: 34px;
-}
+.lpe-export-diagnostics[open] { margin-bottom: 2px; }
 .lpe-field { display: flex; flex-direction: column; gap: 5px; }
 .lpe-field > label {
   font-size: 11px; font-weight: 500; letter-spacing: 0.02em;
@@ -1043,6 +1054,8 @@
 /* v1.2 — picked-element debug preview (HTML / CSS / JS tabs). */
 .lpe-debug {
   margin-top: 4px;
+  width: 100%;
+  min-width: 0;
   border: 1px solid rgba(115, 255, 184, 0.22);
   border-radius: 10px;
   background: rgba(11, 15, 14, 0.72);
@@ -1174,6 +1187,9 @@
 
 .lpe-export-modes {
   margin-top: 10px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 12px 14px 14px;
   border-top: 1px dashed rgba(245, 255, 250, 0.62);
   color: #F5FFFA;
@@ -2028,14 +2044,23 @@
   font-weight: 650;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-body {
-  padding: 10px;
+  padding: 10px 10px 40px;
   gap: 8px;
+  max-height: min(calc(var(--lpe-visible-h, 100%) - 86px), calc(100% - 86px), calc(100vh - 112px));
+  overflow-x: hidden;
+  scroll-padding-bottom: 40px;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-btn {
   min-height: 38px;
   padding: 8px 10px;
   border-radius: 9px;
   font-size: 13px;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-error-actions .lpe-btn {
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-btn-primary {
   background: rgba(17, 23, 21, 0.92) !important;
