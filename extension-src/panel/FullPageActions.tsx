@@ -45,12 +45,18 @@ export interface FullPageActionsProps {
   activeUrl?: string;
   shareEnabled?: boolean;
   onShare?: (artifacts: ExportArtifacts) => Promise<void>;
+  onEnsureArtifacts?: () => Promise<FullPageArtifactSource | null | undefined>;
 }
 
-export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }: FullPageActionsProps): JSX.Element {
+export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare, onEnsureArtifacts }: FullPageActionsProps): JSX.Element {
   const [fmt, setFmt] = useState<"raw" | "md">("raw");
   const [customName, setCustomName] = useState<string>("");
   const ready = !!artifacts;
+  const canEnsure = !!onEnsureArtifacts;
+  const resolveArtifacts = useCallback(async (): Promise<FullPageArtifactSource | null> => {
+    if (artifacts) return artifacts;
+    return (await onEnsureArtifacts?.()) ?? null;
+  }, [artifacts, onEnsureArtifacts]);
   const effectiveBase = (suffix?: string): string => {
     const safe = domainSafeFor(artifacts);
     const ts = tsNow();
@@ -60,10 +66,11 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
   };
 
   const onDownloadOne = useCallback(async (k: "html" | "css" | "js") => {
-    if (!artifacts) return;
+    const current = await resolveArtifacts();
+    if (!current) return;
     if (fmt === "md") {
       await saveBlobWithPrompt(
-        new Blob([buildSingleMd(artifacts, k)], { type: "text/markdown;charset=utf-8" }),
+        new Blob([buildSingleMd(current, k)], { type: "text/markdown;charset=utf-8" }),
         `${effectiveBase(k)}.md`,
       );
     } else {
@@ -72,42 +79,44 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
         : k === "css" ? "text/css"
         : "text/javascript";
       await saveBlobWithPrompt(
-        new Blob([artifacts[k] || ""], { type: `${mime};charset=utf-8` }),
+        new Blob([current[k] || ""], { type: `${mime};charset=utf-8` }),
         `${effectiveBase()}.${k}`,
       );
     }
-  }, [artifacts, fmt, customName]);
+  }, [resolveArtifacts, fmt, customName]);
 
   const onDownloadScreenshot = useCallback(async () => {
-    if (!artifacts) return;
+    const current = await resolveArtifacts();
+    if (!current) return;
     try {
-      const blob = await dataUrlToBlob(artifacts.screenshotDataUrl);
+      const blob = await dataUrlToBlob(current.screenshotDataUrl);
       const ext = blob.type.includes("jpeg") ? "jpg" : "png";
       await saveBlobWithPrompt(blob, `${effectiveBase("screenshot")}.${ext}`);
     } catch { /* ignore */ }
-  }, [artifacts, customName]);
+  }, [resolveArtifacts, customName]);
 
   const onDownloadAll = useCallback(async () => {
-    if (!artifacts) return;
+    const current = await resolveArtifacts();
+    if (!current) return;
     try {
       const zip = new JSZip();
       if (fmt === "md") {
-        zip.file("page.md", buildCombinedMd(artifacts));
+        zip.file("page.md", buildCombinedMd(current));
       } else {
-        zip.file("page.html", artifacts.html);
-        zip.file("styles.css", artifacts.css);
-        zip.file("scripts.js", artifacts.js);
+        zip.file("page.html", current.html);
+        zip.file("styles.css", current.css);
+        zip.file("scripts.js", current.js);
       }
       try {
-        const shot = await dataUrlToBlob(artifacts.screenshotDataUrl);
+        const shot = await dataUrlToBlob(current.screenshotDataUrl);
         const ext = shot.type.includes("jpeg") ? "jpg" : "png";
         zip.file(`screenshot.${ext}`, shot);
       } catch { /* skip screenshot if conversion fails */ }
-      zip.file("manifest.json", `${JSON.stringify(artifacts.meta, null, 2)}\n`);
+      zip.file("manifest.json", `${JSON.stringify(current.meta, null, 2)}\n`);
       const blob = await zip.generateAsync({ type: "blob" });
       await saveBlobWithPrompt(blob, `${effectiveBase()}.zip`);
     } catch { /* ignore */ }
-  }, [artifacts, fmt, customName]);
+  }, [resolveArtifacts, fmt, customName]);
 
   // Stub artifacts for ExportModes when nothing has been captured yet — gives
   // the user a preview of every export mode button without forcing a capture.
@@ -155,30 +164,30 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
             className="lpe-debug-fmt-btn"
             aria-pressed={fmt === "raw"}
             onClick={() => setFmt("raw")}
-            disabled={!ready}
+            disabled={false}
           >{COPY.debugFormatRaw}</button>
           <button
             type="button"
             className="lpe-debug-fmt-btn"
             aria-pressed={fmt === "md"}
             onClick={() => setFmt("md")}
-            disabled={!ready}
+            disabled={false}
           >{COPY.debugFormatMd}</button>
         </span>
         <span className="lpe-spacer" />
-        <button type="button" className="lpe-btn" onClick={() => onDownloadOne("html")} disabled={!ready}>
+        <button type="button" className="lpe-btn" onClick={() => onDownloadOne("html")} disabled={!ready && !canEnsure}>
           {COPY.fullPageDownloadHtml}
         </button>
-        <button type="button" className="lpe-btn" onClick={() => onDownloadOne("css")} disabled={!ready}>
+        <button type="button" className="lpe-btn" onClick={() => onDownloadOne("css")} disabled={!ready && !canEnsure}>
           {COPY.fullPageDownloadCss}
         </button>
-        <button type="button" className="lpe-btn" onClick={() => onDownloadOne("js")} disabled={!ready}>
+        <button type="button" className="lpe-btn" onClick={() => onDownloadOne("js")} disabled={!ready && !canEnsure}>
           {COPY.fullPageDownloadJs}
         </button>
-        <button type="button" className="lpe-btn" onClick={onDownloadScreenshot} disabled={!ready}>
+        <button type="button" className="lpe-btn" onClick={onDownloadScreenshot} disabled={!ready && !canEnsure}>
           {COPY.fullPageDownloadScreenshot}
         </button>
-        <button type="button" className="lpe-btn lpe-btn-primary" onClick={onDownloadAll} disabled={!ready}>
+        <button type="button" className="lpe-btn lpe-btn-primary" onClick={onDownloadAll} disabled={!ready && !canEnsure}>
           {COPY.fullPageDownloadAllZip}
         </button>
       </div>
@@ -187,6 +196,12 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare }:
         shareEnabled={ready && shareEnabled}
         onShare={onShare}
         disabled={!ready}
+        onEnsureArtifacts={onEnsureArtifacts
+          ? async () => {
+              const current = await onEnsureArtifacts();
+              return current ? buildFullPageArtifacts(current, activeUrl) : null;
+            }
+          : undefined}
         customBaseName={sanitizeFileBase(customName.trim()) || undefined}
       />
     </div>
