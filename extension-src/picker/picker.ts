@@ -390,6 +390,16 @@ function pickTarget(x: number, y: number): Element | null {
   // elementFromPoint can see the actual page beneath Lovable/AI sidebars.
   const prevDisplay = state.host.style.display;
   state.host.style.display = "none";
+  // v2.7.10 — Fix #4: also hide the floating panel host while probing.
+  // Previously the panel host was excluded from the hide list, so clicks
+  // (and right-clicks) whose coordinates landed inside the panel returned
+  // the panel itself and the picker bailed out instead of selecting the
+  // page element underneath. The picker `onClick`/`onContextMenu` handlers
+  // already let panel UI clicks through via `closest()` before reaching
+  // pickTarget, so it is safe to treat the panel as invisible here.
+  const panelHost = document.getElementById("inspect-page-panel-host") as HTMLElement | null;
+  const prevPanelDisplay = panelHost?.style.display ?? "";
+  if (panelHost) panelHost.style.display = "none";
   const hidden = collectInjectedOverlays(document, window)
     .filter((el) => el !== state?.host && el.id !== "inspect-page-panel-host")
     .map((el) => ({ el, visibility: el.style.visibility }));
@@ -400,6 +410,7 @@ function pickTarget(x: number, y: number): Element | null {
   } finally {
     for (const item of hidden) item.el.style.visibility = item.visibility;
     state.host.style.display = prevDisplay;
+    if (panelHost) panelHost.style.display = prevPanelDisplay;
   }
   if (!el) return null;
   if (el === state.host) return null;
