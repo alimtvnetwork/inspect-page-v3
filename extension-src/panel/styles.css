@@ -535,10 +535,12 @@
 .lpe-root[data-lpe-surface="floating"] .lpe-body {
   flex: 1;
   min-height: 0;
-  max-height: none;
+  max-height: min(calc(100% - 86px), calc(100vh - 112px));
   overflow-y: auto;
-  padding: 10px 10px 32px;
+  overflow-x: hidden;
+  padding: 10px 10px 40px;
   gap: 8px;
+  scroll-padding-bottom: 40px;
 }
 .lpe-btn {
   display: block; width: 100%;
@@ -668,6 +670,28 @@
   width: auto;
   min-height: 34px;
   padding: 6px 14px;
+}
+.lpe-error-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  min-width: 0;
+}
+.lpe-error-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  width: 100%;
+  margin: 0 0 2px;
+}
+.lpe-error-actions .lpe-btn {
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.2;
 }
 .lpe-status[data-status="Error"] .lpe-status-message {
   padding: 10px 12px;
