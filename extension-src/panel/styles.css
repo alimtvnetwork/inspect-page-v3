@@ -1167,17 +1167,17 @@
 
 .lpe-export-modes {
   margin-top: 10px;
-  padding: 10px 10px 10px;
+  padding: 12px 14px 14px;
   border-top: 1px dashed rgba(245, 255, 250, 0.62);
   color: #F5FFFA;
 }
 .lpe-file-name-row {
   display: grid;
-  grid-template-columns: 76px minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 12px;
   align-items: center;
-  margin: 6px 0 8px;
-  padding: 0 10px;
+  margin: 6px 4px 10px;
+  padding: 0 4px;
 }
 .lpe-file-name-label {
   font-size: 12px;
