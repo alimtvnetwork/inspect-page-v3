@@ -204,8 +204,12 @@
 .lpe-text-typo-list { display: flex; flex-direction: column; gap: 8px; }
 .lpe-text-typo-card {
   display: flex; flex-direction: column; gap: 4px;
-  padding: 8px 10px; border: 1px solid var(--lpe-border); border-radius: 8px;
-  background: var(--lpe-surface);
+  padding: 8px 10px;
+  /* v2.7.10 — Decouple typography card borders from the active preset so
+   * amber/orange themes don't paint a harsh ring around every sample. */
+  border: 1px solid rgba(245, 255, 250, 0.10);
+  border-radius: 8px;
+  background: rgba(17, 23, 21, 0.6);
 }
 .lpe-text-typo-head {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
@@ -216,19 +220,21 @@
 }
 .lpe-text-typo-meta { font-size: 10px; color: var(--lpe-muted); }
 .lpe-text-typo-locate {
-  border: 1px solid var(--lpe-border); background: var(--lpe-surface-2);
-  color: var(--lpe-accent); border-radius: 6px;
+  border: 1px solid rgba(245, 255, 250, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--lpe-fg); border-radius: 6px;
   width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
   cursor: pointer; font-size: 12px; line-height: 1;
 }
 .lpe-text-typo-locate:hover {
-  background: rgba(45, 212, 168, 0.12); border-color: var(--lpe-accent);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(245, 255, 250, 0.22);
 }
 .lpe-text-typo-sample {
   padding: 6px 8px; border-radius: 6px;
-  background: var(--lpe-surface-2);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--lpe-fg);
-  border: 1px solid var(--lpe-border);
+  border: 1px solid rgba(245, 255, 250, 0.10);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .lpe-text-typo-sample[data-has-inline-color="true"] { /* inline style takes over */ }
@@ -246,11 +252,12 @@
 .lpe-text-typo-toggle {
   flex: 0 0 auto;
   padding: 4px 9px; font-size: 12px; font-weight: 650;
-  border: 1px solid var(--lpe-border); border-radius: 999px;
-  background: var(--lpe-surface-2); color: var(--lpe-accent);
+  border: 1px solid rgba(245, 255, 250, 0.14); border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04); color: var(--lpe-fg);
 }
 .lpe-text-typo-toggle:hover {
-  background: rgba(45, 212, 168, 0.12); border-color: var(--lpe-accent);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(245, 255, 250, 0.24);
 }
 .lpe-text-typo-preview {
   padding: 12px; margin-bottom: 12px;
