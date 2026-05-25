@@ -535,7 +535,7 @@
 .lpe-root[data-lpe-surface="floating"] .lpe-body {
   flex: 1;
   min-height: 0;
-  max-height: min(calc(100% - 86px), calc(100vh - 112px));
+  max-height: min(calc(var(--lpe-visible-h, 100%) - 86px), calc(100% - 86px), calc(100vh - 112px));
   overflow-y: auto;
   overflow-x: hidden;
   padding: 10px 10px 40px;
@@ -2041,7 +2041,7 @@
 .lpe-root[data-lpe-surface="floating"] .lpe-body {
   padding: 10px 10px 40px;
   gap: 8px;
-  max-height: min(calc(100% - 86px), calc(100vh - 112px));
+  max-height: min(calc(var(--lpe-visible-h, 100%) - 86px), calc(100% - 86px), calc(100vh - 112px));
   overflow-x: hidden;
   scroll-padding-bottom: 40px;
 }
