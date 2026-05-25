@@ -152,6 +152,10 @@ export function enterPicker(handlers: PickerHandlers): void {
     // the page doesn't navigate while the picker is active.
     const t = e.target as Element | null;
     if (t?.closest?.("#inspect-page-panel-host")) return;
+    // Any click that lands inside the picker's own shadow host (chip, bar,
+    // tooltip, sel ring) belongs to picker UI — never swallow it, never
+    // re-target the host page underneath.
+    if (e.composedPath().includes(dom.host)) return;
     // Let chip-button clicks through to their own handlers.
     if (e.composedPath().includes(dom.chip)) return;
     // Let bar-button clicks through to their own handlers.
