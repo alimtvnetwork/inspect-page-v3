@@ -760,41 +760,41 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             </div>
           )}
           {state.status === PanelStatus.Error && (
-            <div style={{ marginTop: 8 }}>
+            <div className="lpe-error-details">
               <ExportDiagnostics
                 code={state.errorCode}
                 message={state.message}
                 detail={state.errorDetail}
               />
-              <div className="lpe-row" style={{ marginTop: 8 }}>
-              <button type="button" className="lpe-btn" onClick={onCopyDetails}>{COPY.btnCopyDetails}</button>
-              <button type="button" className="lpe-btn lpe-btn-primary" onClick={onRetry}>{COPY.btnRetry}</button>
-              {state.errorCode === ErrorCode.E_SHARE_QUOTA_FREE && (
-                <button
-                  type="button"
-                  className="lpe-btn lpe-btn-primary"
-                  onClick={async () => {
-                    emitBilling("upgrade_clicked", "inline_quota_error");
-                    try {
-                      const { url } = await startBillingCheckout({ getShareSettings });
-                      if (typeof window !== "undefined" && url) {
-                        emitBilling("checkout_opened", "inline_quota_error");
-                        window.open(url, "_blank", "noopener,noreferrer");
-                        pollBillingUntilPro({ getShareSettings });
+              <div className="lpe-error-actions">
+                <button type="button" className="lpe-btn" onClick={onCopyDetails}>{COPY.btnCopyDetails}</button>
+                <button type="button" className="lpe-btn lpe-btn-primary" onClick={onRetry}>{COPY.btnRetry}</button>
+                {state.errorCode === ErrorCode.E_SHARE_QUOTA_FREE && (
+                  <button
+                    type="button"
+                    className="lpe-btn lpe-btn-primary"
+                    onClick={async () => {
+                      emitBilling("upgrade_clicked", "inline_quota_error");
+                      try {
+                        const { url } = await startBillingCheckout({ getShareSettings });
+                        if (typeof window !== "undefined" && url) {
+                          emitBilling("checkout_opened", "inline_quota_error");
+                          window.open(url, "_blank", "noopener,noreferrer");
+                          pollBillingUntilPro({ getShareSettings });
+                        }
+                      } catch (err) {
+                        emitBilling("checkout_failed", "inline_quota_error", {
+                          reason: err instanceof Error ? err.message : String(err),
+                        });
+                        if (typeof window !== "undefined") {
+                          window.open(INSPECT_PAGE_PRICING_URL, "_blank", "noopener,noreferrer");
+                        }
                       }
-                    } catch (err) {
-                      emitBilling("checkout_failed", "inline_quota_error", {
-                        reason: err instanceof Error ? err.message : String(err),
-                      });
-                      if (typeof window !== "undefined") {
-                        window.open(INSPECT_PAGE_PRICING_URL, "_blank", "noopener,noreferrer");
-                      }
-                    }
-                  }}
-                >
-                  {COPY.shareUpgradeBtn}
-                </button>
-              )}
+                    }}
+                  >
+                    {COPY.shareUpgradeBtn}
+                  </button>
+                )}
               </div>
             </div>
           )}
