@@ -15,6 +15,44 @@ import type { InspectSnapshot, TypographyGroup } from "../../inspect/types";
 const SAMPLE = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
 const COLLAPSED_COUNT = 2;
 
+/**
+ * Resolve any CSS color string (hex, rgb, hsl, lab, named, …) to its sRGB
+ * components by letting the browser parse it via a throwaway canvas. Returns
+ * null when the color cannot be parsed.
+ */
+function parseColorToRgb(color: string): { r: number; g: number; b: number } | null {
+  if (!color) return null;
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = "#000";
+    ctx.fillStyle = color; // browser normalizes; invalid → stays "#000"
+    ctx.fillRect(0, 0, 1, 1);
+    const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+    return { r, g, b };
+  } catch { return null; }
+}
+
+function relativeLuminance(r: number, g: number, b: number): number {
+  const f = (c: number): number => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+}
+
+/**
+ * Pick a background that contrasts with the given text color so the sample
+ * is always readable. Light text → dark bg, dark text → light bg.
+ */
+function contrastingBg(color: string): string {
+  const rgb = parseColorToRgb(color);
+  if (!rgb) return "#ffffff";
+  return relativeLuminance(rgb.r, rgb.g, rgb.b) > 0.5 ? "#1a1a1a" : "#ffffff";
+}
+
 export interface InspectTextTypographyProps { snapshot: InspectSnapshot }
 
 export function InspectTextTypography({ snapshot }: InspectTextTypographyProps): JSX.Element | null {
@@ -63,6 +101,7 @@ function TextTypoCard({ group, onShowDetails }: {
   };
 
   const sample = group.sampleText && group.sampleText.length > 0 ? group.sampleText : SAMPLE;
+  const bg = contrastingBg(group.color || "#111111");
 
   return (
     <div className="lpe-text-typo-card">
@@ -87,7 +126,7 @@ function TextTypoCard({ group, onShowDetails }: {
           fontSize: `${Math.max(12, Math.min(group.fontSizePx, 22))}px`,
           fontWeight: group.fontWeight,
           color: group.color || "#111111",
-          background: "#ffffff",
+          background: bg,
           lineHeight: group.lineHeightPx ? `${group.lineHeightPx}px` : undefined,
           letterSpacing: group.letterSpacing !== "normal" ? group.letterSpacing : undefined,
         }}
@@ -125,7 +164,7 @@ function TextTypoDetailDrawer({ group, onClose }: {
               fontSize: `${Math.max(14, Math.min(group.fontSizePx, 28))}px`,
               fontWeight: group.fontWeight,
               color: group.color || "#111111",
-              background: "#ffffff",
+              background: contrastingBg(group.color || "#111111"),
               lineHeight: group.lineHeightPx ? `${group.lineHeightPx}px` : undefined,
               letterSpacing: group.letterSpacing !== "normal" ? group.letterSpacing : undefined,
             }}
