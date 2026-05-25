@@ -220,8 +220,23 @@ export function enterPicker(handlers: PickerHandlers): void {
     if (!state) return;
     const navKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"];
     if (!navKeys.includes(e.key)) return;
-    const t = e.target as Element | null;
-    if (t?.closest?.("#inspect-page-panel-host")) return;
+    // v2.7.10 — Fix #5: don't hijack arrow / Enter keys when focus is in
+    // the floating panel (inputs, selects, textareas, buttons) or in any
+    // editable host-page field. e.target gets retargeted to the shadow
+    // host, but `closest` doesn't always match across shadow boundaries
+    // reliably depending on the path, so use composedPath() + activeElement.
+    const path = typeof e.composedPath === "function" ? e.composedPath() : [];
+    const inPanel = path.some((n) => {
+      const el = n as HTMLElement | null;
+      return !!(el && el.nodeType === 1 && (el.id === "inspect-page-panel-host" || el.id === HOST_ID));
+    });
+    if (inPanel) return;
+    const ae = document.activeElement as HTMLElement | null;
+    if (ae) {
+      const tag = ae.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || ae.isContentEditable) return;
+      if (ae.id === "inspect-page-panel-host") return;
+    }
     e.preventDefault(); e.stopPropagation();
     const current = state.navTarget ?? pickTarget(state.lastX, state.lastY);
     if (!current) return;
