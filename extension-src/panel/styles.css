@@ -2039,14 +2039,23 @@
   font-weight: 650;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-body {
-  padding: 10px;
+  padding: 10px 10px 40px;
   gap: 8px;
+  max-height: min(calc(100% - 86px), calc(100vh - 112px));
+  overflow-x: hidden;
+  scroll-padding-bottom: 40px;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-btn {
   min-height: 38px;
   padding: 8px 10px;
   border-radius: 9px;
   font-size: 13px;
+}
+.lpe-root[data-lpe-surface="floating"] .lpe-error-actions .lpe-btn {
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-btn-primary {
   background: rgba(17, 23, 21, 0.92) !important;
