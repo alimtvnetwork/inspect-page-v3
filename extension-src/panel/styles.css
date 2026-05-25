@@ -1054,6 +1054,8 @@
 /* v1.2 — picked-element debug preview (HTML / CSS / JS tabs). */
 .lpe-debug {
   margin-top: 4px;
+  width: 100%;
+  min-width: 0;
   border: 1px solid rgba(115, 255, 184, 0.22);
   border-radius: 10px;
   background: rgba(11, 15, 14, 0.72);
@@ -1185,6 +1187,9 @@
 
 .lpe-export-modes {
   margin-top: 10px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 12px 14px 14px;
   border-top: 1px dashed rgba(245, 255, 250, 0.62);
   color: #F5FFFA;
