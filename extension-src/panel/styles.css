@@ -203,8 +203,8 @@
 .lpe-text-typo-header { align-items: center; }
 .lpe-text-typo-list { display: flex; flex-direction: column; gap: 8px; }
 .lpe-text-typo-card {
-  display: flex; flex-direction: column; gap: 6px;
-  padding: 12px; border: 1px solid var(--lpe-border); border-radius: 8px;
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 8px 10px; border: 1px solid var(--lpe-border); border-radius: 8px;
   background: var(--lpe-surface);
 }
 .lpe-text-typo-head {
@@ -212,22 +212,22 @@
 }
 .lpe-text-typo-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .lpe-text-typo-tag {
-  font-size: 14px; font-weight: 700; color: var(--lpe-fg);
+  font-size: 13px; font-weight: 650; color: var(--lpe-fg);
 }
-.lpe-text-typo-meta { font-size: 11px; color: var(--lpe-muted); }
+.lpe-text-typo-meta { font-size: 10px; color: var(--lpe-muted); }
 .lpe-text-typo-locate {
   border: 1px solid var(--lpe-border); background: var(--lpe-surface-2);
   color: var(--lpe-accent); border-radius: 6px;
-  width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 14px; line-height: 1;
+  width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 12px; line-height: 1;
 }
 .lpe-text-typo-locate:hover {
   background: rgba(45, 212, 168, 0.12); border-color: var(--lpe-accent);
 }
 .lpe-text-typo-sample {
-  padding: 8px 10px; border-radius: 6px;
-  background: #ffffff;
-  color: #111111;
+  padding: 6px 8px; border-radius: 6px;
+  background: var(--lpe-surface-2);
+  color: var(--lpe-fg);
   border: 1px solid var(--lpe-border);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
