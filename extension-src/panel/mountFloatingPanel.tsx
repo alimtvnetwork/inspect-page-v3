@@ -70,7 +70,7 @@ export function mountFloatingPanel(options: MountFloatingPanelOptions): void {
     :host { all: initial; contain: layout style; }
     #inspect-page-floating-root {
       width: 100% !important;
-      height: 100% !important;
+      height: var(--lpe-visible-h, 100%) !important;
       overflow: hidden !important;
     }
     .lpe-floating-grip {
