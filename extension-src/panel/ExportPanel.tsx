@@ -509,6 +509,35 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
     return;
   }, [activeUrl]);
 
+  const ensureFullPageArtifacts = useCallback(async (): Promise<PanelState["fullPageArtifacts"] | null> => {
+    if (state.fullPageArtifacts) return state.fullPageArtifacts;
+    if (disabled || busy || settings === null) return null;
+    const tid = activeTabId ?? -1;
+    setState({ status: PanelStatus.Collecting, lastAction: "fullPage" });
+    try {
+      const res = await requestFullPageExport(tid, settings, true);
+      const artifacts = res.artifacts ?? null;
+      setState({
+        status: PanelStatus.Success,
+        successFilename: res.bundleFilename || "Captured page",
+        successTelemetry: res.telemetry,
+        ...(artifacts ? { fullPageArtifacts: artifacts } : {}),
+        lastAction: "fullPage",
+      });
+      return artifacts;
+    } catch (err) {
+      const me = err instanceof MessageError ? err : null;
+      setState({
+        status: PanelStatus.Error,
+        message: me?.message ?? (err instanceof Error ? err.message : String(err)),
+        errorCode: me?.code,
+        errorDetail: me?.detail,
+        lastAction: "fullPage",
+      });
+      return null;
+    }
+  }, [activeTabId, busy, disabled, settings, state.fullPageArtifacts]);
+
   /**
    * B3 — Direct sign-in trigger. Both the onboarding "Sign in" button and
    * the signed-out Share Links button call this so the user is taken
@@ -818,6 +847,7 @@ export function ExportPanel(props: ExportPanelProps): JSX.Element {
             activeUrl={activeUrl}
             shareEnabled={!!shareSettings && !!shareSettings.nonce && !!shareSettings.siteUrl}
             onShare={onShare}
+            onEnsureArtifacts={ensureFullPageArtifacts}
           />
         )}
 
