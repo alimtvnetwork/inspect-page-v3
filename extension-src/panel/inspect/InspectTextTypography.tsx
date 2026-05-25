@@ -101,6 +101,7 @@ function TextTypoCard({ group, onShowDetails }: {
   };
 
   const sample = group.sampleText && group.sampleText.length > 0 ? group.sampleText : SAMPLE;
+  const bg = contrastingBg(group.color || "#111111");
 
   return (
     <div className="lpe-text-typo-card">
@@ -125,7 +126,7 @@ function TextTypoCard({ group, onShowDetails }: {
           fontSize: `${Math.max(12, Math.min(group.fontSizePx, 22))}px`,
           fontWeight: group.fontWeight,
           color: group.color || "#111111",
-          background: "#ffffff",
+          background: bg,
           lineHeight: group.lineHeightPx ? `${group.lineHeightPx}px` : undefined,
           letterSpacing: group.letterSpacing !== "normal" ? group.letterSpacing : undefined,
         }}
