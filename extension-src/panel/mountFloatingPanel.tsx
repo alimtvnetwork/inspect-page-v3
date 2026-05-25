@@ -257,6 +257,7 @@ function repositionExisting(host: HTMLDivElement): void {
   const maxY = Math.max(EDGE_GAP, window.innerHeight - size.h - EDGE_GAP);
   host.style.left = `${clamp(host.offsetLeft, EDGE_GAP, maxX)}px`;
   host.style.top = `${clamp(host.offsetTop, EDGE_GAP, maxY)}px`;
+  updateVisiblePanelArea(host, size.w, size.h);
 }
 
 function applyPanelFrame(host: HTMLDivElement, w = DEFAULT_VISUAL_W, h = DEFAULT_VISUAL_H): void {
@@ -270,6 +271,7 @@ function applyPanelFrame(host: HTMLDivElement, w = DEFAULT_VISUAL_W, h = DEFAULT
   host.style.setProperty("transform", "none", "important");
   host.style.setProperty("overflow", "hidden", "important");
   host.style.setProperty("box-sizing", "border-box", "important");
+  updateVisiblePanelArea(host, w, h);
   // Zoom-invariant inner UI: keep the floating panel's text/buttons the
   // same visual size regardless of browser zoom without changing the user's
   // chosen panel width/height. Only the mounted React UI is downscaled.
@@ -281,6 +283,15 @@ function applyPanelFrame(host: HTMLDivElement, w = DEFAULT_VISUAL_W, h = DEFAULT
     mount.style.transformOrigin = "top left";
     mount.style.transform = `scale(${1 / z})`;
   }
+}
+
+function updateVisiblePanelArea(host: HTMLDivElement, w = host.offsetWidth, h = host.offsetHeight): void {
+  const left = Number.isFinite(host.offsetLeft) ? host.offsetLeft : EDGE_GAP;
+  const top = Number.isFinite(host.offsetTop) ? host.offsetTop : EDGE_GAP;
+  const visibleW = clamp(window.innerWidth - left - EDGE_GAP, MIN_VISUAL_W, Math.max(MIN_VISUAL_W, w));
+  const visibleH = clamp(window.innerHeight - top - EDGE_GAP, MIN_VISUAL_H, Math.max(MIN_VISUAL_H, h));
+  host.style.setProperty("--lpe-visible-w", `${Math.round(visibleW)}px`);
+  host.style.setProperty("--lpe-visible-h", `${Math.round(visibleH)}px`);
 }
 
 function wireDrag(host: HTMLDivElement, onDone: () => void): void {
