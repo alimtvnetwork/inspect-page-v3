@@ -535,7 +535,7 @@
 .lpe-root[data-lpe-surface="floating"] .lpe-body {
   flex: 1;
   min-height: 0;
-  max-height: min(calc(var(--lpe-visible-h, 100%) - 86px), calc(100% - 86px), calc(100vh - 112px));
+  max-height: none;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 10px 10px 40px;
@@ -680,19 +680,20 @@
 }
 .lpe-error-actions {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
   width: 100%;
-  margin: 0 0 2px;
+  margin: 0 0 8px;
 }
 .lpe-error-actions .lpe-btn {
   width: 100%;
-  min-height: 32px;
-  padding: 6px 10px;
-  border-radius: 8px;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 7px;
   font-size: 12px;
   line-height: 1.2;
 }
+.lpe-error-actions .lpe-btn:nth-child(n + 3) { grid-column: 1 / -1; }
 .lpe-status[data-status="Error"] .lpe-status-message {
   padding: 10px 12px;
   border-radius: 8px;
@@ -879,7 +880,7 @@
   padding-top: 8px;
   border-top: 1px solid rgba(245, 255, 250, 0.18);
   color: var(--lpe-fg);
-  overflow: hidden;
+  overflow: visible;
   min-width: 0;
 }
 .lpe-export-diagnostics summary {
@@ -914,8 +915,8 @@
   color: var(--lpe-fg);
   font-size: 12px;
   line-height: 1.5;
-  max-height: 190px;
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
   overscroll-behavior: contain;
 }
 .lpe-export-diagnostics-message {
@@ -1197,15 +1198,24 @@
 .lpe-file-name-row {
   display: grid;
   grid-template-columns: 84px minmax(0, 1fr);
-  gap: 12px;
+  gap: 0;
   align-items: center;
   margin: 6px 4px 10px;
-  padding: 0 4px;
+  padding: 0;
+  overflow: hidden;
 }
 .lpe-file-name-label {
   font-size: 12px;
   font-weight: 700;
   color: var(--lpe-muted);
+  padding-left: 10px;
+}
+.lpe-file-name-row .lpe-input {
+  min-width: 0;
+  min-height: 42px;
+  border: 0 !important;
+  border-left: 1px solid color-mix(in srgb, var(--lpe-accent) 28%, var(--lpe-border)) !important;
+  border-radius: 0;
 }
 .lpe-export-modes .lpe-debug-title { margin-bottom: 6px; color: inherit; }
 .lpe-root[data-lpe-theme="dark"] .lpe-debug,
@@ -2044,9 +2054,10 @@
   font-weight: 650;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-body {
-  padding: 10px 10px 40px;
+  padding: 10px 0 40px;
   gap: 8px;
-  max-height: min(calc(var(--lpe-visible-h, 100%) - 86px), calc(100% - 86px), calc(100vh - 112px));
+  max-height: none;
+  overflow-y: auto;
   overflow-x: hidden;
   scroll-padding-bottom: 40px;
 }
@@ -2057,9 +2068,9 @@
   font-size: 13px;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-error-actions .lpe-btn {
-  min-height: 32px;
-  padding: 6px 10px;
-  border-radius: 8px;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 7px;
   font-size: 12px;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-btn-primary {
@@ -2090,6 +2101,15 @@
 .lpe-root *::-webkit-scrollbar { width: 0 !important; height: 0 !important; background: transparent !important; }
 .lpe-root *::-webkit-scrollbar-thumb { background: transparent !important; }
 .lpe-root, .lpe-root * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+.lpe-root .lpe-body {
+  scrollbar-width: thin !important;
+  scrollbar-color: color-mix(in srgb, var(--lpe-accent) 55%, transparent) transparent !important;
+}
+.lpe-root .lpe-body::-webkit-scrollbar { width: 8px !important; height: 8px !important; }
+.lpe-root .lpe-body::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--lpe-accent) 55%, transparent) !important;
+  border-radius: 999px !important;
+}
 
 /* ---------- Settings tabs (Appearance feature) ---------- */
 .lpe-settings-tabs {
