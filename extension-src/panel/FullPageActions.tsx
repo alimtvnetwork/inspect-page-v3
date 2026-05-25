@@ -57,8 +57,8 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare, o
     if (artifacts) return artifacts;
     return (await onEnsureArtifacts?.()) ?? null;
   }, [artifacts, onEnsureArtifacts]);
-  const effectiveBase = (suffix?: string): string => {
-    const safe = domainSafeFor(artifacts);
+  const effectiveBase = (suffix?: string, source: FullPageArtifactSource | null | undefined = artifacts): string => {
+    const safe = domainSafeFor(source);
     const ts = tsNow();
     const cleaned = sanitizeFileBase(customName.trim());
     const base = cleaned || `inspect-page-fullpage-${safe}-${ts}`;
@@ -142,7 +142,7 @@ export function FullPageActions({ artifacts, activeUrl, shareEnabled, onShare, o
       <div className="lpe-debug-note" role="note">
         {ready
           ? <>Tip: set a custom file name below — leave blank to use the auto name <code>{`inspect-page-fullpage-${domainSafeFor(artifacts)}-…`}</code>.</>
-          : <>Run <strong>Export Full Page</strong> above first — these become active once the capture lands.</>}
+          : <>{COPY.fullPageActionsReadyHint}</>}
       </div>
       <label className="lpe-field-row lpe-file-name-row">
         <span className="lpe-file-name-label">File name</span>
