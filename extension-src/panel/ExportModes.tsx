@@ -23,6 +23,8 @@ export interface ExportModesProps {
   shareEnabled?: boolean;
   /** Async — returns once URLs are copied. Errors surface inline. */
   onShare?: (artifacts: ExportArtifacts) => Promise<void>;
+  /** Capture artifacts on first click when the Export section has not run yet. */
+  onEnsureArtifacts?: () => Promise<ExportArtifacts | null | undefined>;
   /** v2.7.6 — when true every action button is disabled (no capture yet). */
   disabled?: boolean;
   /** v2.7.10 — user-supplied base file name (without extension). */
@@ -104,6 +106,7 @@ export function ExportModes({
   artifacts,
   shareEnabled = false,
   onShare,
+  onEnsureArtifacts,
   disabled = false,
   customBaseName,
 }: ExportModesProps): JSX.Element {
@@ -135,27 +138,36 @@ export function ExportModes({
     return () => clearInterval(t);
   }, [shareState.phase]);
 
-  const baseName = (suffix?: string): string => {
-    const base = customBaseName?.trim() || fileBaseName(artifacts);
+  const resolveArtifacts = useCallback(async (): Promise<ExportArtifacts | null> => {
+    if (!disabled) return artifacts;
+    return (await onEnsureArtifacts?.()) ?? null;
+  }, [artifacts, disabled, onEnsureArtifacts]);
+
+  const baseName = (a: ExportArtifacts, suffix?: string): string => {
+    const base = customBaseName?.trim() || fileBaseName(a);
     return suffix ? `${base}-${suffix}` : base;
   };
 
   const onMd = useCallback(async () => {
-    const md = buildSingleMd(artifacts, addons);
+    const current = await resolveArtifacts();
+    if (!current) return;
+    const md = buildSingleMd(current, addons);
     const saved = await triggerDownload(
       new Blob([md], { type: "text/markdown;charset=utf-8" }),
-      `${baseName()}.md`,
+      `${baseName(current)}.md`,
     );
     if (saved) setLastSavedPath(saved);
-  }, [artifacts, addons, customBaseName]);
+  }, [resolveArtifacts, addons, customBaseName]);
 
   const handleShare = useCallback(async () => {
     if (!onShare) return;
+    const current = await resolveArtifacts();
+    if (!current) return;
     setShareState({ phase: "uploading" });
     try {
       // Bake the token CSS into the shared payload so the four hosted
       // pages get the same `var(--ip-color-…)` system as ZIP downloads.
-      const augmented = withAddonsBakedIn(artifacts, addons);
+      const augmented = withAddonsBakedIn(current, addons);
       await onShare(augmented);
       // Best-effort: extract expires_at via a side channel — onShare hides
       // it. We approximate 24h from now for the chip.
@@ -166,62 +178,66 @@ export function ExportModes({
         message: e instanceof Error ? e.message : String(e),
       });
     }
-  }, [artifacts, onShare, addons]);
+  }, [resolveArtifacts, onShare, addons]);
 
   const onMdFiles = useCallback(async () => {
+    const current = await resolveArtifacts();
+    if (!current) return;
     const zip = new JSZip();
-    zip.file("prompt.md", buildMdFilesMd(artifacts, addons));
-    if (artifacts.html) zip.file("index.html", artifacts.html);
-    if (artifacts.css) zip.file("style.css", artifacts.css);
+    zip.file("prompt.md", buildMdFilesMd(current, addons));
+    if (current.html) zip.file("index.html", current.html);
+    if (current.css) zip.file("style.css", current.css);
     if (addons.tokensCss)    zip.file("tokens.css", addons.tokensCss);
     if (addons.selectorsCss) zip.file("selectors.css", addons.selectorsCss);
-    for (const img of artifacts.images) {
+    for (const img of current.images) {
       zip.file(`images/${img.name}`, base64ToUint8(img.base64));
     }
     const blob = await zip.generateAsync({ type: "blob" });
-    const saved = await triggerDownload(blob, `${baseName("mdfiles")}.zip`);
+    const saved = await triggerDownload(blob, `${baseName(current, "mdfiles")}.zip`);
     if (saved) setLastSavedPath(saved);
-  }, [artifacts, addons, customBaseName]);
+  }, [resolveArtifacts, addons, customBaseName]);
 
   const onZip = useCallback(async () => {
+    const current = await resolveArtifacts();
+    if (!current) return;
     const zip = new JSZip();
-    const preludeBits = [artifacts.prelude, addons.mdBlock].filter(Boolean).join("\n\n");
+    const preludeBits = [current.prelude, addons.mdBlock].filter(Boolean).join("\n\n");
     const zipPrompt = preludeBits
-      ? `${buildPromptMd(artifacts, { mode: "zip" })}\n\n${preludeBits}`
-      : buildPromptMd(artifacts, { mode: "zip" });
+      ? `${buildPromptMd(current, { mode: "zip" })}\n\n${preludeBits}`
+      : buildPromptMd(current, { mode: "zip" });
     zip.file("prompt.md", zipPrompt);
-    if (artifacts.html) zip.file("index.html", artifacts.html);
-    if (artifacts.css) zip.file("style.css", artifacts.css);
-    if (artifacts.js) zip.file("script.js", artifacts.js);
+    if (current.html) zip.file("index.html", current.html);
+    if (current.css) zip.file("style.css", current.css);
+    if (current.js) zip.file("script.js", current.js);
     if (addons.tokensCss)    zip.file("tokens.css", addons.tokensCss);
     if (addons.selectorsCss) zip.file("selectors.css", addons.selectorsCss);
-    for (const img of artifacts.images) {
+    for (const img of current.images) {
       zip.file(`images/${img.name}`, base64ToUint8(img.base64));
     }
-    zip.file("manifest.json", `${JSON.stringify(artifacts.meta, null, 2)}\n`);
+    zip.file("manifest.json", `${JSON.stringify(current.meta, null, 2)}\n`);
     const blob = await zip.generateAsync({ type: "blob" });
-    const saved = await triggerDownload(blob, `${baseName()}.zip`);
+    const saved = await triggerDownload(blob, `${baseName(current)}.zip`);
     if (saved) setLastSavedPath(saved);
-  }, [artifacts, addons, customBaseName]);
+  }, [resolveArtifacts, addons, customBaseName]);
 
   return (
     <div className="lpe-export-modes" aria-label={COPY.exportModesHeader}>
       <div className="lpe-debug-title">{COPY.exportModesHeader}</div>
       <div className="lpe-debug-actions">
-        <button type="button" className="lpe-btn" onClick={onMd} disabled={disabled}>
+        <button type="button" className="lpe-btn" onClick={onMd} disabled={disabled && !onEnsureArtifacts}>
           {COPY.exportModeMd}
         </button>
-        <button type="button" className="lpe-btn" onClick={onMdFiles} disabled={disabled}>
+        <button type="button" className="lpe-btn" onClick={onMdFiles} disabled={disabled && !onEnsureArtifacts}>
           {COPY.exportModeMdFiles}
         </button>
-        <button type="button" className="lpe-btn lpe-btn-primary" onClick={onZip} disabled={disabled}>
+        <button type="button" className="lpe-btn lpe-btn-primary" onClick={onZip} disabled={disabled && !onEnsureArtifacts}>
           {COPY.exportModeZip}
         </button>
         <button
           type="button"
           className="lpe-btn"
           onClick={handleShare}
-          disabled={disabled || !shareEnabled || shareState.phase === "uploading"}
+          disabled={(disabled && !onEnsureArtifacts) || !shareEnabled || shareState.phase === "uploading"}
           title={shareEnabled ? undefined : COPY.exportModeShareDisabledTip}
         >
           {shareState.phase === "uploading" ? COPY.shareUploading : COPY.exportModeShare}

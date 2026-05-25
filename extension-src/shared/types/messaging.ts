@@ -27,7 +27,12 @@ export interface Envelope<K extends MessageKind, P> {
 export interface PingPayload { sentAtMs: number }
 export interface PingResponse { extensionVersion: string; receivedAtMs: number }
 
-export interface RunFullPageExportPayload { tabId: number; settings: Settings }
+export interface RunFullPageExportPayload {
+  tabId: number;
+  settings: Settings;
+  /** When true, collect/capture artifacts but do not auto-save the default ZIP. */
+  captureOnly?: boolean;
+}
 export interface RunFullPageExportResponse {
   bundleFilename: string;
   downloadId: number;

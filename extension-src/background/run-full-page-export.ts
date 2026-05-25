@@ -211,6 +211,7 @@ function notifyDownloadComplete(downloadId: number, filename: string): void {
 export async function runFullPageExport(
   tabId: number,
   settings: SetSettingsPayload,
+  options: { captureOnly?: boolean } = {},
 ): Promise<RunFullPageExportResponse> {
   startKeepAlive();
   let exportTabId = tabId;
@@ -271,6 +272,34 @@ export async function runFullPageExport(
       counts: { ...artifacts.meta.counts, captureFrames: screenshot.framesPlaced },
     };
 
+    const filename = applyTemplate(
+      settings?.namingTemplateFullPage ?? "inspect-page-fullpage-{domain}-{timestamp}.zip",
+      { domain: domainFromUrl(artifacts.meta.url), timestamp: localTimestamp() },
+    );
+
+    const screenshotDataUrl = await blobToDataUrl(screenshot.blob);
+    if (options.captureOnly) {
+      const response: RunFullPageExportResponse = {
+        bundleFilename: "",
+        downloadId: -1,
+        telemetry: finalMeta.counts,
+        artifacts: {
+          html: artifacts.html,
+          css: artifacts.css,
+          js: artifacts.js,
+          screenshotDataUrl,
+          meta: finalMeta,
+        },
+      };
+      await broadcast({
+        status: PanelStatus.Success,
+        message: "Captured page",
+        telemetry: response.telemetry,
+        fullPageArtifacts: response.artifacts,
+      });
+      return response;
+    }
+
     await broadcast({ status: PanelStatus.Bundling });
     const bundle = await buildBundle({
       html: artifacts.html,
@@ -280,17 +309,11 @@ export async function runFullPageExport(
       meta: finalMeta,
     });
 
-    const filename = applyTemplate(
-      settings?.namingTemplateFullPage ?? "inspect-page-fullpage-{domain}-{timestamp}.zip",
-      { domain: domainFromUrl(artifacts.meta.url), timestamp: localTimestamp() },
-    );
-
     await broadcast({ status: PanelStatus.Downloading });
     const downloadId = await downloadBundle(bundle, filename);
     logger.info(LogCategory.Download, `bundle saved as ${filename} (id=${downloadId})`);
     notifyDownloadComplete(downloadId, filename);
 
-    const screenshotDataUrl = await blobToDataUrl(screenshot.blob);
     const response: RunFullPageExportResponse = {
       bundleFilename: filename,
       downloadId,

@@ -181,7 +181,7 @@ router.on<OpenLoginPopupPayload, OpenLoginPopupResponse>(
 
 router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
   MessageKind.RunFullPageExport,
-  async ({ tabId, settings }, sender) => {
+  async ({ tabId, settings, captureOnly }, sender) => {
     const tid = tabId > 0 ? tabId : sender.tab?.id;
     if (tid === undefined) {
       throw new MessageError(ErrorCode.E_NOT_AVAILABLE_HERE, "Cannot resolve tab for export");
@@ -191,7 +191,7 @@ router.on<RunFullPageExportPayload, RunFullPageExportResponse>(
     // bypasses runFullPageExport's retry/diagnostic path and surfaces the old
     // generic E_NOT_AVAILABLE_HERE. The orchestrator owns readiness, retries,
     // reinjection, and phase-tagged errors.
-    return runFullPageExport(tid, settings);
+    return runFullPageExport(tid, settings, { captureOnly });
   },
 );
 
