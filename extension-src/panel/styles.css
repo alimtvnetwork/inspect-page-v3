@@ -2044,9 +2044,9 @@
   font-weight: 650;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-body {
-  padding: 10px 0 40px;
+  padding: 10px 10px 40px;
   gap: 8px;
-  max-height: none;
+  max-height: min(calc(var(--lpe-visible-h, 100%) - 86px), calc(100% - 86px), calc(100vh - 112px));
   overflow-y: auto;
   overflow-x: hidden;
   scroll-padding-bottom: 40px;
@@ -2058,9 +2058,9 @@
   font-size: 13px;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-error-actions .lpe-btn {
-  min-height: 28px;
-  padding: 4px 10px;
-  border-radius: 7px;
+  min-height: 30px;
+  padding: 5px 10px;
+  border-radius: 8px;
   font-size: 12px;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-btn-primary {
