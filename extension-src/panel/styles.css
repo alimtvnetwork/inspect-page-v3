@@ -2055,12 +2055,12 @@
   font-weight: 650;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-body {
-  padding: 10px 0 40px;
+  padding: 10px 0 56px;
   gap: 8px;
   max-height: none;
-  overflow-y: auto;
+  overflow-y: scroll;
   overflow-x: hidden;
-  scroll-padding-bottom: 40px;
+  scroll-padding-bottom: 56px;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-btn {
   min-height: 38px;
@@ -2069,8 +2069,8 @@
   font-size: 13px;
 }
 .lpe-root[data-lpe-surface="floating"] .lpe-error-actions .lpe-btn {
-  min-height: 28px;
-  padding: 4px 10px;
+  min-height: 30px;
+  padding: 5px 10px;
   border-radius: 7px;
   font-size: 12px;
 }
